@@ -1,0 +1,43 @@
+#Requires -Version 5.1
+<#+
+.SYNOPSIS
+    Runs the local ImageMapForge MVP validation.
+#>
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent $scriptDir
+
+Write-Output 'PZMapForge validate.ps1'
+Write-Output "Root: $repoRoot"
+
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\new-test-image.ps1')
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'source\image-mapforge.ps1') -ImagePath (Join-Path $repoRoot '.local\mapforge\sample-input.png')
+
+$required = @(
+    '.local\mapforge\parsed-cell.json',
+    '.local\mapforge\parsed-cell-report.md',
+    '.local\mapforge\parsed-cell-preview.png',
+    '.local\mapforge\parsed-cell-tiles.png',
+    '.local\mapforge\parsed-cell-basic.tmx'
+)
+
+foreach ($relative in $required) {
+    $path = Join-Path $repoRoot $relative
+    if (-not (Test-Path -LiteralPath $path)) {
+        throw "Missing expected output: $relative"
+    }
+    Write-Output "OK: $relative"
+}
+
+$mediaMaps = Join-Path $repoRoot 'media\maps'
+if (Test-Path -LiteralPath $mediaMaps) {
+    $items = @(Get-ChildItem -LiteralPath $mediaMaps -Recurse -Force -ErrorAction SilentlyContinue)
+    if ($items.Count -gt 0) {
+        throw 'media/maps contains files. This MVP must not write into media/maps.'
+    }
+}
+
+Write-Output 'Validation passed.'

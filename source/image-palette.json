@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "cell_width": 300,
+  "cell_height": 300,
+  "tile_size": 32,
+  "description": "ImageMapForge MVP palette. Colours are deterministic planning colours, not Project Zomboid asset colours.",
+  "kinds": [
+    { "kind": "grass", "gid": 1, "symbol": "G", "color": "#648C46" },
+    { "kind": "road", "gid": 2, "symbol": "R", "color": "#464646" },
+    { "kind": "sidewalk", "gid": 3, "symbol": "S", "color": "#BEB4A0" },
+    { "kind": "row_house", "gid": 4, "symbol": "H", "color": "#A06E50" },
+    { "kind": "depanneur", "gid": 5, "symbol": "D", "color": "#C8823C" },
+    { "kind": "garage", "gid": 6, "symbol": "A", "color": "#505064" },
+    { "kind": "industrial_yard", "gid": 7, "symbol": "I", "color": "#A0825A" },
+    { "kind": "landmark", "gid": 8, "symbol": "L", "color": "#FFDC00" },
+    { "kind": "spawn", "gid": 9, "symbol": "P", "color": "#00DC50" }
+  ]
+}
