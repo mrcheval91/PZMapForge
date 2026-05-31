@@ -51,6 +51,11 @@ if (Test-Path -LiteralPath $mediaMaps) {
 }
 
 Write-Output ""
+Write-Output "--- Artifact contract validation ---"
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\test-parsed-cell-contract.ps1')
+if ($LASTEXITCODE -ne 0) { throw "Artifact contract validation failed." }
+
+Write-Output ""
 Write-Output "--- Hardening test harness ---"
 & powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'tests\test-image-mapforge.ps1')
 if ($LASTEXITCODE -ne 0) { throw "Hardening test harness failed." }

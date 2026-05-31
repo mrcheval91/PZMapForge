@@ -9,6 +9,19 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- scripts/test-parsed-cell-contract.ps1: deterministic artifact contract check
+  (33 assertions: required fields, schema sentinel, claim_boundary, dimensions
+  300x300, rows count and length, counts pixel sum, all 9 required kinds,
+  outputs keys, matching fields and pixel sum).
+- scripts/validate.ps1: contract step added before hardening test harness.
+- docs/IMPLEMENTATION.md: contract validation row added to ratified table;
+  gap 4 added for JSON Schema type validation.
+
+---
+
+## [Unreleased - prev]
+
+### Added
 - Import hardened ImageMapForge MVP from pz-sud-ouest-montreal@5944173.
   - source/image-mapforge.ps1: RGB palette format, Fail+exit pattern, Debug
     exits early (no artifacts), nearest-colour drift cache and drift records
