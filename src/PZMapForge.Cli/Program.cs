@@ -1,5 +1,6 @@
 using PZMapForge.Core.Palette;
 using PZMapForge.Core.ParsedCell;
+using PZMapForge.Core.Primitives;
 using PZMapForge.Core.Regions;
 
 // Claim boundary: PZMapForge CLI is a planning tool only.
@@ -12,6 +13,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  palette-check     --palette <path>");
     Console.Error.WriteLine("  parsed-cell-check --path <path>");
     Console.Error.WriteLine("  region-check      --path <path>");
+    Console.Error.WriteLine("  primitive-check   --path <path>");
     return 1;
 }
 
@@ -20,6 +22,7 @@ return args[0] switch
     "palette-check"     => PaletteCheckCommand(args[1..]),
     "parsed-cell-check" => ParsedCellCheckCommand(args[1..]),
     "region-check"      => RegionCheckCommand(args[1..]),
+    "primitive-check"   => PrimitiveCheckCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -104,9 +107,7 @@ static int RegionCheckCommand(string[] args)
         return 1;
     }
 
-    var grid = cellResult.Grid!;
-
-    // Build code->kind map from the document's counts
+    var grid      = cellResult.Grid!;
     var codeToKind = cellResult.Document!.Counts
         .ToDictionary(c => c.Code[0], c => c.Kind)
         .AsReadOnly();
@@ -121,9 +122,58 @@ static int RegionCheckCommand(string[] args)
     return 0;
 }
 
+static int PrimitiveCheckCommand(string[] args)
+{
+    var jsonPath = string.Empty;
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        if (args[i] is "--path" or "-p") { jsonPath = args[i + 1]; break; }
+    }
+
+    if (string.IsNullOrWhiteSpace(jsonPath))
+    {
+        Console.Error.WriteLine("primitive-check requires --path <path>");
+        return 1;
+    }
+
+    var cellResult = ParsedCellLoader.Load(jsonPath);
+    if (!cellResult.IsValid)
+    {
+        Console.WriteLine("Status:     INVALID (parsed-cell failed)");
+        foreach (var e in cellResult.Errors) Console.Error.WriteLine($"  error: {e}");
+        return 1;
+    }
+
+    var grid      = cellResult.Grid!;
+    var codeToKind = cellResult.Document!.Counts
+        .ToDictionary(c => c.Code[0], c => c.Kind)
+        .AsReadOnly();
+
+    PrimitiveClassificationResult result;
+    try
+    {
+        var regions = RegionExtractor.Extract(grid, codeToKind);
+        result      = PrimitiveClassifier.Classify(regions);
+    }
+    catch (ArgumentException ex)
+    {
+        Console.WriteLine("Status:     INVALID (classification failed)");
+        Console.Error.WriteLine($"  error: {ex.Message}");
+        return 1;
+    }
+
+    Console.WriteLine($"Dimensions:     {grid.Width}x{grid.Height}");
+    Console.WriteLine($"Regions:        {result.Primitives.Count}");
+    Console.WriteLine($"Primitives:     {result.PrimitiveCount}");
+    Console.WriteLine($"Primitive types:{result.SummaryByPrimitiveType.Count}");
+    Console.WriteLine($"Pixels:         {result.TotalPixels}");
+    Console.WriteLine("Status:         OK");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
-    Console.Error.WriteLine("Available commands: palette-check, parsed-cell-check, region-check");
+    Console.Error.WriteLine("Available commands: palette-check, parsed-cell-check, region-check, primitive-check");
     return 1;
 }

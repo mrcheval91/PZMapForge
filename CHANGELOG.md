@@ -9,6 +9,20 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- src/PZMapForge.Cli/Program.cs: primitive-check --path <path> command.
+  Loads parsed-cell, extracts regions, classifies primitives, prints
+  dimensions/regions/primitives/primitive-types/pixels/status. Exits 0
+  on success; exits 1 if parsed-cell is invalid or classification fails
+  (e.g. unmapped kind).
+- tests/PZMapForge.Cli.Tests/CliSmokeTests.cs: PrimitiveClassifier_IsAccessible
+  test confirming PrimitiveClassifier.IsKnownKind and all 7 PlanningPrimitiveType
+  enum values are accessible from the CLI test project.
+
+---
+
+## [Unreleased - prev13]
+
+### Added
 - src/PZMapForge.Core/Primitives/: typed primitive classifier.
   - PlanningPrimitiveType enum (7 values mirroring PS kindMap output).
   - PlanningPrimitive, PrimitiveKindSummary, PrimitiveClassificationResult.

@@ -36,6 +36,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | .NET CLI region-check command | Ratified | Exits 0; prints dims/regions/kinds/pixels/status |
 | .NET cross-verification vs PS regions.json | Ratified | 3 cross-verification xUnit tests; totals, summary-by-kind, per-region details match PS reference for all 9 regions |
 | .NET primitive classifier (PrimitiveClassifier.Classify) | Ratified | 16 xUnit tests (8 behavioural + 8 [Theory] kind mappings); PS cross-verification fixture proves .NET output matches PS reference for all 9 primitives |
+| .NET CLI primitive-check command | Ratified | Exits 0 on valid parsed-cell; prints dimensions/regions/primitives/types/pixels/status |
 
 ## Provisional: present but not load-tested
 
