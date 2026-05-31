@@ -9,6 +9,22 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- scripts/write-proof-packet.ps1: generates .local/mapforge/proof-packet.json
+  and proof-packet.md with schema sentinel, UTC timestamp, git state,
+  SHA-256 hashes of all 5 artifacts, expected validation counts, and safety
+  flags. Runs validate.ps1 first if parsed-cell.json is missing.
+- scripts/test-proof-packet.ps1: 32-assertion proof packet validator (output
+  files exist, 15 required fields, schema/claim sentinels, 5 SHA-256 formats,
+  validation summary counts, 4 safety flags).
+- schemas/pzmapforge.proof-packet.v0.1.schema.json: JSON Schema for proof packet.
+- scripts/validate.ps1: proof packet write + test steps added after hardening.
+- docs/IMPLEMENTATION.md: proof packet row added to ratified table.
+
+---
+
+## [Unreleased - prev2]
+
+### Added
 - scripts/test-schema-files.ps1: schema file sanity validator (28 assertions:
   $schema, $id sentinel, title, required list for 11 fields, properties keys
   for those same fields). No external dependencies.

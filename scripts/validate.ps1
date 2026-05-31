@@ -66,4 +66,12 @@ Write-Output "--- Hardening test harness ---"
 if ($LASTEXITCODE -ne 0) { throw "Hardening test harness failed." }
 
 Write-Output ""
+Write-Output "--- Proof packet ---"
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\write-proof-packet.ps1')
+if ($LASTEXITCODE -ne 0) { throw "write-proof-packet.ps1 failed." }
+
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\test-proof-packet.ps1')
+if ($LASTEXITCODE -ne 0) { throw "Proof packet validation failed." }
+
+Write-Output ""
 Write-Output "Validation passed."

@@ -14,6 +14,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | parsed-cell.json (counts, legend, drift) | Ratified | Test 6: all 5 outputs written |
 | parsed-cell.json artifact contract | Ratified | test-parsed-cell-contract.ps1: 40 assertions pass |
 | Schema file sanity (id, required, properties) | Ratified | test-schema-files.ps1: 28 assertions pass |
+| Proof packet (hashes, git state, safety flags) | Ratified | test-proof-packet.ps1: 32 assertions pass |
 | parsed-cell-report.md (drift table, legend) | Ratified | Test 9: drift section present in report |
 | Deterministic output (same input = same counts) | Ratified | Test 8: two runs identical |
 | Kind-count completeness (sum = W x H) | Ratified | Test 7: 90000 = 300 x 300 |
