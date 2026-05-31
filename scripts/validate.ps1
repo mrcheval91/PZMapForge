@@ -110,6 +110,11 @@ Write-Output "--- Plan export ---"
 if ($LASTEXITCODE -ne 0) { throw "plan-export failed." }
 
 Write-Output ""
+Write-Output "--- Plan recommendations contract ---"
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\test-plan-recommendations-contract.ps1')
+if ($LASTEXITCODE -ne 0) { throw "Plan recommendations contract failed." }
+
+Write-Output ""
 Write-Output "--- Proof packet ---"
 & powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\write-proof-packet.ps1')
 if ($LASTEXITCODE -ne 0) { throw "write-proof-packet.ps1 failed." }

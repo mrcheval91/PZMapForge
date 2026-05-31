@@ -9,6 +9,33 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- scripts/test-plan-recommendations-contract.ps1: 21-assertion contract
+  validator for .local/mapforge/plan-recommendations.json. Checks: 2 output
+  files, schema/claim_boundary/width/height sentinels, 4 count integrity
+  checks, recommendations array exists/count-matches/5-field presence,
+  summary exists/matches/counts_by_severity sum. Generates artifact via
+  dotnet plan-export if missing (no validate.ps1 recursion).
+- schemas/pzmapforge.proof-packet.v0.8.schema.json: adds
+  plan_recommendations_contract (const: 21) to validation_summary; updates
+  proof_packet (55) and total_expected_assertions (358).
+
+### Changed
+- scripts/validate.ps1: plan-recommendations contract step added between
+  plan-export and proof packet.
+- scripts/write-proof-packet.ps1: bumped to v0.8; adds
+  plan_recommendations_contract=21, proof_packet=55, total=358.
+- scripts/test-proof-packet.ps1: v0.8; adds plan_recommendations_contract==21;
+  total==358. 55 assertions (was 54).
+- scripts/test-schema-files.ps1: proof-packet -> v0.8; total unchanged at 134.
+- docs/IMPLEMENTATION.md: plan contract ratified; proof packet v0.8.
+
+Full PowerShell pipeline: 134+40+5+21+36+24+22+21+55 = 358 assertions. All pass.
+
+---
+
+## [Unreleased - prev20]
+
+### Added
 - schemas/pzmapforge.proof-packet.v0.7.schema.json: adds plan_recommendations_
   sha256/plan_report_sha256 to required; updates validation_summary consts
   (schema_file_sanity=134, proof_packet=54, total=336).

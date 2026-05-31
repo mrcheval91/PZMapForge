@@ -1,9 +1,9 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.7) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.8) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
-    and planning recommendation artifacts. Hardening harness covers -Resize (36 assertions).
+    planning recommendation artifacts, and plan-recommendations contract. Hardening harness covers -Resize (36 assertions).
 
     Reads parsed-cell.json, regions.json, primitives.json and companion files,
     computes SHA-256 hashes, captures git state, and writes:
@@ -145,7 +145,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.7'
+    schema                  = 'pzmapforge.proof-packet.v0.8'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -178,8 +178,9 @@ $packet = [ordered]@{
         hardening_harness           = 36
         region_extraction           = 24
         primitive_classification    = 22
-        proof_packet                = 54
-        total_expected_assertions   = 336
+        plan_recommendations_contract = 21
+        proof_packet                = 55
+        total_expected_assertions   = 358
     }
     safety = [ordered]@{
         local_only_outputs      = $true
@@ -205,7 +206,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.7
+Schema: pzmapforge.proof-packet.v0.8
 
 ## Claim boundary
 
@@ -261,8 +262,9 @@ planning_artifact_only_not_pz_load_tested
 | Hardening harness | 36 |
 | Region extraction | 24 |
 | Primitive classification | 22 |
-| Proof packet | 54 |
-| Total | 336 |
+| Plan recommendations contract | 21 |
+| Proof packet | 55 |
+| Total | 358 |
 
 ## Safety
 
