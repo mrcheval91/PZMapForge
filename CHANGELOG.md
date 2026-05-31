@@ -9,6 +9,29 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- schemas/pzmapforge.proof-packet.v0.4.schema.json: proof packet schema v0.4.
+  Adds tmx_integrity (const: 21) to validation_summary; updates proof_packet
+  (47) and total_expected_assertions (286).
+
+### Changed
+- scripts/write-proof-packet.ps1: bumped to v0.4; added tmx_integrity=21,
+  updated proof_packet=47, total=286.
+- scripts/test-proof-packet.ps1: expects v0.4; adds tmx_integrity==21 check;
+  total_expected_assertions==286. 47 assertions (was 46).
+- scripts/test-schema-files.ps1: proof-packet section now validates v0.4.
+  Total schema assertions unchanged at 104.
+- docs/IMPLEMENTATION.md: proof packet row updated to v0.4/47 assertions.
+
+### Note
+Full PowerShell pipeline: schema (104) + contract (40) + TMX integrity (21) +
+hardening (28) + regions (24) + primitives (22) + proof packet (47) = 286
+assertions. All pass.
+
+---
+
+## [Unreleased - prev14]
+
+### Added
 - src/PZMapForge.Cli/Program.cs: primitive-check --path <path> command.
   Loads parsed-cell, extracts regions, classifies primitives, prints
   dimensions/regions/primitives/primitive-types/pixels/status. Exits 0

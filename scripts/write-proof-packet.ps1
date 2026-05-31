@@ -1,8 +1,8 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.3) covering ImageMapForge,
-    region extraction, and primitive classification artifacts.
+    Writes a deterministic local proof packet (v0.4) covering ImageMapForge,
+    TMX integrity, region extraction, and primitive classification artifacts.
 
     Reads parsed-cell.json, regions.json, primitives.json and companion files,
     computes SHA-256 hashes, captures git state, and writes:
@@ -124,7 +124,7 @@ $primitivesMdSha    = Get-FileSha256 $primitivesMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.3'
+    schema                  = 'pzmapforge.proof-packet.v0.4'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -148,11 +148,12 @@ $packet = [ordered]@{
     validation_summary      = [ordered]@{
         schema_file_sanity        = 104
         artifact_contract         = 40
+        tmx_integrity             = 21
         hardening_harness         = 28
         region_extraction         = 24
         primitive_classification  = 22
-        proof_packet              = 46
-        total_expected_assertions = 264
+        proof_packet              = 47
+        total_expected_assertions = 286
     }
     safety = [ordered]@{
         local_only_outputs      = $true
@@ -178,7 +179,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.3
+Schema: pzmapforge.proof-packet.v0.4
 
 ## Claim boundary
 
@@ -222,11 +223,12 @@ planning_artifact_only_not_pz_load_tested
 |---|---:|
 | Schema file sanity | 104 |
 | Artifact contract | 40 |
+| TMX integrity | 21 |
 | Hardening harness | 28 |
 | Region extraction | 24 |
 | Primitive classification | 22 |
-| Proof packet | 46 |
-| Total | 264 |
+| Proof packet | 47 |
+| Total | 286 |
 
 ## Safety
 

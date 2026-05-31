@@ -15,7 +15,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | parsed-cell.json artifact contract | Ratified | test-parsed-cell-contract.ps1: 40 assertions pass |
 | TMX structural integrity (base64, gzip, GID range) | Ratified | test-tmx-integrity.ps1: 21 assertions pass |
 | Schema file sanity — all 4 schemas | Ratified | test-schema-files.ps1: 104 assertions pass (4 schemas, proof-packet on v0.3) |
-| Proof packet v0.3 (ImageMapForge + region + primitive hashes) | Ratified | test-proof-packet.ps1: 46 assertions pass |
+| Proof packet v0.4 (+ tmx_integrity=21; total=286) | Ratified | test-proof-packet.ps1: 47 assertions pass |
 | Semantic region extraction (4-neighbor BFS) | Ratified | test-region-extraction.ps1: 24 assertions pass |
 | Primitive classification (9 kinds to 7 types) | Ratified | test-primitive-classification.ps1: 22 assertions pass |
 | parsed-cell-report.md (drift table, legend) | Ratified | Test 9: drift section present in report |
