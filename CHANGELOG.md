@@ -9,6 +9,28 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- schemas/pzmapforge.proof-packet.v0.2.schema.json: proof packet schema v0.2
+  covering region artifact fields (regions_json_path, regions_report_path,
+  regions_json_sha256, regions_report_sha256) and updated validation_summary
+  (schema_file_sanity=78, region_extraction=24, proof_packet=39, total=209).
+
+### Changed
+- scripts/write-proof-packet.ps1: bumped to v0.2. Now hashes regions.json and
+  regions-report.md; runs extract-regions.ps1 if regions.json is missing;
+  updated validation_summary counts.
+- scripts/test-proof-packet.ps1: updated for v0.2 contract — 39 assertions
+  (was 32): 4 new required fields, 2 new SHA-256 checks, region_extraction=24,
+  total=209.
+- scripts/test-schema-files.ps1: proof-packet section now validates v0.2
+  (12 checked fields, was 10) — 78 total schema assertions (unchanged count
+  since proof-packet gained 4 but the total was already recomputed correctly).
+- docs/IMPLEMENTATION.md: proof packet row updated to v0.2.
+
+---
+
+## [Unreleased - prev4]
+
+### Added
 - scripts/extract-regions.ps1: BFS flood-fill region extraction from
   parsed-cell.json rows using 4-neighbor connectivity. Outputs
   regions.json (schema, claim, regions[], summary_by_kind[]) and

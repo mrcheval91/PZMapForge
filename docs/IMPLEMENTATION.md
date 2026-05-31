@@ -14,7 +14,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | parsed-cell.json (counts, legend, drift) | Ratified | Test 6: all 5 outputs written |
 | parsed-cell.json artifact contract | Ratified | test-parsed-cell-contract.ps1: 40 assertions pass |
 | Schema file sanity — all 3 schemas | Ratified | test-schema-files.ps1: 74 assertions pass (was 28 for parsed-cell only) |
-| Proof packet (hashes, git state, safety flags) | Ratified | test-proof-packet.ps1: 32 assertions pass |
+| Proof packet v0.2 (ImageMapForge + region hashes, git, safety) | Ratified | test-proof-packet.ps1: 39 assertions pass |
 | Semantic region extraction (4-neighbor BFS) | Ratified | test-region-extraction.ps1: 24 assertions pass |
 | parsed-cell-report.md (drift table, legend) | Ratified | Test 9: drift section present in report |
 | Deterministic output (same input = same counts) | Ratified | Test 8: two runs identical |
