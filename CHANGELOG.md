@@ -9,6 +9,33 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- src/PZMapForge.Core/Planning/PlanningRuleOptions.cs: configurable thresholds.
+  TinyBuildingPixelThreshold (default 9) and LargeGroundPixelThreshold
+  (default 50000). Both must be >= 0; ArgumentOutOfRangeException otherwise.
+  PlanningRuleOptions.Default provides the original hardcoded values.
+- PlanningRuleEngine.Evaluate(primitives, options) overload; existing no-options
+  overload delegates to it via PlanningRuleOptions.Default.
+- tests/PZMapForge.Core.Tests/Planning/PlanningRuleEngineOptionsTests.cs:
+  8 xUnit tests: default preserves output, zero-threshold suppresses tiny
+  warnings (1px buildings not <= 0), lower threshold = fewer warnings,
+  threshold equals pixel_count triggers, higher large-ground suppresses note,
+  lower large-ground triggers, negative tiny throws, negative large throws.
+
+### Changed
+- src/PZMapForge.Core/Planning/PlanningRuleEngine.cs: removed private const
+  thresholds; now reads from PlanningRuleOptions.
+- docs/PLANNING_RULES.md: threshold table updated to reflect PlanningRuleOptions
+  field names; configurable usage example added.
+
+dotnet build: 0 errors
+dotnet test:  82/82 pass (80 Core + 2 Cli)
+scripts/validate.ps1: 358 PS assertions unchanged.
+
+---
+
+## [Unreleased - prev22]
+
+### Added
 - tests/fixtures/plan-recommendations/valid.json: committed reference fixture
   generated from tests/fixtures/parsed-cell/valid.json via PlanningArtifactWriter.
   9 primitives, 13 recommendations (3 warnings/tiny_building + 10 info),

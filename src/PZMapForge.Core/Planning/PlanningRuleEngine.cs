@@ -9,7 +9,7 @@ namespace PZMapForge.Core.Planning;
 /// Sort order: severity (Warning before Info), recommendation_type ASC,
 ///             pixel_count DESC, bounds.y ASC, bounds.x ASC, source_primitive_id ASC.
 ///
-/// Thresholds:
+/// Default thresholds (see PlanningRuleOptions.Default):
 ///   tiny_building_candidate  : pixel_count &lt;= 9  (3x3 area or smaller)
 ///   large_open_ground_area   : pixel_count &gt; 50000
 ///
@@ -20,12 +20,16 @@ namespace PZMapForge.Core.Planning;
 /// </summary>
 public static class PlanningRuleEngine
 {
-    private const int TinyBuildingThreshold  = 9;
-    private const int LargeGroundThreshold   = 50_000;
+    /// <summary>Evaluates with default thresholds (PlanningRuleOptions.Default).</summary>
+    public static PlanningRuleResult Evaluate(PrimitiveClassificationResult primitives) =>
+        Evaluate(primitives, PlanningRuleOptions.Default);
 
-    public static PlanningRuleResult Evaluate(PrimitiveClassificationResult primitives)
+    /// <summary>Evaluates with caller-supplied threshold options.</summary>
+    public static PlanningRuleResult Evaluate(
+        PrimitiveClassificationResult primitives,
+        PlanningRuleOptions           options)
     {
-        var raw = new List<PlanningRecommendation>(primitives.PrimitiveCount * 2);
+        var raw      = new List<PlanningRecommendation>(primitives.PrimitiveCount * 2);
         var hasSpawn = false;
 
         foreach (var p in primitives.Primitives)
@@ -45,7 +49,7 @@ public static class PlanningRuleEngine
                 case PlanningPrimitiveType.BuildingFootprint:
                     raw.Add(Make(p, PlanningRecommendationType.BuildingFootprintCandidate,
                         PlanningSeverity.Info, "structure placement candidate"));
-                    if (p.PixelCount <= TinyBuildingThreshold)
+                    if (p.PixelCount <= options.TinyBuildingPixelThreshold)
                         raw.Add(Make(p, PlanningRecommendationType.TinyBuildingCandidate,
                             PlanningSeverity.Warning, "very small footprint — review placement"));
                     break;
@@ -69,14 +73,13 @@ public static class PlanningRuleEngine
                 case PlanningPrimitiveType.GroundRegion:
                     raw.Add(Make(p, PlanningRecommendationType.OpenGroundArea,
                         PlanningSeverity.Info, "background terrain / filler area"));
-                    if (p.PixelCount > LargeGroundThreshold)
+                    if (p.PixelCount > options.LargeGroundPixelThreshold)
                         raw.Add(Make(p, PlanningRecommendationType.LargeOpenGroundArea,
                             PlanningSeverity.Info, "large open area — consider subdivision"));
                     break;
             }
         }
 
-        // Global rule: missing spawn marker
         if (!hasSpawn)
             raw.Add(new PlanningRecommendation(
                 0, string.Empty,
@@ -85,7 +88,6 @@ public static class PlanningRuleEngine
                 "no spawn marker found — add at least one spawn point",
                 0, null));
 
-        // Deterministic sort
         var sorted = raw
             .OrderBy(r  => (int)r.Severity)
             .ThenBy(r   => r.RecommendationTypeStr, StringComparer.Ordinal)
@@ -95,8 +97,7 @@ public static class PlanningRuleEngine
             .ThenBy(r   => r.SourcePrimitiveId)
             .ToList();
 
-        var summary = BuildSummary(sorted, primitives);
-        return new PlanningRuleResult(sorted, summary);
+        return new PlanningRuleResult(sorted, BuildSummary(sorted, primitives));
     }
 
     private static PlanningRecommendation Make(

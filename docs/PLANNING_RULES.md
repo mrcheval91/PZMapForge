@@ -1,7 +1,8 @@
 # Planning Rules
 
-`PlanningRuleEngine.Evaluate(PrimitiveClassificationResult)` turns classified
-planning primitives into deterministic planning recommendations.
+`PlanningRuleEngine.Evaluate(PrimitiveClassificationResult)` (or the overload
+with `PlanningRuleOptions`) turns classified planning primitives into deterministic
+planning recommendations.
 
 ---
 
@@ -41,8 +42,18 @@ No lotpack, no playable export, no PZ asset reference.
 
 | Threshold | Value | Trigger |
 |---|---|---|
-| `TinyBuildingThreshold` | 9 pixels | building_footprint with pixel_count <= 9 gets tiny_building_candidate warning |
-| `LargeGroundThreshold` | 50,000 pixels | ground_region with pixel_count > 50000 gets large_open_ground_area info |
+| `TinyBuildingPixelThreshold` | 9 pixels | building_footprint with pixel_count <= threshold gets tiny_building_candidate warning |
+| `LargeGroundPixelThreshold` | 50,000 pixels | ground_region with pixel_count > threshold gets large_open_ground_area info |
+
+Thresholds are configurable via `PlanningRuleOptions`:
+
+```csharp
+var opts = new PlanningRuleOptions(tinyBuildingPixelThreshold: 0, largeGroundPixelThreshold: 100_000);
+var result = PlanningRuleEngine.Evaluate(primitives, opts);
+```
+
+Both values must be >= 0; negative values throw `ArgumentOutOfRangeException`.
+The no-options overload uses `PlanningRuleOptions.Default` (9 and 50000).
 
 ---
 
