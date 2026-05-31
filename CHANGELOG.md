@@ -9,6 +9,24 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- tests/fixtures/plan-recommendations/valid.json: committed reference fixture
+  generated from tests/fixtures/parsed-cell/valid.json via PlanningArtifactWriter.
+  9 primitives, 13 recommendations (3 warnings/tiny_building + 10 info),
+  warning_count=3, total_pixels=90000.
+- tests/PZMapForge.Core.Tests/Planning/PlanningArtifactCrossVerificationTests.cs:
+  3 [Fact] cross-verification tests comparing .NET pipeline output against the
+  committed fixture (header fields, all 13 recommendation details incl. bounds,
+  summary counts_by_type/counts_by_severity). EnsureFixture() generates the
+  fixture if missing (developer commits on first run).
+
+dotnet test: 74/74 (72 Core + 2 Cli)
+scripts/validate.ps1: 358 PS assertions unchanged.
+
+---
+
+## [Unreleased - prev21]
+
+### Added
 - scripts/test-plan-recommendations-contract.ps1: 21-assertion contract
   validator for .local/mapforge/plan-recommendations.json. Checks: 2 output
   files, schema/claim_boundary/width/height sentinels, 4 count integrity

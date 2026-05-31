@@ -20,6 +20,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Plan-recommendations schema sanity | Ratified | test-schema-files.ps1: 134 total (was 104; +26 plan-recs +4 proof-packet v0.7) |
 | Plan-recommendations artifact contract | Ratified | test-plan-recommendations-contract.ps1: 21 assertions pass |
 | Proof packet v0.8 (plan contract; total=358) | Ratified | test-proof-packet.ps1: 55 assertions pass |
+| .NET plan artifact cross-verification | Ratified | PlanningArtifactCrossVerificationTests: 3 [Fact] methods verify header fields, all 13 recommendations, and summary against committed fixture |
 | Semantic region extraction (4-neighbor BFS) | Ratified | test-region-extraction.ps1: 24 assertions pass |
 | Primitive classification (9 kinds to 7 types) | Ratified | test-primitive-classification.ps1: 22 assertions pass |
 | parsed-cell-report.md (drift table, legend) | Ratified | Test 9: drift section present in report |

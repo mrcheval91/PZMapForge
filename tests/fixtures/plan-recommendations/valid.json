@@ -1,0 +1,245 @@
+{
+  "schema": "pzmapforge.plan-recommendations.v0.1",
+  "claim_boundary": "planning_artifact_only_not_pz_load_tested",
+  "generated_at_utc": "2026-05-31T23:32:04Z",
+  "source": {
+    "parsed_cell_path": "E:\\Omni\\Zomboid\\PZMapForge\\tests\\fixtures\\parsed-cell\\valid.json",
+    "generated_by": "PZMapForge.Cli plan-export"
+  },
+  "width": 300,
+  "height": 300,
+  "primitive_count": 9,
+  "recommendation_count": 13,
+  "warning_count": 3,
+  "recommendations": [
+    {
+      "recommendation_id": 1,
+      "recommendation_type": "tiny_building_candidate",
+      "severity": "warning",
+      "planning_role": "very small footprint \u2014 review placement",
+      "source_primitive_id": 1,
+      "primitive_type": "building_footprint",
+      "pixel_count": 1,
+      "bounds": {
+        "x": 294,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "message": "tiny_building_candidate: very small footprint \u2014 review placement"
+    },
+    {
+      "recommendation_id": 2,
+      "recommendation_type": "tiny_building_candidate",
+      "severity": "warning",
+      "planning_role": "very small footprint \u2014 review placement",
+      "source_primitive_id": 2,
+      "primitive_type": "building_footprint",
+      "pixel_count": 1,
+      "bounds": {
+        "x": 295,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "message": "tiny_building_candidate: very small footprint \u2014 review placement"
+    },
+    {
+      "recommendation_id": 3,
+      "recommendation_type": "tiny_building_candidate",
+      "severity": "warning",
+      "planning_role": "very small footprint \u2014 review placement",
+      "source_primitive_id": 3,
+      "primitive_type": "building_footprint",
+      "pixel_count": 1,
+      "bounds": {
+        "x": 296,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "message": "tiny_building_candidate: very small footprint \u2014 review placement"
+    },
+    {
+      "recommendation_id": 4,
+      "recommendation_type": "building_footprint_candidate",
+      "severity": "info",
+      "planning_role": "structure placement candidate",
+      "source_primitive_id": 1,
+      "primitive_type": "building_footprint",
+      "pixel_count": 1,
+      "bounds": {
+        "x": 294,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "message": "building_footprint_candidate: structure placement candidate"
+    },
+    {
+      "recommendation_id": 5,
+      "recommendation_type": "building_footprint_candidate",
+      "severity": "info",
+      "planning_role": "structure placement candidate",
+      "source_primitive_id": 2,
+      "primitive_type": "building_footprint",
+      "pixel_count": 1,
+      "bounds": {
+        "x": 295,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "message": "building_footprint_candidate: structure placement candidate"
+    },
+    {
+      "recommendation_id": 6,
+      "recommendation_type": "building_footprint_candidate",
+      "severity": "info",
+      "planning_role": "structure placement candidate",
+      "source_primitive_id": 3,
+      "primitive_type": "building_footprint",
+      "pixel_count": 1,
+      "bounds": {
+        "x": 296,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "message": "building_footprint_candidate: structure placement candidate"
+    },
+    {
+      "recommendation_id": 7,
+      "recommendation_type": "landmark_marker",
+      "severity": "info",
+      "planning_role": "orientation / named location marker",
+      "source_primitive_id": 5,
+      "primitive_type": "landmark_marker",
+      "pixel_count": 1,
+      "bounds": {
+        "x": 298,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "message": "landmark_marker: orientation / named location marker"
+    },
+    {
+      "recommendation_id": 8,
+      "recommendation_type": "large_open_ground_area",
+      "severity": "info",
+      "planning_role": "large open area \u2014 consider subdivision",
+      "source_primitive_id": 4,
+      "primitive_type": "ground_region",
+      "pixel_count": 89992,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 300,
+        "height": 300
+      },
+      "message": "large_open_ground_area: large open area \u2014 consider subdivision"
+    },
+    {
+      "recommendation_id": 9,
+      "recommendation_type": "open_ground_area",
+      "severity": "info",
+      "planning_role": "background terrain / filler area",
+      "source_primitive_id": 4,
+      "primitive_type": "ground_region",
+      "pixel_count": 89992,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 300,
+        "height": 300
+      },
+      "message": "open_ground_area: background terrain / filler area"
+    },
+    {
+      "recommendation_id": 10,
+      "recommendation_type": "road_corridor_candidate",
+      "severity": "info",
+      "planning_role": "traffic spine / routing corridor",
+      "source_primitive_id": 6,
+      "primitive_type": "road_region",
+      "pixel_count": 1,
+      "bounds": {
+        "x": 292,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "message": "road_corridor_candidate: traffic spine / routing corridor"
+    },
+    {
+      "recommendation_id": 11,
+      "recommendation_type": "sidewalk_band_candidate",
+      "severity": "info",
+      "planning_role": "pedestrian buffer / frontage band",
+      "source_primitive_id": 7,
+      "primitive_type": "sidewalk_region",
+      "pixel_count": 1,
+      "bounds": {
+        "x": 293,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "message": "sidewalk_band_candidate: pedestrian buffer / frontage band"
+    },
+    {
+      "recommendation_id": 12,
+      "recommendation_type": "spawn_marker",
+      "severity": "info",
+      "planning_role": "spawn planning marker",
+      "source_primitive_id": 8,
+      "primitive_type": "spawn_marker",
+      "pixel_count": 1,
+      "bounds": {
+        "x": 299,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "message": "spawn_marker: spawn planning marker"
+    },
+    {
+      "recommendation_id": 13,
+      "recommendation_type": "yard_candidate",
+      "severity": "info",
+      "planning_role": "industrial yard / service area",
+      "source_primitive_id": 9,
+      "primitive_type": "yard_region",
+      "pixel_count": 1,
+      "bounds": {
+        "x": 297,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "message": "yard_candidate: industrial yard / service area"
+    }
+  ],
+  "summary": {
+    "total_pixels": 90000,
+    "primitive_count": 9,
+    "recommendation_count": 13,
+    "warning_count": 3,
+    "counts_by_recommendation_type": {
+      "building_footprint_candidate": 3,
+      "landmark_marker": 1,
+      "large_open_ground_area": 1,
+      "open_ground_area": 1,
+      "road_corridor_candidate": 1,
+      "sidewalk_band_candidate": 1,
+      "spawn_marker": 1,
+      "tiny_building_candidate": 3,
+      "yard_candidate": 1
+    },
+    "counts_by_severity": {
+      "info": 10,
+      "warning": 3
+    }
+  }
+}
