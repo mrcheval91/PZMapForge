@@ -18,6 +18,13 @@ public sealed class SemanticGrid
         _rows  = rows.ToArray();
     }
 
+    /// <summary>
+    /// Public factory for test fixtures that do not go through ParsedCellLoader.
+    /// Allows building small grids without the 300x300 validation constraint.
+    /// </summary>
+    public static SemanticGrid CreateForTesting(int width, int height, IEnumerable<string> rows) =>
+        new(width, height, rows);
+
     public bool InBounds(int x, int y) =>
         x >= 0 && x < Width && y >= 0 && y < Height;
 

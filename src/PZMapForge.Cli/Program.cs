@@ -1,5 +1,6 @@
 using PZMapForge.Core.Palette;
 using PZMapForge.Core.ParsedCell;
+using PZMapForge.Core.Regions;
 
 // Claim boundary: PZMapForge CLI is a planning tool only.
 // It does not produce a playable Project Zomboid export.
@@ -8,8 +9,9 @@ if (args.Length < 1)
 {
     Console.Error.WriteLine("Usage: pzmapforge <command> [options]");
     Console.Error.WriteLine("Commands:");
-    Console.Error.WriteLine("  palette-check    --palette <path>");
+    Console.Error.WriteLine("  palette-check     --palette <path>");
     Console.Error.WriteLine("  parsed-cell-check --path <path>");
+    Console.Error.WriteLine("  region-check      --path <path>");
     return 1;
 }
 
@@ -17,6 +19,7 @@ return args[0] switch
 {
     "palette-check"     => PaletteCheckCommand(args[1..]),
     "parsed-cell-check" => ParsedCellCheckCommand(args[1..]),
+    "region-check"      => RegionCheckCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -25,11 +28,7 @@ static int PaletteCheckCommand(string[] args)
     var palettePath = string.Empty;
     for (var i = 0; i < args.Length - 1; i++)
     {
-        if (args[i] is "--palette" or "-p")
-        {
-            palettePath = args[i + 1];
-            break;
-        }
+        if (args[i] is "--palette" or "-p") { palettePath = args[i + 1]; break; }
     }
 
     if (string.IsNullOrWhiteSpace(palettePath))
@@ -48,15 +47,10 @@ static int PaletteCheckCommand(string[] args)
     var range = gids.Count > 0 ? $"{gids.First()}..{gids.Last()}" : "none";
     Console.WriteLine($"GID range:  {range}");
 
-    if (result.IsValid)
-    {
-        Console.WriteLine("Status:     OK");
-        return 0;
-    }
+    if (result.IsValid) { Console.WriteLine("Status:     OK"); return 0; }
 
     Console.WriteLine("Status:     INVALID");
-    foreach (var error in result.Errors)
-        Console.Error.WriteLine($"  error: {error}");
+    foreach (var e in result.Errors) Console.Error.WriteLine($"  error: {e}");
     return 1;
 }
 
@@ -65,11 +59,7 @@ static int ParsedCellCheckCommand(string[] args)
     var jsonPath = string.Empty;
     for (var i = 0; i < args.Length - 1; i++)
     {
-        if (args[i] is "--path" or "-p")
-        {
-            jsonPath = args[i + 1];
-            break;
-        }
+        if (args[i] is "--path" or "-p") { jsonPath = args[i + 1]; break; }
     }
 
     if (string.IsNullOrWhiteSpace(jsonPath))
@@ -85,21 +75,55 @@ static int ParsedCellCheckCommand(string[] args)
     Console.WriteLine($"Rows:       {result.Document?.Rows?.Count ?? 0}");
     Console.WriteLine($"Kinds:      {result.Document?.Counts?.Count ?? 0}");
 
-    if (result.IsValid)
-    {
-        Console.WriteLine("Status:     OK");
-        return 0;
-    }
+    if (result.IsValid) { Console.WriteLine("Status:     OK"); return 0; }
 
     Console.WriteLine("Status:     INVALID");
-    foreach (var error in result.Errors)
-        Console.Error.WriteLine($"  error: {error}");
+    foreach (var e in result.Errors) Console.Error.WriteLine($"  error: {e}");
     return 1;
+}
+
+static int RegionCheckCommand(string[] args)
+{
+    var jsonPath = string.Empty;
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        if (args[i] is "--path" or "-p") { jsonPath = args[i + 1]; break; }
+    }
+
+    if (string.IsNullOrWhiteSpace(jsonPath))
+    {
+        Console.Error.WriteLine("region-check requires --path <path>");
+        return 1;
+    }
+
+    var cellResult = ParsedCellLoader.Load(jsonPath);
+    if (!cellResult.IsValid)
+    {
+        Console.WriteLine("Status:     INVALID (parsed-cell failed)");
+        foreach (var e in cellResult.Errors) Console.Error.WriteLine($"  error: {e}");
+        return 1;
+    }
+
+    var grid = cellResult.Grid!;
+
+    // Build code->kind map from the document's counts
+    var codeToKind = cellResult.Document!.Counts
+        .ToDictionary(c => c.Code[0], c => c.Kind)
+        .AsReadOnly();
+
+    var result = RegionExtractor.Extract(grid, codeToKind);
+
+    Console.WriteLine($"Dimensions: {grid.Width}x{grid.Height}");
+    Console.WriteLine($"Regions:    {result.TotalRegions}");
+    Console.WriteLine($"Kinds:      {result.SummaryByKind.Count}");
+    Console.WriteLine($"Pixels:     {result.TotalPixels}");
+    Console.WriteLine("Status:     OK");
+    return 0;
 }
 
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
-    Console.Error.WriteLine("Available commands: palette-check, parsed-cell-check");
+    Console.Error.WriteLine("Available commands: palette-check, parsed-cell-check, region-check");
     return 1;
 }

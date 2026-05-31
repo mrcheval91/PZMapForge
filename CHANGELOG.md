@@ -9,6 +9,28 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- src/PZMapForge.Core/Regions/: typed .NET region extractor.
+  - RegionBounds, RegionCentroid, SemanticRegion, RegionKindSummary,
+    RegionExtractionResult: typed region models.
+  - RegionExtractor.Extract(SemanticGrid, IReadOnlyDictionary<char,string>):
+    BFS flood-fill with 4-neighbor connectivity, deterministic sort
+    (kind ASC, pixel_count DESC, y ASC, x ASC, discovery_id ASC),
+    sequential region_id, summary_by_kind. Uses integer modulo decomposition
+    (cx = idx % w; cy = idx / w) to avoid floating-point rounding issues.
+- SemanticGrid.CreateForTesting(w, h, rows): public factory for test fixtures
+  that bypass ParsedCellLoader's 300x300 constraint.
+- src/PZMapForge.Cli/Program.cs: region-check --path <path> command.
+  Loads parsed-cell, extracts regions, prints dims/regions/kinds/pixels/status.
+- tests/PZMapForge.Core.Tests/Regions/RegionExtractorTests.cs:
+  8 xUnit tests: all-grass=1 region, valid fixture has 9 kinds, pixel sum 90000,
+  all regions positive, bounds in grid, centroid in bounds, deterministic,
+  diagonal cells are separate regions (4-neighbor proof).
+
+---
+
+## [Unreleased - prev10]
+
+### Added
 - src/PZMapForge.Core/ParsedCell/: typed parsed-cell artifact reader.
   - ParsedCellDocument, ParsedCellMatching, ParsedCellLegendEntry,
     ParsedCellCount, ParsedCellDrift, ParsedCellOutputs: JSON-mapped models.

@@ -32,6 +32,8 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | .NET CLI palette-check command | Ratified | Exits 0 on valid palette; prints schema/dims/kinds/GID range/status |
 | .NET parsed-cell reader (ParsedCellLoader.Load) | Ratified | 11 xUnit tests pass; SemanticGrid GetCode/InBounds/CountCode verified |
 | .NET CLI parsed-cell-check command | Ratified | Exits 0 on valid artifact; prints schema/dims/rows/kinds/status |
+| .NET region extractor (RegionExtractor.Extract) | Ratified | 8 xUnit tests; 4-neighbor BFS, deterministic sort, 90000 pixel coverage |
+| .NET CLI region-check command | Ratified | Exits 0; prints dims/regions/kinds/pixels/status |
 
 ## Provisional: present but not load-tested
 
