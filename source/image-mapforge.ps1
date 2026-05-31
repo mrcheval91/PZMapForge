@@ -1,24 +1,18 @@
 #Requires -Version 5.1
-<#+
+<#
 .SYNOPSIS
-    Converts a PNG/BMP blockout image into deterministic PZMapForge planning artifacts.
+    ImageMapForge: reads a PNG or BMP blockout image and writes local-only
+    deterministic map-planning artifacts under .local/mapforge/.
 
 .DESCRIPTION
-    ImageMapForge reads an image, maps pixels to semantic cell kinds using
-    source/image-palette.json, and writes local-only planning outputs:
-      .local/mapforge/parsed-cell.json
-      .local/mapforge/parsed-cell-report.md
-      .local/mapforge/parsed-cell-preview.png
-      .local/mapforge/parsed-cell-tiles.png
-      .local/mapforge/parsed-cell-basic.tmx
+    Converts image pixels into semantic cell kinds, writes a compact parsed-cell
+    JSON artifact, a markdown report (including nearest-colour drift detail), a
+    visual preview PNG, a generated colour-strip tileset, and a TileZed-openable
+    planning TMX.
 
-    The TMX uses generated colour tiles and is a TileZed-openable planning artifact.
-    It is not a Project Zomboid load-tested map export.
-
-    Nearest-colour drift: pixels that do not exactly match a palette entry are
-    resolved to the closest palette entry by RGB squared distance. The drift table
-    (source colour -> matched kind, distance) is written to the JSON and report
-    so colour mismatch is visible without guessing.
+    Does not write into media/maps. Does not copy or redistribute Project Zomboid
+    assets. Does not produce lotpack/lotheader/bin files. The TMX is a planning
+    artifact only and is not a Project Zomboid load-tested export.
 #>
 
 param(
@@ -41,101 +35,147 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName 'System.IO.Compression'
 
-$scriptDir        = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot         = Split-Path -Parent $scriptDir
-$palettePath      = Join-Path $scriptDir 'image-palette.json'
-$defaultOutputDir = Join-Path $repoRoot '.local\mapforge'
+$scriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot    = Split-Path -Parent $scriptDir
+$palettePath = Join-Path $scriptDir 'image-palette.json'
+
 if ([string]::IsNullOrWhiteSpace($OutputDir)) {
-    $OutputDir = $defaultOutputDir
+    $OutputDir = Join-Path $repoRoot '.local\mapforge'
 }
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Guards and helpers
 # ---------------------------------------------------------------------------
 
-function Resolve-FullPath {
-    param([Parameter(Mandatory = $true)][string]$PathValue)
+function Fail {
+    param([string]$Message)
+    Write-Error $Message
+    exit 1
+}
+
+function Get-FullPathSafe {
+    param([string]$PathValue)
     return [System.IO.Path]::GetFullPath($PathValue)
 }
 
-function Test-PathInside {
-    param(
-        [Parameter(Mandatory = $true)][string]$Child,
-        [Parameter(Mandatory = $true)][string]$Parent
-    )
-    $childFull  = Resolve-FullPath $Child
-    $parentFull = Resolve-FullPath $Parent
-    if ($childFull.Equals($parentFull, [System.StringComparison]::OrdinalIgnoreCase)) { return $true }
-    if (-not $parentFull.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
-        $parentFull = $parentFull + [System.IO.Path]::DirectorySeparatorChar
+function Test-PathIsUnder {
+    param([string]$ChildPath, [string]$ParentPath)
+    $child  = Get-FullPathSafe $ChildPath
+    $parent = Get-FullPathSafe $ParentPath
+    $cmp    = [StringComparison]::OrdinalIgnoreCase
+    if ($child.Equals($parent, $cmp)) { return $true }
+    $sep = [System.IO.Path]::DirectorySeparatorChar
+    $alt = [System.IO.Path]::AltDirectorySeparatorChar
+    if (-not $parent.EndsWith([string]$sep) -and -not $parent.EndsWith([string]$alt)) {
+        $parent = $parent + $sep
     }
-    return $childFull.StartsWith($parentFull, [System.StringComparison]::OrdinalIgnoreCase)
+    return $child.StartsWith($parent, $cmp)
 }
 
-function ConvertFrom-HexColor {
-    param([Parameter(Mandatory = $true)][string]$Hex)
-    if ($Hex -notmatch '^#[0-9A-Fa-f]{6}$') {
-        throw "Invalid palette colour '$Hex'. Expected #RRGGBB."
+function Get-FileSha256 {
+    param([string]$PathValue)
+    $sha    = [System.Security.Cryptography.SHA256]::Create()
+    $stream = [System.IO.File]::OpenRead($PathValue)
+    try {
+        $hash = $sha.ComputeHash($stream)
+        return (($hash | ForEach-Object { $_.ToString('x2') }) -join '')
     }
-    $r = [Convert]::ToInt32($Hex.Substring(1, 2), 16)
-    $g = [Convert]::ToInt32($Hex.Substring(3, 2), 16)
-    $b = [Convert]::ToInt32($Hex.Substring(5, 2), 16)
+    finally { $stream.Dispose(); $sha.Dispose() }
+}
+
+function New-ColorFromRgbArray {
+    param([object[]]$Rgb)
+    if ($Rgb.Count -ne 3) { Fail "Palette rgb must have exactly 3 integers." }
+    $r = [int]$Rgb[0]; $g = [int]$Rgb[1]; $b = [int]$Rgb[2]
+    foreach ($v in @($r, $g, $b)) {
+        if ($v -lt 0 -or $v -gt 255) { Fail "Palette rgb value out of range 0..255." }
+    }
     return [System.Drawing.Color]::FromArgb(255, $r, $g, $b)
 }
 
-function Get-ColorKey {
-    param([Parameter(Mandatory = $true)][System.Drawing.Color]$Color)
-    return ('#{0:X2}{1:X2}{2:X2}' -f $Color.R, $Color.G, $Color.B)
+function Get-RgbKey {
+    param([System.Drawing.Color]$Color)
+    return "$($Color.R),$($Color.G),$($Color.B)"
 }
 
-function Get-ColorDistanceSq {
-    param(
-        [Parameter(Mandatory = $true)][System.Drawing.Color]$A,
-        [Parameter(Mandatory = $true)][System.Drawing.Color]$B
-    )
-    $dr = [int]$A.R - [int]$B.R
-    $dg = [int]$A.G - [int]$B.G
-    $db = [int]$A.B - [int]$B.B
-    return (($dr * $dr) + ($dg * $dg) + ($db * $db))
-}
-
-function Get-NearestKind {
-    param(
-        [Parameter(Mandatory = $true)][System.Drawing.Color]$Color,
-        [Parameter(Mandatory = $true)]$PaletteKinds
-    )
-    $best         = $null
-    $bestDistance = [int]::MaxValue
-    foreach ($entry in $PaletteKinds) {
-        $distance = Get-ColorDistanceSq -A $Color -B $entry.Color
-        if ($distance -lt $bestDistance) { $best = $entry; $bestDistance = $distance }
+function Get-NearestPaletteEntry {
+    param([System.Drawing.Color]$Color, [object[]]$Entries)
+    $best      = $null
+    $bestScore = [double]::PositiveInfinity
+    foreach ($entry in $Entries) {
+        $dr    = [double]$Color.R - [double]$entry.r
+        $dg    = [double]$Color.G - [double]$entry.g
+        $db    = [double]$Color.B - [double]$entry.b
+        $score = ($dr * $dr) + ($dg * $dg) + ($db * $db)
+        if ($score -lt $bestScore) { $best = $entry; $bestScore = $score }
     }
     return $best
 }
 
-function Write-TmxFile {
-    param(
-        [Parameter(Mandatory = $true)][uint32[]]$Gids,
-        [Parameter(Mandatory = $true)][int]$Width,
-        [Parameter(Mandatory = $true)][int]$Height,
-        [Parameter(Mandatory = $true)][int]$TileSize,
-        [Parameter(Mandatory = $true)][int]$TilesetWidth,
-        [Parameter(Mandatory = $true)][string]$TmxPath
-    )
-    $rawBytes = New-Object byte[] ($Gids.Length * 4)
-    [System.Buffer]::BlockCopy($Gids, 0, $rawBytes, 0, $rawBytes.Length)
+function Write-TileStrip {
+    param([object[]]$Entries, [string]$PathValue, [int]$TileSize)
+    $bmp = [System.Drawing.Bitmap]::new($Entries.Count * $TileSize, $TileSize)
+    $g   = [System.Drawing.Graphics]::FromImage($bmp)
+    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None
+    try {
+        for ($i = 0; $i -lt $Entries.Count; $i++) {
+            $brush = [System.Drawing.SolidBrush]::new($Entries[$i].color)
+            $pen   = [System.Drawing.Pen]::new([System.Drawing.Color]::FromArgb(255, 0, 0, 0), 1)
+            try {
+                $g.FillRectangle($brush, ($i * $TileSize), 0, $TileSize, $TileSize)
+                $g.DrawRectangle($pen,   ($i * $TileSize), 0, ($TileSize - 1), ($TileSize - 1))
+            }
+            finally { $brush.Dispose(); $pen.Dispose() }
+        }
+        $bmp.Save($PathValue, [System.Drawing.Imaging.ImageFormat]::Png)
+    }
+    finally { $g.Dispose(); $bmp.Dispose() }
+}
+
+function Write-PreviewPng {
+    param([string[]]$Rows, [hashtable]$CodeToEntry, [string]$PathValue,
+          [int]$Width, [int]$Height, [int]$Scale)
+    $bmp = [System.Drawing.Bitmap]::new(($Width * $Scale), ($Height * $Scale))
+    $g   = [System.Drawing.Graphics]::FromImage($bmp)
+    $g.SmoothingMode      = [System.Drawing.Drawing2D.SmoothingMode]::None
+    $g.InterpolationMode  = [System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor
+    $g.PixelOffsetMode    = [System.Drawing.Drawing2D.PixelOffsetMode]::Half
+    try {
+        for ($y = 0; $y -lt $Height; $y++) {
+            $row = $Rows[$y]
+            for ($x = 0; $x -lt $Width; $x++) {
+                $entry = $CodeToEntry[[string]$row[$x]]
+                $brush = [System.Drawing.SolidBrush]::new($entry.color)
+                try { $g.FillRectangle($brush, ($x * $Scale), ($y * $Scale), $Scale, $Scale) }
+                finally { $brush.Dispose() }
+            }
+        }
+        $bmp.Save($PathValue, [System.Drawing.Imaging.ImageFormat]::Png)
+    }
+    finally { $g.Dispose(); $bmp.Dispose() }
+}
+
+function Convert-GidGridToBase64Gzip {
+    param([uint32[]]$Grid)
+    $rawBytes = New-Object byte[] ($Grid.Length * 4)
+    [System.Buffer]::BlockCopy($Grid, 0, $rawBytes, 0, $rawBytes.Length)
     $ms = [System.IO.MemoryStream]::new()
     $gz = [System.IO.Compression.GZipStream]::new($ms, [System.IO.Compression.CompressionMode]::Compress)
-    $gz.Write($rawBytes, 0, $rawBytes.Length)
-    $gz.Close()
-    $compressed = $ms.ToArray()
-    $ms.Dispose()
-    $b64 = [Convert]::ToBase64String($compressed)
-    $tmxContent = @"
+    try { $gz.Write($rawBytes, 0, $rawBytes.Length) }
+    finally { $gz.Close() }
+    try { return [Convert]::ToBase64String($ms.ToArray()) }
+    finally { $ms.Dispose() }
+}
+
+function Write-Tmx {
+    param([string]$PathValue, [string]$TilesetImageName,
+          [int]$Width, [int]$Height, [int]$TileSize, [int]$TilesetImageWidth, [uint32[]]$Grid)
+    $b64 = Convert-GidGridToBase64Gzip $Grid
+    $tmx = @"
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.0" orientation="orthogonal" width="$Width" height="$Height" tilewidth="$TileSize" tileheight="$TileSize">
- <tileset firstgid="1" name="pzmapforge_colour_planning" tilewidth="$TileSize" tileheight="$TileSize">
-  <image source="parsed-cell-tiles.png" width="$TilesetWidth" height="$TileSize"/>
+ <tileset firstgid="1" name="imagemapforge_blockout" tilewidth="$TileSize" tileheight="$TileSize">
+  <image source="$TilesetImageName" width="$TilesetImageWidth" height="$TileSize"/>
  </tileset>
  <layer name="Ground" width="$Width" height="$Height">
   <data encoding="base64" compression="gzip">
@@ -144,390 +184,403 @@ function Write-TmxFile {
  </layer>
 </map>
 "@
-    Set-Content -Path $TmxPath -Value $tmxContent -Encoding UTF8
-}
-
-function Write-TileStrip {
-    param(
-        [Parameter(Mandatory = $true)]$PaletteKinds,
-        [Parameter(Mandatory = $true)][int]$TileSize,
-        [Parameter(Mandatory = $true)][string]$TilesPath
-    )
-    $ordered    = @($PaletteKinds | Sort-Object Gid)
-    $stripWidth = $ordered.Count * $TileSize
-    $stripBmp   = [System.Drawing.Bitmap]::new($stripWidth, $TileSize)
-    $g          = [System.Drawing.Graphics]::FromImage($stripBmp)
-    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None
-    for ($i = 0; $i -lt $ordered.Count; $i++) {
-        $brush = [System.Drawing.SolidBrush]::new($ordered[$i].Color)
-        $g.FillRectangle($brush, ($i * $TileSize), 0, $TileSize, $TileSize)
-        $brush.Dispose()
-        $pen = [System.Drawing.Pen]::new([System.Drawing.Color]::FromArgb(255, 0, 0, 0), 1)
-        $g.DrawRectangle($pen, ($i * $TileSize), 0, ($TileSize - 1), ($TileSize - 1))
-        $pen.Dispose()
-    }
-    $g.Dispose()
-    $stripBmp.Save($TilesPath, [System.Drawing.Imaging.ImageFormat]::Png)
-    $stripBmp.Dispose()
-    return $stripWidth
-}
-
-function Resize-BitmapNearest {
-    param(
-        [Parameter(Mandatory = $true)][System.Drawing.Bitmap]$Bitmap,
-        [Parameter(Mandatory = $true)][int]$Width,
-        [Parameter(Mandatory = $true)][int]$Height
-    )
-    $resized = [System.Drawing.Bitmap]::new($Width, $Height)
-    $g = [System.Drawing.Graphics]::FromImage($resized)
-    $g.SmoothingMode      = [System.Drawing.Drawing2D.SmoothingMode]::None
-    $g.InterpolationMode  = [System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor
-    $g.PixelOffsetMode    = [System.Drawing.Drawing2D.PixelOffsetMode]::Half
-    $g.DrawImage($Bitmap, 0, 0, $Width, $Height)
-    $g.Dispose()
-    return $resized
+    Set-Content -Path $PathValue -Value $tmx -Encoding UTF8
 }
 
 # ---------------------------------------------------------------------------
-# Guards
+# Output path guards
 # ---------------------------------------------------------------------------
 
-$imageFull = Resolve-FullPath $ImagePath
-if (-not (Test-Path -LiteralPath $imageFull)) {
-    throw "Input image not found: $imageFull"
+$outputFull    = Get-FullPathSafe $OutputDir
+$allowedRoot   = Get-FullPathSafe (Join-Path $repoRoot '.local\mapforge')
+$mediaMapsRoot = Get-FullPathSafe (Join-Path $repoRoot 'media\maps')
+
+if ((Test-PathIsUnder $outputFull $mediaMapsRoot) -or (Test-PathIsUnder $mediaMapsRoot $outputFull)) {
+    Fail "Refusing to write into or over media/maps. Use a .local/mapforge output path."
 }
 
-$extension = [System.IO.Path]::GetExtension($imageFull).ToLowerInvariant()
-if ($extension -ne '.png' -and $extension -ne '.bmp') {
-    throw "Unsupported image extension '$extension'. Use PNG or BMP."
+if (-not $AllowExternalOutput -and -not (Test-PathIsUnder $outputFull $allowedRoot)) {
+    Fail "Refusing to write outside .local/mapforge without -AllowExternalOutput. Requested: $outputFull"
 }
-
-if (-not (Test-Path -LiteralPath $palettePath)) {
-    throw "Palette config not found: $palettePath"
-}
-
-$outputFull      = Resolve-FullPath $OutputDir
-$defaultFull     = Resolve-FullPath $defaultOutputDir
-$mediaMapsFull   = Resolve-FullPath (Join-Path $repoRoot 'media\maps')
-
-if (Test-PathInside -Child $outputFull -Parent $mediaMapsFull) {
-    throw "Refusing to write into media/maps: $outputFull"
-}
-
-if (-not $AllowExternalOutput) {
-    if (-not (Test-PathInside -Child $outputFull -Parent $defaultFull)) {
-        throw "Refusing to write outside .local/mapforge without -AllowExternalOutput: $outputFull"
-    }
-}
-
-New-Item -ItemType Directory -Force -Path $outputFull | Out-Null
 
 # ---------------------------------------------------------------------------
-# Load palette
+# Input validation
 # ---------------------------------------------------------------------------
 
-$palette      = Get-Content -LiteralPath $palettePath -Raw | ConvertFrom-Json
-$W            = [int]$palette.cell_width
-$H            = [int]$palette.cell_height
-$TileSize     = [int]$palette.tile_size
-
-$paletteKinds = @()
-foreach ($kind in $palette.kinds) {
-    $paletteKinds += [PSCustomObject]@{
-        Kind   = [string]$kind.kind
-        Gid    = [uint32]$kind.gid
-        Symbol = [string]$kind.symbol
-        Hex    = [string]$kind.color
-        Color  = ConvertFrom-HexColor -Hex ([string]$kind.color)
-    }
+if (-not (Test-Path $ImagePath -PathType Leaf)) {
+    Fail "ImagePath not found: $ImagePath"
 }
+
+if (-not (Test-Path $palettePath -PathType Leaf)) {
+    Fail "Palette config not found: $palettePath"
+}
+
+$imageFull = (Resolve-Path $ImagePath).Path
+$ext       = [System.IO.Path]::GetExtension($imageFull).ToLowerInvariant()
+if ($ext -ne '.png' -and $ext -ne '.bmp') {
+    Fail "Unsupported image extension '$ext'. Use PNG or BMP."
+}
+
+# ---------------------------------------------------------------------------
+# Load and validate palette
+# ---------------------------------------------------------------------------
+
+$palette      = Get-Content -Path $palettePath -Raw | ConvertFrom-Json
+$width        = [int]$palette.cell_width
+$height       = [int]$palette.cell_height
+$previewScale = [int]$palette.preview_scale
+$tileSize     = [int]$palette.tile_size
+
+if ($width -le 0 -or $height -le 0)  { Fail "Palette cell dimensions must be positive." }
+if ($tileSize -le 0)                  { Fail "Palette tile_size must be positive." }
+if ($previewScale -le 0)              { Fail "Palette preview_scale must be positive." }
 
 $requiredKinds = @('grass','road','sidewalk','row_house','depanneur',
                    'garage','industrial_yard','landmark','spawn')
-foreach ($req in $requiredKinds) {
-    if (-not @($paletteKinds | Where-Object { $_.Kind -eq $req })) {
-        throw "Palette missing required kind '$req'."
+
+$entries       = @()
+$kindSet       = @{}
+$gidSet        = @{}
+$codeSet       = @{}
+$exactColorMap = @{}
+$codeToEntry   = @{}
+
+foreach ($raw in $palette.kinds) {
+    $kind  = [string]$raw.kind
+    $code  = [string]$raw.code
+    $gid   = [int]$raw.gid
+    $color = New-ColorFromRgbArray $raw.rgb
+
+    if ([string]::IsNullOrWhiteSpace($kind))   { Fail "Palette entry has blank kind." }
+    if ($code.Length -ne 1)                    { Fail "Palette code for '$kind' must be one character." }
+    if ($gid -le 0)                            { Fail "Palette gid for '$kind' must be positive." }
+    if ($kindSet.ContainsKey($kind))            { Fail "Duplicate palette kind: $kind" }
+    if ($gidSet.ContainsKey([string]$gid))      { Fail "Duplicate palette gid: $gid" }
+    if ($codeSet.ContainsKey($code))            { Fail "Duplicate palette code: $code" }
+
+    $entry = [pscustomobject]@{
+        kind        = $kind
+        code        = $code
+        gid         = $gid
+        r           = [int]$color.R
+        g           = [int]$color.G
+        b           = [int]$color.B
+        color       = $color
+        description = [string]$raw.description
     }
+
+    $rgbKey = Get-RgbKey $color
+    if ($exactColorMap.ContainsKey($rgbKey)) { Fail "Duplicate palette rgb: $rgbKey" }
+
+    $kindSet[$kind]       = $true
+    $gidSet[[string]$gid] = $true
+    $codeSet[$code]       = $true
+    $exactColorMap[$rgbKey] = $entry
+    $codeToEntry[$code]   = $entry
+    $entries             += $entry
 }
 
-$exactByHex = @{}
-foreach ($entry in $paletteKinds) {
-    $exactByHex[$entry.Hex.ToUpperInvariant()] = $entry
+foreach ($req in $requiredKinds) {
+    if (-not $kindSet.ContainsKey($req)) { Fail "Palette missing required kind: $req" }
+}
+
+$entries = @($entries | Sort-Object -Property gid)
+for ($i = 0; $i -lt $entries.Count; $i++) {
+    $want = $i + 1
+    if ([int]$entries[$i].gid -ne $want) {
+        Fail "Palette gids must be contiguous from 1. Expected $want, got $($entries[$i].gid)."
+    }
 }
 
 # ---------------------------------------------------------------------------
 # Load and optionally resize image
 # ---------------------------------------------------------------------------
 
-$sourceBitmap = [System.Drawing.Bitmap]::new($imageFull)
-$bitmap       = $sourceBitmap
-$resizedFrom  = $null
+$sourceBmp = [System.Drawing.Bitmap]::new($imageFull)
+$workBmp   = $null
 try {
-    if ($sourceBitmap.Width -ne $W -or $sourceBitmap.Height -ne $H) {
+    if ($sourceBmp.Width -ne $width -or $sourceBmp.Height -ne $height) {
         if (-not $Resize) {
-            throw "Input image is $($sourceBitmap.Width)x$($sourceBitmap.Height). Expected ${W}x${H}. Re-run with -Resize to scale with nearest-neighbour sampling."
+            Fail "Input image is $($sourceBmp.Width)x$($sourceBmp.Height). Expected ${width}x${height}. Re-run with -Resize to scale deterministically."
         }
-        $resizedFrom = "$($sourceBitmap.Width)x$($sourceBitmap.Height)"
-        $bitmap      = Resize-BitmapNearest -Bitmap $sourceBitmap -Width $W -Height $H
+        $workBmp   = [System.Drawing.Bitmap]::new($width, $height)
+        $resizeGfx = [System.Drawing.Graphics]::FromImage($workBmp)
+        $resizeGfx.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor
+        $resizeGfx.PixelOffsetMode   = [System.Drawing.Drawing2D.PixelOffsetMode]::Half
+        try { $resizeGfx.DrawImage($sourceBmp, 0, 0, $width, $height) }
+        finally { $resizeGfx.Dispose() }
+    }
+    else {
+        $workBmp = [System.Drawing.Bitmap]::new($sourceBmp)
+    }
+}
+finally { $sourceBmp.Dispose() }
+
+# ---------------------------------------------------------------------------
+# Pixel scan (both modes)
+# ---------------------------------------------------------------------------
+
+$colorFrequencies         = @{}
+$unmappedExactFrequencies = @{}
+
+try {
+    for ($y = 0; $y -lt $height; $y++) {
+        for ($x = 0; $x -lt $width; $x++) {
+            $color = $workBmp.GetPixel($x, $y)
+            $key   = Get-RgbKey $color
+            if (-not $colorFrequencies.ContainsKey($key)) { $colorFrequencies[$key] = 0 }
+            $colorFrequencies[$key]++
+            if (-not $exactColorMap.ContainsKey($key)) {
+                if (-not $unmappedExactFrequencies.ContainsKey($key)) {
+                    $unmappedExactFrequencies[$key] = 0
+                }
+                $unmappedExactFrequencies[$key]++
+            }
+        }
     }
 
-    # -----------------------------------------------------------------------
-    # Pixel scan
-    # -----------------------------------------------------------------------
+    # ---- Debug mode: print diagnostics and exit without writing artifacts ---
 
-    $gids        = New-Object uint32[] ($W * $H)
-    $rows        = New-Object string[] $H
-    $counts      = @{}
-    $colorCounts = @{}
-    $unmapped    = @{}
+    if ($Mode -eq 'Debug') {
+        Write-Output "ImageMapForge Debug"
+        Write-Output "Image: $imageFull"
+        Write-Output "Dimensions: $($workBmp.Width)x$($workBmp.Height)"
+        Write-Output "Unique colours: $($colorFrequencies.Count)"
+        Write-Output "Unmapped exact colours: $($unmappedExactFrequencies.Count)"
+        Write-Output ""
+        Write-Output "Top colour frequencies:"
+        $colorFrequencies.GetEnumerator() |
+            Sort-Object -Property @{ Expression = 'Value'; Descending = $true },
+                                  @{ Expression = 'Key';   Descending = $false } |
+            Select-Object -First 50 |
+            ForEach-Object { Write-Output ("  {0} = {1}" -f $_.Key, $_.Value) }
 
-    # nearestDrift: hex key -> @{source_hex, entry, nearest_kind, nearest_hex, dist, count}
-    # Caches nearest-colour lookups so each unique unmapped colour is resolved once.
-    $nearestDrift = @{}
+        if ($unmappedExactFrequencies.Count -gt 0) {
+            Write-Output ""
+            Write-Output "Top unmapped exact colours (nearest-colour matching will be applied):"
+            $unmappedExactFrequencies.GetEnumerator() |
+                Sort-Object -Property @{ Expression = 'Value'; Descending = $true },
+                                      @{ Expression = 'Key';   Descending = $false } |
+                Select-Object -First 50 |
+                ForEach-Object { Write-Output ("  {0} = {1}" -f $_.Key, $_.Value) }
+        }
+        exit 0
+    }
 
-    foreach ($entry in $paletteKinds) { $counts[$entry.Kind] = 0 }
+    # ---- Palette mode: full artifact generation ----------------------------
 
-    for ($y = 0; $y -lt $H; $y++) {
-        $chars = New-Object char[] $W
-        for ($x = 0; $x -lt $W; $x++) {
-            $color    = $bitmap.GetPixel($x, $y)
-            $key      = Get-ColorKey -Color $color
-            $upperKey = $key.ToUpperInvariant()
+    New-Item -ItemType Directory -Force -Path $outputFull | Out-Null
 
-            if (-not $colorCounts.ContainsKey($key)) { $colorCounts[$key] = 0 }
-            $colorCounts[$key]++
+    $jsonPath    = Join-Path $outputFull 'parsed-cell.json'
+    $reportPath  = Join-Path $outputFull 'parsed-cell-report.md'
+    $previewPath = Join-Path $outputFull 'parsed-cell-preview.png'
+    $tilesPath   = Join-Path $outputFull 'parsed-cell-tiles.png'
+    $tmxPath     = Join-Path $outputFull 'parsed-cell-basic.tmx'
 
-            $entry = $null
-            if ($exactByHex.ContainsKey($upperKey)) {
-                $entry = $exactByHex[$upperKey]
+    $rows       = New-Object System.Collections.Generic.List[string]
+    $grid       = New-Object uint32[] ($width * $height)
+    $kindCounts = @{}
+    foreach ($entry in $entries) { $kindCounts[$entry.kind] = 0 }
+
+    $exactMatchedPixels   = 0
+    $nearestMatchedPixels = 0
+    $nearestDrift         = @{}
+
+    for ($y = 0; $y -lt $height; $y++) {
+        $chars = New-Object char[] $width
+        for ($x = 0; $x -lt $width; $x++) {
+            $color = $workBmp.GetPixel($x, $y)
+            $key   = Get-RgbKey $color
+
+            if ($exactColorMap.ContainsKey($key)) {
+                $entry = $exactColorMap[$key]
+                $exactMatchedPixels++
             }
             else {
-                if (-not $unmapped.ContainsKey($key)) { $unmapped[$key] = 0 }
-                $unmapped[$key]++
-
                 if ($nearestDrift.ContainsKey($key)) {
                     $entry = $nearestDrift[$key].entry
                     $nearestDrift[$key].count++
                 }
                 else {
-                    $nearest  = Get-NearestKind -Color $color -PaletteKinds $paletteKinds
-                    $sqDist   = Get-ColorDistanceSq -A $color -B $nearest.Color
-                    $rgbDist  = [Math]::Round([Math]::Sqrt([double]$sqDist), 2)
+                    $nearest = Get-NearestPaletteEntry $color $entries
+                    $dr      = [double]$color.R - [double]$nearest.r
+                    $dg      = [double]$color.G - [double]$nearest.g
+                    $db      = [double]$color.B - [double]$nearest.b
+                    $dist    = [Math]::Round([Math]::Sqrt($dr*$dr + $dg*$dg + $db*$db), 2)
                     $nearestDrift[$key] = @{
-                        source_hex   = $key
+                        source_rgb   = $key
                         entry        = $nearest
-                        nearest_kind = $nearest.Kind
-                        nearest_hex  = $nearest.Hex
-                        dist         = $rgbDist
+                        nearest_kind = $nearest.kind
+                        nearest_rgb  = "$($nearest.r),$($nearest.g),$($nearest.b)"
+                        distance     = $dist
                         count        = 1
                     }
                     $entry = $nearest
                 }
+                $nearestMatchedPixels++
             }
 
-            $index       = ($y * $W) + $x
-            $gids[$index] = [uint32]$entry.Gid
-            $chars[$x]   = [char]$entry.Symbol
-            $counts[$entry.Kind]++
+            $chars[$x]                = [char]$entry.code[0]
+            $grid[($y * $width) + $x] = [uint32]$entry.gid
+            $kindCounts[$entry.kind]++
         }
-        $rows[$y] = -join $chars
+        $rows.Add((-join $chars)) | Out-Null
     }
 
-    # -----------------------------------------------------------------------
-    # Build drift records (sorted by count desc)
-    # -----------------------------------------------------------------------
+    Write-PreviewPng -Rows ($rows.ToArray()) -CodeToEntry $codeToEntry `
+        -PathValue $previewPath -Width $width -Height $height -Scale $previewScale
+    Write-TileStrip -Entries $entries -PathValue $tilesPath -TileSize $tileSize
+    Write-Tmx -PathValue $tmxPath -TilesetImageName 'parsed-cell-tiles.png' `
+        -Width $width -Height $height -TileSize $tileSize `
+        -TilesetImageWidth ($entries.Count * $tileSize) -Grid $grid
+
+    $driftList = $nearestDrift.Values |
+        Sort-Object -Property @{ Expression = 'count'; Descending = $true },
+                              @{ Expression = 'source_rgb'; Descending = $false }
 
     $driftRecords = @()
-    $nearestDrift.Values |
-        Sort-Object -Property @{E='count';D=$true}, @{E='source_hex';D=$false} |
-        ForEach-Object {
-            $driftRecords += [ordered]@{
-                source_hex   = $_.source_hex
-                count        = [int]$_.count
-                nearest_kind = $_.nearest_kind
-                nearest_hex  = $_.nearest_hex
-                dist         = $_.dist
-            }
-        }
-
-    # -----------------------------------------------------------------------
-    # Write artifacts
-    # -----------------------------------------------------------------------
-
-    $previewScale = 3
-    $previewPath  = Join-Path $outputFull 'parsed-cell-preview.png'
-    $preview = [System.Drawing.Bitmap]::new(($W * $previewScale), ($H * $previewScale))
-    $pg = [System.Drawing.Graphics]::FromImage($preview)
-    $pg.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None
-    for ($y = 0; $y -lt $H; $y++) {
-        for ($x = 0; $x -lt $W; $x++) {
-            $gid   = $gids[($y * $W) + $x]
-            $entry = @($paletteKinds | Where-Object { $_.Gid -eq $gid })[0]
-            $brush = [System.Drawing.SolidBrush]::new($entry.Color)
-            $pg.FillRectangle($brush, ($x * $previewScale), ($y * $previewScale), $previewScale, $previewScale)
-            $brush.Dispose()
-        }
-    }
-    $pg.Dispose()
-    $preview.Save($previewPath, [System.Drawing.Imaging.ImageFormat]::Png)
-    $preview.Dispose()
-
-    $tilesPath   = Join-Path $outputFull 'parsed-cell-tiles.png'
-    $tilesetWidth = Write-TileStrip -PaletteKinds $paletteKinds -TileSize $TileSize -TilesPath $tilesPath
-
-    $tmxPath = Join-Path $outputFull 'parsed-cell-basic.tmx'
-    Write-TmxFile -Gids $gids -Width $W -Height $H -TileSize $TileSize `
-        -TilesetWidth $tilesetWidth -TmxPath $tmxPath
-
-    # -----------------------------------------------------------------------
-    # JSON artifact
-    # -----------------------------------------------------------------------
-
-    $legend = @{}
-    foreach ($entry in ($paletteKinds | Sort-Object Gid)) {
-        $legend[$entry.Symbol] = [PSCustomObject]@{
-            kind   = $entry.Kind
-            gid    = [int]$entry.Gid
-            color  = $entry.Hex
+    foreach ($d in $driftList) {
+        $driftRecords += [ordered]@{
+            source_rgb   = $d.source_rgb
+            count        = [int]$d.count
+            nearest_kind = $d.nearest_kind
+            nearest_rgb  = $d.nearest_rgb
+            distance     = $d.distance
         }
     }
 
-    $countObject = [ordered]@{}
-    foreach ($entry in ($paletteKinds | Sort-Object Gid)) {
-        $countObject[$entry.Kind] = [int]$counts[$entry.Kind]
-    }
-
-    $json = [ordered]@{
-        schema         = 'pzmapforge.parsed-cell.v0.1'
-        generator      = 'ImageMapForge'
-        claim_boundary = 'Planning artifact only. Not a Project Zomboid load-tested map export.'
-        source_image   = $imageFull
-        palette        = (Resolve-FullPath $palettePath)
-        width          = $W
-        height         = $H
-        resized_from   = $resizedFrom
-        matching       = [ordered]@{
-            unique_colours   = [int]$colorCounts.Count
-            unmapped_colours = [int]$unmapped.Count
-        }
-        legend         = $legend
-        counts         = $countObject
-        nearest_drift  = $driftRecords
-        rows           = $rows
-    }
-
-    $jsonPath = Join-Path $outputFull 'parsed-cell.json'
-    ($json | ConvertTo-Json -Depth 10) | Set-Content -Path $jsonPath -Encoding UTF8
-
-    # -----------------------------------------------------------------------
-    # Markdown report
-    # -----------------------------------------------------------------------
-
-    $topKinds = foreach ($entry in ($paletteKinds | Sort-Object Gid)) {
-        '| ' + $entry.Kind + ' | ' + $entry.Symbol + ' | ' + $entry.Gid + ' | ' + $entry.Hex + ' | ' + $counts[$entry.Kind] + ' |'
-    }
-
-    $unmappedLines = @()
-    if ($unmapped.Count -eq 0) {
-        $unmappedLines += 'None. All input colours matched the palette exactly.'
-    }
-    else {
-        foreach ($k in ($unmapped.Keys | Sort-Object)) {
-            $unmappedLines += "- $k : $($unmapped[$k]) pixels"
+    $legend = @()
+    foreach ($e in $entries) {
+        $legend += [ordered]@{
+            code        = $e.code
+            kind        = $e.kind
+            gid         = [int]$e.gid
+            rgb         = @([int]$e.r, [int]$e.g, [int]$e.b)
+            description = $e.description
         }
     }
 
-    $driftTop   = $driftRecords | Select-Object -First 20
+    $counts = @()
+    foreach ($e in $entries) {
+        $counts += [ordered]@{
+            kind   = $e.kind
+            code   = $e.code
+            gid    = [int]$e.gid
+            pixels = [int]$kindCounts[$e.kind]
+        }
+    }
+
+    $artifact = [ordered]@{
+        schema              = 'pzmapforge.parsed-cell.v0.1'
+        tool                = 'ImageMapForge'
+        claim_boundary      = 'planning_artifact_only_not_pz_load_tested'
+        source_image        = $imageFull
+        source_image_sha256 = Get-FileSha256 $imageFull
+        palette             = $palettePath
+        palette_sha256      = Get-FileSha256 $palettePath
+        width               = $width
+        height              = $height
+        resized             = [bool]$Resize
+        matching            = [ordered]@{
+            exact_pixels           = [int]$exactMatchedPixels
+            nearest_pixels         = [int]$nearestMatchedPixels
+            unique_source_colours  = [int]$colorFrequencies.Count
+            unmapped_exact_colours = [int]$unmappedExactFrequencies.Count
+        }
+        legend              = $legend
+        counts              = $counts
+        nearest_drift       = $driftRecords
+        rows                = $rows.ToArray()
+        outputs             = [ordered]@{
+            json              = 'parsed-cell.json'
+            report            = 'parsed-cell-report.md'
+            preview           = 'parsed-cell-preview.png'
+            generated_tileset = 'parsed-cell-tiles.png'
+            tmx               = 'parsed-cell-basic.tmx'
+        }
+    }
+
+    $artifact | ConvertTo-Json -Depth 10 | Set-Content -Path $jsonPath -Encoding UTF8
+
+    $countLines = foreach ($e in $entries) {
+        "| $($e.kind) | $($e.code) | $($e.gid) | $($kindCounts[$e.kind]) |"
+    }
+    $legendLines = foreach ($e in $entries) {
+        "| $($e.kind) | $($e.code) | $($e.gid) | $($e.r),$($e.g),$($e.b) | $($e.description) |"
+    }
+    $driftTop   = $driftList | Select-Object -First 20
     $driftLines = foreach ($d in $driftTop) {
-        "| $($d.source_hex) | $($d.count) | $($d.nearest_kind) | $($d.nearest_hex) | $($d.dist) |"
+        "| $($d.source_rgb) | $($d.count) | $($d.nearest_kind) | $($d.nearest_rgb) | $($d.distance) |"
     }
-    if (@($driftLines).Count -eq 0) { $driftLines = @('| (none) | — | — | — | — |') }
 
-    $reportPath = Join-Path $outputFull 'parsed-cell-report.md'
     $report = @"
 # ImageMapForge Parsed Cell Report
 
-Generated: deterministic local run (timestamp omitted for reproducibility)
+Source image: ``$imageFull``
+Source SHA-256: ``$((Get-FileSha256 $imageFull))``
+Palette: ``$palettePath``
+Palette SHA-256: ``$((Get-FileSha256 $palettePath))``
+Dimensions: ${width}x${height}
+Resized: $([bool]$Resize)
 
 ## Claim boundary
 
-Planning artifact only. Not a Project Zomboid load-tested map export.
-No lotpack, lotheader, or bin files generated. No PZ game assets copied.
+Planning artifact only. Not a Project Zomboid load-tested export. No lotpack,
+lotheader, or bin files generated. No Project Zomboid tilesheets copied.
+``media/maps`` not touched.
 
-## Input
-
-| Field | Value |
-|---|---|
-| Image | ``$imageFull`` |
-| Palette | ``$(Resolve-FullPath $palettePath)`` |
-| Mode | ``$Mode`` |
-| Dimensions | ${W}x${H} |
-| Resized from | $resizedFrom |
-
-## Matching
+## Matching summary
 
 | Field | Value |
 |---|---:|
-| Unique source colours | $($colorCounts.Count) |
-| Unmapped exact colours | $($unmapped.Count) |
+| Unique source colours | $($colorFrequencies.Count) |
+| Exact matched pixels | $exactMatchedPixels |
+| Nearest matched pixels | $nearestMatchedPixels |
+| Unmapped exact colours | $($unmappedExactFrequencies.Count) |
 
 ## Nearest-colour drift (top 20 by pixel count)
 
-Pixels that did not match a palette entry exactly, and the palette entry they
-were mapped to. Zero rows means all pixels matched exactly.
-High distance values flag palette mismatches.
+Unmapped source colours and what they were matched to. Zero rows means all
+pixels matched exactly. High distance values flag palette mismatches.
 
-| Source hex | Count | Nearest kind | Palette hex | RGB dist |
+| Source RGB | Count | Matched kind | Palette RGB | RGB distance |
 |---|---:|---|---|---:|
 $($driftLines -join "`n")
 
-## Semantic counts
+## Semantic kind counts
 
-| Kind | Symbol | GID | Colour | Pixel count |
-|---|---:|---:|---|---:|
-$($topKinds -join "`n")
+| Kind | Code | GID | Pixels |
+|---|---|---:|---:|
+$($countLines -join "`n")
+
+## Palette legend
+
+| Kind | Code | GID | RGB | Description |
+|---|---|---:|---|---|
+$($legendLines -join "`n")
 
 ## Outputs
 
+All outputs are local-only. Keep under ``.local/mapforge/``.
+
 | File | Purpose |
 |---|---|
-| ``parsed-cell.json`` | Semantic grid, counts, drift records |
+| ``parsed-cell.json`` | Compact semantic grid artifact |
 | ``parsed-cell-report.md`` | This report |
-| ``parsed-cell-preview.png`` | Visual semantic preview |
-| ``parsed-cell-tiles.png`` | Generated colour-strip tileset for the TMX |
+| ``parsed-cell-preview.png`` | Visual preview from semantic rows |
+| ``parsed-cell-tiles.png`` | Generated colour-strip tileset |
 | ``parsed-cell-basic.tmx`` | TileZed-openable planning TMX |
 "@
+
     Set-Content -Path $reportPath -Value $report -Encoding UTF8
-
-    # -----------------------------------------------------------------------
-    # Debug mode extra output
-    # -----------------------------------------------------------------------
-
-    if ($Mode -eq 'Debug') {
-        Write-Output ''
-        Write-Output '--- DEBUG: colour frequencies ---'
-        foreach ($k in ($colorCounts.Keys | Sort-Object)) {
-            Write-Output ("  {0}  {1}" -f $k, $colorCounts[$k])
-        }
-        Write-Output ''
-        Write-Output '--- DEBUG: unmapped exact colours ---'
-        foreach ($line in $unmappedLines) { Write-Output "  $line" }
-        Write-Output ''
-        Write-Output '--- DEBUG: nearest-colour drift ---'
-        foreach ($d in ($driftRecords | Select-Object -First 20)) {
-            Write-Output ("  {0} -> {1} ({2}) dist={3}" -f `
-                $d.source_hex, $d.nearest_kind, $d.nearest_hex, $d.dist)
-        }
-    }
 
     Write-Output "JSON written: $jsonPath"
     Write-Output "Report written: $reportPath"
     Write-Output "Preview written: $previewPath"
-    Write-Output "Tiles written: $tilesPath"
+    Write-Output "Tile strip written: $tilesPath"
     Write-Output "TMX written: $tmxPath"
-    Write-Output 'Done.'
+    Write-Output "Done. Planning artifacts only; no PZ export claim."
 }
 finally {
-    if ($bitmap -ne $sourceBitmap -and $null -ne $bitmap) { $bitmap.Dispose() }
-    if ($null -ne $sourceBitmap) { $sourceBitmap.Dispose() }
+    if ($null -ne $workBmp) { $workBmp.Dispose() }
 }

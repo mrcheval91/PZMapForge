@@ -1,68 +1,133 @@
 # PZMapForge
 
-PZMapForge is an independent deterministic Project Zomboid map-planning layer.
+An independent deterministic map-planning layer for Project Zomboid mod work.
 
-It turns a simple image or blockout into local-only planning artifacts:
+Converts a blockout image into local-only planning artifacts: a semantic cell
+grid, a JSON artifact with drift records and SHA-256 hashes, a preview PNG,
+a colour-strip tileset, and a TileZed-openable planning TMX.
 
-- parsed semantic cell JSON
-- markdown report
-- preview PNG
-- TileZed-openable planning TMX using generated colour tiles
+---
 
 ## Claim boundary
 
-This repository does not generate a playable Project Zomboid map yet.
+**Current verified claim:**
 
-Current claim:
+> PNG or BMP blockout -> semantic 300x300 grid -> planning artifacts
+> (JSON, report, preview, tileset, TileZed-openable TMX).
 
-> Image input -> semantic grid -> preview PNG -> TileZed-openable planning TMX.
+Not claimed:
+- Playable Project Zomboid map export.
+- lotpack / lotheader / bin generation.
+- Build 42 compatibility (unverified).
+- Official Project Zomboid tool status.
+- WorldEd replacement.
 
-No `lotpack`, `lotheader`, or `bin` export is claimed. No Project Zomboid game source or assets are copied into this repository. Local installed Project Zomboid assets may only be referenced later for local generation after a documented boundary review.
+See [docs/CLAIM_BOUNDARY.md](docs/CLAIM_BOUNDARY.md) for the full boundary.
+
+---
 
 ## Quickstart
 
-Create a deterministic sample image under `.local/mapforge/`:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File "scripts\new-test-image.ps1"
-```
-
-Generate ImageMapForge outputs:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File "source\image-mapforge.ps1" -ImagePath ".local\mapforge\sample-input.png"
-```
-
-Or run the local validation wrapper:
+Run the local validation (creates a sample image, runs the tool, runs 28 tests):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File "scripts\validate.ps1"
 ```
 
-Outputs are written under `.local/mapforge/` and are gitignored.
+Or run ImageMapForge directly against your own blockout:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "source\image-mapforge.ps1" -ImagePath ".local\mapforge\mymap.png"
+```
+
+Use `-Mode Debug` to inspect colour frequencies before generating artifacts:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "source\image-mapforge.ps1" -ImagePath ".local\mapforge\mymap.png" -Mode Debug
+```
+
+Outputs appear under `.local\mapforge\` (created on first run, gitignored).
+
+---
 
 ## Outputs
 
 | File | Purpose |
 |---|---|
-| `.local/mapforge/parsed-cell.json` | Semantic grid and deterministic counts |
-| `.local/mapforge/parsed-cell-report.md` | Human-readable generation report |
-| `.local/mapforge/parsed-cell-preview.png` | Visual preview of parsed semantic grid |
+| `.local/mapforge/parsed-cell.json` | Semantic grid, counts, drift records, SHA-256 hashes |
+| `.local/mapforge/parsed-cell-report.md` | Human-readable report with claim boundary and drift table |
+| `.local/mapforge/parsed-cell-preview.png` | Visual preview of the parsed semantic grid |
 | `.local/mapforge/parsed-cell-tiles.png` | Generated colour-strip tileset used by the TMX |
 | `.local/mapforge/parsed-cell-basic.tmx` | TileZed-openable planning TMX |
 
+---
+
+## Testing
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "tests\test-image-mapforge.ps1"
+```
+
+Expected: 28 assertions, all pass, exit 0.
+
+The test harness covers: bad image path, wrong size without -Resize, external
+output refusal, media/maps refusal, Debug mode (no artifacts, correct output),
+normal run (all 5 files), kind-count completeness, determinism, drift accuracy,
+and .local/ gitignore proof.
+
+---
+
+## Structure
+
+```
+source/
+  image-mapforge.ps1    image-to-semantic-grid tool
+  image-palette.json    RGB palette (9 required semantic kinds)
+
+tests/
+  test-image-mapforge.ps1   28-assertion hardening harness
+
+scripts/
+  validate.ps1          smoke + full test harness
+  new-test-image.ps1    generates deterministic sample input
+
+schemas/
+  pzmapforge.parsed-cell.v0.1.schema.json   JSON Schema for parsed-cell.json
+
+docs/
+  GENESIS.md            why PZMapForge exists
+  CONSTITUTION.md       non-negotiable behavioral rules
+  IMPLEMENTATION.md     ratified vs. provisional vs. not present
+  TOOL_USAGE.md         detailed usage guide
+  CLAIM_BOUNDARY.md     what is and is not claimed
+  IMAGE_MAPFORGE.md     ImageMapForge reference
+  ROADMAP.md            phased roadmap
+  decisions/
+    0001-independent-mapmaker-layer.md
+    0002-planning-artifacts-before-playable-export.md
+
+examples/
+  README.md             how to create your own blockout image
+```
+
+---
+
 ## Documentation
 
-- [ImageMapForge MVP](docs/IMAGE_MAPFORGE.md)
-- [Claim boundary](docs/CLAIM_BOUNDARY.md)
-- [Roadmap](docs/ROADMAP.md)
+- [Genesis](docs/GENESIS.md) — why this tool exists
+- [Constitution](docs/CONSTITUTION.md) — non-negotiable rules
+- [Implementation](docs/IMPLEMENTATION.md) — current state, ratified vs. provisional
+- [Tool usage](docs/TOOL_USAGE.md) — parameters, examples, palette format
+- [Claim boundary](docs/CLAIM_BOUNDARY.md) — what is verified, what is not
+- [Roadmap](docs/ROADMAP.md) — phase plan
+
+---
 
 ## Doctrine
 
 - Deterministic over manual.
 - Evidence over claims.
-- No official tool claim.
 - No copied Project Zomboid game source.
 - No redistributed Project Zomboid assets.
-- No fake playable claim.
+- No playable claim without a local load test.
 - Local-only generated artifacts stay under `.local/`.

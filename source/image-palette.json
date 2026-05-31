@@ -1,18 +1,73 @@
 {
-  "version": 1,
+  "schema": "pzmapforge.image-palette.v0.1",
   "cell_width": 300,
   "cell_height": 300,
+  "preview_scale": 3,
   "tile_size": 32,
-  "description": "ImageMapForge MVP palette. Colours are deterministic planning colours, not Project Zomboid asset colours.",
+  "description": "ImageMapForge palette. Colours map image pixels to semantic planning kinds. No Project Zomboid assets are embedded or redistributed.",
   "kinds": [
-    { "kind": "grass", "gid": 1, "symbol": "G", "color": "#648C46" },
-    { "kind": "road", "gid": 2, "symbol": "R", "color": "#464646" },
-    { "kind": "sidewalk", "gid": 3, "symbol": "S", "color": "#BEB4A0" },
-    { "kind": "row_house", "gid": 4, "symbol": "H", "color": "#A06E50" },
-    { "kind": "depanneur", "gid": 5, "symbol": "D", "color": "#C8823C" },
-    { "kind": "garage", "gid": 6, "symbol": "A", "color": "#505064" },
-    { "kind": "industrial_yard", "gid": 7, "symbol": "I", "color": "#A0825A" },
-    { "kind": "landmark", "gid": 8, "symbol": "L", "color": "#FFDC00" },
-    { "kind": "spawn", "gid": 9, "symbol": "P", "color": "#00DC50" }
+    {
+      "kind": "grass",
+      "code": "g",
+      "gid": 1,
+      "rgb": [100, 140, 70],
+      "description": "Grass or open ground"
+    },
+    {
+      "kind": "road",
+      "code": "r",
+      "gid": 2,
+      "rgb": [70, 70, 70],
+      "description": "Road or asphalt driving surface"
+    },
+    {
+      "kind": "sidewalk",
+      "code": "s",
+      "gid": 3,
+      "rgb": [190, 180, 160],
+      "description": "Sidewalk or pedestrian hardscape"
+    },
+    {
+      "kind": "row_house",
+      "code": "h",
+      "gid": 4,
+      "rgb": [160, 110, 80],
+      "description": "Row house footprint"
+    },
+    {
+      "kind": "depanneur",
+      "code": "d",
+      "gid": 5,
+      "rgb": [200, 130, 60],
+      "description": "Depanneur or corner-store footprint"
+    },
+    {
+      "kind": "garage",
+      "code": "a",
+      "gid": 6,
+      "rgb": [80, 80, 100],
+      "description": "Garage or auto-shop footprint"
+    },
+    {
+      "kind": "industrial_yard",
+      "code": "i",
+      "gid": 7,
+      "rgb": [160, 130, 90],
+      "description": "Industrial yard, dirt lot, or service yard"
+    },
+    {
+      "kind": "landmark",
+      "code": "l",
+      "gid": 8,
+      "rgb": [255, 220, 0],
+      "description": "Landmark marker"
+    },
+    {
+      "kind": "spawn",
+      "code": "p",
+      "gid": 9,
+      "rgb": [0, 220, 80],
+      "description": "Spawn marker"
+    }
   ]
 }
