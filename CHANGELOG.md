@@ -9,6 +9,30 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- PZMapForge.slnx: .NET 10 solution (.slnx format, dotnet 10 SDK default).
+- src/PZMapForge.Core: class library with typed palette models
+  (PaletteDocument, PaletteKind, PaletteValidationResult) and PaletteLoader
+  which reads source/image-palette.json, validates schema/dims/kinds/GIDs/
+  codes/RGB, and returns structured errors.
+- src/PZMapForge.Cli: console app with palette-check command. Exits 0 on
+  valid palette; prints schema, dimensions, kind count, GID range, status.
+  Usage: dotnet run --project src/PZMapForge.Cli -- palette-check --palette
+  source/image-palette.json
+- tests/PZMapForge.Core.Tests: 8 xUnit tests covering valid canonical palette,
+  missing file, duplicate GID, missing required kind, invalid RGB, duplicate
+  code, wrong schema, wrong cell_width.
+- tests/PZMapForge.Cli.Tests: 1 smoke test confirming PZMapForge.Core loads.
+- .gitignore: bin/, obj/, .vs/ added for .NET build artifacts.
+
+### Notes
+PowerShell scripts are unchanged. The .NET engine is additive only.
+All existing PowerShell validation (285 assertions) continues to pass.
+
+---
+
+## [Unreleased - prev8]
+
+### Added
 - scripts/test-tmx-integrity.ps1: 21-assertion TMX structural validator.
   Checks map/tileset/layer XML attributes, decodes base64+gzip payload,
   verifies decompressed length == 360000, GID count == 90000, all GIDs

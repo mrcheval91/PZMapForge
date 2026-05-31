@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PZMapForge.Cli/PZMapForge.Cli.csproj" />
+    <Project Path="src/PZMapForge.Core/PZMapForge.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PZMapForge.Cli.Tests/PZMapForge.Cli.Tests.csproj" />
+    <Project Path="tests/PZMapForge.Core.Tests/PZMapForge.Core.Tests.csproj" />
+  </Folder>
+</Solution>

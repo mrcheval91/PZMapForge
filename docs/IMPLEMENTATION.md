@@ -28,6 +28,9 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Debug mode exits 0, no artifacts | Ratified | Test 5 |
 | .local/ gitignored | Ratified | Test 10 |
 
+| .NET palette loader (PaletteLoader.Load) | Ratified | 8 xUnit tests pass (valid, missing, dup GID, missing kind, invalid RGB, dup code, wrong schema, wrong width) |
+| .NET CLI palette-check command | Ratified | Exits 0 on valid palette; prints schema/dims/kinds/GID range/status |
+
 ## Provisional: present but not load-tested
 
 | Capability | Flag | Notes |

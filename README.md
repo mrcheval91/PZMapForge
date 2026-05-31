@@ -26,9 +26,32 @@ See [docs/CLAIM_BOUNDARY.md](docs/CLAIM_BOUNDARY.md) for the full boundary.
 
 ---
 
+## .NET engine foundation
+
+A typed .NET engine (C#, .NET 10) is being built alongside the PowerShell
+reference implementation. The PowerShell pipeline remains the authority.
+
+Build and test:
+
+```
+dotnet build PZMapForge.slnx
+dotnet test PZMapForge.slnx
+```
+
+Validate the palette via the CLI:
+
+```
+dotnet run --project src/PZMapForge.Cli -- palette-check --palette source/image-palette.json
+```
+
+The .NET engine does not replace the PowerShell scripts. It is a foundation
+for future typed parsing and generation capabilities.
+
+---
+
 ## Quickstart
 
-Run the local validation (creates a sample image, runs the tool, runs 28 tests):
+Run the local validation (creates a sample image, runs the tool, runs 285 assertions):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File "scripts\validate.ps1"
