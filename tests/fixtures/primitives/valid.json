@@ -1,0 +1,225 @@
+﻿{
+    "schema":  "pzmapforge.primitives.v0.1",
+    "claim_boundary":  "planning_artifact_only_not_pz_load_tested",
+    "source":  ".local/mapforge/regions.json",
+    "width":  300,
+    "height":  300,
+    "primitive_count":  9,
+    "primitives":  [
+                       {
+                           "primitive_id":  1,
+                           "primitive_type":  "building_footprint",
+                           "source_region_id":  7,
+                           "kind":  "row_house",
+                           "code":  "h",
+                           "pixel_count":  1,
+                           "bounds":  {
+                                          "x":  294,
+                                          "y":  0,
+                                          "width":  1,
+                                          "height":  1
+                                      },
+                           "centroid":  {
+                                            "x":  294,
+                                            "y":  0
+                                        },
+                           "planning_role":  "structure footprint"
+                       },
+                       {
+                           "primitive_id":  2,
+                           "primitive_type":  "building_footprint",
+                           "source_region_id":  1,
+                           "kind":  "depanneur",
+                           "code":  "d",
+                           "pixel_count":  1,
+                           "bounds":  {
+                                          "x":  295,
+                                          "y":  0,
+                                          "width":  1,
+                                          "height":  1
+                                      },
+                           "centroid":  {
+                                            "x":  295,
+                                            "y":  0
+                                        },
+                           "planning_role":  "structure footprint"
+                       },
+                       {
+                           "primitive_id":  3,
+                           "primitive_type":  "building_footprint",
+                           "source_region_id":  2,
+                           "kind":  "garage",
+                           "code":  "a",
+                           "pixel_count":  1,
+                           "bounds":  {
+                                          "x":  296,
+                                          "y":  0,
+                                          "width":  1,
+                                          "height":  1
+                                      },
+                           "centroid":  {
+                                            "x":  296,
+                                            "y":  0
+                                        },
+                           "planning_role":  "structure footprint"
+                       },
+                       {
+                           "primitive_id":  4,
+                           "primitive_type":  "ground_region",
+                           "source_region_id":  3,
+                           "kind":  "grass",
+                           "code":  "g",
+                           "pixel_count":  89992,
+                           "bounds":  {
+                                          "x":  0,
+                                          "y":  0,
+                                          "width":  300,
+                                          "height":  300
+                                      },
+                           "centroid":  {
+                                            "x":  149.49,
+                                            "y":  149.51
+                                        },
+                           "planning_role":  "open ground or background area"
+                       },
+                       {
+                           "primitive_id":  5,
+                           "primitive_type":  "landmark_marker",
+                           "source_region_id":  5,
+                           "kind":  "landmark",
+                           "code":  "l",
+                           "pixel_count":  1,
+                           "bounds":  {
+                                          "x":  298,
+                                          "y":  0,
+                                          "width":  1,
+                                          "height":  1
+                                      },
+                           "centroid":  {
+                                            "x":  298,
+                                            "y":  0
+                                        },
+                           "planning_role":  "navigation reference point"
+                       },
+                       {
+                           "primitive_id":  6,
+                           "primitive_type":  "road_region",
+                           "source_region_id":  6,
+                           "kind":  "road",
+                           "code":  "r",
+                           "pixel_count":  1,
+                           "bounds":  {
+                                          "x":  292,
+                                          "y":  0,
+                                          "width":  1,
+                                          "height":  1
+                                      },
+                           "centroid":  {
+                                            "x":  292,
+                                            "y":  0
+                                        },
+                           "planning_role":  "driveable surface"
+                       },
+                       {
+                           "primitive_id":  7,
+                           "primitive_type":  "sidewalk_region",
+                           "source_region_id":  8,
+                           "kind":  "sidewalk",
+                           "code":  "s",
+                           "pixel_count":  1,
+                           "bounds":  {
+                                          "x":  293,
+                                          "y":  0,
+                                          "width":  1,
+                                          "height":  1
+                                      },
+                           "centroid":  {
+                                            "x":  293,
+                                            "y":  0
+                                        },
+                           "planning_role":  "pedestrian path"
+                       },
+                       {
+                           "primitive_id":  8,
+                           "primitive_type":  "spawn_marker",
+                           "source_region_id":  9,
+                           "kind":  "spawn",
+                           "code":  "p",
+                           "pixel_count":  1,
+                           "bounds":  {
+                                          "x":  299,
+                                          "y":  0,
+                                          "width":  1,
+                                          "height":  1
+                                      },
+                           "centroid":  {
+                                            "x":  299,
+                                            "y":  0
+                                        },
+                           "planning_role":  "player spawn location"
+                       },
+                       {
+                           "primitive_id":  9,
+                           "primitive_type":  "yard_region",
+                           "source_region_id":  4,
+                           "kind":  "industrial_yard",
+                           "code":  "i",
+                           "pixel_count":  1,
+                           "bounds":  {
+                                          "x":  297,
+                                          "y":  0,
+                                          "width":  1,
+                                          "height":  1
+                                      },
+                           "centroid":  {
+                                            "x":  297,
+                                            "y":  0
+                                        },
+                           "planning_role":  "open industrial or service yard"
+                       }
+                   ],
+    "summary_by_primitive_type":  [
+                                      {
+                                          "primitive_type":  "building_footprint",
+                                          "region_count":  3,
+                                          "total_pixels":  3,
+                                          "largest_region_pixels":  1
+                                      },
+                                      {
+                                          "primitive_type":  "ground_region",
+                                          "region_count":  1,
+                                          "total_pixels":  89992,
+                                          "largest_region_pixels":  89992
+                                      },
+                                      {
+                                          "primitive_type":  "landmark_marker",
+                                          "region_count":  1,
+                                          "total_pixels":  1,
+                                          "largest_region_pixels":  1
+                                      },
+                                      {
+                                          "primitive_type":  "road_region",
+                                          "region_count":  1,
+                                          "total_pixels":  1,
+                                          "largest_region_pixels":  1
+                                      },
+                                      {
+                                          "primitive_type":  "sidewalk_region",
+                                          "region_count":  1,
+                                          "total_pixels":  1,
+                                          "largest_region_pixels":  1
+                                      },
+                                      {
+                                          "primitive_type":  "spawn_marker",
+                                          "region_count":  1,
+                                          "total_pixels":  1,
+                                          "largest_region_pixels":  1
+                                      },
+                                      {
+                                          "primitive_type":  "yard_region",
+                                          "region_count":  1,
+                                          "total_pixels":  1,
+                                          "largest_region_pixels":  1
+                                      }
+                                  ]
+}

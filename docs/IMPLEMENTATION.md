@@ -35,6 +35,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | .NET region extractor (RegionExtractor.Extract) | Ratified | 8 xUnit tests; 4-neighbor BFS, deterministic sort, 90000 pixel coverage |
 | .NET CLI region-check command | Ratified | Exits 0; prints dims/regions/kinds/pixels/status |
 | .NET cross-verification vs PS regions.json | Ratified | 3 cross-verification xUnit tests; totals, summary-by-kind, per-region details match PS reference for all 9 regions |
+| .NET primitive classifier (PrimitiveClassifier.Classify) | Ratified | 16 xUnit tests (8 behavioural + 8 [Theory] kind mappings); PS cross-verification fixture proves .NET output matches PS reference for all 9 primitives |
 
 ## Provisional: present but not load-tested
 

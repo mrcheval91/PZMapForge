@@ -19,4 +19,10 @@ public sealed class SemanticRegion
         Bounds     = bounds;
         Centroid   = centroid;
     }
+
+    public static SemanticRegion CreateForTesting(
+        string kind, char code, int pixelCount,
+        RegionBounds bounds, RegionCentroid centroid,
+        int regionId = 1) =>
+        new(kind, code, pixelCount, bounds, centroid) { RegionId = regionId };
 }

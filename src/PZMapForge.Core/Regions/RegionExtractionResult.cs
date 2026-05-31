@@ -14,4 +14,9 @@ public sealed class RegionExtractionResult
         Regions       = regions;
         SummaryByKind = summary;
     }
+
+    public static RegionExtractionResult CreateForTesting(
+        IReadOnlyList<SemanticRegion>    regions,
+        IReadOnlyList<RegionKindSummary> summary) =>
+        new(regions, summary);
 }
