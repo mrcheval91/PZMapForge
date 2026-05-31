@@ -74,6 +74,12 @@ Export planning recommendations to local JSON and markdown artifacts:
 dotnet run --project src/PZMapForge.Cli -- plan-export --path .local/mapforge/parsed-cell.json
 ```
 
+Use custom planning thresholds (`--tiny-threshold`, `--large-threshold`):
+
+```
+dotnet run --project src/PZMapForge.Cli -- plan-check --path .local/mapforge/parsed-cell.json --tiny-threshold 0 --large-threshold 100000
+```
+
 The .NET engine does not replace the PowerShell scripts. It is a foundation
 for future typed parsing and generation capabilities.
 

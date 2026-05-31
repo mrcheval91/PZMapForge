@@ -15,8 +15,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("  parsed-cell-check --path <path>");
     Console.Error.WriteLine("  region-check      --path <path>");
     Console.Error.WriteLine("  primitive-check   --path <path>");
-    Console.Error.WriteLine("  plan-check        --path <path>");
-    Console.Error.WriteLine("  plan-export       --path <path> [--output <dir>]");
+    Console.Error.WriteLine("  plan-check        --path <path> [--tiny-threshold <int>] [--large-threshold <int>]");
+    Console.Error.WriteLine("  plan-export       --path <path> [--output <dir>] [--tiny-threshold <int>] [--large-threshold <int>]");
     return 1;
 }
 
@@ -190,6 +190,9 @@ static int PlanCheckCommand(string[] args)
         return 1;
     }
 
+    var (opts, optErr) = ParsePlanningOptions(args);
+    if (optErr != 0) return optErr;
+
     var cellResult = ParsedCellLoader.Load(jsonPath);
     if (!cellResult.IsValid)
     {
@@ -198,7 +201,7 @@ static int PlanCheckCommand(string[] args)
         return 1;
     }
 
-    var grid      = cellResult.Grid!;
+    var grid       = cellResult.Grid!;
     var codeToKind = cellResult.Document!.Counts
         .ToDictionary(c => c.Code[0], c => c.Kind)
         .AsReadOnly();
@@ -208,7 +211,7 @@ static int PlanCheckCommand(string[] args)
     {
         var regions    = RegionExtractor.Extract(grid, codeToKind);
         var primitives = PrimitiveClassifier.Classify(regions);
-        result         = PlanningRuleEngine.Evaluate(primitives);
+        result         = PlanningRuleEngine.Evaluate(primitives, opts!);
     }
     catch (ArgumentException ex)
     {
@@ -221,6 +224,8 @@ static int PlanCheckCommand(string[] args)
     Console.WriteLine($"Primitives:       {result.Summary.PrimitiveCount}");
     Console.WriteLine($"Recommendations:  {result.RecommendationCount}");
     Console.WriteLine($"Warnings:         {result.Summary.WarningCount}");
+    Console.WriteLine($"Tiny threshold:   {opts!.TinyBuildingPixelThreshold}");
+    Console.WriteLine($"Large threshold:  {opts!.LargeGroundPixelThreshold}");
     Console.WriteLine("Status:           OK");
     return 0;
 }
@@ -234,6 +239,9 @@ static int PlanExportCommand(string[] args)
         if (args[i] is "--path"   or "-p") { jsonPath  = args[i + 1]; }
         if (args[i] is "--output" or "-o") { outputDir = args[i + 1]; }
     }
+
+    var (opts, optErr) = ParsePlanningOptions(args);
+    if (optErr != 0) return optErr;
 
     if (string.IsNullOrWhiteSpace(jsonPath))
     {
@@ -275,7 +283,7 @@ static int PlanExportCommand(string[] args)
     {
         var regions    = RegionExtractor.Extract(grid, codeToKind);
         var primitives = PrimitiveClassifier.Classify(regions);
-        planResult     = PlanningRuleEngine.Evaluate(primitives);
+        planResult     = PlanningRuleEngine.Evaluate(primitives, opts!);
     }
     catch (ArgumentException ex)
     {
@@ -289,13 +297,61 @@ static int PlanExportCommand(string[] args)
         Path.GetFullPath(jsonPath), "PZMapForge.Cli plan-export",
         planResult);
 
-    Console.WriteLine($"Plan JSON:    {jsonOut}");
-    Console.WriteLine($"Plan report:  {mdOut}");
-    Console.WriteLine($"Primitives:   {planResult.Summary.PrimitiveCount}");
+    Console.WriteLine($"Plan JSON:       {jsonOut}");
+    Console.WriteLine($"Plan report:     {mdOut}");
+    Console.WriteLine($"Primitives:      {planResult.Summary.PrimitiveCount}");
     Console.WriteLine($"Recommendations: {planResult.RecommendationCount}");
-    Console.WriteLine($"Warnings:     {planResult.Summary.WarningCount}");
-    Console.WriteLine("Status:       OK");
+    Console.WriteLine($"Warnings:        {planResult.Summary.WarningCount}");
+    Console.WriteLine($"Tiny threshold:  {opts!.TinyBuildingPixelThreshold}");
+    Console.WriteLine($"Large threshold: {opts!.LargeGroundPixelThreshold}");
+    Console.WriteLine("Status:          OK");
     return 0;
+}
+
+/// <summary>
+/// Parses optional --tiny-threshold and --large-threshold from args.
+/// Returns (options, 0) on success, (null, 1) on any parse or validation error.
+/// </summary>
+static (PlanningRuleOptions? Options, int ErrorCode) ParsePlanningOptions(string[] args)
+{
+    int? tinyThreshold  = null;
+    int? largeThreshold = null;
+
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        if (args[i] == "--tiny-threshold")
+        {
+            if (!int.TryParse(args[i + 1], out var v))
+            {
+                Console.Error.WriteLine($"--tiny-threshold: expected integer, got '{args[i + 1]}'");
+                return (null, 1);
+            }
+            tinyThreshold = v;
+        }
+        if (args[i] == "--large-threshold")
+        {
+            if (!int.TryParse(args[i + 1], out var v))
+            {
+                Console.Error.WriteLine($"--large-threshold: expected integer, got '{args[i + 1]}'");
+                return (null, 1);
+            }
+            largeThreshold = v;
+        }
+    }
+
+    try
+    {
+        var opts = new PlanningRuleOptions(
+            tinyBuildingPixelThreshold: tinyThreshold  ?? PlanningRuleOptions.Default.TinyBuildingPixelThreshold,
+            largeGroundPixelThreshold:  largeThreshold ?? PlanningRuleOptions.Default.LargeGroundPixelThreshold);
+        return (opts, 0);
+    }
+    catch (ArgumentOutOfRangeException ex)
+    {
+        var param = ex.ParamName ?? "threshold";
+        Console.Error.WriteLine($"Invalid threshold value ({param}): must be >= 0.");
+        return (null, 1);
+    }
 }
 
 static int UnknownCommand(string cmd)

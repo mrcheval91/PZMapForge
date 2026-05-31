@@ -9,6 +9,23 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- src/PZMapForge.Cli/Program.cs: --tiny-threshold and --large-threshold optional
+  flags for plan-check and plan-export. ParsePlanningOptions() helper parses
+  both flags, returns (PlanningRuleOptions?, errorCode). Non-integer value or
+  negative value prints a clear error and exits 1. Both commands print
+  "Tiny threshold: N" and "Large threshold: N" in their output.
+- tests/PZMapForge.Cli.Tests/CliSmokeTests.cs: 5 new threshold tests (default
+  values, custom values accepted, zero tiny valid, negative tiny throws,
+  negative large throws). 7 total Cli tests.
+
+dotnet build: 0 errors
+dotnet test:  87/87 pass (80 Core + 7 Cli)
+
+---
+
+## [Unreleased - prev23]
+
+### Added
 - src/PZMapForge.Core/Planning/PlanningRuleOptions.cs: configurable thresholds.
   TinyBuildingPixelThreshold (default 9) and LargeGroundPixelThreshold
   (default 50000). Both must be >= 0; ArgumentOutOfRangeException otherwise.

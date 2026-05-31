@@ -55,6 +55,16 @@ var result = PlanningRuleEngine.Evaluate(primitives, opts);
 Both values must be >= 0; negative values throw `ArgumentOutOfRangeException`.
 The no-options overload uses `PlanningRuleOptions.Default` (9 and 50000).
 
+The CLI exposes the same flags for `plan-check` and `plan-export`:
+
+```
+plan-check  --path <path> [--tiny-threshold <int>] [--large-threshold <int>]
+plan-export --path <path> [--output <dir>] [--tiny-threshold <int>] [--large-threshold <int>]
+```
+
+Both commands print the thresholds used in their output. Non-integer values and
+negative values exit with code 1 and a clear error message.
+
 ---
 
 ## Sort order

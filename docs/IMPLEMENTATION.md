@@ -44,7 +44,8 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | .NET CLI primitive-check command | Ratified | Exits 0 on valid parsed-cell; prints dimensions/regions/primitives/types/pixels/status |
 | .NET planning rule engine (PlanningRuleEngine.Evaluate) | Ratified | 15 xUnit tests cover all 7 primitive types, missing spawn, determinism, counts by type/severity, source id retention |
 | PlanningRuleOptions configurable thresholds | Ratified | 8 xUnit tests: default preserves output, zero tiny threshold suppresses warnings, boundary match, high large-ground suppresses note, negatives throw |
-| .NET CLI plan-check command | Ratified | Exits 0; prints dims/primitives/recommendations/warnings/status |
+| CLI --tiny-threshold / --large-threshold flags | Ratified | plan-check and plan-export accept optional threshold flags; non-integer/negative exit 1; output shows values used; 5 CLI smoke tests |
+| .NET CLI plan-check command | Ratified | Exits 0; prints dims/primitives/recommendations/warnings/thresholds/status |
 | Planning artifact export (PlanningArtifactWriter) | Ratified | 8 xUnit tests; deterministic JSON + markdown; file stream disposed cleanly |
 | .NET CLI plan-export command | Ratified | Writes plan-recommendations.json + plan-report.md to .local/mapforge/ |
 
