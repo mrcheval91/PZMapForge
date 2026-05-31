@@ -16,7 +16,8 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | TMX structural integrity (base64, gzip, GID range) | Ratified | test-tmx-integrity.ps1: 21 assertions pass |
 | Schema file sanity — all 4 schemas | Ratified | test-schema-files.ps1: 104 assertions pass (4 schemas, proof-packet on v0.3) |
 | Palette SHA-256 verification (parsed-cell vs source/image-palette.json) | Ratified | test-palette-sha256.ps1: 5 assertions pass; Gap 3 closed |
-| Proof packet v0.5 (+ palette_sha256_verification=5; total=292) | Ratified | test-proof-packet.ps1: 48 assertions pass |
+| ImageMapForge -Resize flag (150x150 scaled to 300x300) | Ratified | test-image-mapforge.ps1 Test 11: 8 assertions; Gap 1 closed |
+| Proof packet v0.6 (hardening_harness=36; total=300) | Ratified | test-proof-packet.ps1: 48 assertions pass |
 | Semantic region extraction (4-neighbor BFS) | Ratified | test-region-extraction.ps1: 24 assertions pass |
 | Primitive classification (9 kinds to 7 types) | Ratified | test-primitive-classification.ps1: 22 assertions pass |
 | parsed-cell-report.md (drift table, legend) | Ratified | Test 9: drift section present in report |
@@ -58,9 +59,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 
 ## Known gaps
 
-1. The `-Resize` flag is not covered by a dedicated test assertion. A test image
-   at a non-300x300 size run with `-Resize` should produce correct kind counts.
-   Tracked as a future test addition.
+1. ~~-Resize flag not test-covered~~ — Closed by test-image-mapforge.ps1 Test 11.
 
 2. ~~TMX structural validation~~ — Closed by Slice 10 (test-tmx-integrity.ps1).
 

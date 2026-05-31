@@ -9,6 +9,34 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- tests/test-image-mapforge.ps1 Test 11: -Resize coverage (8 assertions).
+  Creates a 150x150 all-grass image, runs image-mapforge.ps1 with -Resize,
+  asserts exit 0, parsed-cell.json written, width==300, height==300,
+  rows.Count==300, all row lengths==300, counts sum==90000, resized==true.
+  Closes IMPLEMENTATION.md gap 1. Hardening harness total: 36 (was 28).
+- schemas/pzmapforge.proof-packet.v0.6.schema.json: hardening_harness const=36,
+  total_expected_assertions const=300.
+
+### Changed
+- scripts/write-proof-packet.ps1: bumped to v0.6; hardening_harness=36, total=300.
+- scripts/test-proof-packet.ps1: expects v0.6; hardening_harness==36; total==300.
+  48 assertions unchanged.
+- scripts/test-schema-files.ps1: proof-packet section updated to v0.6.
+  Total schema assertions unchanged at 104.
+- docs/IMPLEMENTATION.md: -Resize ratified; gap 1 closed; proof packet v0.6.
+
+### Note
+Full PowerShell pipeline: 104+40+5+21+36+24+22+48 = 300 assertions. All pass.
+All three original known gaps now closed:
+  Gap 1: -Resize flag (closed this slice)
+  Gap 2: TMX structural validation (closed by test-tmx-integrity.ps1)
+  Gap 3: palette_sha256 verification (closed by test-palette-sha256.ps1)
+
+---
+
+## [Unreleased - prev16]
+
+### Added
 - scripts/test-palette-sha256.ps1: 5-assertion palette hash verifier. Checks
   parsed-cell.json exists, source/image-palette.json exists, palette_sha256
   field is present and 64-char hex, and matches the computed SHA-256 of

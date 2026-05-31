@@ -1,8 +1,9 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.5) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.6) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, and primitive classification.
+    Hardening harness now covers the -Resize flag (36 assertions).
 
     Reads parsed-cell.json, regions.json, primitives.json and companion files,
     computes SHA-256 hashes, captures git state, and writes:
@@ -124,7 +125,7 @@ $primitivesMdSha    = Get-FileSha256 $primitivesMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.5'
+    schema                  = 'pzmapforge.proof-packet.v0.6'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -150,11 +151,11 @@ $packet = [ordered]@{
         artifact_contract           = 40
         palette_sha256_verification = 5
         tmx_integrity               = 21
-        hardening_harness           = 28
+        hardening_harness           = 36
         region_extraction           = 24
         primitive_classification    = 22
         proof_packet                = 48
-        total_expected_assertions   = 292
+        total_expected_assertions   = 300
     }
     safety = [ordered]@{
         local_only_outputs      = $true
@@ -180,7 +181,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.5
+Schema: pzmapforge.proof-packet.v0.6
 
 ## Claim boundary
 
@@ -226,11 +227,11 @@ planning_artifact_only_not_pz_load_tested
 | Artifact contract | 40 |
 | Palette SHA-256 verification | 5 |
 | TMX integrity | 21 |
-| Hardening harness | 28 |
+| Hardening harness | 36 |
 | Region extraction | 24 |
 | Primitive classification | 22 |
 | Proof packet | 48 |
-| Total | 292 |
+| Total | 300 |
 
 ## Safety
 

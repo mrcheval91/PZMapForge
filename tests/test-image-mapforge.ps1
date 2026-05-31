@@ -73,6 +73,15 @@ $g10.Dispose()
 $bmp10.Save($img10, [System.Drawing.Imaging.ImageFormat]::Png)
 $bmp10.Dispose()
 
+# 150x150 all-grass — used by Test 11 to exercise -Resize flag
+$img150 = Join-Path $testDir 'test-150x150.png'
+$bmp150 = [System.Drawing.Bitmap]::new(150, 150)
+$g150   = [System.Drawing.Graphics]::FromImage($bmp150)
+$g150.Clear([System.Drawing.Color]::FromArgb(255, $GRASS_R, $GRASS_G, $GRASS_B))
+$g150.Dispose()
+$bmp150.Save($img150, [System.Drawing.Imaging.ImageFormat]::Png)
+$bmp150.Dispose()
+
 Write-Output "Test images created. outputDir cleared."
 Write-Output ""
 
@@ -194,6 +203,32 @@ $gitOut = git -C $repoRoot status --porcelain 2>&1
 $ErrorActionPreference = 'Stop'
 $leaked = @($gitOut | Where-Object { [string]$_ -match '\.local[\\/]' })
 Assert-True ($leaked.Count -eq 0) ".local/ absent from git status (leaked: $($leaked.Count))"
+
+# ---------------------------------------------------------------------------
+# Test 11: -Resize flag -- 150x150 grass image scaled to 300x300
+# ---------------------------------------------------------------------------
+
+Write-Output "Test 11: -Resize flag"
+$r = Invoke-Imf @('-ImagePath', $img150, '-Resize')
+Assert-True ($r.ExitCode -eq 0) "-Resize run exits 0 (exit $($r.ExitCode))"
+Assert-True (Test-Path (Join-Path $outputDir 'parsed-cell.json')) "parsed-cell.json written after resize"
+
+$json11 = Get-Content (Join-Path $outputDir 'parsed-cell.json') -Raw | ConvertFrom-Json
+Assert-True ([int]$json11.width  -eq 300) "width == 300 after resize (got $($json11.width))"
+Assert-True ([int]$json11.height -eq 300) "height == 300 after resize (got $($json11.height))"
+Assert-True ($json11.rows.Count  -eq 300) "rows.Count == 300 after resize (got $($json11.rows.Count))"
+
+$badRows = 0
+for ($i = 0; $i -lt $json11.rows.Count; $i++) {
+    if ($json11.rows[$i].Length -ne 300) { $badRows++ }
+}
+Assert-True ($badRows -eq 0) "All 300 row lengths == 300 after resize ($badRows bad)"
+
+$sum11 = 0
+foreach ($c in $json11.counts) { $sum11 += [int]$c.pixels }
+Assert-True ($sum11 -eq 90000) "counts sum == 90000 after resize (got $sum11)"
+
+Assert-True ([bool]$json11.resized -eq $true) "resized field is true"
 
 # ---------------------------------------------------------------------------
 # Summary
