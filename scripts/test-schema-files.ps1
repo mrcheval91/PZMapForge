@@ -85,14 +85,15 @@ Test-Schema `
 # ---------------------------------------------------------------------------
 
 Test-Schema `
-    -FileName    'pzmapforge.proof-packet.v0.2.schema.json' `
-    -ExpectedId  'pzmapforge.proof-packet.v0.2' `
+    -FileName    'pzmapforge.proof-packet.v0.3.schema.json' `
+    -ExpectedId  'pzmapforge.proof-packet.v0.3' `
     -CheckRequired @(
         'schema', 'generated_at_utc', 'repo_root',
         'git_branch', 'git_commit',
         'claim_boundary', 'validation_summary', 'safety',
         'parsed_cell_sha256', 'tmx_sha256',
-        'regions_json_sha256', 'regions_report_sha256'
+        'regions_json_sha256', 'regions_report_sha256',
+        'primitives_json_sha256', 'primitives_report_sha256'
     )
 
 # ---------------------------------------------------------------------------

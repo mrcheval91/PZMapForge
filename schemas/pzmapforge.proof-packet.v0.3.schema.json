@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pzmapforge.proof-packet.v0.3",
+  "title": "PZMapForge Proof Packet v0.3",
+  "description": "Local-only proof packet covering ImageMapForge, region extraction, and primitive classification artifacts. Planning artifact only.",
+  "type": "object",
+  "required": [
+    "schema",
+    "generated_at_utc",
+    "repo_root",
+    "git_branch",
+    "git_commit",
+    "git_status_short",
+    "parsed_cell_path",
+    "parsed_cell_sha256",
+    "report_sha256",
+    "preview_sha256",
+    "tiles_sha256",
+    "tmx_sha256",
+    "regions_json_path",
+    "regions_report_path",
+    "regions_json_sha256",
+    "regions_report_sha256",
+    "primitives_json_path",
+    "primitives_report_path",
+    "primitives_json_sha256",
+    "primitives_report_sha256",
+    "claim_boundary",
+    "validation_summary",
+    "safety"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "pzmapforge.proof-packet.v0.3"
+    },
+    "generated_at_utc":   { "type": "string", "minLength": 1 },
+    "repo_root":          { "type": "string", "minLength": 1 },
+    "git_branch":         { "type": "string" },
+    "git_commit":         { "type": "string" },
+    "git_status_short":   { "type": "string" },
+    "parsed_cell_path":   { "type": "string", "minLength": 1 },
+    "parsed_cell_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "report_sha256":      { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "preview_sha256":     { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "tiles_sha256":       { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "tmx_sha256":         { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "regions_json_path":      { "type": "string", "minLength": 1 },
+    "regions_report_path":    { "type": "string", "minLength": 1 },
+    "regions_json_sha256":    { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "regions_report_sha256":  { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "primitives_json_path":    { "type": "string", "minLength": 1 },
+    "primitives_report_path":  { "type": "string", "minLength": 1 },
+    "primitives_json_sha256":  { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "primitives_report_sha256":{ "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "claim_boundary": {
+      "type": "string",
+      "const": "planning_artifact_only_not_pz_load_tested"
+    },
+    "validation_summary": {
+      "type": "object",
+      "required": [
+        "schema_file_sanity",
+        "artifact_contract",
+        "hardening_harness",
+        "region_extraction",
+        "primitive_classification",
+        "proof_packet",
+        "total_expected_assertions"
+      ],
+      "properties": {
+        "schema_file_sanity":        { "type": "integer", "const": 104 },
+        "artifact_contract":         { "type": "integer", "const": 40  },
+        "hardening_harness":         { "type": "integer", "const": 28  },
+        "region_extraction":         { "type": "integer", "const": 24  },
+        "primitive_classification":  { "type": "integer", "const": 22  },
+        "proof_packet":              { "type": "integer", "const": 46  },
+        "total_expected_assertions": { "type": "integer", "const": 264 }
+      },
+      "additionalProperties": false
+    },
+    "safety": {
+      "type": "object",
+      "required": [
+        "local_only_outputs",
+        "media_maps_touched",
+        "pz_assets_copied",
+        "playable_export_claimed"
+      ],
+      "properties": {
+        "local_only_outputs":      { "type": "boolean", "const": true  },
+        "media_maps_touched":      { "type": "boolean", "const": false },
+        "pz_assets_copied":        { "type": "boolean", "const": false },
+        "playable_export_claimed": { "type": "boolean", "const": false }
+      },
+      "additionalProperties": false
+    }
+  }
+}

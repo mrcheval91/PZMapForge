@@ -1,16 +1,17 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.2) covering ImageMapForge
-    artifacts and region extraction artifacts.
+    Writes a deterministic local proof packet (v0.3) covering ImageMapForge,
+    region extraction, and primitive classification artifacts.
 
-    Reads parsed-cell.json, regions.json, and companion files, computes
-    SHA-256 hashes, captures git state, and writes:
+    Reads parsed-cell.json, regions.json, primitives.json and companion files,
+    computes SHA-256 hashes, captures git state, and writes:
       .local/mapforge/proof-packet.json
       .local/mapforge/proof-packet.md
 
     If parsed-cell.json is missing, runs validate.ps1 first.
-    If regions.json is missing (but parsed-cell.json exists), runs extract-regions.ps1.
+    If regions.json is missing, runs extract-regions.ps1.
+    If primitives.json is missing, runs classify-primitives.ps1.
     All outputs are local-only. Does not commit. Does not touch media/maps.
     Does not claim playable Project Zomboid export.
 #>
@@ -18,18 +19,20 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$scriptDir       = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot        = Split-Path -Parent $scriptDir
-$outputDir       = Join-Path $repoRoot '.local\mapforge'
-$jsonPath        = Join-Path $outputDir 'parsed-cell.json'
-$reportPath      = Join-Path $outputDir 'parsed-cell-report.md'
-$previewPath     = Join-Path $outputDir 'parsed-cell-preview.png'
-$tilesPath       = Join-Path $outputDir 'parsed-cell-tiles.png'
-$tmxPath         = Join-Path $outputDir 'parsed-cell-basic.tmx'
-$regionsJsonPath = Join-Path $outputDir 'regions.json'
-$regionsMdPath   = Join-Path $outputDir 'regions-report.md'
-$packetJson      = Join-Path $outputDir 'proof-packet.json'
-$packetMd        = Join-Path $outputDir 'proof-packet.md'
+$scriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot           = Split-Path -Parent $scriptDir
+$outputDir          = Join-Path $repoRoot '.local\mapforge'
+$jsonPath           = Join-Path $outputDir 'parsed-cell.json'
+$reportPath         = Join-Path $outputDir 'parsed-cell-report.md'
+$previewPath        = Join-Path $outputDir 'parsed-cell-preview.png'
+$tilesPath          = Join-Path $outputDir 'parsed-cell-tiles.png'
+$tmxPath            = Join-Path $outputDir 'parsed-cell-basic.tmx'
+$regionsJsonPath    = Join-Path $outputDir 'regions.json'
+$regionsMdPath      = Join-Path $outputDir 'regions-report.md'
+$primitivesJsonPath = Join-Path $outputDir 'primitives.json'
+$primitivesMdPath   = Join-Path $outputDir 'primitives-report.md'
+$packetJson         = Join-Path $outputDir 'proof-packet.json'
+$packetMd           = Join-Path $outputDir 'proof-packet.md'
 
 # ---------------------------------------------------------------------------
 # Ensure artifacts exist
@@ -43,8 +46,7 @@ if (-not (Test-Path $jsonPath -PathType Leaf)) {
 
 foreach ($p in @($jsonPath, $reportPath, $previewPath, $tilesPath, $tmxPath)) {
     if (-not (Test-Path $p -PathType Leaf)) {
-        Write-Error "Required ImageMapForge artifact missing: $p"
-        exit 1
+        Write-Error "Required ImageMapForge artifact missing: $p"; exit 1
     }
 }
 
@@ -56,8 +58,19 @@ if (-not (Test-Path $regionsJsonPath -PathType Leaf)) {
 
 foreach ($p in @($regionsJsonPath, $regionsMdPath)) {
     if (-not (Test-Path $p -PathType Leaf)) {
-        Write-Error "Required region artifact missing: $p"
-        exit 1
+        Write-Error "Required region artifact missing: $p"; exit 1
+    }
+}
+
+if (-not (Test-Path $primitivesJsonPath -PathType Leaf)) {
+    Write-Output "primitives.json not found. Running classify-primitives.ps1..."
+    & powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\classify-primitives.ps1')
+    if ($LASTEXITCODE -ne 0) { Write-Error "classify-primitives.ps1 failed."; exit 1 }
+}
+
+foreach ($p in @($primitivesJsonPath, $primitivesMdPath)) {
+    if (-not (Test-Path $p -PathType Leaf)) {
+        Write-Error "Required primitive artifact missing: $p"; exit 1
     }
 }
 
@@ -96,43 +109,50 @@ $ErrorActionPreference = $savedPref
 
 $generatedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
 
-$parsedCellSha   = Get-FileSha256 $jsonPath
-$reportSha       = Get-FileSha256 $reportPath
-$previewSha      = Get-FileSha256 $previewPath
-$tilesSha        = Get-FileSha256 $tilesPath
-$tmxSha          = Get-FileSha256 $tmxPath
-$regionsJsonSha  = Get-FileSha256 $regionsJsonPath
-$regionsMdSha    = Get-FileSha256 $regionsMdPath
+$parsedCellSha      = Get-FileSha256 $jsonPath
+$reportSha          = Get-FileSha256 $reportPath
+$previewSha         = Get-FileSha256 $previewPath
+$tilesSha           = Get-FileSha256 $tilesPath
+$tmxSha             = Get-FileSha256 $tmxPath
+$regionsJsonSha     = Get-FileSha256 $regionsJsonPath
+$regionsMdSha       = Get-FileSha256 $regionsMdPath
+$primitivesJsonSha  = Get-FileSha256 $primitivesJsonPath
+$primitivesMdSha    = Get-FileSha256 $primitivesMdPath
 
 # ---------------------------------------------------------------------------
 # Build proof packet
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                = 'pzmapforge.proof-packet.v0.2'
-    generated_at_utc      = $generatedAt
-    repo_root             = $repoRoot
-    git_branch            = $gitBranch
-    git_commit            = $gitCommit
-    git_status_short      = $gitStatus
-    parsed_cell_path      = '.local/mapforge/parsed-cell.json'
-    parsed_cell_sha256    = $parsedCellSha
-    report_sha256         = $reportSha
-    preview_sha256        = $previewSha
-    tiles_sha256          = $tilesSha
-    tmx_sha256            = $tmxSha
-    regions_json_path     = '.local/mapforge/regions.json'
-    regions_report_path   = '.local/mapforge/regions-report.md'
-    regions_json_sha256   = $regionsJsonSha
-    regions_report_sha256 = $regionsMdSha
-    claim_boundary        = 'planning_artifact_only_not_pz_load_tested'
-    validation_summary    = [ordered]@{
-        schema_file_sanity        = 78
+    schema                  = 'pzmapforge.proof-packet.v0.3'
+    generated_at_utc        = $generatedAt
+    repo_root               = $repoRoot
+    git_branch              = $gitBranch
+    git_commit              = $gitCommit
+    git_status_short        = $gitStatus
+    parsed_cell_path        = '.local/mapforge/parsed-cell.json'
+    parsed_cell_sha256      = $parsedCellSha
+    report_sha256           = $reportSha
+    preview_sha256          = $previewSha
+    tiles_sha256            = $tilesSha
+    tmx_sha256              = $tmxSha
+    regions_json_path       = '.local/mapforge/regions.json'
+    regions_report_path     = '.local/mapforge/regions-report.md'
+    regions_json_sha256     = $regionsJsonSha
+    regions_report_sha256   = $regionsMdSha
+    primitives_json_path    = '.local/mapforge/primitives.json'
+    primitives_report_path  = '.local/mapforge/primitives-report.md'
+    primitives_json_sha256  = $primitivesJsonSha
+    primitives_report_sha256 = $primitivesMdSha
+    claim_boundary          = 'planning_artifact_only_not_pz_load_tested'
+    validation_summary      = [ordered]@{
+        schema_file_sanity        = 104
         artifact_contract         = 40
         hardening_harness         = 28
         region_extraction         = 24
-        proof_packet              = 39
-        total_expected_assertions = 209
+        primitive_classification  = 22
+        proof_packet              = 46
+        total_expected_assertions = 264
     }
     safety = [ordered]@{
         local_only_outputs      = $true
@@ -158,7 +178,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.2
+Schema: pzmapforge.proof-packet.v0.3
 
 ## Claim boundary
 
@@ -189,16 +209,24 @@ planning_artifact_only_not_pz_load_tested
 | regions.json | $regionsJsonSha |
 | regions-report.md | $regionsMdSha |
 
+## Primitive classification artifact hashes (SHA-256)
+
+| Artifact | SHA-256 |
+|---|---|
+| primitives.json | $primitivesJsonSha |
+| primitives-report.md | $primitivesMdSha |
+
 ## Validation summary
 
 | Check | Expected assertions |
 |---|---:|
-| Schema file sanity | 78 |
+| Schema file sanity | 104 |
 | Artifact contract | 40 |
 | Hardening harness | 28 |
 | Region extraction | 24 |
-| Proof packet | 39 |
-| Total | 209 |
+| Primitive classification | 22 |
+| Proof packet | 46 |
+| Total | 264 |
 
 ## Safety
 

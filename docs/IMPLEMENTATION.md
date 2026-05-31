@@ -13,8 +13,8 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Nearest-colour fallback with drift cache | Ratified | Test 9: near-grass mapped to grass, dist 1.73 |
 | parsed-cell.json (counts, legend, drift) | Ratified | Test 6: all 5 outputs written |
 | parsed-cell.json artifact contract | Ratified | test-parsed-cell-contract.ps1: 40 assertions pass |
-| Schema file sanity — all 4 schemas | Ratified | test-schema-files.ps1: 100 assertions pass (4 schemas) |
-| Proof packet v0.2 (ImageMapForge + region hashes, git, safety) | Ratified | test-proof-packet.ps1: 39 assertions pass |
+| Schema file sanity — all 4 schemas | Ratified | test-schema-files.ps1: 104 assertions pass (4 schemas, proof-packet on v0.3) |
+| Proof packet v0.3 (ImageMapForge + region + primitive hashes) | Ratified | test-proof-packet.ps1: 46 assertions pass |
 | Semantic region extraction (4-neighbor BFS) | Ratified | test-region-extraction.ps1: 24 assertions pass |
 | Primitive classification (9 kinds to 7 types) | Ratified | test-primitive-classification.ps1: 22 assertions pass |
 | parsed-cell-report.md (drift table, legend) | Ratified | Test 9: drift section present in report |

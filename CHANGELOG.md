@@ -9,6 +9,26 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- schemas/pzmapforge.proof-packet.v0.3.schema.json: proof packet schema v0.3
+  covering all three artifact groups (ImageMapForge, region, primitive) and
+  updated validation_summary consts (schema_file_sanity=104, primitive_
+  classification=22, proof_packet=46, total=264).
+
+### Changed
+- scripts/write-proof-packet.ps1: bumped to v0.3. Hashes primitives.json and
+  primitives-report.md; runs classify-primitives.ps1 if missing; updated
+  all validation_summary counts.
+- scripts/test-proof-packet.ps1: 46 assertions (was 39). 4 new required
+  fields, 2 new SHA-256 checks, primitive_classification=22, total=264.
+- scripts/test-schema-files.ps1: proof-packet section updated to v0.3
+  (14 checked fields, was 12) -- 104 total schema assertions (was 100).
+- docs/IMPLEMENTATION.md: proof packet and schema sanity rows updated.
+
+---
+
+## [Unreleased - prev6]
+
+### Added
 - scripts/classify-primitives.ps1: maps 9 semantic kinds to 7 planning
   primitive types (road_region, sidewalk_region, building_footprint,
   yard_region, landmark_marker, spawn_marker, ground_region). Reads

@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Validates .local/mapforge/proof-packet.json against the v0.2 proof-packet contract.
+    Validates .local/mapforge/proof-packet.json against the v0.3 proof-packet contract.
 
     Runs write-proof-packet.ps1 first if proof-packet.json does not exist.
     Exits 0 if all checks pass, exits 1 if any fail.
@@ -55,7 +55,7 @@ Assert-True (Test-Path $packetMd   -PathType Leaf) "proof-packet.md exists"
 $p = Get-Content $packetJson -Raw | ConvertFrom-Json
 
 # ---------------------------------------------------------------------------
-# Required top-level fields (v0.2 adds region artifact fields)
+# Required top-level fields (v0.3 adds primitive artifact fields)
 # ---------------------------------------------------------------------------
 
 Write-Output ""
@@ -67,6 +67,8 @@ $requiredFields = @(
     'report_sha256', 'preview_sha256', 'tiles_sha256', 'tmx_sha256',
     'regions_json_path', 'regions_report_path',
     'regions_json_sha256', 'regions_report_sha256',
+    'primitives_json_path', 'primitives_report_path',
+    'primitives_json_sha256', 'primitives_report_sha256',
     'claim_boundary', 'validation_summary', 'safety'
 )
 foreach ($field in $requiredFields) {
@@ -79,13 +81,13 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.2') `
-    "schema == 'pzmapforge.proof-packet.v0.2' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.3') `
+    "schema == 'pzmapforge.proof-packet.v0.3' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
 # ---------------------------------------------------------------------------
-# SHA-256 format (64 lowercase hex chars) — ImageMapForge + region artifacts
+# SHA-256 format (64 lowercase hex chars)
 # ---------------------------------------------------------------------------
 
 Write-Output ""
@@ -93,7 +95,8 @@ Write-Output "--- SHA-256 hashes ---"
 $shaFields = @(
     'parsed_cell_sha256', 'report_sha256', 'preview_sha256',
     'tiles_sha256', 'tmx_sha256',
-    'regions_json_sha256', 'regions_report_sha256'
+    'regions_json_sha256', 'regions_report_sha256',
+    'primitives_json_sha256', 'primitives_report_sha256'
 )
 foreach ($field in $shaFields) {
     $val = [string]$p.PSObject.Properties[$field].Value
@@ -106,11 +109,12 @@ foreach ($field in $shaFields) {
 
 Write-Output ""
 Write-Output "--- Validation summary ---"
-Assert-True ([int]$p.validation_summary.schema_file_sanity        -eq 78)  "schema_file_sanity == 78"
+Assert-True ([int]$p.validation_summary.schema_file_sanity        -eq 104) "schema_file_sanity == 104"
 Assert-True ([int]$p.validation_summary.artifact_contract         -eq 40)  "artifact_contract == 40"
 Assert-True ([int]$p.validation_summary.hardening_harness         -eq 28)  "hardening_harness == 28"
 Assert-True ([int]$p.validation_summary.region_extraction         -eq 24)  "region_extraction == 24"
-Assert-True ([int]$p.validation_summary.total_expected_assertions -eq 209) "total_expected_assertions == 209"
+Assert-True ([int]$p.validation_summary.primitive_classification  -eq 22)  "primitive_classification == 22"
+Assert-True ([int]$p.validation_summary.total_expected_assertions -eq 264) "total_expected_assertions == 264"
 
 # ---------------------------------------------------------------------------
 # Safety flags
