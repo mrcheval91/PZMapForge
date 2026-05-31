@@ -51,6 +51,11 @@ if (Test-Path -LiteralPath $mediaMaps) {
 }
 
 Write-Output ""
+Write-Output "--- Schema file sanity ---"
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\test-schema-files.ps1')
+if ($LASTEXITCODE -ne 0) { throw "Schema file sanity failed." }
+
+Write-Output ""
 Write-Output "--- Artifact contract validation ---"
 & powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\test-parsed-cell-contract.ps1')
 if ($LASTEXITCODE -ne 0) { throw "Artifact contract validation failed." }

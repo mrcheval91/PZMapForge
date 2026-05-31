@@ -9,8 +9,21 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- scripts/test-schema-files.ps1: schema file sanity validator (28 assertions:
+  $schema, $id sentinel, title, required list for 11 fields, properties keys
+  for those same fields). No external dependencies.
+- scripts/validate.ps1: schema sanity step added before artifact contract step.
+- docs/IMPLEMENTATION.md: schema sanity row added to ratified table.
+- Fixed: CHANGELOG and IMPLEMENTATION.md had stale "33 assertions" for the
+  parsed-cell contract; corrected to 40.
+
+---
+
+## [Unreleased - prev]
+
+### Added
 - scripts/test-parsed-cell-contract.ps1: deterministic artifact contract check
-  (33 assertions: required fields, schema sentinel, claim_boundary, dimensions
+  (40 assertions: required fields, schema sentinel, claim_boundary, dimensions
   300x300, rows count and length, counts pixel sum, all 9 required kinds,
   outputs keys, matching fields and pixel sum).
 - scripts/validate.ps1: contract step added before hardening test harness.
