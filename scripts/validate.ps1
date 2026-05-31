@@ -61,6 +61,11 @@ Write-Output "--- Artifact contract validation ---"
 if ($LASTEXITCODE -ne 0) { throw "Artifact contract validation failed." }
 
 Write-Output ""
+Write-Output "--- Palette SHA-256 verification ---"
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\test-palette-sha256.ps1')
+if ($LASTEXITCODE -ne 0) { throw "Palette SHA-256 verification failed." }
+
+Write-Output ""
 Write-Output "--- TMX integrity ---"
 & powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\test-tmx-integrity.ps1')
 if ($LASTEXITCODE -ne 0) { throw "TMX integrity validation failed." }

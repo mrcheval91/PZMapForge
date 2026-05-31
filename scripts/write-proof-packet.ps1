@@ -1,8 +1,8 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.4) covering ImageMapForge,
-    TMX integrity, region extraction, and primitive classification artifacts.
+    Writes a deterministic local proof packet (v0.5) covering ImageMapForge,
+    palette SHA-256 verification, TMX integrity, region extraction, and primitive classification.
 
     Reads parsed-cell.json, regions.json, primitives.json and companion files,
     computes SHA-256 hashes, captures git state, and writes:
@@ -124,7 +124,7 @@ $primitivesMdSha    = Get-FileSha256 $primitivesMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.4'
+    schema                  = 'pzmapforge.proof-packet.v0.5'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -146,14 +146,15 @@ $packet = [ordered]@{
     primitives_report_sha256 = $primitivesMdSha
     claim_boundary          = 'planning_artifact_only_not_pz_load_tested'
     validation_summary      = [ordered]@{
-        schema_file_sanity        = 104
-        artifact_contract         = 40
-        tmx_integrity             = 21
-        hardening_harness         = 28
-        region_extraction         = 24
-        primitive_classification  = 22
-        proof_packet              = 47
-        total_expected_assertions = 286
+        schema_file_sanity          = 104
+        artifact_contract           = 40
+        palette_sha256_verification = 5
+        tmx_integrity               = 21
+        hardening_harness           = 28
+        region_extraction           = 24
+        primitive_classification    = 22
+        proof_packet                = 48
+        total_expected_assertions   = 292
     }
     safety = [ordered]@{
         local_only_outputs      = $true
@@ -179,7 +180,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.4
+Schema: pzmapforge.proof-packet.v0.5
 
 ## Claim boundary
 
@@ -223,12 +224,13 @@ planning_artifact_only_not_pz_load_tested
 |---|---:|
 | Schema file sanity | 104 |
 | Artifact contract | 40 |
+| Palette SHA-256 verification | 5 |
 | TMX integrity | 21 |
 | Hardening harness | 28 |
 | Region extraction | 24 |
 | Primitive classification | 22 |
-| Proof packet | 47 |
-| Total | 286 |
+| Proof packet | 48 |
+| Total | 292 |
 
 ## Safety
 

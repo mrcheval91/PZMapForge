@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Validates .local/mapforge/proof-packet.json against the v0.4 proof-packet contract.
+    Validates .local/mapforge/proof-packet.json against the v0.5 proof-packet contract.
 
     Runs write-proof-packet.ps1 first if proof-packet.json does not exist.
     Exits 0 if all checks pass, exits 1 if any fail.
@@ -81,8 +81,8 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.4') `
-    "schema == 'pzmapforge.proof-packet.v0.4' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.5') `
+    "schema == 'pzmapforge.proof-packet.v0.5' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
@@ -109,13 +109,14 @@ foreach ($field in $shaFields) {
 
 Write-Output ""
 Write-Output "--- Validation summary ---"
-Assert-True ([int]$p.validation_summary.schema_file_sanity        -eq 104) "schema_file_sanity == 104"
-Assert-True ([int]$p.validation_summary.artifact_contract         -eq 40)  "artifact_contract == 40"
-Assert-True ([int]$p.validation_summary.tmx_integrity             -eq 21)  "tmx_integrity == 21"
-Assert-True ([int]$p.validation_summary.hardening_harness         -eq 28)  "hardening_harness == 28"
-Assert-True ([int]$p.validation_summary.region_extraction         -eq 24)  "region_extraction == 24"
-Assert-True ([int]$p.validation_summary.primitive_classification  -eq 22)  "primitive_classification == 22"
-Assert-True ([int]$p.validation_summary.total_expected_assertions -eq 286) "total_expected_assertions == 286"
+Assert-True ([int]$p.validation_summary.schema_file_sanity          -eq 104) "schema_file_sanity == 104"
+Assert-True ([int]$p.validation_summary.artifact_contract           -eq 40)  "artifact_contract == 40"
+Assert-True ([int]$p.validation_summary.palette_sha256_verification -eq 5)   "palette_sha256_verification == 5"
+Assert-True ([int]$p.validation_summary.tmx_integrity               -eq 21)  "tmx_integrity == 21"
+Assert-True ([int]$p.validation_summary.hardening_harness           -eq 28)  "hardening_harness == 28"
+Assert-True ([int]$p.validation_summary.region_extraction           -eq 24)  "region_extraction == 24"
+Assert-True ([int]$p.validation_summary.primitive_classification    -eq 22)  "primitive_classification == 22"
+Assert-True ([int]$p.validation_summary.total_expected_assertions   -eq 292) "total_expected_assertions == 292"
 
 # ---------------------------------------------------------------------------
 # Safety flags

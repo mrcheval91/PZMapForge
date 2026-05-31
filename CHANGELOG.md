@@ -9,6 +9,33 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- scripts/test-palette-sha256.ps1: 5-assertion palette hash verifier. Checks
+  parsed-cell.json exists, source/image-palette.json exists, palette_sha256
+  field is present and 64-char hex, and matches the computed SHA-256 of
+  source/image-palette.json. Closes IMPLEMENTATION.md gap 3.
+- schemas/pzmapforge.proof-packet.v0.5.schema.json: adds
+  palette_sha256_verification (const: 5) to validation_summary; updates
+  proof_packet (48) and total_expected_assertions (292).
+
+### Changed
+- scripts/validate.ps1: palette SHA-256 verification step inserted after
+  artifact contract and before TMX integrity.
+- scripts/write-proof-packet.ps1: bumped to v0.5; adds
+  palette_sha256_verification=5, proof_packet=48, total=292.
+- scripts/test-proof-packet.ps1: expects v0.5; adds
+  palette_sha256_verification==5; total==292. 48 assertions (was 47).
+- scripts/test-schema-files.ps1: proof-packet section updated to v0.5.
+  Total schema assertions unchanged at 104.
+- docs/IMPLEMENTATION.md: palette SHA-256 ratified; gap 3 closed.
+
+### Note
+Full PowerShell pipeline: 104+40+5+21+28+24+22+48 = 292 assertions, all pass.
+
+---
+
+## [Unreleased - prev15]
+
+### Added
 - schemas/pzmapforge.proof-packet.v0.4.schema.json: proof packet schema v0.4.
   Adds tmx_integrity (const: 21) to validation_summary; updates proof_packet
   (47) and total_expected_assertions (286).

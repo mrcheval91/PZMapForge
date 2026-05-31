@@ -15,7 +15,8 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | parsed-cell.json artifact contract | Ratified | test-parsed-cell-contract.ps1: 40 assertions pass |
 | TMX structural integrity (base64, gzip, GID range) | Ratified | test-tmx-integrity.ps1: 21 assertions pass |
 | Schema file sanity — all 4 schemas | Ratified | test-schema-files.ps1: 104 assertions pass (4 schemas, proof-packet on v0.3) |
-| Proof packet v0.4 (+ tmx_integrity=21; total=286) | Ratified | test-proof-packet.ps1: 47 assertions pass |
+| Palette SHA-256 verification (parsed-cell vs source/image-palette.json) | Ratified | test-palette-sha256.ps1: 5 assertions pass; Gap 3 closed |
+| Proof packet v0.5 (+ palette_sha256_verification=5; total=292) | Ratified | test-proof-packet.ps1: 48 assertions pass |
 | Semantic region extraction (4-neighbor BFS) | Ratified | test-region-extraction.ps1: 24 assertions pass |
 | Primitive classification (9 kinds to 7 types) | Ratified | test-primitive-classification.ps1: 22 assertions pass |
 | parsed-cell-report.md (drift table, legend) | Ratified | Test 9: drift section present in report |
@@ -63,8 +64,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 
 2. ~~TMX structural validation~~ — Closed by Slice 10 (test-tmx-integrity.ps1).
 
-3. The `palette_sha256` in the JSON artifact is not verified in any test.
-   A future test should hash the palette and confirm the JSON field matches.
+3. ~~palette_sha256 not verified~~ — Closed by test-palette-sha256.ps1.
 
 4. The contract test validates the artifact structure but does not validate
    field types beyond what ConvertFrom-Json infers. A JSON Schema validator
