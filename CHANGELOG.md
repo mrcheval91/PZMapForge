@@ -9,6 +9,32 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- scripts/extract-regions.ps1: BFS flood-fill region extraction from
+  parsed-cell.json rows using 4-neighbor connectivity. Outputs
+  regions.json (schema, claim, regions[], summary_by_kind[]) and
+  regions-report.md. Deterministic sort: kind ASC, pixel_count DESC,
+  y ASC, x ASC. Fixed PS5.1 [int] rounding bug: uses $cur % $W for
+  flat-index decomposition instead of [int]($cur / $W). Used @() array
+  with PSCustomObject elements to avoid ConvertTo-Json wrapping $finalRegions
+  as {"value":[...]} instead of a JSON array.
+- scripts/test-region-extraction.ps1: 24-assertion harness (output files,
+  schema/claim sentinels, dimensions, regions structure, bounds validity,
+  centroid within bounds, summary 9 kinds, pixel sum 90000, determinism,
+  gitignore proof).
+- schemas/pzmapforge.regions.v0.1.schema.json: JSON Schema for regions.json.
+- docs/REGION_EXTRACTION.md: 4-neighbor BFS docs, sort order, output fields,
+  PS5.1 [int] rounding bug note.
+- scripts/test-schema-files.ps1: extended to validate all 3 schemas
+  (parsed-cell, proof-packet, regions) — 74 total assertions (was 28).
+- scripts/validate.ps1: region extraction step (extract + test) added before
+  proof packet.
+- docs/IMPLEMENTATION.md: region extraction and updated schema sanity row.
+
+---
+
+## [Unreleased - prev3]
+
+### Added
 - scripts/write-proof-packet.ps1: generates .local/mapforge/proof-packet.json
   and proof-packet.md with schema sentinel, UTC timestamp, git state,
   SHA-256 hashes of all 5 artifacts, expected validation counts, and safety

@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pzmapforge.regions.v0.1",
+  "title": "PZMapForge Regions v0.1",
+  "description": "Semantic region extraction artifact from PZMapForge. Planning artifact only.",
+  "type": "object",
+  "required": [
+    "schema",
+    "claim_boundary",
+    "source",
+    "width",
+    "height",
+    "total_regions",
+    "regions",
+    "summary_by_kind"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "pzmapforge.regions.v0.1"
+    },
+    "claim_boundary": {
+      "type": "string",
+      "const": "planning_artifact_only_not_pz_load_tested"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "width": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "height": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "total_regions": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "regions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["region_id", "kind", "code", "pixel_count", "bounds", "centroid"],
+        "properties": {
+          "region_id":   { "type": "integer", "minimum": 1 },
+          "kind":        { "type": "string",  "minLength": 1 },
+          "code":        { "type": "string",  "minLength": 1, "maxLength": 1 },
+          "pixel_count": { "type": "integer", "minimum": 1 },
+          "bounds": {
+            "type": "object",
+            "required": ["x", "y", "width", "height"],
+            "properties": {
+              "x":      { "type": "integer", "minimum": 0 },
+              "y":      { "type": "integer", "minimum": 0 },
+              "width":  { "type": "integer", "minimum": 1 },
+              "height": { "type": "integer", "minimum": 1 }
+            },
+            "additionalProperties": false
+          },
+          "centroid": {
+            "type": "object",
+            "required": ["x", "y"],
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "summary_by_kind": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "code", "region_count", "total_pixels", "largest_region_pixels"],
+        "properties": {
+          "kind":                   { "type": "string",  "minLength": 1 },
+          "code":                   { "type": "string",  "minLength": 1, "maxLength": 1 },
+          "region_count":           { "type": "integer", "minimum": 1 },
+          "total_pixels":           { "type": "integer", "minimum": 1 },
+          "largest_region_pixels":  { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

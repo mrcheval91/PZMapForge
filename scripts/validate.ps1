@@ -66,6 +66,23 @@ Write-Output "--- Hardening test harness ---"
 if ($LASTEXITCODE -ne 0) { throw "Hardening test harness failed." }
 
 Write-Output ""
+Write-Output "--- Restore sample artifacts for region extraction ---"
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\new-test-image.ps1')
+if ($LASTEXITCODE -ne 0) { throw "new-test-image.ps1 failed (restore)." }
+
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'source\image-mapforge.ps1') `
+    -ImagePath (Join-Path $repoRoot '.local\mapforge\sample-input.png')
+if ($LASTEXITCODE -ne 0) { throw "image-mapforge.ps1 failed (restore)." }
+
+Write-Output ""
+Write-Output "--- Region extraction ---"
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\extract-regions.ps1')
+if ($LASTEXITCODE -ne 0) { throw "extract-regions.ps1 failed." }
+
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\test-region-extraction.ps1')
+if ($LASTEXITCODE -ne 0) { throw "Region extraction tests failed." }
+
+Write-Output ""
 Write-Output "--- Proof packet ---"
 & powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\write-proof-packet.ps1')
 if ($LASTEXITCODE -ne 0) { throw "write-proof-packet.ps1 failed." }
