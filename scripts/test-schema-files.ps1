@@ -109,6 +109,20 @@ Test-Schema `
     )
 
 # ---------------------------------------------------------------------------
+# primitives schema
+# ---------------------------------------------------------------------------
+
+Test-Schema `
+    -FileName    'pzmapforge.primitives.v0.1.schema.json' `
+    -ExpectedId  'pzmapforge.primitives.v0.1' `
+    -CheckRequired @(
+        'schema', 'claim_boundary',
+        'width', 'height', 'primitive_count',
+        'primitives', 'summary_by_primitive_type',
+        'source'
+    )
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 

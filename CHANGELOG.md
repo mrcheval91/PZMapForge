@@ -9,6 +9,33 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- scripts/classify-primitives.ps1: maps 9 semantic kinds to 7 planning
+  primitive types (road_region, sidewalk_region, building_footprint,
+  yard_region, landmark_marker, spawn_marker, ground_region). Reads
+  regions.json, sorts primitives deterministically (primitive_type ASC,
+  pixel_count DESC, y ASC, x ASC, source_region_id ASC), writes
+  primitives.json and primitives-report.md.
+- scripts/test-primitive-classification.ps1: 22-assertion harness (output
+  files, sentinels, dimensions, structure, bounds, centroids, all 7 types
+  present, pixel sum 90000, determinism, gitignore proof).
+- schemas/pzmapforge.primitives.v0.1.schema.json: JSON Schema for primitives.
+- docs/PRIMITIVE_CLASSIFICATION.md: kind-to-primitive mapping table, output
+  fields, deterministic sort order, claim boundary.
+- scripts/test-schema-files.ps1: primitives schema added -- 100 total
+  assertions (was 78 for 3 schemas).
+- scripts/validate.ps1: primitive classification step added before proof packet.
+- docs/IMPLEMENTATION.md: primitive classification ratified.
+
+### Note
+Proof packet remains at v0.2 (schema_file_sanity hardcoded at 78, total at 209).
+These counts are now stale. Proof packet v0.3 will cover primitive artifacts
+and correct the counts.
+
+---
+
+## [Unreleased - prev5]
+
+### Added
 - schemas/pzmapforge.proof-packet.v0.2.schema.json: proof packet schema v0.2
   covering region artifact fields (regions_json_path, regions_report_path,
   regions_json_sha256, regions_report_sha256) and updated validation_summary

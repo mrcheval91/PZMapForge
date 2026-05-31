@@ -83,6 +83,14 @@ if ($LASTEXITCODE -ne 0) { throw "extract-regions.ps1 failed." }
 if ($LASTEXITCODE -ne 0) { throw "Region extraction tests failed." }
 
 Write-Output ""
+Write-Output "--- Primitive classification ---"
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\classify-primitives.ps1')
+if ($LASTEXITCODE -ne 0) { throw "classify-primitives.ps1 failed." }
+
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\test-primitive-classification.ps1')
+if ($LASTEXITCODE -ne 0) { throw "Primitive classification tests failed." }
+
+Write-Output ""
 Write-Output "--- Proof packet ---"
 & powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\write-proof-packet.ps1')
 if ($LASTEXITCODE -ne 0) { throw "write-proof-packet.ps1 failed." }
