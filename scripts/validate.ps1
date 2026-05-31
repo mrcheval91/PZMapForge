@@ -101,6 +101,15 @@ if ($LASTEXITCODE -ne 0) { throw "classify-primitives.ps1 failed." }
 if ($LASTEXITCODE -ne 0) { throw "Primitive classification tests failed." }
 
 Write-Output ""
+Write-Output "--- Plan export ---"
+& dotnet run --project (Join-Path $repoRoot 'src\PZMapForge.Cli') `
+    --configuration Release --no-build `
+    -- plan-export `
+    --path (Join-Path $repoRoot '.local\mapforge\parsed-cell.json') `
+    --output (Join-Path $repoRoot '.local\mapforge')
+if ($LASTEXITCODE -ne 0) { throw "plan-export failed." }
+
+Write-Output ""
 Write-Output "--- Proof packet ---"
 & powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\write-proof-packet.ps1')
 if ($LASTEXITCODE -ne 0) { throw "write-proof-packet.ps1 failed." }

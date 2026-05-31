@@ -85,15 +85,16 @@ Test-Schema `
 # ---------------------------------------------------------------------------
 
 Test-Schema `
-    -FileName    'pzmapforge.proof-packet.v0.6.schema.json' `
-    -ExpectedId  'pzmapforge.proof-packet.v0.6' `
+    -FileName    'pzmapforge.proof-packet.v0.7.schema.json' `
+    -ExpectedId  'pzmapforge.proof-packet.v0.7' `
     -CheckRequired @(
         'schema', 'generated_at_utc', 'repo_root',
         'git_branch', 'git_commit',
         'claim_boundary', 'validation_summary', 'safety',
         'parsed_cell_sha256', 'tmx_sha256',
         'regions_json_sha256', 'regions_report_sha256',
-        'primitives_json_sha256', 'primitives_report_sha256'
+        'primitives_json_sha256', 'primitives_report_sha256',
+        'plan_recommendations_sha256', 'plan_report_sha256'
     )
 
 # ---------------------------------------------------------------------------
@@ -121,6 +122,20 @@ Test-Schema `
         'width', 'height', 'primitive_count',
         'primitives', 'summary_by_primitive_type',
         'source'
+    )
+
+# ---------------------------------------------------------------------------
+# plan-recommendations schema
+# ---------------------------------------------------------------------------
+
+Test-Schema `
+    -FileName    'pzmapforge.plan-recommendations.v0.1.schema.json' `
+    -ExpectedId  'pzmapforge.plan-recommendations.v0.1' `
+    -CheckRequired @(
+        'schema', 'claim_boundary',
+        'source', 'width', 'height',
+        'primitive_count', 'recommendation_count', 'warning_count',
+        'recommendations', 'summary'
     )
 
 # ---------------------------------------------------------------------------

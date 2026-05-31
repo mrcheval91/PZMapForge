@@ -9,6 +9,30 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- schemas/pzmapforge.proof-packet.v0.7.schema.json: adds plan_recommendations_
+  sha256/plan_report_sha256 to required; updates validation_summary consts
+  (schema_file_sanity=134, proof_packet=54, total=336).
+
+### Changed
+- scripts/test-schema-files.ps1: proof-packet -> v0.7 (16 CheckRequired, +2);
+  plan-recommendations schema section added (10 CheckRequired, 26 assertions).
+  134 total assertions (was 104).
+- scripts/write-proof-packet.ps1: bumped to v0.7; adds plan_recommendations_
+  path/report_path/sha256 fields; runs plan-export if artifacts missing;
+  schema_file_sanity=134, proof_packet=54, total=336.
+- scripts/test-proof-packet.ps1: v0.7; +4 required field checks, +2 SHA-256
+  checks; schema_file_sanity==134; total==336. 54 assertions (was 48).
+- scripts/validate.ps1: plan-export step (dotnet run --no-build) inserted
+  before proof packet step.
+- docs/IMPLEMENTATION.md: plan-recs schema sanity ratified; proof packet v0.7.
+
+Full PowerShell pipeline: 134+40+5+21+36+24+22+54 = 336 assertions. All pass.
+
+---
+
+## [Unreleased - prev19]
+
+### Added
 - src/PZMapForge.Core/Planning/PlanningArtifactWriter.cs: writes
   plan-recommendations.json (schema v0.1) and plan-report.md from a
   PlanningRuleResult. Accepts DateTimeOffset? overrideGeneratedAt for

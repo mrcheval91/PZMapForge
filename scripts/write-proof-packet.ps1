@@ -1,9 +1,9 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.6) covering ImageMapForge,
-    palette SHA-256 verification, TMX integrity, region extraction, and primitive classification.
-    Hardening harness now covers the -Resize flag (36 assertions).
+    Writes a deterministic local proof packet (v0.7) covering ImageMapForge,
+    palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
+    and planning recommendation artifacts. Hardening harness covers -Resize (36 assertions).
 
     Reads parsed-cell.json, regions.json, primitives.json and companion files,
     computes SHA-256 hashes, captures git state, and writes:
@@ -32,6 +32,8 @@ $regionsJsonPath    = Join-Path $outputDir 'regions.json'
 $regionsMdPath      = Join-Path $outputDir 'regions-report.md'
 $primitivesJsonPath = Join-Path $outputDir 'primitives.json'
 $primitivesMdPath   = Join-Path $outputDir 'primitives-report.md'
+$planJsonPath       = Join-Path $outputDir 'plan-recommendations.json'
+$planMdPath         = Join-Path $outputDir 'plan-report.md'
 $packetJson         = Join-Path $outputDir 'proof-packet.json'
 $packetMd           = Join-Path $outputDir 'proof-packet.md'
 
@@ -72,6 +74,22 @@ if (-not (Test-Path $primitivesJsonPath -PathType Leaf)) {
 foreach ($p in @($primitivesJsonPath, $primitivesMdPath)) {
     if (-not (Test-Path $p -PathType Leaf)) {
         Write-Error "Required primitive artifact missing: $p"; exit 1
+    }
+}
+
+if (-not (Test-Path $planJsonPath -PathType Leaf)) {
+    Write-Output "plan-recommendations.json not found. Running plan-export via dotnet..."
+    & dotnet run --project (Join-Path $repoRoot 'src\PZMapForge.Cli') `
+        --configuration Release --no-build `
+        -- plan-export `
+        --path (Join-Path $repoRoot '.local\mapforge\parsed-cell.json') `
+        --output (Join-Path $repoRoot '.local\mapforge')
+    if ($LASTEXITCODE -ne 0) { Write-Error "plan-export failed."; exit 1 }
+}
+
+foreach ($p in @($planJsonPath, $planMdPath)) {
+    if (-not (Test-Path $p -PathType Leaf)) {
+        Write-Error "Required plan artifact missing: $p"; exit 1
     }
 }
 
@@ -119,13 +137,15 @@ $regionsJsonSha     = Get-FileSha256 $regionsJsonPath
 $regionsMdSha       = Get-FileSha256 $regionsMdPath
 $primitivesJsonSha  = Get-FileSha256 $primitivesJsonPath
 $primitivesMdSha    = Get-FileSha256 $primitivesMdPath
+$planJsonSha        = Get-FileSha256 $planJsonPath
+$planMdSha          = Get-FileSha256 $planMdPath
 
 # ---------------------------------------------------------------------------
 # Build proof packet
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.6'
+    schema                  = 'pzmapforge.proof-packet.v0.7'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -145,17 +165,21 @@ $packet = [ordered]@{
     primitives_report_path  = '.local/mapforge/primitives-report.md'
     primitives_json_sha256  = $primitivesJsonSha
     primitives_report_sha256 = $primitivesMdSha
+    plan_recommendations_path = '.local/mapforge/plan-recommendations.json'
+    plan_report_path          = '.local/mapforge/plan-report.md'
+    plan_recommendations_sha256 = $planJsonSha
+    plan_report_sha256          = $planMdSha
     claim_boundary          = 'planning_artifact_only_not_pz_load_tested'
     validation_summary      = [ordered]@{
-        schema_file_sanity          = 104
+        schema_file_sanity          = 134
         artifact_contract           = 40
         palette_sha256_verification = 5
         tmx_integrity               = 21
         hardening_harness           = 36
         region_extraction           = 24
         primitive_classification    = 22
-        proof_packet                = 48
-        total_expected_assertions   = 300
+        proof_packet                = 54
+        total_expected_assertions   = 336
     }
     safety = [ordered]@{
         local_only_outputs      = $true
@@ -181,7 +205,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.6
+Schema: pzmapforge.proof-packet.v0.7
 
 ## Claim boundary
 
@@ -219,19 +243,26 @@ planning_artifact_only_not_pz_load_tested
 | primitives.json | $primitivesJsonSha |
 | primitives-report.md | $primitivesMdSha |
 
+## Planning recommendation artifact hashes (SHA-256)
+
+| Artifact | SHA-256 |
+|---|---|
+| plan-recommendations.json | $planJsonSha |
+| plan-report.md | $planMdSha |
+
 ## Validation summary
 
 | Check | Expected assertions |
 |---|---:|
-| Schema file sanity | 104 |
+| Schema file sanity | 134 |
 | Artifact contract | 40 |
 | Palette SHA-256 verification | 5 |
 | TMX integrity | 21 |
 | Hardening harness | 36 |
 | Region extraction | 24 |
 | Primitive classification | 22 |
-| Proof packet | 48 |
-| Total | 300 |
+| Proof packet | 54 |
+| Total | 336 |
 
 ## Safety
 

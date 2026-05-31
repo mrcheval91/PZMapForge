@@ -17,7 +17,8 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Schema file sanity — all 4 schemas | Ratified | test-schema-files.ps1: 104 assertions pass (4 schemas, proof-packet on v0.3) |
 | Palette SHA-256 verification (parsed-cell vs source/image-palette.json) | Ratified | test-palette-sha256.ps1: 5 assertions pass; Gap 3 closed |
 | ImageMapForge -Resize flag (150x150 scaled to 300x300) | Ratified | test-image-mapforge.ps1 Test 11: 8 assertions; Gap 1 closed |
-| Proof packet v0.6 (hardening_harness=36; total=300) | Ratified | test-proof-packet.ps1: 48 assertions pass |
+| Plan-recommendations schema sanity | Ratified | test-schema-files.ps1: 134 total (was 104; +26 plan-recs +4 proof-packet v0.7) |
+| Proof packet v0.7 (plan artifacts; total=336) | Ratified | test-proof-packet.ps1: 54 assertions pass |
 | Semantic region extraction (4-neighbor BFS) | Ratified | test-region-extraction.ps1: 24 assertions pass |
 | Primitive classification (9 kinds to 7 types) | Ratified | test-primitive-classification.ps1: 22 assertions pass |
 | parsed-cell-report.md (drift table, legend) | Ratified | Test 9: drift section present in report |

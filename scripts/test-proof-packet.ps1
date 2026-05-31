@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Validates .local/mapforge/proof-packet.json against the v0.6 proof-packet contract.
+    Validates .local/mapforge/proof-packet.json against the v0.7 proof-packet contract.
 
     Runs write-proof-packet.ps1 first if proof-packet.json does not exist.
     Exits 0 if all checks pass, exits 1 if any fail.
@@ -69,6 +69,8 @@ $requiredFields = @(
     'regions_json_sha256', 'regions_report_sha256',
     'primitives_json_path', 'primitives_report_path',
     'primitives_json_sha256', 'primitives_report_sha256',
+    'plan_recommendations_path', 'plan_report_path',
+    'plan_recommendations_sha256', 'plan_report_sha256',
     'claim_boundary', 'validation_summary', 'safety'
 )
 foreach ($field in $requiredFields) {
@@ -81,8 +83,8 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.6') `
-    "schema == 'pzmapforge.proof-packet.v0.6' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.7') `
+    "schema == 'pzmapforge.proof-packet.v0.7' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
@@ -96,7 +98,8 @@ $shaFields = @(
     'parsed_cell_sha256', 'report_sha256', 'preview_sha256',
     'tiles_sha256', 'tmx_sha256',
     'regions_json_sha256', 'regions_report_sha256',
-    'primitives_json_sha256', 'primitives_report_sha256'
+    'primitives_json_sha256', 'primitives_report_sha256',
+    'plan_recommendations_sha256', 'plan_report_sha256'
 )
 foreach ($field in $shaFields) {
     $val = [string]$p.PSObject.Properties[$field].Value
@@ -109,14 +112,14 @@ foreach ($field in $shaFields) {
 
 Write-Output ""
 Write-Output "--- Validation summary ---"
-Assert-True ([int]$p.validation_summary.schema_file_sanity          -eq 104) "schema_file_sanity == 104"
+Assert-True ([int]$p.validation_summary.schema_file_sanity          -eq 134) "schema_file_sanity == 134"
 Assert-True ([int]$p.validation_summary.artifact_contract           -eq 40)  "artifact_contract == 40"
 Assert-True ([int]$p.validation_summary.palette_sha256_verification -eq 5)   "palette_sha256_verification == 5"
 Assert-True ([int]$p.validation_summary.tmx_integrity               -eq 21)  "tmx_integrity == 21"
 Assert-True ([int]$p.validation_summary.hardening_harness           -eq 36)  "hardening_harness == 36"
 Assert-True ([int]$p.validation_summary.region_extraction           -eq 24)  "region_extraction == 24"
 Assert-True ([int]$p.validation_summary.primitive_classification    -eq 22)  "primitive_classification == 22"
-Assert-True ([int]$p.validation_summary.total_expected_assertions   -eq 300) "total_expected_assertions == 300"
+Assert-True ([int]$p.validation_summary.total_expected_assertions   -eq 336) "total_expected_assertions == 336"
 
 # ---------------------------------------------------------------------------
 # Safety flags
