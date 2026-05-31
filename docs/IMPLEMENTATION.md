@@ -13,6 +13,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Nearest-colour fallback with drift cache | Ratified | Test 9: near-grass mapped to grass, dist 1.73 |
 | parsed-cell.json (counts, legend, drift) | Ratified | Test 6: all 5 outputs written |
 | parsed-cell.json artifact contract | Ratified | test-parsed-cell-contract.ps1: 40 assertions pass |
+| TMX structural integrity (base64, gzip, GID range) | Ratified | test-tmx-integrity.ps1: 21 assertions pass |
 | Schema file sanity — all 4 schemas | Ratified | test-schema-files.ps1: 104 assertions pass (4 schemas, proof-packet on v0.3) |
 | Proof packet v0.3 (ImageMapForge + region + primitive hashes) | Ratified | test-proof-packet.ps1: 46 assertions pass |
 | Semantic region extraction (4-neighbor BFS) | Ratified | test-region-extraction.ps1: 24 assertions pass |
@@ -31,7 +32,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 
 | Capability | Flag | Notes |
 |---|---|---|
-| TileZed-openable planning TMX | PROVISIONAL | Opened visibly in TileZed. Not a PZ load-tested export. |
+| TileZed-openable planning TMX | PROVISIONAL | Opened visibly in TileZed. Structurally validated (gap 2 closed). Not a PZ load-tested export. |
 | -Resize flag (nearest-neighbour) | PROVISIONAL | Logic present, not explicitly tested in harness. |
 
 ## Not present: out of scope for current phase
@@ -50,8 +51,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
    at a non-300x300 size run with `-Resize` should produce correct kind counts.
    Tracked as a future test addition.
 
-2. The TMX validity (gzip payload integrity, correct GID count) is not
-   programmatically validated. A structural TMX validator is Phase 2.
+2. ~~TMX structural validation~~ — Closed by Slice 10 (test-tmx-integrity.ps1).
 
 3. The `palette_sha256` in the JSON artifact is not verified in any test.
    A future test should hash the palette and confirm the JSON field matches.

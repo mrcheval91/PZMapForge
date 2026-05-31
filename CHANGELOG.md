@@ -9,6 +9,27 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- scripts/test-tmx-integrity.ps1: 21-assertion TMX structural validator.
+  Checks map/tileset/layer XML attributes, decodes base64+gzip payload,
+  verifies decompressed length == 360000, GID count == 90000, all GIDs
+  in range 1..9. Closes IMPLEMENTATION.md gap 2.
+- docs/TMX_INTEGRITY.md: validator design, payload encoding, assertions table,
+  claim boundary.
+- scripts/validate.ps1: TMX integrity step added after artifact contract
+  and before hardening harness.
+- docs/IMPLEMENTATION.md: TMX structural integrity ratified; gap 2 closed;
+  TileZed provisional note updated.
+
+### Note
+Proof packet stays at v0.3. The running pipeline total is now 285 assertions
+(104+40+21+28+24+22+46). Proof packet v0.4 will correct the stale counts
+(schema_file_sanity and total_expected_assertions).
+
+---
+
+## [Unreleased - prev7]
+
+### Added
 - schemas/pzmapforge.proof-packet.v0.3.schema.json: proof packet schema v0.3
   covering all three artifact groups (ImageMapForge, region, primitive) and
   updated validation_summary consts (schema_file_sanity=104, primitive_
