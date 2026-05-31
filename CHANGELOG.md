@@ -9,6 +9,29 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- src/PZMapForge.Core/Planning/PlanningArtifactWriter.cs: writes
+  plan-recommendations.json (schema v0.1) and plan-report.md from a
+  PlanningRuleResult. Accepts DateTimeOffset? overrideGeneratedAt for
+  deterministic testing. File stream disposed with using block.
+- schemas/pzmapforge.plan-recommendations.v0.1.schema.json: JSON Schema.
+- docs/PLAN_EXPORT.md: artifact structure, determinism, output path safety.
+- src/PZMapForge.Cli/Program.cs: plan-export --path --output command.
+  Refuses output outside .local/. Prints JSON path, markdown path,
+  primitive count, recommendation count, warning count, status.
+- tests/PZMapForge.Core.Tests/Planning/PlanningArtifactWriterTests.cs:
+  8 xUnit tests: JSON/md files created, schema sentinel, claim boundary,
+  recommendation_count, warning_count, markdown contains claim boundary,
+  determinism with fixed timestamp.
+
+dotnet build: 0 errors
+dotnet test:  71/71 pass (69 Core + 2 Cli)
+plan-export: plan-recommendations.json + plan-report.md written, Status OK
+
+---
+
+## [Unreleased - prev18]
+
+### Added
 - src/PZMapForge.Core/Planning/: planning rule engine.
   - PlanningSeverity enum (Warning, Info).
   - PlanningRecommendationType enum (10 values) + ToTypeString() extension.

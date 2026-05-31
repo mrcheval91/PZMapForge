@@ -16,6 +16,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  region-check      --path <path>");
     Console.Error.WriteLine("  primitive-check   --path <path>");
     Console.Error.WriteLine("  plan-check        --path <path>");
+    Console.Error.WriteLine("  plan-export       --path <path> [--output <dir>]");
     return 1;
 }
 
@@ -26,6 +27,7 @@ return args[0] switch
     "region-check"      => RegionCheckCommand(args[1..]),
     "primitive-check"   => PrimitiveCheckCommand(args[1..]),
     "plan-check"        => PlanCheckCommand(args[1..]),
+    "plan-export"       => PlanExportCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -223,9 +225,82 @@ static int PlanCheckCommand(string[] args)
     return 0;
 }
 
+static int PlanExportCommand(string[] args)
+{
+    var jsonPath  = string.Empty;
+    var outputDir = string.Empty;
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        if (args[i] is "--path"   or "-p") { jsonPath  = args[i + 1]; }
+        if (args[i] is "--output" or "-o") { outputDir = args[i + 1]; }
+    }
+
+    if (string.IsNullOrWhiteSpace(jsonPath))
+    {
+        Console.Error.WriteLine("plan-export requires --path <path>");
+        return 1;
+    }
+
+    // Default output: .local/mapforge (same dir as parsed-cell)
+    if (string.IsNullOrWhiteSpace(outputDir))
+        outputDir = Path.GetDirectoryName(Path.GetFullPath(jsonPath)) ?? ".";
+
+    // Safety: refuse output outside .local/ unless caller explicitly chose --output
+    var outputFull  = Path.GetFullPath(outputDir);
+    var localMarker = Path.DirectorySeparatorChar + ".local" + Path.DirectorySeparatorChar;
+    if (!outputFull.Contains(localMarker, StringComparison.OrdinalIgnoreCase) &&
+        !outputFull.EndsWith(Path.DirectorySeparatorChar + ".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"plan-export: refusing to write outside a .local/ directory: {outputFull}");
+        Console.Error.WriteLine("  Pass --output to an explicit .local/ path.");
+        return 1;
+    }
+
+    var cellResult = ParsedCellLoader.Load(jsonPath);
+    if (!cellResult.IsValid)
+    {
+        Console.WriteLine("Status: INVALID (parsed-cell failed)");
+        foreach (var e in cellResult.Errors) Console.Error.WriteLine($"  error: {e}");
+        return 1;
+    }
+
+    var grid      = cellResult.Grid!;
+    var codeToKind = cellResult.Document!.Counts
+        .ToDictionary(c => c.Code[0], c => c.Kind)
+        .AsReadOnly();
+
+    PlanningRuleResult planResult;
+    try
+    {
+        var regions    = RegionExtractor.Extract(grid, codeToKind);
+        var primitives = PrimitiveClassifier.Classify(regions);
+        planResult     = PlanningRuleEngine.Evaluate(primitives);
+    }
+    catch (ArgumentException ex)
+    {
+        Console.WriteLine("Status: INVALID (planning evaluation failed)");
+        Console.Error.WriteLine($"  error: {ex.Message}");
+        return 1;
+    }
+
+    var (jsonOut, mdOut) = PlanningArtifactWriter.Write(
+        outputDir, grid.Width, grid.Height,
+        Path.GetFullPath(jsonPath), "PZMapForge.Cli plan-export",
+        planResult);
+
+    Console.WriteLine($"Plan JSON:    {jsonOut}");
+    Console.WriteLine($"Plan report:  {mdOut}");
+    Console.WriteLine($"Primitives:   {planResult.Summary.PrimitiveCount}");
+    Console.WriteLine($"Recommendations: {planResult.RecommendationCount}");
+    Console.WriteLine($"Warnings:     {planResult.Summary.WarningCount}");
+    Console.WriteLine("Status:       OK");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
-    Console.Error.WriteLine("Available commands: palette-check, parsed-cell-check, region-check, primitive-check, plan-check");
+    Console.Error.WriteLine("Available commands: palette-check, parsed-cell-check, region-check, primitive-check, plan-check, plan-export");
     return 1;
 }

@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pzmapforge.plan-recommendations.v0.1",
+  "title": "PZMapForge Plan Recommendations v0.1",
+  "description": "Deterministic planning recommendations export. Planning artifact only, not a PZ load-tested export.",
+  "type": "object",
+  "required": [
+    "schema", "claim_boundary", "generated_at_utc", "source",
+    "width", "height", "primitive_count",
+    "recommendation_count", "warning_count",
+    "recommendations", "summary"
+  ],
+  "properties": {
+    "schema":              { "type": "string", "const": "pzmapforge.plan-recommendations.v0.1" },
+    "claim_boundary":      { "type": "string", "const": "planning_artifact_only_not_pz_load_tested" },
+    "generated_at_utc":    { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "required": ["parsed_cell_path", "generated_by"],
+      "properties": {
+        "parsed_cell_path": { "type": "string" },
+        "generated_by":     { "type": "string" }
+      }
+    },
+    "width":              { "type": "integer", "minimum": 1 },
+    "height":             { "type": "integer", "minimum": 1 },
+    "primitive_count":    { "type": "integer", "minimum": 0 },
+    "recommendation_count": { "type": "integer", "minimum": 0 },
+    "warning_count":      { "type": "integer", "minimum": 0 },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["recommendation_id", "recommendation_type", "severity",
+                     "planning_role", "source_primitive_id", "primitive_type",
+                     "pixel_count", "message"],
+        "properties": {
+          "recommendation_id":  { "type": "integer", "minimum": 1 },
+          "recommendation_type":{ "type": "string", "minLength": 1 },
+          "severity":           { "type": "string", "enum": ["warning", "info"] },
+          "planning_role":      { "type": "string" },
+          "source_primitive_id":{ "type": "integer", "minimum": 0 },
+          "primitive_type":     { "type": "string" },
+          "pixel_count":        { "type": "integer", "minimum": 0 },
+          "message":            { "type": "string" }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["total_pixels", "primitive_count", "recommendation_count",
+                   "warning_count", "counts_by_recommendation_type", "counts_by_severity"],
+      "properties": {
+        "total_pixels":         { "type": "integer", "minimum": 0 },
+        "primitive_count":      { "type": "integer", "minimum": 0 },
+        "recommendation_count": { "type": "integer", "minimum": 0 },
+        "warning_count":        { "type": "integer", "minimum": 0 },
+        "counts_by_recommendation_type": { "type": "object" },
+        "counts_by_severity":            { "type": "object" }
+      }
+    }
+  }
+}
