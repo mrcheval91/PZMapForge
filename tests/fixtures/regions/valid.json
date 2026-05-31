@@ -1,0 +1,219 @@
+﻿{
+    "schema":  "pzmapforge.regions.v0.1",
+    "claim_boundary":  "planning_artifact_only_not_pz_load_tested",
+    "source":  ".local/mapforge/parsed-cell.json",
+    "width":  300,
+    "height":  300,
+    "total_regions":  9,
+    "regions":  [
+                    {
+                        "region_id":  1,
+                        "kind":  "depanneur",
+                        "code":  "d",
+                        "pixel_count":  1,
+                        "bounds":  {
+                                       "x":  295,
+                                       "y":  0,
+                                       "width":  1,
+                                       "height":  1
+                                   },
+                        "centroid":  {
+                                         "x":  295,
+                                         "y":  0
+                                     }
+                    },
+                    {
+                        "region_id":  2,
+                        "kind":  "garage",
+                        "code":  "a",
+                        "pixel_count":  1,
+                        "bounds":  {
+                                       "x":  296,
+                                       "y":  0,
+                                       "width":  1,
+                                       "height":  1
+                                   },
+                        "centroid":  {
+                                         "x":  296,
+                                         "y":  0
+                                     }
+                    },
+                    {
+                        "region_id":  3,
+                        "kind":  "grass",
+                        "code":  "g",
+                        "pixel_count":  89992,
+                        "bounds":  {
+                                       "x":  0,
+                                       "y":  0,
+                                       "width":  300,
+                                       "height":  300
+                                   },
+                        "centroid":  {
+                                         "x":  149.49,
+                                         "y":  149.51
+                                     }
+                    },
+                    {
+                        "region_id":  4,
+                        "kind":  "industrial_yard",
+                        "code":  "i",
+                        "pixel_count":  1,
+                        "bounds":  {
+                                       "x":  297,
+                                       "y":  0,
+                                       "width":  1,
+                                       "height":  1
+                                   },
+                        "centroid":  {
+                                         "x":  297,
+                                         "y":  0
+                                     }
+                    },
+                    {
+                        "region_id":  5,
+                        "kind":  "landmark",
+                        "code":  "l",
+                        "pixel_count":  1,
+                        "bounds":  {
+                                       "x":  298,
+                                       "y":  0,
+                                       "width":  1,
+                                       "height":  1
+                                   },
+                        "centroid":  {
+                                         "x":  298,
+                                         "y":  0
+                                     }
+                    },
+                    {
+                        "region_id":  6,
+                        "kind":  "road",
+                        "code":  "r",
+                        "pixel_count":  1,
+                        "bounds":  {
+                                       "x":  292,
+                                       "y":  0,
+                                       "width":  1,
+                                       "height":  1
+                                   },
+                        "centroid":  {
+                                         "x":  292,
+                                         "y":  0
+                                     }
+                    },
+                    {
+                        "region_id":  7,
+                        "kind":  "row_house",
+                        "code":  "h",
+                        "pixel_count":  1,
+                        "bounds":  {
+                                       "x":  294,
+                                       "y":  0,
+                                       "width":  1,
+                                       "height":  1
+                                   },
+                        "centroid":  {
+                                         "x":  294,
+                                         "y":  0
+                                     }
+                    },
+                    {
+                        "region_id":  8,
+                        "kind":  "sidewalk",
+                        "code":  "s",
+                        "pixel_count":  1,
+                        "bounds":  {
+                                       "x":  293,
+                                       "y":  0,
+                                       "width":  1,
+                                       "height":  1
+                                   },
+                        "centroid":  {
+                                         "x":  293,
+                                         "y":  0
+                                     }
+                    },
+                    {
+                        "region_id":  9,
+                        "kind":  "spawn",
+                        "code":  "p",
+                        "pixel_count":  1,
+                        "bounds":  {
+                                       "x":  299,
+                                       "y":  0,
+                                       "width":  1,
+                                       "height":  1
+                                   },
+                        "centroid":  {
+                                         "x":  299,
+                                         "y":  0
+                                     }
+                    }
+                ],
+    "summary_by_kind":  [
+                            {
+                                "kind":  "industrial_yard",
+                                "code":  "i",
+                                "region_count":  1,
+                                "total_pixels":  1,
+                                "largest_region_pixels":  1
+                            },
+                            {
+                                "kind":  "row_house",
+                                "code":  "h",
+                                "region_count":  1,
+                                "total_pixels":  1,
+                                "largest_region_pixels":  1
+                            },
+                            {
+                                "kind":  "landmark",
+                                "code":  "l",
+                                "region_count":  1,
+                                "total_pixels":  1,
+                                "largest_region_pixels":  1
+                            },
+                            {
+                                "kind":  "road",
+                                "code":  "r",
+                                "region_count":  1,
+                                "total_pixels":  1,
+                                "largest_region_pixels":  1
+                            },
+                            {
+                                "kind":  "sidewalk",
+                                "code":  "s",
+                                "region_count":  1,
+                                "total_pixels":  1,
+                                "largest_region_pixels":  1
+                            },
+                            {
+                                "kind":  "depanneur",
+                                "code":  "d",
+                                "region_count":  1,
+                                "total_pixels":  1,
+                                "largest_region_pixels":  1
+                            },
+                            {
+                                "kind":  "spawn",
+                                "code":  "p",
+                                "region_count":  1,
+                                "total_pixels":  1,
+                                "largest_region_pixels":  1
+                            },
+                            {
+                                "kind":  "grass",
+                                "code":  "g",
+                                "region_count":  1,
+                                "total_pixels":  89992,
+                                "largest_region_pixels":  89992
+                            },
+                            {
+                                "kind":  "garage",
+                                "code":  "a",
+                                "region_count":  1,
+                                "total_pixels":  1,
+                                "largest_region_pixels":  1
+                            }
+                        ]
+}

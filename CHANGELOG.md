@@ -9,6 +9,23 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- tests/PZMapForge.Core.Tests/Regions/RegionCrossVerificationTests.cs:
+  3 cross-verification [Fact] tests asserting the .NET RegionExtractor
+  matches the PowerShell extract-regions.ps1 reference for the same input:
+  1. TotalsMatch: total region count and total pixel count
+  2. SummaryByKindMatches: region_count, total_pixels, largest_region_pixels
+     per kind; no extra kinds in either direction
+  3. RegionDetailsMatch: kind, code, pixel_count, bounds (x,y,w,h), centroid
+     (x,y to 2 decimal places) for all 9 regions (< 20 cap)
+- tests/fixtures/regions/valid.json: PS-generated reference fixture from
+  tests/fixtures/parsed-cell/valid.json; 9 regions, 90000 pixels,
+  grass centroid (149.49, 149.51).
+
+---
+
+## [Unreleased - prev11]
+
+### Added
 - src/PZMapForge.Core/Regions/: typed .NET region extractor.
   - RegionBounds, RegionCentroid, SemanticRegion, RegionKindSummary,
     RegionExtractionResult: typed region models.
