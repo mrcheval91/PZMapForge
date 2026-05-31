@@ -1,5 +1,6 @@
 using PZMapForge.Core.Palette;
 using PZMapForge.Core.ParsedCell;
+using PZMapForge.Core.Planning;
 using PZMapForge.Core.Primitives;
 using PZMapForge.Core.Regions;
 
@@ -14,6 +15,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  parsed-cell-check --path <path>");
     Console.Error.WriteLine("  region-check      --path <path>");
     Console.Error.WriteLine("  primitive-check   --path <path>");
+    Console.Error.WriteLine("  plan-check        --path <path>");
     return 1;
 }
 
@@ -23,6 +25,7 @@ return args[0] switch
     "parsed-cell-check" => ParsedCellCheckCommand(args[1..]),
     "region-check"      => RegionCheckCommand(args[1..]),
     "primitive-check"   => PrimitiveCheckCommand(args[1..]),
+    "plan-check"        => PlanCheckCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -171,9 +174,58 @@ static int PrimitiveCheckCommand(string[] args)
     return 0;
 }
 
+static int PlanCheckCommand(string[] args)
+{
+    var jsonPath = string.Empty;
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        if (args[i] is "--path" or "-p") { jsonPath = args[i + 1]; break; }
+    }
+
+    if (string.IsNullOrWhiteSpace(jsonPath))
+    {
+        Console.Error.WriteLine("plan-check requires --path <path>");
+        return 1;
+    }
+
+    var cellResult = ParsedCellLoader.Load(jsonPath);
+    if (!cellResult.IsValid)
+    {
+        Console.WriteLine("Status:           INVALID (parsed-cell failed)");
+        foreach (var e in cellResult.Errors) Console.Error.WriteLine($"  error: {e}");
+        return 1;
+    }
+
+    var grid      = cellResult.Grid!;
+    var codeToKind = cellResult.Document!.Counts
+        .ToDictionary(c => c.Code[0], c => c.Kind)
+        .AsReadOnly();
+
+    PlanningRuleResult result;
+    try
+    {
+        var regions    = RegionExtractor.Extract(grid, codeToKind);
+        var primitives = PrimitiveClassifier.Classify(regions);
+        result         = PlanningRuleEngine.Evaluate(primitives);
+    }
+    catch (ArgumentException ex)
+    {
+        Console.WriteLine("Status:           INVALID (planning evaluation failed)");
+        Console.Error.WriteLine($"  error: {ex.Message}");
+        return 1;
+    }
+
+    Console.WriteLine($"Dimensions:       {grid.Width}x{grid.Height}");
+    Console.WriteLine($"Primitives:       {result.Summary.PrimitiveCount}");
+    Console.WriteLine($"Recommendations:  {result.RecommendationCount}");
+    Console.WriteLine($"Warnings:         {result.Summary.WarningCount}");
+    Console.WriteLine("Status:           OK");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
-    Console.Error.WriteLine("Available commands: palette-check, parsed-cell-check, region-check, primitive-check");
+    Console.Error.WriteLine("Available commands: palette-check, parsed-cell-check, region-check, primitive-check, plan-check");
     return 1;
 }

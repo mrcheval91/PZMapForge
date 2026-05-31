@@ -62,6 +62,12 @@ Classify regions into planning primitives:
 dotnet run --project src/PZMapForge.Cli -- primitive-check --path .local/mapforge/parsed-cell.json
 ```
 
+Evaluate planning rules and get deterministic recommendations:
+
+```
+dotnet run --project src/PZMapForge.Cli -- plan-check --path .local/mapforge/parsed-cell.json
+```
+
 The .NET engine does not replace the PowerShell scripts. It is a foundation
 for future typed parsing and generation capabilities.
 

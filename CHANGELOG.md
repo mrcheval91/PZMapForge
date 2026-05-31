@@ -9,6 +9,35 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- src/PZMapForge.Core/Planning/: planning rule engine.
+  - PlanningSeverity enum (Warning, Info).
+  - PlanningRecommendationType enum (10 values) + ToTypeString() extension.
+  - PlanningRecommendation: source primitive id, type, severity, role, pixel
+    count, bounds; id=0 for global recommendations.
+  - PlanningSummary: total pixels, primitive count, recommendation count,
+    warning count, counts by type and severity.
+  - PlanningRuleResult: ClaimBoundary, Recommendations, Summary.
+  - PlanningRuleEngine.Evaluate(PrimitiveClassificationResult):
+    per-primitive rules for all 7 types; tiny_building_candidate warning
+    (pixel_count <= 9); large_open_ground_area info (pixel_count > 50000);
+    missing_spawn_marker global warning; deterministic sort (severity ASC,
+    type ASC, pixel_count DESC, y ASC, x ASC, primitive_id ASC).
+- tests/PZMapForge.Core.Tests/Planning/PlanningRuleEngineTests.cs:
+  15 xUnit tests covering non-empty output, claim boundary, count consistency,
+  all 7 primitive-type mappings ([Theory]), missing spawn warning, determinism,
+  counts_by_type stability, counts_by_severity stability, source primitive id.
+- docs/PLANNING_RULES.md: rules table, thresholds, sort order, output model.
+- src/PZMapForge.Cli/Program.cs: plan-check --path command.
+
+dotnet build: 0 errors
+dotnet test:  63/63 pass (61 Core + 2 Cli)
+plan-check output: 300x300, 20 primitives, 20 recommendations, 0 warnings, OK
+
+---
+
+## [Unreleased - prev17]
+
+### Added
 - tests/test-image-mapforge.ps1 Test 11: -Resize coverage (8 assertions).
   Creates a 150x150 all-grass image, runs image-mapforge.ps1 with -Resize,
   asserts exit 0, parsed-cell.json written, width==300, height==300,
