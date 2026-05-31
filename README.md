@@ -44,6 +44,12 @@ Validate the palette via the CLI:
 dotnet run --project src/PZMapForge.Cli -- palette-check --palette source/image-palette.json
 ```
 
+Validate a parsed-cell artifact via the CLI:
+
+```
+dotnet run --project src/PZMapForge.Cli -- parsed-cell-check --path .local/mapforge/parsed-cell.json
+```
+
 The .NET engine does not replace the PowerShell scripts. It is a foundation
 for future typed parsing and generation capabilities.
 

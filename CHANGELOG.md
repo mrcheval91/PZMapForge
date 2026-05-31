@@ -9,6 +9,28 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- src/PZMapForge.Core/ParsedCell/: typed parsed-cell artifact reader.
+  - ParsedCellDocument, ParsedCellMatching, ParsedCellLegendEntry,
+    ParsedCellCount, ParsedCellDrift, ParsedCellOutputs: JSON-mapped models.
+  - SemanticGrid: InBounds(x,y), GetCode(x,y) throws on OOB, CountCode(code).
+  - ParsedCellLoadResult: IsValid, Document, Grid, Errors.
+  - ParsedCellLoader.Load(path): validates schema, claim_boundary, width==300,
+    height==300, rows count/length, counts sum==90000, all 9 required kinds.
+- src/PZMapForge.Cli/Program.cs: parsed-cell-check --path <path> command.
+- tests/PZMapForge.Core.Tests/ParsedCell/ParsedCellLoaderTests.cs:
+  11 xUnit tests (valid fixture, missing file, wrong schema, wrong claim
+  boundary, wrong width, bad row count, bad row length, counts sum mismatch,
+  missing required kind, GetCode works, GetCode out-of-bounds throws).
+- tests/fixtures/parsed-cell/valid.json: checked-in minimal 300x300 fixture
+  (292 grass + 1 each of all 8 non-grass kinds per row 0; rows 1-299 all grass;
+  counts sum == 90000; all 9 required kinds present).
+- docs/IMPLEMENTATION.md: parsed-cell reader and CLI command ratified.
+
+---
+
+## [Unreleased - prev9]
+
+### Added
 - PZMapForge.slnx: .NET 10 solution (.slnx format, dotnet 10 SDK default).
 - src/PZMapForge.Core: class library with typed palette models
   (PaletteDocument, PaletteKind, PaletteValidationResult) and PaletteLoader
