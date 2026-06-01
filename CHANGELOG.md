@@ -9,6 +9,25 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- tests/PZMapForge.Core.Tests/ImageParsing/ImageMapForgeParserCrossVerificationTests.cs:
+  6 cross-verification tests comparing ImageMapForgeParser output against
+  tests/fixtures/parsed-cell/valid.json:
+  1. HeaderFields: width==300, height==300, resized==false, claim_boundary correct
+  2. PaletteSha256: parser result matches actual source/image-palette.json hash
+     (fixture has placeholder zeros; test documents this explicitly)
+  3. AllRows: all 300 rows identical to fixture
+  4. Counts: all 9 kinds with correct pixel counts match fixture
+  5. MatchingStats: exact==90000, nearest==0, unique==9, unmapped==0
+  6. Resize: 150x150 all-grass -> 300x300 with all 90000 grass pixels
+
+dotnet test: 105/105 (98 Core + 7 Cli)
+scripts/validate.ps1: 365 PS assertions unchanged.
+
+---
+
+## [Unreleased - prev27]
+
+### Added
 - src/PZMapForge.Core/ImageParsing/ImageMapForgeOptions.cs: Resize flag
   (default false).
 - src/PZMapForge.Core/ImageParsing/ImageMapForgeResult.cs: Width, Height,
