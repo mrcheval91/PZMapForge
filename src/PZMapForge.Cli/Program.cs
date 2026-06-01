@@ -17,6 +17,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  region-check      --path <path>");
     Console.Error.WriteLine("  primitive-check   --path <path>");
     Console.Error.WriteLine("  image-check       --path <image> --palette <palette> [--resize]");
+    Console.Error.WriteLine("  image-export      --path <image> --palette <palette> [--output <dir>] [--resize]");
     Console.Error.WriteLine("  plan-check        --path <path> [--tiny-threshold <int>] [--large-threshold <int>]");
     Console.Error.WriteLine("  plan-export       --path <path> [--output <dir>] [--tiny-threshold <int>] [--large-threshold <int>]");
     return 1;
@@ -25,6 +26,7 @@ if (args.Length < 1)
 return args[0] switch
 {
     "image-check"       => ImageCheckCommand(args[1..]),
+    "image-export"      => ImageExportCommand(args[1..]),
     "palette-check"     => PaletteCheckCommand(args[1..]),
     "parsed-cell-check" => ParsedCellCheckCommand(args[1..]),
     "region-check"      => RegionCheckCommand(args[1..]),
@@ -362,6 +364,84 @@ static int ImageCheckCommand(string[] args)
     return 0;
 }
 
+static int ImageExportCommand(string[] args)
+{
+    var imagePath   = string.Empty;
+    var palettePath = string.Empty;
+    var outputDir   = string.Empty;
+    var resize      = false;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if      (args[i] is "--path"    or "-p" && i + 1 < args.Length) imagePath   = args[++i];
+        else if (args[i] is "--palette" && i + 1 < args.Length)          palettePath = args[++i];
+        else if (args[i] is "--output"  or "-o" && i + 1 < args.Length) outputDir   = args[++i];
+        else if (args[i] is "--resize")                                   resize      = true;
+    }
+
+    if (string.IsNullOrWhiteSpace(imagePath))
+    {
+        Console.Error.WriteLine("image-export requires --path <image>");
+        return 1;
+    }
+    if (string.IsNullOrWhiteSpace(palettePath))
+    {
+        Console.Error.WriteLine("image-export requires --palette <palette>");
+        return 1;
+    }
+
+    // Default output: .local/mapforge relative to CWD
+    if (string.IsNullOrWhiteSpace(outputDir))
+        outputDir = Path.Combine(Directory.GetCurrentDirectory(), ".local", "mapforge");
+
+    // Safety: output must be inside a .local/ directory
+    var outputFull  = Path.GetFullPath(outputDir);
+    var localMarker = Path.DirectorySeparatorChar + ".local" + Path.DirectorySeparatorChar;
+    if (!outputFull.Contains(localMarker, StringComparison.OrdinalIgnoreCase) &&
+        !outputFull.EndsWith(Path.DirectorySeparatorChar + ".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"image-export: refusing to write outside a .local/ directory: {outputFull}");
+        return 1;
+    }
+
+    // Parse image
+    ImageMapForgeResult parseResult;
+    PaletteLoader.Load(palettePath); // early validation — actual load happens inside parser
+    try
+    {
+        var opts    = new ImageMapForgeOptions { Resize = resize };
+        parseResult = ImageMapForgeParser.Parse(imagePath, palettePath, opts);
+    }
+    catch (ArgumentException ex)
+    {
+        Console.WriteLine("Status:   INVALID");
+        Console.Error.WriteLine($"  error: {ex.Message}");
+        return 1;
+    }
+
+    // Load palette document for legend building
+    var paletteResult = PaletteLoader.Load(palettePath);
+    if (!paletteResult.IsValid)
+    {
+        Console.WriteLine("Status:   INVALID (palette)");
+        foreach (var e in paletteResult.Errors) Console.Error.WriteLine($"  error: {e}");
+        return 1;
+    }
+
+    // Write artifact
+    var jsonPath = ImageMapForgeArtifactWriter.Write(
+        outputFull, imagePath, palettePath, paletteResult.Document!, parseResult);
+
+    Console.WriteLine($"Parsed cell: {jsonPath}");
+    Console.WriteLine($"Dimensions:  {parseResult.Width}x{parseResult.Height}");
+    Console.WriteLine($"Resized:     {parseResult.Resized}");
+    Console.WriteLine($"Kinds:       {parseResult.Counts.Count(c => c.Pixels > 0)}");
+    Console.WriteLine($"Pixels:      {parseResult.Counts.Sum(c => c.Pixels)}");
+    Console.WriteLine("Status:      OK");
+    return 0;
+}
+
 /// <summary>
 /// Parses optional --tiny-threshold and --large-threshold from args.
 /// Returns (options, 0) on success, (null, 1) on any parse or validation error.
@@ -411,6 +491,6 @@ static (PlanningRuleOptions? Options, int ErrorCode) ParsePlanningOptions(string
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
-    Console.Error.WriteLine("Available commands: image-check, palette-check, parsed-cell-check, region-check, primitive-check, plan-check, plan-export");
+    Console.Error.WriteLine("Available commands: image-check, image-export, palette-check, parsed-cell-check, region-check, primitive-check, plan-check, plan-export");
     return 1;
 }

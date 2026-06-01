@@ -9,6 +9,28 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- src/PZMapForge.Core/ImageParsing/ImageMapForgeArtifactWriter.cs: writes
+  parsed-cell.json from ImageMapForgeResult + PaletteDocument. Builds a full
+  ParsedCellDocument (schema, tool, claim_boundary, source/palette paths and
+  SHA-256, width/height/resized, matching, legend, counts, nearest_drift, rows,
+  outputs). Output is loadable by ParsedCellLoader and compatible with the full
+  .NET downstream pipeline.
+- src/PZMapForge.Cli/Program.cs: image-export --path --palette [--output]
+  [--resize] command. Defaults to .local/mapforge. Refuses output outside
+  .local/. Calls ImageMapForgeArtifactWriter.Write().
+- tests/PZMapForge.Core.Tests/ImageParsing/ImageMapForgeArtifactWriterTests.cs:
+  9 xUnit tests (file created, schema, claim_boundary, dims, rows, counts,
+  resized flag, determinism, loadable by ParsedCellLoader).
+
+dotnet build: 0 errors, 0 warnings
+dotnet test:  117/117 (107 Core + 10 Cli)
+scripts/validate.ps1: 365 PS assertions unchanged.
+
+---
+
+## [Unreleased - prev29]
+
+### Added
 - src/PZMapForge.Cli/Program.cs: image-check --path --palette [--resize] command.
   Calls ImageMapForgeParser.Parse(). Prints image/palette paths, dimensions,
   resized flag, row count, kind count, exact/nearest/unmapped pixels, palette

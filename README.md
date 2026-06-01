@@ -50,6 +50,12 @@ With resize (non-300x300 input):
 dotnet run --project src/PZMapForge.Cli -- image-check --path mymap-150x150.png --palette source/image-palette.json --resize
 ```
 
+Export image to parsed-cell.json (image-export):
+
+```
+dotnet run --project src/PZMapForge.Cli -- image-export --path .local/mapforge/sample-input.png --palette source/image-palette.json --output .local/mapforge
+```
+
 Validate the palette via the CLI:
 
 ```

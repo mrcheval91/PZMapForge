@@ -17,15 +17,20 @@ It is designed for fast iteration when the WorldEd GUI path is too slow or fragi
 - Windows-only (System.Drawing.Common/GDI+).
 - Claim boundary: `planning_artifact_only_not_pz_load_tested`.
 
-CLI command:
+CLI commands:
 
 ```
 image-check --path <image> --palette <palette> [--resize]
 ```
+Read-only: prints dimensions, resized, row/kind counts, exact/nearest/unmapped
+pixel counts, palette SHA-256, and status. Does not write artifact files.
 
-Prints image path, palette path, dimensions, resized flag, row/kind counts,
-exact/nearest/unmapped pixel counts, palette SHA-256, and status. Exits 0 on
-success, 1 on error. Does not write any local artifact files.
+```
+image-export --path <image> --palette <palette> [--output <dir>] [--resize]
+```
+Writes `parsed-cell.json` to `--output` (default `.local/mapforge`). Refuses
+output outside a `.local/` directory. Output is loadable by `ParsedCellLoader`
+and compatible with the full .NET downstream pipeline.
 
 ## What it does
 
