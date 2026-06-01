@@ -9,6 +9,26 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- scripts/Run-Phase3ALocalPzSurvey.ps1: read-only Phase 3A survey helper.
+  Accepts optional -PzRoot parameter. Searches 4 common Steam paths for PZ.
+  If found: inventories media/ and media/tiles/ (file count/extensions
+  bucketed), searches tilesheet names for semantic-kind keywords, probes
+  build version. Writes full local report (with paths) and redacted report
+  (yes/no + buckets, no exact paths/names) to .local/pzmapforge/surveys/.
+  Exits 0 even when PZ install is not found. Never copies assets.
+
+### Changed
+- docs/PHASE_3A_LOCAL_INSTALL_SURVEY.md: "Claude-assisted survey helper"
+  section added (how to run, what is automated, what the operator must verify).
+- README.md: survey helper command added under Phase 3A link.
+- docs/IMPLEMENTATION.md: survey helper row added.
+- CHANGELOG.md: this entry.
+
+No code changes. No validation count changes.
+PZ install not found at default paths; operator must pass -PzRoot if PZ
+is installed at a non-standard location.
+
+### Added
 - docs/PHASE_3A_LOCAL_INSTALL_SURVEY.md: operator survey guide for local PZ
   install inventory. Provides 8-step PowerShell survey (locate install, check
   build version, list media/, survey tiles/, sample tilesheet names, count

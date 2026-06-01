@@ -225,6 +225,12 @@ examples/
 - [Phase 2B / Phase 3 decision](docs/PHASE_2B_OR_PHASE_3_DECISION.md) — Phase 2B (layer authoring) chosen over Phase 3 (PZ tile IDs)
 - [Phase 3 local PZ config spec](docs/PHASE_3_LOCAL_PZ_CONFIG_SPEC.md) — precondition documentation for local tile ID mapping; not implemented
 - [Phase 3A local install survey](docs/PHASE_3A_LOCAL_INSTALL_SURVEY.md) — operator survey guide: locate PZ install, inventory tiles, document findings
+
+Run the automated read-only survey helper (writes to `.local/`, gitignored):
+
+```
+powershell -ExecutionPolicy Bypass -File "scripts\Run-Phase3ALocalPzSurvey.ps1"
+```
 - [Layer authoring guide](docs/LAYER_AUTHORING_GUIDE.md) — manifest format, kind-by-layer table, precedence, conflict policy, workflow, error glossary
 
 Validate a layer manifest and images without writing artifacts (layer-validate):

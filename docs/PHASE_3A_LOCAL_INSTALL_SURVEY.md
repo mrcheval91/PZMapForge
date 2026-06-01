@@ -48,6 +48,57 @@ Committed docs use placeholders: [PZ_INSTALL_ROOT], [tiles_count], etc.
 
 ---
 
+## Claude-assisted survey helper
+
+A helper script automates the read-only portions of this survey.
+
+### How to run
+
+    powershell -ExecutionPolicy Bypass -File "scripts\Run-Phase3ALocalPzSurvey.ps1"
+
+If PZ is not in a standard Steam location, pass the path explicitly:
+
+    powershell -ExecutionPolicy Bypass -File "scripts\Run-Phase3ALocalPzSurvey.ps1" `
+        -PzRoot "D:\SteamLibrary\steamapps\common\ProjectZomboid"
+
+### What the script automates
+
+- Searches common Steam paths for a PZ installation.
+- Checks whether media/ and media/tiles/ exist.
+- Counts files by extension, bucketed (no exact counts in redacted output).
+- Searches tilesheet file names for semantic kind keywords (grass, road, etc.).
+- Probes build version from .bat files (read-only).
+- Confirms repo media/maps/ is untouched.
+- Writes two local survey files to .local/pzmapforge/surveys/:
+    pz-install-survey-latest.txt            (full, with local paths)
+    pz-install-survey-redacted-latest.md    (redacted, yes/no and buckets only)
+
+### What the script cannot decide
+
+- Whether a tilesheet name actually maps to a given semantic kind.
+  (Names may hint at meaning but cannot be confirmed without visual inspection.)
+- Whether the discovered tile GID range is correct for the target build.
+- Whether the build version is 41 or 42.
+  (May require manual inspection of the exe or Steam manifest.)
+- The operator must still fill in the placeholder table and write PHASE_3A_DECISION.md.
+
+### What the operator must still verify
+
+After running the script:
+1. Check the redacted report at .local/pzmapforge/surveys/pz-install-survey-redacted-latest.md.
+2. Manually verify which tile sheets visually represent each semantic kind.
+3. Note approximate GID ranges per kind (do not commit exact GIDs).
+4. Fill in the placeholder table (see "What to paste back" section below).
+5. Write docs/PHASE_3A_DECISION.md using the placeholder table only.
+
+### Notes
+
+- Do NOT commit either survey file.
+- Do NOT paste local paths or tilesheet names into committed docs.
+- The .local/ directory is already gitignored.
+
+---
+
 ## Step 1: Locate the Project Zomboid install
 
 Run each block in PowerShell from the repo root.
