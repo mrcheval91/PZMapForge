@@ -1,10 +1,15 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Local validation for PZMapForge.
-    Runs new-test-image.ps1, image-mapforge.ps1, checks outputs, then
-    runs the full hardening test harness at tests/test-image-mapforge.ps1.
-    Exits nonzero if anything fails.
+    Full local validation for PZMapForge.
+    Runs all PowerShell validation sub-scripts and finishes with a ledger
+    summary. All sub-scripts must pass; exits nonzero on any failure.
+
+    Final output reports the complete PowerShell validation lane total (381)
+    and the .NET lane total (152) as separate evidence lanes.
+    Counts are sourced from proof-packet v0.10 / docs/VALIDATION_LEDGER.md.
+    Do not edit the constants below without also updating the proof packet
+    schema and the validation ledger.
 #>
 
 Set-StrictMode -Version Latest
@@ -123,4 +128,51 @@ if ($LASTEXITCODE -ne 0) { throw "write-proof-packet.ps1 failed." }
 if ($LASTEXITCODE -ne 0) { throw "Proof packet validation failed." }
 
 Write-Output ""
+Write-Output "========================================"
+Write-Output "PZMapForge validation summary"
+Write-Output "========================================"
+
+# ---------------------------------------------------------------------------
+# Ledger constants — sourced from proof-packet v0.10 / docs/VALIDATION_LEDGER.md.
+# Update here when counts change; update the proof packet schema and ledger too.
+# ---------------------------------------------------------------------------
+
+$psChecks = [ordered]@{
+    'Schema file sanity'            = 136
+    'Artifact contract'             = 40
+    'Palette SHA-256 verification'  = 5
+    'TMX integrity'                 = 21
+    'Hardening harness'             = 36
+    'Region extraction'             = 24
+    'Primitive classification'      = 22
+    'Plan recommendations contract' = 28
+    'Proof packet'                  = 69
+}
+$psTotal = 381   # = validation_summary.total_expected_assertions in proof-packet v0.10
+
+$dnCoreTests = 123   # PZMapForge.Core.Tests
+$dnCliTests  = 29    # PZMapForge.Cli.Tests
+$dnTotal     = 152   # = dotnet_validation_summary.test_total in proof-packet v0.10
+
+Write-Output ""
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.10):"
+foreach ($kv in $psChecks.GetEnumerator()) {
+    Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
+}
+Write-Output "    -------------------------------------- ----"
+Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
+
+Write-Output ""
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.10 -- tracked separately):"
+Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
+Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
+Write-Output "    -------------------------------------- ----"
+Write-Output ("    {0,-34} {1,4}" -f "Total:", $dnTotal)
+
+Write-Output ""
+Write-Output ("  PS {0} + .NET {1} = two separate evidence lanes, not summed." -f $psTotal, $dnTotal)
+Write-Output "  Claim boundary: planning_artifact_only_not_pz_load_tested"
+Write-Output ""
+Write-Output "========================================"
 Write-Output "Validation passed."
+Write-Output "========================================"

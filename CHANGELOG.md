@@ -8,6 +8,25 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Changed
+- scripts/validate.ps1: final output now prints the full validation ledger
+  summary. PowerShell lane (381 total, 9 checks) and .NET lane (152 total,
+  Core 123 + CLI 29) are shown as separate tables. Both are stated not to be
+  summed. Claim boundary printed. "Validation passed." still the final line.
+  Constants sourced from proof-packet v0.10 / VALIDATION_LEDGER.md; comment
+  in script directs maintainer to update proof packet schema and ledger too.
+- docs/IMPLEMENTATION.md: validate.ps1 ledger summary row added.
+- CHANGELOG.md: this entry.
+
+dotnet build: 0 errors
+dotnet test:  152/152
+test-proof-packet.ps1: 69/69 (unchanged)
+validate.ps1: Validation passed. PS 381 + .NET 152.
+
+---
+
+## Previous
+
 ### Added
 - docs/VALIDATION_LEDGER.md: operator-readable ledger for both validation lanes.
   Documents PowerShell lane (381 assertions, 9 scripts), .NET lane (152 tests,

@@ -30,6 +30,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Plan-recommendations artifact contract | Ratified | test-plan-recommendations-contract.ps1: 28 assertions pass (+7 thresholds_used checks) |
 | Proof packet v0.10 (dotnet_validation_summary added; PS total=381) | Ratified | test-proof-packet.ps1: 69 assertions pass; dotnet lane separate |
 | Validation ledger (docs/VALIDATION_LEDGER.md) | Ratified | Both lanes documented; baseline cac517c; commands and expected counts recorded |
+| validate.ps1 ledger summary | Ratified | Final output reports PS lane (381 total) and .NET lane (152 total) separately; claim boundary stated |
 | .NET plan artifact cross-verification | Ratified | PlanningArtifactCrossVerificationTests: 3 [Fact] methods verify header fields, all 13 recommendations, and summary against committed fixture |
 | Semantic region extraction (4-neighbor BFS) | Ratified | test-region-extraction.ps1: 24 assertions pass |
 | Primitive classification (9 kinds to 7 types) | Ratified | test-primitive-classification.ps1: 22 assertions pass |
