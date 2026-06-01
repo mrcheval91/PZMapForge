@@ -160,7 +160,29 @@ The following are not claimed and must not be added without documented evidence:
 
 ---
 
-## First implementation slice: Slice 2B-1
+## Slice 2B-1: COMPLETE
+
+Files added:
+  docs/LAYER_AUTHORING_GUIDE.md
+  tests/fixtures/layers/README.md
+  tests/fixtures/layers/example-2b/layer-manifest.json
+  tests/fixtures/layers/example-2b/README.md
+
+No binary images. No code changes. No validation count changes.
+
+## Next implementation slice: Slice 2B-2
+
+Candidate work:
+  Add a fixture-generator script or test helper that deterministically
+  creates the example-2b PNG images so the example can be run end-to-end
+  without hand-drawn files.
+
+OR continue toward Phase 3 conditions:
+  Document the local PZ install config mechanism spec before coding it.
+
+---
+
+## First implementation slice (archived): Slice 2B-1
 
 Slice 2B-1: Layer authoring guide and fixture pack
 

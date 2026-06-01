@@ -31,6 +31,8 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Proof packet v0.10 (dotnet_validation_summary added; PS total=381) | Ratified | test-proof-packet.ps1: 69 assertions pass; dotnet lane separate |
 | Proof packet v0.11 (Phase 2A; .NET 184; PS total=391) | Ratified | test-proof-packet.ps1: 79 assertions pass; layer_pipeline fields added |
 | Phase 2B/3 decision record (docs/PHASE_2B_OR_PHASE_3_DECISION.md) | Ratified | Phase 2B (layer authoring conventions) chosen; Phase 3 (PZ tile IDs) deferred; Slice 2B-1 defined |
+| Layer authoring guide (Slice 2B-1) | Ratified | docs/LAYER_AUTHORING_GUIDE.md: claim boundary, workflow, kind-by-layer table, precedence, conflict policy, error glossary, non-claims |
+| Layer fixture examples (Slice 2B-1) | Ratified | tests/fixtures/layers/README.md + example-2b/ (manifest + README; no binary images) |
 | Validation ledger (docs/VALIDATION_LEDGER.md) | Ratified | Both lanes documented; baseline cac517c; commands and expected counts recorded |
 | validate.ps1 ledger summary | Ratified | Final output reports PS lane (381 total) and .NET lane (152 total) separately; claim boundary stated |
 | Phase 2 decision record (docs/PHASE_2_DECISION.md) | Ratified | Option A (multi-layer image conventions) chosen; Option B (PZ tile IDs) deferred; Slice 2A-1 complete |

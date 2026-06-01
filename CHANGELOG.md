@@ -8,6 +8,28 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (Slice 2B-1: layer authoring guide and fixture examples)
+- docs/LAYER_AUTHORING_GUIDE.md: claim boundary, what layer-pipeline does,
+  required manifest shape, standard layer names, kind-by-layer table,
+  precedence policy, default kind, conflict policy, authoring workflow (8 steps),
+  naming conventions, error glossary (7 errors), non-claims.
+- tests/fixtures/layers/README.md: fixture folder purpose, binary-image policy,
+  contents table, guidance for adding new fixtures.
+- tests/fixtures/layers/example-2b/layer-manifest.json: v0.1 manifest covering
+  all 9 kinds across 4 layers with standard precedence.
+- tests/fixtures/layers/example-2b/README.md: expected image descriptions per
+  layer (palette RGB values included), how to run layer-pipeline, why PNGs
+  are not committed.
+
+### Changed
+- README.md: link to LAYER_AUTHORING_GUIDE.md added.
+- docs/IMPLEMENTATION.md: Slice 2B-1 rows added.
+- docs/PHASE_2B_OR_PHASE_3_DECISION.md: Slice 2B-1 marked complete;
+  Slice 2B-2 candidate noted.
+- CHANGELOG.md: this entry.
+
+No code changes. No validation count changes.
+
 ### Added
 - docs/PHASE_2B_OR_PHASE_3_DECISION.md: Phase 2B (layer authoring conventions)
   chosen over Phase 3 (local PZ install / tile ID mapping). Documents Option A
