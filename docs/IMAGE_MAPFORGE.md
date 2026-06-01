@@ -17,6 +17,16 @@ It is designed for fast iteration when the WorldEd GUI path is too slow or fragi
 - Windows-only (System.Drawing.Common/GDI+).
 - Claim boundary: `planning_artifact_only_not_pz_load_tested`.
 
+CLI command:
+
+```
+image-check --path <image> --palette <palette> [--resize]
+```
+
+Prints image path, palette path, dimensions, resized flag, row/kind counts,
+exact/nearest/unmapped pixel counts, palette SHA-256, and status. Exits 0 on
+success, 1 on error. Does not write any local artifact files.
+
 ## What it does
 
 The MVP reads an input image, maps each pixel to a semantic cell kind, and writes:

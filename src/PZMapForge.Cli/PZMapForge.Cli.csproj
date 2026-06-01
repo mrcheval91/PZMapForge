@@ -9,6 +9,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- CA1416: CLI is Windows-only; System.Drawing.Common calls are intentional -->
+    <NoWarn>CA1416</NoWarn>
   </PropertyGroup>
 
 </Project>

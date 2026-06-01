@@ -38,6 +38,18 @@ dotnet build PZMapForge.slnx
 dotnet test PZMapForge.slnx
 ```
 
+Parse a PNG/BMP blockout image (image-check):
+
+```
+dotnet run --project src/PZMapForge.Cli -- image-check --path .local/mapforge/sample-input.png --palette source/image-palette.json
+```
+
+With resize (non-300x300 input):
+
+```
+dotnet run --project src/PZMapForge.Cli -- image-check --path mymap-150x150.png --palette source/image-palette.json --resize
+```
+
 Validate the palette via the CLI:
 
 ```

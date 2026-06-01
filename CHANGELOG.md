@@ -9,6 +9,27 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- src/PZMapForge.Cli/Program.cs: image-check --path --palette [--resize] command.
+  Calls ImageMapForgeParser.Parse(). Prints image/palette paths, dimensions,
+  resized flag, row count, kind count, exact/nearest/unmapped pixels, palette
+  SHA-256, status. Exits 0 on success, 1 on error. Does not write artifacts.
+- tests/PZMapForge.Cli.Tests/CliSmokeTests.cs: 3 new ImageMapForge smoke tests
+  (DefaultResize=false, ResizeTrue construction, Parser accessible). 10 total
+  CLI tests (was 7).
+
+### Changed
+- src/PZMapForge.Cli/PZMapForge.Cli.csproj: <NoWarn>CA1416</NoWarn> added
+  (Windows-only CLI; System.Drawing.Common calls are intentional).
+
+dotnet build: 0 errors, 0 warnings
+dotnet test:  108/108 (98 Core + 10 Cli)
+scripts/validate.ps1: 365 PS assertions unchanged.
+
+---
+
+## [Unreleased - prev28]
+
+### Added
 - tests/PZMapForge.Core.Tests/ImageParsing/ImageMapForgeParserCrossVerificationTests.cs:
   6 cross-verification tests comparing ImageMapForgeParser output against
   tests/fixtures/parsed-cell/valid.json:

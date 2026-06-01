@@ -1,3 +1,4 @@
+using PZMapForge.Core.ImageParsing;
 using PZMapForge.Core.Palette;
 using PZMapForge.Core.ParsedCell;
 using PZMapForge.Core.Planning;
@@ -15,6 +16,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  parsed-cell-check --path <path>");
     Console.Error.WriteLine("  region-check      --path <path>");
     Console.Error.WriteLine("  primitive-check   --path <path>");
+    Console.Error.WriteLine("  image-check       --path <image> --palette <palette> [--resize]");
     Console.Error.WriteLine("  plan-check        --path <path> [--tiny-threshold <int>] [--large-threshold <int>]");
     Console.Error.WriteLine("  plan-export       --path <path> [--output <dir>] [--tiny-threshold <int>] [--large-threshold <int>]");
     return 1;
@@ -22,6 +24,7 @@ if (args.Length < 1)
 
 return args[0] switch
 {
+    "image-check"       => ImageCheckCommand(args[1..]),
     "palette-check"     => PaletteCheckCommand(args[1..]),
     "parsed-cell-check" => ParsedCellCheckCommand(args[1..]),
     "region-check"      => RegionCheckCommand(args[1..]),
@@ -308,6 +311,57 @@ static int PlanExportCommand(string[] args)
     return 0;
 }
 
+static int ImageCheckCommand(string[] args)
+{
+    var imagePath   = string.Empty;
+    var palettePath = string.Empty;
+    var resize      = false;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if (args[i] is "--path"    or "-p" && i + 1 < args.Length) imagePath   = args[++i];
+        else if (args[i] is "--palette" && i + 1 < args.Length)     palettePath = args[++i];
+        else if (args[i] is "--resize")                              resize      = true;
+    }
+
+    if (string.IsNullOrWhiteSpace(imagePath))
+    {
+        Console.Error.WriteLine("image-check requires --path <image>");
+        return 1;
+    }
+    if (string.IsNullOrWhiteSpace(palettePath))
+    {
+        Console.Error.WriteLine("image-check requires --palette <palette>");
+        return 1;
+    }
+
+    ImageMapForgeResult result;
+    try
+    {
+        var opts = new ImageMapForgeOptions { Resize = resize };
+        result   = ImageMapForgeParser.Parse(imagePath, palettePath, opts);
+    }
+    catch (ArgumentException ex)
+    {
+        Console.WriteLine($"Status:          INVALID");
+        Console.Error.WriteLine($"  error: {ex.Message}");
+        return 1;
+    }
+
+    Console.WriteLine($"Image:           {imagePath}");
+    Console.WriteLine($"Palette:         {palettePath}");
+    Console.WriteLine($"Dimensions:      {result.Width}x{result.Height}");
+    Console.WriteLine($"Resized:         {result.Resized}");
+    Console.WriteLine($"Row count:       {result.Rows.Count}");
+    Console.WriteLine($"Kind count:      {result.Counts.Count(c => c.Pixels > 0)}");
+    Console.WriteLine($"Exact pixels:    {result.Matching.ExactPixels}");
+    Console.WriteLine($"Nearest pixels:  {result.Matching.NearestPixels}");
+    Console.WriteLine($"Unmapped:        {result.Matching.UnmappedExactColours}");
+    Console.WriteLine($"Palette SHA-256: {result.PaletteSha256}");
+    Console.WriteLine("Status:          OK");
+    return 0;
+}
+
 /// <summary>
 /// Parses optional --tiny-threshold and --large-threshold from args.
 /// Returns (options, 0) on success, (null, 1) on any parse or validation error.
@@ -357,6 +411,6 @@ static (PlanningRuleOptions? Options, int ErrorCode) ParsePlanningOptions(string
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
-    Console.Error.WriteLine("Available commands: palette-check, parsed-cell-check, region-check, primitive-check, plan-check, plan-export");
+    Console.Error.WriteLine("Available commands: image-check, palette-check, parsed-cell-check, region-check, primitive-check, plan-check, plan-export");
     return 1;
 }

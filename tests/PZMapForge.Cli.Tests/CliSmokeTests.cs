@@ -1,3 +1,4 @@
+using PZMapForge.Core.ImageParsing;
 using PZMapForge.Core.Planning;
 using PZMapForge.Core.Primitives;
 using Xunit;
@@ -64,5 +65,28 @@ public sealed class CliSmokeTests
     {
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             new PlanningRuleOptions(largeGroundPixelThreshold: -1));
+    }
+
+    // -----------------------------------------------------------------------
+    // ImageMapForgeOptions -- covers the type surface used by image-check
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void ImageMapForgeOptions_DefaultResize_IsFalse()
+    {
+        Assert.False(ImageMapForgeOptions.Default.Resize);
+    }
+
+    [Fact]
+    public void ImageMapForgeOptions_ResizeTrue_CanBeConstructed()
+    {
+        Assert.True(new ImageMapForgeOptions { Resize = true }.Resize);
+    }
+
+    [Fact]
+    public void ImageMapForgeParser_IsAccessibleFromCli()
+    {
+        var t = typeof(ImageMapForgeParser);
+        Assert.Equal("ImageMapForgeParser", t.Name);
     }
 }
