@@ -1,0 +1,29 @@
+{
+  "schema": "pzmapforge.layer-manifest.v0.1",
+  "claim_boundary": "planning_artifact_only_not_pz_load_tested",
+  "width": 300,
+  "height": 300,
+  "layers": [
+    {
+      "name": "terrain",
+      "path": "terrain.png",
+      "allowed_kinds": ["grass", "industrial_yard"]
+    },
+    {
+      "name": "roads",
+      "path": "roads.png",
+      "allowed_kinds": ["road", "sidewalk"]
+    },
+    {
+      "name": "buildings",
+      "path": "buildings.png",
+      "allowed_kinds": ["row_house", "depanneur", "garage", "landmark"]
+    },
+    {
+      "name": "markers",
+      "path": "markers.png",
+      "allowed_kinds": ["spawn", "landmark"]
+    }
+  ],
+  "precedence": ["markers", "buildings", "roads", "terrain"]
+}

@@ -8,6 +8,33 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (Slice 2A-1: layer manifest schema and loader foundation)
+- schemas/pzmapforge.layer-manifest.v0.1.schema.json: JSON Schema for the
+  layer manifest format (schema, claim_boundary, width, height, layers array,
+  precedence array).
+- src/PZMapForge.Core/Layers/LayerManifest.cs: root manifest POCO.
+- src/PZMapForge.Core/Layers/LayerManifestLayer.cs: per-layer entry (name,
+  path, allowed_kinds).
+- src/PZMapForge.Core/Layers/LayerManifestLoadResult.cs: result type matching
+  existing loader pattern (IsValid, Errors, Document).
+- src/PZMapForge.Core/Layers/LayerManifestLoader.cs: Load(path) validates
+  schema sentinel, claim_boundary, 300x300 dimensions, layer non-emptiness,
+  unique layer names, non-empty paths, non-empty allowed_kinds, all kinds
+  known via PrimitiveClassifier.IsKnownKind, precedence completeness,
+  no unknown/duplicate precedence entries.
+- tests/PZMapForge.Core.Tests/Layers/LayerManifestLoaderTests.cs: 12 tests.
+- tests/fixtures/layers/valid-layer-manifest.json: 4-layer fixture.
+
+### Changed
+- docs/PHASE_2_DECISION.md: Slice 2A-1 marked complete; Slice 2A-2 defined.
+- docs/IMPLEMENTATION.md: loader row added; multi-layer row updated.
+- CHANGELOG.md: this entry.
+
+dotnet build: 0 errors
+dotnet test:  164/164 (135 Core + 29 Cli)
+PS lane:      381 assertions unchanged
+validate.ps1: Validation passed
+
 ### Added
 - docs/PHASE_2_DECISION.md: Phase 2 decision record. Option A (multi-layer
   image conventions) chosen over Option B (PZ tile ID mapping). Documents

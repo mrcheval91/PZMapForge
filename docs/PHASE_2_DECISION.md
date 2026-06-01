@@ -186,25 +186,45 @@ documented local load test mechanism.
 
 ---
 
-## Next implementation slice
+## Slice 2A-1: COMPLETE
 
-Slice 2A-1: Foundation types and schema
+Slice 2A-1 shipped in commit immediately following this decision record.
 
-Files to add:
+Files added:
   schemas/pzmapforge.layer-manifest.v0.1.schema.json
   src/PZMapForge.Core/Layers/LayerManifest.cs
+  src/PZMapForge.Core/Layers/LayerManifestLayer.cs
   src/PZMapForge.Core/Layers/LayerManifestLoader.cs
+  src/PZMapForge.Core/Layers/LayerManifestLoadResult.cs
   tests/PZMapForge.Core.Tests/Layers/LayerManifestLoaderTests.cs
+  tests/fixtures/layers/valid-layer-manifest.json
+
+Tests: 12 new (valid fixture, missing file, wrong schema, wrong claim boundary,
+  wrong dimensions, duplicate layer names, missing layer in precedence,
+  unknown layer in precedence, duplicate precedence entry, unknown allowed kind,
+  empty allowed_kinds, empty layer path).
+
+dotnet test: 164/164 (135 Core + 29 Cli). PS lane unchanged at 381.
+
+## Next implementation slice
+
+Slice 2A-2: Layer merger
+
+Files to add:
+  src/PZMapForge.Core/Layers/LayerMerger.cs
+  src/PZMapForge.Core/Layers/LayerMergeResult.cs
+  src/PZMapForge.Core/Layers/LayerMergeReport.cs
+  tests/PZMapForge.Core.Tests/Layers/LayerMergerTests.cs
 
 Deliverables:
-  LayerManifest schema: layers array, each entry has name, path, kind_restriction
-  LayerManifestLoader.Load: validates schema, returns typed result, same error
-    pattern as PaletteLoader (IsValid, Errors)
-  Unit tests: valid manifest, missing file, unknown kind, duplicate layer name
+  LayerMerger.Merge(manifest, palettePath): resolves layer image paths,
+    parses each image, merges into one SemanticGrid using precedence order.
+  Default kind for cells with no layer contribution: grass (or configurable).
+  Layer merge report: conflict count, per-layer pixel contribution summary.
+  Unit tests: single layer, two layers with overlap, full 4-layer fixture,
+    missing image file (error), conflict count correct.
 
-No CLI wiring yet. No merger yet. Foundation types only.
-
-Commit: Add layer manifest schema and loader foundation
+Commit: Add layer merger
 
 ---
 
