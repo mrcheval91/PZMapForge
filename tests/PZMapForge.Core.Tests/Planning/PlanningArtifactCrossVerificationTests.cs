@@ -131,6 +131,13 @@ public sealed class PlanningArtifactCrossVerificationTests : IDisposable
         Assert.Equal(
             ref_.GetProperty("warning_count").GetInt32(),
             gen.GetProperty("warning_count").GetInt32());
+
+        var refT = ref_.GetProperty("thresholds_used");
+        var genT = gen.GetProperty("thresholds_used");
+        Assert.Equal(refT.GetProperty("tiny_building_pixel_threshold").GetInt32(),
+                     genT.GetProperty("tiny_building_pixel_threshold").GetInt32());
+        Assert.Equal(refT.GetProperty("large_ground_pixel_threshold").GetInt32(),
+                     genT.GetProperty("large_ground_pixel_threshold").GetInt32());
     }
 
     // -----------------------------------------------------------------------

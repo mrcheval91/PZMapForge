@@ -1,16 +1,20 @@
 {
   "schema": "pzmapforge.plan-recommendations.v0.1",
   "claim_boundary": "planning_artifact_only_not_pz_load_tested",
-  "generated_at_utc": "2026-05-31T23:32:04Z",
+  "generated_at_utc": "2026-01-01T00:00:00Z",
   "source": {
     "parsed_cell_path": "E:\\Omni\\Zomboid\\PZMapForge\\tests\\fixtures\\parsed-cell\\valid.json",
-    "generated_by": "PZMapForge.Cli plan-export"
+    "generated_by": "cross-verification"
   },
   "width": 300,
   "height": 300,
   "primitive_count": 9,
   "recommendation_count": 13,
   "warning_count": 3,
+  "thresholds_used": {
+    "tiny_building_pixel_threshold": 9,
+    "large_ground_pixel_threshold": 50000
+  },
   "recommendations": [
     {
       "recommendation_id": 1,

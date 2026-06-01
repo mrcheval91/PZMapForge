@@ -295,7 +295,7 @@ static int PlanExportCommand(string[] args)
     var (jsonOut, mdOut) = PlanningArtifactWriter.Write(
         outputDir, grid.Width, grid.Height,
         Path.GetFullPath(jsonPath), "PZMapForge.Cli plan-export",
-        planResult);
+        planResult, opts);
 
     Console.WriteLine($"Plan JSON:       {jsonOut}");
     Console.WriteLine($"Plan report:     {mdOut}");

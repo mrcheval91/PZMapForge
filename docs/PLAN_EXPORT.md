@@ -41,6 +41,10 @@ Both files are written to the `--output` directory (default: `.local/mapforge/`)
   "primitive_count": 20,
   "recommendation_count": 20,
   "warning_count": 0,
+  "thresholds_used": {
+    "tiny_building_pixel_threshold": 9,
+    "large_ground_pixel_threshold": 50000
+  },
   "recommendations": [...],
   "summary": {
     "total_pixels": 90000,

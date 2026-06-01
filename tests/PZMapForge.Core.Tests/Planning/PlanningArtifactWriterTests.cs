@@ -110,7 +110,8 @@ public sealed class PlanningArtifactWriterTests : IDisposable
     {
         var (result, w, h) = BuildRuleResult();
         var (json, _) = PlanningArtifactWriter.Write(
-            _tempDir, w, h, ParsedCellFixture, "test", result, FixedTs);
+            _tempDir, w, h, ParsedCellFixture, "test", result,
+            overrideGeneratedAt: FixedTs);
 
         var doc = JsonDocument.Parse(File.ReadAllText(json));
         Assert.Equal(result.RecommendationCount,
@@ -126,7 +127,8 @@ public sealed class PlanningArtifactWriterTests : IDisposable
     {
         var (result, w, h) = BuildRuleResult();
         var (json, _) = PlanningArtifactWriter.Write(
-            _tempDir, w, h, ParsedCellFixture, "test", result, FixedTs);
+            _tempDir, w, h, ParsedCellFixture, "test", result,
+            overrideGeneratedAt: FixedTs);
 
         var doc = JsonDocument.Parse(File.ReadAllText(json));
         Assert.Equal(result.Summary.WarningCount,
@@ -150,6 +152,48 @@ public sealed class PlanningArtifactWriterTests : IDisposable
     // Test 8: deterministic output with fixed timestamp
     // -----------------------------------------------------------------------
 
+    // -----------------------------------------------------------------------
+    // Test 9: default thresholds are recorded in the artifact
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Write_DefaultThresholds_AreRecorded()
+    {
+        var (result, w, h) = BuildRuleResult();
+        var (json, _) = PlanningArtifactWriter.Write(
+            _tempDir, w, h, ParsedCellFixture, "test", result,
+            overrideGeneratedAt: FixedTs);
+
+        var doc = JsonDocument.Parse(File.ReadAllText(json));
+        var thresholds = doc.RootElement.GetProperty("thresholds_used");
+        Assert.Equal(9,      thresholds.GetProperty("tiny_building_pixel_threshold").GetInt32());
+        Assert.Equal(50_000, thresholds.GetProperty("large_ground_pixel_threshold").GetInt32());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 10: custom thresholds are recorded in the artifact
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Write_CustomThresholds_AreRecorded()
+    {
+        var (result, w, h) = BuildRuleResult();
+        var customOpts = new PZMapForge.Core.Planning.PlanningRuleOptions(
+            tinyBuildingPixelThreshold: 0, largeGroundPixelThreshold: 100_000);
+        var (json, _) = PlanningArtifactWriter.Write(
+            _tempDir, w, h, ParsedCellFixture, "test", result,
+            options: customOpts, overrideGeneratedAt: FixedTs);
+
+        var doc = JsonDocument.Parse(File.ReadAllText(json));
+        var thresholds = doc.RootElement.GetProperty("thresholds_used");
+        Assert.Equal(0,       thresholds.GetProperty("tiny_building_pixel_threshold").GetInt32());
+        Assert.Equal(100_000, thresholds.GetProperty("large_ground_pixel_threshold").GetInt32());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 8: deterministic output with fixed timestamp
+    // -----------------------------------------------------------------------
+
     [Fact]
     public void Write_IsDeterministic()
     {
@@ -161,9 +205,11 @@ public sealed class PlanningArtifactWriterTests : IDisposable
         Directory.CreateDirectory(dir2);
 
         var (j1, _) = PlanningArtifactWriter.Write(
-            dir1, w, h, ParsedCellFixture, "test", result, FixedTs);
+            dir1, w, h, ParsedCellFixture, "test", result,
+            overrideGeneratedAt: FixedTs);
         var (j2, _) = PlanningArtifactWriter.Write(
-            dir2, w, h, ParsedCellFixture, "test", result, FixedTs);
+            dir2, w, h, ParsedCellFixture, "test", result,
+            overrideGeneratedAt: FixedTs);
 
         Assert.Equal(File.ReadAllText(j1), File.ReadAllText(j2));
     }

@@ -24,18 +24,20 @@ public static class PlanningArtifactWriter
     /// Pass <paramref name="overrideGeneratedAt"/> in tests to get deterministic output.
     /// </summary>
     public static (string JsonPath, string MdPath) Write(
-        string          outputDir,
-        int             width,
-        int             height,
-        string          parsedCellPath,
-        string          generatedBy,
-        PlanningRuleResult result,
-        DateTimeOffset? overrideGeneratedAt = null)
+        string               outputDir,
+        int                  width,
+        int                  height,
+        string               parsedCellPath,
+        string               generatedBy,
+        PlanningRuleResult   result,
+        PlanningRuleOptions? options             = null,
+        DateTimeOffset?      overrideGeneratedAt = null)
     {
         Directory.CreateDirectory(outputDir);
 
-        var ts      = overrideGeneratedAt ?? DateTimeOffset.UtcNow;
-        var jsonDoc = BuildDocument(ts, width, height, parsedCellPath, generatedBy, result);
+        var effectiveOpts = options ?? PlanningRuleOptions.Default;
+        var ts            = overrideGeneratedAt ?? DateTimeOffset.UtcNow;
+        var jsonDoc       = BuildDocument(ts, width, height, parsedCellPath, generatedBy, result, effectiveOpts);
 
         var jsonPath = Path.Combine(outputDir, "plan-recommendations.json");
         var mdPath   = Path.Combine(outputDir, "plan-report.md");
@@ -43,7 +45,7 @@ public static class PlanningArtifactWriter
         using (var fs = File.Create(jsonPath))
             JsonSerializer.Serialize(fs, jsonDoc, JsonOpts);
 
-        File.WriteAllText(mdPath, BuildMarkdown(ts, parsedCellPath, result), System.Text.Encoding.UTF8);
+        File.WriteAllText(mdPath, BuildMarkdown(ts, parsedCellPath, result, effectiveOpts), System.Text.Encoding.UTF8);
 
         return (jsonPath, mdPath);
     }
@@ -55,7 +57,7 @@ public static class PlanningArtifactWriter
     private static PlanDoc BuildDocument(
         DateTimeOffset ts, int width, int height,
         string parsedCellPath, string generatedBy,
-        PlanningRuleResult result)
+        PlanningRuleResult result, PlanningRuleOptions options)
     {
         var recs = result.Recommendations
             .Select((r, i) => new RecEntry
@@ -98,6 +100,11 @@ public static class PlanningArtifactWriter
             PrimitiveCount     = s.PrimitiveCount,
             RecommendationCount = result.RecommendationCount,
             WarningCount       = s.WarningCount,
+            ThresholdsUsed     = new ThresholdsEntry
+            {
+                TinyBuildingPixelThreshold = options.TinyBuildingPixelThreshold,
+                LargeGroundPixelThreshold  = options.LargeGroundPixelThreshold,
+            },
             Recommendations    = recs,
             Summary            = summary,
         };
@@ -108,7 +115,8 @@ public static class PlanningArtifactWriter
     // -----------------------------------------------------------------------
 
     private static string BuildMarkdown(
-        DateTimeOffset ts, string parsedCellPath, PlanningRuleResult result)
+        DateTimeOffset ts, string parsedCellPath, PlanningRuleResult result,
+        PlanningRuleOptions options)
     {
         var sb = new System.Text.StringBuilder();
         var s  = result.Summary;
@@ -131,6 +139,8 @@ public static class PlanningArtifactWriter
         sb.AppendLine($"| Recommendations | {s.RecommendationCount} |");
         sb.AppendLine($"| Warnings | {s.WarningCount} |");
         sb.AppendLine($"| Total pixels | {s.TotalPixels} |");
+        sb.AppendLine($"| Tiny building threshold | {options.TinyBuildingPixelThreshold} |");
+        sb.AppendLine($"| Large ground threshold | {options.LargeGroundPixelThreshold} |");
         sb.AppendLine();
 
         // Warnings first
@@ -186,8 +196,15 @@ public static class PlanningArtifactWriter
         public int     PrimitiveCount      { get; init; }
         public int     RecommendationCount { get; init; }
         public int     WarningCount        { get; init; }
+        public ThresholdsEntry ThresholdsUsed { get; init; } = new();
         public List<RecEntry> Recommendations { get; init; } = [];
         public SummaryEntry   Summary         { get; init; } = new();
+    }
+
+    private sealed class ThresholdsEntry
+    {
+        public int TinyBuildingPixelThreshold { get; init; }
+        public int LargeGroundPixelThreshold  { get; init; }
     }
 
     private sealed class SourceEntry

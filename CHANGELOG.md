@@ -9,6 +9,32 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- plan-recommendations.json now includes thresholds_used object
+  (tiny_building_pixel_threshold, large_ground_pixel_threshold) recording
+  the PlanningRuleOptions values active during export.
+
+### Changed
+- PlanningArtifactWriter.Write: added PlanningRuleOptions? options = null
+  parameter (before overrideGeneratedAt). Defaults to PlanningRuleOptions.Default
+  when null. Backward-compatible via default and named arguments.
+- PlanExportCommand: passes parsed opts to PlanningArtifactWriter.Write.
+- schemas/pzmapforge.plan-recommendations.v0.1.schema.json: thresholds_used
+  added to required and properties.
+- tests/fixtures/plan-recommendations/valid.json: regenerated with
+  thresholds_used: {tiny_building_pixel_threshold: 9, large_ground_pixel_threshold: 50000}.
+- PlanningArtifactWriterTests: 2 new tests (default/custom thresholds recorded).
+  10 total (was 8).
+- PlanningArtifactCrossVerificationTests: thresholds_used fields added to
+  CrossVerify_HeaderFieldsMatch.
+
+dotnet test: 89/89 (82 Core + 7 Cli)
+scripts/validate.ps1: 358 PS assertions unchanged.
+
+---
+
+## [Unreleased - prev24]
+
+### Added
 - src/PZMapForge.Cli/Program.cs: --tiny-threshold and --large-threshold optional
   flags for plan-check and plan-export. ParsePlanningOptions() helper parses
   both flags, returns (PlanningRuleOptions?, errorCode). Non-integer value or
