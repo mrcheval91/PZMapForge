@@ -18,6 +18,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("  primitive-check   --path <path>");
     Console.Error.WriteLine("  image-check       --path <image> --palette <palette> [--resize]");
     Console.Error.WriteLine("  image-export      --path <image> --palette <palette> [--output <dir>] [--resize]");
+    Console.Error.WriteLine("  full-pipeline     --path <image> --palette <palette> [--output <dir>] [--resize]");
+    Console.Error.WriteLine("                    [--tiny-threshold <int>] [--large-threshold <int>]");
     Console.Error.WriteLine("  plan-check        --path <path> [--tiny-threshold <int>] [--large-threshold <int>]");
     Console.Error.WriteLine("  plan-export       --path <path> [--output <dir>] [--tiny-threshold <int>] [--large-threshold <int>]");
     return 1;
@@ -27,6 +29,7 @@ return args[0] switch
 {
     "image-check"       => ImageCheckCommand(args[1..]),
     "image-export"      => ImageExportCommand(args[1..]),
+    "full-pipeline"     => FullPipelineCommand(args[1..]),
     "palette-check"     => PaletteCheckCommand(args[1..]),
     "parsed-cell-check" => ParsedCellCheckCommand(args[1..]),
     "region-check"      => RegionCheckCommand(args[1..]),
@@ -442,6 +445,115 @@ static int ImageExportCommand(string[] args)
     return 0;
 }
 
+static int FullPipelineCommand(string[] args)
+{
+    var imagePath   = string.Empty;
+    var palettePath = string.Empty;
+    var outputDir   = string.Empty;
+    var resize      = false;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if      (args[i] is "--path"    or "-p" && i + 1 < args.Length) imagePath   = args[++i];
+        else if (args[i] is "--palette" && i + 1 < args.Length)          palettePath = args[++i];
+        else if (args[i] is "--output"  or "-o" && i + 1 < args.Length) outputDir   = args[++i];
+        else if (args[i] is "--resize")                                   resize      = true;
+    }
+
+    if (string.IsNullOrWhiteSpace(imagePath))   { Console.Error.WriteLine("full-pipeline requires --path <image>");   return 1; }
+    if (string.IsNullOrWhiteSpace(palettePath)) { Console.Error.WriteLine("full-pipeline requires --palette <palette>"); return 1; }
+
+    if (string.IsNullOrWhiteSpace(outputDir))
+        outputDir = Path.Combine(Directory.GetCurrentDirectory(), ".local", "mapforge");
+
+    var outputFull  = Path.GetFullPath(outputDir);
+    var localMarker = Path.DirectorySeparatorChar + ".local" + Path.DirectorySeparatorChar;
+    if (!outputFull.Contains(localMarker, StringComparison.OrdinalIgnoreCase) &&
+        !outputFull.EndsWith(Path.DirectorySeparatorChar + ".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine($"full-pipeline: refusing to write outside a .local/ directory: {outputFull}");
+        return 1;
+    }
+
+    var (planOpts, planErr) = ParsePlanningOptions(args);
+    if (planErr != 0) return planErr;
+
+    // --- Step 1: parse image ---
+    ImageMapForgeResult parseResult;
+    try
+    {
+        var imgOpts = new ImageMapForgeOptions { Resize = resize };
+        parseResult = ImageMapForgeParser.Parse(imagePath, palettePath, imgOpts);
+    }
+    catch (ArgumentException ex)
+    {
+        Console.WriteLine("Status:           INVALID (image parse failed)");
+        Console.Error.WriteLine($"  error: {ex.Message}");
+        return 1;
+    }
+
+    // --- Step 2: write parsed-cell.json ---
+    var paletteResult = PaletteLoader.Load(palettePath);
+    if (!paletteResult.IsValid)
+    {
+        Console.WriteLine("Status:           INVALID (palette)");
+        foreach (var e in paletteResult.Errors) Console.Error.WriteLine($"  error: {e}");
+        return 1;
+    }
+    var parsedCellPath = ImageMapForgeArtifactWriter.Write(
+        outputFull, imagePath, palettePath, paletteResult.Document!, parseResult);
+
+    // --- Step 3: build SemanticGrid ---
+    var cellResult = ParsedCellLoader.Load(parsedCellPath);
+    if (!cellResult.IsValid)
+    {
+        Console.WriteLine("Status:           INVALID (parsed-cell load failed)");
+        foreach (var e in cellResult.Errors) Console.Error.WriteLine($"  error: {e}");
+        return 1;
+    }
+    var grid      = cellResult.Grid!;
+    var codeToKind = cellResult.Document!.Counts
+        .ToDictionary(c => c.Code[0], c => c.Kind)
+        .AsReadOnly();
+
+    // --- Steps 4-6: regions, primitives, planning ---
+    PlanningRuleResult planResult;
+    RegionExtractionResult regions;
+    PrimitiveClassificationResult primitives;
+    try
+    {
+        regions    = RegionExtractor.Extract(grid, codeToKind);
+        primitives = PrimitiveClassifier.Classify(regions);
+        planResult = PlanningRuleEngine.Evaluate(primitives, planOpts!);
+    }
+    catch (ArgumentException ex)
+    {
+        Console.WriteLine("Status:           INVALID (pipeline failed)");
+        Console.Error.WriteLine($"  error: {ex.Message}");
+        return 1;
+    }
+
+    // --- Step 7: write plan artifacts ---
+    var (planJsonPath, planMdPath) = PlanningArtifactWriter.Write(
+        outputFull, grid.Width, grid.Height,
+        Path.GetFullPath(parsedCellPath), "PZMapForge.Cli full-pipeline",
+        planResult, planOpts);
+
+    Console.WriteLine($"Parsed cell:      {parsedCellPath}");
+    Console.WriteLine($"Plan JSON:        {planJsonPath}");
+    Console.WriteLine($"Plan report:      {planMdPath}");
+    Console.WriteLine($"Dimensions:       {grid.Width}x{grid.Height}");
+    Console.WriteLine($"Resized:          {parseResult.Resized}");
+    Console.WriteLine($"Regions:          {regions.TotalRegions}");
+    Console.WriteLine($"Primitives:       {primitives.PrimitiveCount}");
+    Console.WriteLine($"Recommendations:  {planResult.RecommendationCount}");
+    Console.WriteLine($"Warnings:         {planResult.Summary.WarningCount}");
+    Console.WriteLine($"Tiny threshold:   {planOpts!.TinyBuildingPixelThreshold}");
+    Console.WriteLine($"Large threshold:  {planOpts!.LargeGroundPixelThreshold}");
+    Console.WriteLine("Status:           OK");
+    return 0;
+}
+
 /// <summary>
 /// Parses optional --tiny-threshold and --large-threshold from args.
 /// Returns (options, 0) on success, (null, 1) on any parse or validation error.
@@ -491,6 +603,6 @@ static (PlanningRuleOptions? Options, int ErrorCode) ParsePlanningOptions(string
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
-    Console.Error.WriteLine("Available commands: image-check, image-export, palette-check, parsed-cell-check, region-check, primitive-check, plan-check, plan-export");
+    Console.Error.WriteLine("Available commands: image-check, image-export, full-pipeline, palette-check, parsed-cell-check, region-check, primitive-check, plan-check, plan-export");
     return 1;
 }

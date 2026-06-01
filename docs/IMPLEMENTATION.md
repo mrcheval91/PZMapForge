@@ -14,6 +14,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | .NET CLI image-check command | Ratified | Exits 0; prints dims/rows/kinds/exact/nearest/unmapped/sha256/status; --resize flag supported |
 | ImageMapForgeArtifactWriter (image -> parsed-cell.json) | Ratified | 9 xUnit tests; schema/claim/dims/rows/counts/resized/determinism/loadable by ParsedCellLoader |
 | .NET CLI image-export command | Ratified | Writes parsed-cell.json to .local/; refuses non-.local output; --resize flag supported |
+| .NET CLI full-pipeline command | Ratified | Chains image parse -> parsed-cell.json -> regions -> primitives -> plan artifacts in one command; --resize and --tiny/large-threshold supported |
 | Image pixel scan (exact colour match) | Ratified | Test 9: exact grass pixel matched correctly |
 | Nearest-colour fallback with drift cache | Ratified | Test 9: near-grass mapped to grass, dist 1.73 |
 | parsed-cell.json (counts, legend, drift) | Ratified | Test 6: all 5 outputs written |

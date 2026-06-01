@@ -3,6 +3,10 @@
 `PlanningArtifactWriter.Write()` and the `plan-export` CLI command export the
 `PlanningRuleResult` to deterministic local artifacts.
 
+The `full-pipeline` command chains the entire image-to-planning workflow
+(image-export → ParsedCellLoader → RegionExtractor → PrimitiveClassifier →
+PlanningRuleEngine → PlanningArtifactWriter) in a single CLI invocation.
+
 ---
 
 ## Claim boundary

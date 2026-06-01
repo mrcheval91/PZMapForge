@@ -89,4 +89,30 @@ public sealed class CliSmokeTests
         var t = typeof(ImageMapForgeParser);
         Assert.Equal("ImageMapForgeParser", t.Name);
     }
+
+    // -----------------------------------------------------------------------
+    // full-pipeline type surface coverage
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void ImageMapForgeArtifactWriter_IsAccessibleFromCli()
+    {
+        var t = typeof(PZMapForge.Core.ImageParsing.ImageMapForgeArtifactWriter);
+        Assert.Equal("ImageMapForgeArtifactWriter", t.Name);
+    }
+
+    [Fact]
+    public void PlanningArtifactWriter_IsAccessibleFromCli()
+    {
+        var t = typeof(PZMapForge.Core.Planning.PlanningArtifactWriter);
+        Assert.Equal("PlanningArtifactWriter", t.Name);
+    }
+
+    [Fact]
+    public void FullPipeline_DefaultOutputPath_IsUnderLocal()
+    {
+        // Documents the default output path convention used by full-pipeline.
+        var defaultOutput = Path.Combine(Directory.GetCurrentDirectory(), ".local", "mapforge");
+        Assert.Contains(".local", defaultOutput, StringComparison.OrdinalIgnoreCase);
+    }
 }

@@ -32,6 +32,14 @@ Writes `parsed-cell.json` to `--output` (default `.local/mapforge`). Refuses
 output outside a `.local/` directory. Output is loadable by `ParsedCellLoader`
 and compatible with the full .NET downstream pipeline.
 
+```
+full-pipeline --path <image> --palette <palette> [--output <dir>] [--resize]
+              [--tiny-threshold <int>] [--large-threshold <int>]
+```
+Full image-to-planning pipeline in one command. Writes `parsed-cell.json`,
+`plan-recommendations.json`, and `plan-report.md`. Accepts all image and
+planning options. Refuses output outside `.local/`.
+
 ## What it does
 
 The MVP reads an input image, maps each pixel to a semantic cell kind, and writes:

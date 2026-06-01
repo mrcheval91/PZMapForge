@@ -38,6 +38,18 @@ dotnet build PZMapForge.slnx
 dotnet test PZMapForge.slnx
 ```
 
+Run the full image-to-planning pipeline in one command (full-pipeline):
+
+```
+dotnet run --project src/PZMapForge.Cli -- full-pipeline --path .local/mapforge/sample-input.png --palette source/image-palette.json --output .local/mapforge
+```
+
+With resize and custom thresholds:
+
+```
+dotnet run --project src/PZMapForge.Cli -- full-pipeline --path mymap.png --palette source/image-palette.json --output .local/mapforge --resize --tiny-threshold 0 --large-threshold 100000
+```
+
 Parse a PNG/BMP blockout image (image-check):
 
 ```

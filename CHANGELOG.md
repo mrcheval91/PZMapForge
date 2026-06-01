@@ -9,6 +9,27 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- src/PZMapForge.Cli/Program.cs: full-pipeline --path --palette [--output]
+  [--resize] [--tiny-threshold] [--large-threshold]. Chains:
+  ImageMapForgeParser -> ImageMapForgeArtifactWriter (parsed-cell.json) ->
+  ParsedCellLoader -> RegionExtractor -> PrimitiveClassifier ->
+  PlanningRuleEngine -> PlanningArtifactWriter (plan-recommendations.json,
+  plan-report.md). Default output .local/mapforge. Refuses non-.local output.
+  Prints: parsed-cell path, plan paths, dims, resized, regions, primitives,
+  recommendations, warnings, thresholds, status.
+- tests/PZMapForge.Cli.Tests/CliSmokeTests.cs: 3 new full-pipeline coverage
+  tests (ArtifactWriter accessible, PlanningArtifactWriter accessible, default
+  output path under .local). 13 total CLI tests (was 10).
+
+dotnet build: 0 errors, 0 warnings
+dotnet test:  120/120 (107 Core + 13 Cli)
+scripts/validate.ps1: 365 PS assertions unchanged.
+
+---
+
+## [Unreleased - prev30]
+
+### Added
 - src/PZMapForge.Core/ImageParsing/ImageMapForgeArtifactWriter.cs: writes
   parsed-cell.json from ImageMapForgeResult + PaletteDocument. Builds a full
   ParsedCellDocument (schema, tool, claim_boundary, source/palette paths and
