@@ -8,3 +8,6 @@ bin/
 obj/
 *.user
 .vs/
+
+# Deterministically generated fixture images (run new-example-images.ps1 to recreate)
+tests/fixtures/layers/example-2b/generated/

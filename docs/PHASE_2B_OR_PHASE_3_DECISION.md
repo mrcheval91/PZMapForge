@@ -170,15 +170,26 @@ Files added:
 
 No binary images. No code changes. No validation count changes.
 
-## Next implementation slice: Slice 2B-2
+## Slice 2B-2: COMPLETE
+
+Files added:
+  tests/fixtures/layers/example-2b/new-example-images.ps1
+  tests/fixtures/layers/example-2b/generated-layer-manifest.json
+  .gitignore (generated/ pattern added)
+  tests/fixtures/layers/example-2b/README.md (updated)
+
+Generates 4 deterministic PNGs (terrain, roads, buildings, markers).
+Pipeline verified: 4 layers, 36 expected conflicts (spawn inside row_house),
+15 regions, Status OK. Generated/ is gitignored.
+
+## Next steps
+
+Phase 2B documentation is complete.
 
 Candidate work:
-  Add a fixture-generator script or test helper that deterministically
-  creates the example-2b PNG images so the example can be run end-to-end
-  without hand-drawn files.
-
-OR continue toward Phase 3 conditions:
-  Document the local PZ install config mechanism spec before coding it.
+  - Continue toward Phase 3 conditions:
+    Document the local PZ install config mechanism spec before coding it.
+  - OR add a layer-validate CLI command (check manifest + images without merging).
 
 ---
 

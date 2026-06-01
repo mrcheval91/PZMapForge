@@ -8,6 +8,29 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (Slice 2B-2: example layer image generator)
+- tests/fixtures/layers/example-2b/new-example-images.ps1: generates 4
+  deterministic 300x300 PNGs using System.Drawing with exact palette RGB
+  values. terrain (grass + industrial_yard), roads (road grid + sidewalk
+  bands), buildings (row_house, depanneur, garage, landmark), markers (spawn).
+  Spawn at (70,70,6x6) intentionally overlaps row_house: 36 conflict cells,
+  markers wins. Script prints expected output and pipeline command.
+- tests/fixtures/layers/example-2b/generated-layer-manifest.json: manifest
+  referencing generated/terrain.png, generated/roads.png, generated/buildings.png,
+  generated/markers.png. Run after new-example-images.ps1 to exercise the full
+  layer-pipeline end-to-end.
+
+### Changed
+- .gitignore: tests/fixtures/layers/example-2b/generated/ pattern added.
+- tests/fixtures/layers/example-2b/README.md: generator instructions, layout
+  table with pixel coordinates, known conflict documented, runnable steps.
+- docs/IMPLEMENTATION.md: Slice 2B-2 row added.
+- docs/PHASE_2B_OR_PHASE_3_DECISION.md: Slice 2B-2 marked complete; next steps.
+- CHANGELOG.md: this entry.
+
+No code changes. No validation count changes.
+Pipeline verified: 4 layers merged, 36 conflicts, 15 regions, Status OK.
+
 ### Added (Slice 2B-1: layer authoring guide and fixture examples)
 - docs/LAYER_AUTHORING_GUIDE.md: claim boundary, what layer-pipeline does,
   required manifest shape, standard layer names, kind-by-layer table,
