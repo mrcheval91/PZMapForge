@@ -222,6 +222,7 @@ examples/
 - [Implementation](docs/IMPLEMENTATION.md) — current state, ratified vs. provisional
 - [Validation ledger](docs/VALIDATION_LEDGER.md) — both validation lanes, expected counts, commands
 - [Phase 2 decision](docs/PHASE_2_DECISION.md) — Phase 2 direction: multi-layer image conventions
+- [Phase 2B / Phase 3 decision](docs/PHASE_2B_OR_PHASE_3_DECISION.md) — Phase 2B (layer authoring) chosen over Phase 3 (PZ tile IDs)
 - [Tool usage](docs/TOOL_USAGE.md) — parameters, examples, palette format
 - [Claim boundary](docs/CLAIM_BOUNDARY.md) — what is verified, what is not
 - [Roadmap](docs/ROADMAP.md) — phase plan

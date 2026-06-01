@@ -9,6 +9,20 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- docs/PHASE_2B_OR_PHASE_3_DECISION.md: Phase 2B (layer authoring conventions)
+  chosen over Phase 3 (local PZ install / tile ID mapping). Documents Option A
+  vs B comparison, rationale, non-claims, and Slice 2B-1 definition
+  (layer authoring guide + fixture examples). Phase 3 deferred pending
+  Phase 2B stability and a documented local load test mechanism.
+
+### Changed
+- README.md: link to PHASE_2B_OR_PHASE_3_DECISION.md added.
+- docs/IMPLEMENTATION.md: Phase 2B/3 decision row added.
+- CHANGELOG.md: this entry.
+
+No code changes. No validation count changes.
+
+### Added
 - schemas/pzmapforge.proof-packet.v0.11.schema.json: bump from v0.10. Adds
   layer_pipeline_present, layer_pipeline_artifact_count, layer_pipeline_artifacts
   (8 items) to dotnet_validation_summary. Updates test_total 152->184,
