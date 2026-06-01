@@ -209,6 +209,7 @@ examples/
 - [Constitution](docs/CONSTITUTION.md) — non-negotiable rules
 - [Implementation](docs/IMPLEMENTATION.md) — current state, ratified vs. provisional
 - [Validation ledger](docs/VALIDATION_LEDGER.md) — both validation lanes, expected counts, commands
+- [Phase 2 decision](docs/PHASE_2_DECISION.md) — Phase 2 direction: multi-layer image conventions
 - [Tool usage](docs/TOOL_USAGE.md) — parameters, examples, palette format
 - [Claim boundary](docs/CLAIM_BOUNDARY.md) — what is verified, what is not
 - [Roadmap](docs/ROADMAP.md) — phase plan

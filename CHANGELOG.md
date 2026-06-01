@@ -8,6 +8,25 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added
+- docs/PHASE_2_DECISION.md: Phase 2 decision record. Option A (multi-layer
+  image conventions) chosen over Option B (PZ tile ID mapping). Documents
+  current verified capability, option comparison, risks, non-claims,
+  recommendation rationale, and first implementation slice (2A-1: layer
+  manifest schema + loader foundation). Option B deferred pending Phase 2
+  stability and documented local load test mechanism.
+
+### Changed
+- README.md: link to PHASE_2_DECISION.md added.
+- docs/IMPLEMENTATION.md: Phase 2 decision row added; multi-layer row updated.
+- CHANGELOG.md: this entry.
+
+No code changes. No validation count changes.
+
+---
+
+## Previous
+
 ### Changed
 - scripts/validate.ps1: final output now prints the full validation ledger
   summary. PowerShell lane (381 total, 9 checks) and .NET lane (152 total,
