@@ -9,6 +9,24 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- tests/PZMapForge.Cli.Tests/FullPipelineContractTests.cs: FullPipelineContractFixture
+  (IClassFixture) runs full-pipeline once against a temp 300x300 grass image.
+  6 contract tests: exit code, regions-report.md claim boundary + summary-by-kind,
+  primitives-report.md claim boundary + summary-by-primitive-type,
+  plan-report.md claim boundary.
+
+### Changed
+- CHANGELOG.md: contract test entry added.
+
+dotnet build: 0 errors, 2 pre-existing warnings
+dotnet test:  152/152 (123 Core + 29 Cli)
+scripts/validate.ps1: 55 PS assertions pass.
+
+---
+
+## Previous
+
+### Added
 - src/PZMapForge.Core/Regions/RegionArtifactWriter.cs: Write() now returns
   (string JsonPath, string MdPath) and also writes regions-report.md with
   claim boundary, summary-by-kind table, top-20-regions table.
