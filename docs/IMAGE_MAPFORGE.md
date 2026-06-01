@@ -4,6 +4,19 @@ ImageMapForge converts a simple PNG or BMP blockout into deterministic map-plann
 
 It is designed for fast iteration when the WorldEd GUI path is too slow or fragile.
 
+## .NET engine
+
+`ImageMapForgeParser.Parse(imagePath, palettePath, options)` in
+`PZMapForge.Core.ImageParsing` ports the parsing logic to typed C#/.NET 10:
+
+- 300x300 images parse directly.
+- Non-300x300 images fail unless `Resize = true`.
+- Same exact-match / nearest-colour algorithm as the PS reference.
+- Returns `ImageMapForgeResult` with rows, counts, matching stats, palette SHA-256, and
+  a `BuildGrid()` helper to get a `SemanticGrid` for the downstream .NET pipeline.
+- Windows-only (System.Drawing.Common/GDI+).
+- Claim boundary: `planning_artifact_only_not_pz_load_tested`.
+
 ## What it does
 
 The MVP reads an input image, maps each pixel to a semantic cell kind, and writes:

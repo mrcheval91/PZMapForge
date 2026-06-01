@@ -9,6 +9,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Capability | Status | Evidence |
 |---|---|---|
 | RGB palette loading and validation | Ratified | 28-assertion test harness passes |
+| .NET ImageMapForgeParser (PNG/BMP -> rows/counts/matching) | Ratified | 10 xUnit tests; exact+nearest match, Resize flag, determinism, palette SHA-256, Windows/GDI+ |
 | Image pixel scan (exact colour match) | Ratified | Test 9: exact grass pixel matched correctly |
 | Nearest-colour fallback with drift cache | Ratified | Test 9: near-grass mapped to grass, dist 1.73 |
 | parsed-cell.json (counts, legend, drift) | Ratified | Test 6: all 5 outputs written |

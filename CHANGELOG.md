@@ -9,6 +9,31 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- src/PZMapForge.Core/ImageParsing/ImageMapForgeOptions.cs: Resize flag
+  (default false).
+- src/PZMapForge.Core/ImageParsing/ImageMapForgeResult.cs: Width, Height,
+  Resized, PaletteSha256, Rows, Counts, Matching, NearestDrift, BuildGrid().
+- src/PZMapForge.Core/ImageParsing/ImageMapForgeParser.cs: [SupportedOSPlatform
+  windows] static Parse(imagePath, palettePath, options). Loads palette via
+  PaletteLoader, computes palette SHA-256 from file bytes, loads image with
+  System.Drawing.Common (GDI+), resizes with NearestNeighbor if Resize=true,
+  scans pixels with exact-then-nearest-colour matching (drift cache per unique
+  unmapped colour), returns ImageMapForgeResult.
+- tests/PZMapForge.Core.Tests/ImageParsing/ImageMapForgeParserTests.cs:
+  10 xUnit tests using programmatically created temp images. Covers 300x300,
+  150x150 without/with Resize, dimension/row/count validation, resized flag,
+  palette SHA-256, invalid path, unsupported extension, determinism.
+- System.Drawing.Common 10.0.8 added to PZMapForge.Core and PZMapForge.Core.Tests.
+
+dotnet build: 0 errors, 0 warnings
+dotnet test:  99/99 pass (92 Core + 7 Cli)
+scripts/validate.ps1: 365 PS assertions unchanged.
+
+---
+
+## [Unreleased - prev26]
+
+### Added
 - schemas/pzmapforge.proof-packet.v0.9.schema.json: plan_recommendations_contract
   const=28, proof_packet const=55, total_expected_assertions const=365.
 
