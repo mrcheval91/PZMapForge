@@ -34,6 +34,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Layer authoring guide (Slice 2B-1) | Ratified | docs/LAYER_AUTHORING_GUIDE.md: claim boundary, workflow, kind-by-layer table, precedence, conflict policy, error glossary, non-claims |
 | Layer fixture examples (Slice 2B-1) | Ratified | tests/fixtures/layers/README.md + example-2b/ (manifest + README; no binary images) |
 | Layer fixture generator (Slice 2B-2) | Ratified | new-example-images.ps1 generates 4 deterministic PNGs; generated-layer-manifest.json; generated/ gitignored; pipeline verified (36 conflicts, Status OK) |
+| LayerValidator (layer-validate CLI) | Ratified | 8 Core xUnit tests + 5 process tests; validates manifest + images without writing artifacts; exits 0/1; --resize supported |
 | Validation ledger (docs/VALIDATION_LEDGER.md) | Ratified | Both lanes documented; baseline cac517c; commands and expected counts recorded |
 | validate.ps1 ledger summary | Ratified | Final output reports PS lane (381 total) and .NET lane (152 total) separately; claim boundary stated |
 | Phase 2 decision record (docs/PHASE_2_DECISION.md) | Ratified | Option A (multi-layer image conventions) chosen; Option B (PZ tile IDs) deferred; Slice 2A-1 complete |

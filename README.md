@@ -224,6 +224,18 @@ examples/
 - [Phase 2 decision](docs/PHASE_2_DECISION.md) — Phase 2 direction: multi-layer image conventions
 - [Phase 2B / Phase 3 decision](docs/PHASE_2B_OR_PHASE_3_DECISION.md) — Phase 2B (layer authoring) chosen over Phase 3 (PZ tile IDs)
 - [Layer authoring guide](docs/LAYER_AUTHORING_GUIDE.md) — manifest format, kind-by-layer table, precedence, conflict policy, workflow, error glossary
+
+Validate a layer manifest and images without writing artifacts (layer-validate):
+
+```
+dotnet run --project src/PZMapForge.Cli -- layer-validate --layers <manifest.json> --palette source/image-palette.json
+```
+
+With resize:
+
+```
+dotnet run --project src/PZMapForge.Cli -- layer-validate --layers <manifest.json> --palette source/image-palette.json --resize
+```
 - [Tool usage](docs/TOOL_USAGE.md) — parameters, examples, palette format
 - [Claim boundary](docs/CLAIM_BOUNDARY.md) — what is verified, what is not
 - [Roadmap](docs/ROADMAP.md) — phase plan

@@ -8,6 +8,36 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added
+- src/PZMapForge.Core/Layers/LayerValidationLayerResult.cs: per-layer result
+  (IsValid, Errors, NonDefaultPixels, InvalidPixels, Width, Height).
+- src/PZMapForge.Core/Layers/LayerValidationResult.cs: overall result
+  (IsValid, Errors, LayerResults, Precedence, ClaimBoundary).
+- src/PZMapForge.Core/Layers/LayerValidator.cs: Validate(manifestPath,
+  palettePath, options) loads manifest, checks image existence, parses each
+  image via ImageMapForgeParser, enforces allowed_kinds, reports invalid pixels.
+  Windows-only (GDI+). No artifact output.
+- tests/PZMapForge.Core.Tests/Layers/LayerValidatorTests.cs: 8 tests
+  (valid layer, missing image, disallowed kind, non-square without/with resize,
+  invalid manifest, determinism, claim boundary).
+- tests/PZMapForge.Cli.Tests/LayerValidateProcessTests.cs: 5 process tests
+  (valid exits 0, missing image exits 1, disallowed kind exits 1,
+  non-square without/with --resize).
+
+### Changed
+- src/PZMapForge.Cli/Program.cs: layer-validate command added; help text and
+  UnknownCommand updated.
+- README.md: layer-validate usage added.
+- docs/LAYER_AUTHORING_GUIDE.md: workflow updated to include layer-validate step.
+- docs/IMPLEMENTATION.md: LayerValidator row added.
+- CHANGELOG.md: this entry.
+
+dotnet build: 0 errors
+dotnet test:  197/197 (162 Core + 35 Cli)
+PS lane:      391 assertions unchanged
+validate.ps1: Validation passed
+layer-validate against example-2b: 4 layers, all OK
+
 ### Added (Slice 2B-2: example layer image generator)
 - tests/fixtures/layers/example-2b/new-example-images.ps1: generates 4
   deterministic 300x300 PNGs using System.Drawing with exact palette RGB

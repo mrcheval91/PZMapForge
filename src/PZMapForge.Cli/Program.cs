@@ -25,6 +25,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  plan-export       --path <path> [--output <dir>] [--tiny-threshold <int>] [--large-threshold <int>]");
     Console.Error.WriteLine("  layer-pipeline    --layers <manifest> --palette <palette> [--output <dir>] [--resize]");
     Console.Error.WriteLine("                    [--tiny-threshold <int>] [--large-threshold <int>]");
+    Console.Error.WriteLine("  layer-validate    --layers <manifest> --palette <palette> [--resize]");
     return 1;
 }
 
@@ -40,6 +41,7 @@ return args[0] switch
     "plan-check"        => PlanCheckCommand(args[1..]),
     "plan-export"       => PlanExportCommand(args[1..]),
     "layer-pipeline"    => LayerPipelineCommand(args[1..]),
+    "layer-validate"    => LayerValidateCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -742,11 +744,63 @@ static int LayerPipelineCommand(string[] args)
     return 0;
 }
 
+static int LayerValidateCommand(string[] args)
+{
+    var manifestPath = string.Empty;
+    var palettePath  = string.Empty;
+    var resize       = false;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if      (args[i] is "--layers"  or "-l" && i + 1 < args.Length) manifestPath = args[++i];
+        else if (args[i] is "--palette"          && i + 1 < args.Length) palettePath  = args[++i];
+        else if (args[i] is "--resize")                                   resize       = true;
+    }
+
+    if (string.IsNullOrWhiteSpace(manifestPath))
+    { Console.Error.WriteLine("layer-validate requires --layers <manifest>"); return 1; }
+    if (string.IsNullOrWhiteSpace(palettePath))
+    { Console.Error.WriteLine("layer-validate requires --palette <palette>"); return 1; }
+
+    var mergeOpts = new LayerMergeOptions { Resize = resize };
+    var result    = LayerValidator.Validate(manifestPath, palettePath, mergeOpts);
+
+    Console.WriteLine($"Manifest:   {Path.GetFullPath(manifestPath)}");
+    Console.WriteLine($"Palette:    {Path.GetFullPath(palettePath)}");
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors) Console.Error.WriteLine($"  error: {e}");
+        Console.WriteLine("Status:     INVALID");
+        return 1;
+    }
+
+    Console.WriteLine($"Layers:     {result.LayerResults.Count}");
+    Console.WriteLine($"Precedence: {string.Join(" > ", result.Precedence)}");
+
+    foreach (var lr in result.LayerResults)
+    {
+        var status = lr.IsValid ? "OK" : "INVALID";
+        Console.WriteLine($"  {lr.LayerName,-12} {lr.FilePath,-24} {status,-8}" +
+                          $" {lr.NonDefaultPixels,6} non-default  {lr.InvalidPixels,4} invalid");
+        foreach (var e in lr.Errors) Console.Error.WriteLine($"    error: {e}");
+    }
+
+    if (!result.IsValid)
+    {
+        Console.WriteLine("Status:     INVALID");
+        return 1;
+    }
+
+    Console.WriteLine("Status:     OK");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
     Console.Error.WriteLine("Available commands: image-check, image-export, full-pipeline, " +
         "palette-check, parsed-cell-check, region-check, primitive-check, " +
-        "plan-check, plan-export, layer-pipeline");
+        "plan-check, plan-export, layer-pipeline, layer-validate");
     return 1;
 }

@@ -163,18 +163,27 @@ Step 5: Write or update the manifest.
   List all four layers with their allowed_kinds.
   Set precedence: markers first, then buildings, then roads, then terrain.
 
-Step 6: Run layer-pipeline.
+Step 6 (optional): Run layer-validate first to check manifest and images without writing artifacts.
+
+    dotnet run --project src/PZMapForge.Cli -- layer-validate \
+      --layers layer-manifest.json \
+      --palette source/image-palette.json
+
+Prints per-layer status, non-default pixel counts, and invalid kind counts.
+Exits 0 if valid, 1 if any error.
+
+Step 7: Run layer-pipeline.
 
     dotnet run --project src/PZMapForge.Cli -- layer-pipeline \
       --layers layer-manifest.json \
       --palette source/image-palette.json \
       --output .local/mapforge
 
-Step 7: Inspect layer-merge-report.md.
+Step 8: Inspect layer-merge-report.md.
   Check conflict count and per-layer contribution table.
   High conflict counts may indicate unintended overlap.
 
-Step 8: Inspect plan-report.md.
+Step 9: Inspect plan-report.md.
   Review planning recommendations.
   Adjust layer images and re-run if needed.
 
