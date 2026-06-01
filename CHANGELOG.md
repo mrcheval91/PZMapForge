@@ -9,6 +9,27 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- docs/VALIDATION_LEDGER.md: operator-readable ledger for both validation lanes.
+  Documents PowerShell lane (381 assertions, 9 scripts), .NET lane (152 tests,
+  breakdown by project), proof packet lane (69 assertions), full-pipeline artifact
+  surface (7 artifacts with content contracts), full validation command sequence,
+  and explicit non-claims.
+
+### Changed
+- README.md: link to VALIDATION_LEDGER.md added; Quickstart assertion count
+  updated from 285 to 381; full-pipeline artifact list updated from 5 to 7.
+- docs/IMPLEMENTATION.md: validation ledger row added.
+- CHANGELOG.md: this entry.
+
+dotnet build: 0 errors
+dotnet test:  152/152
+validate.ps1: Validation passed (no count changes)
+
+---
+
+## Previous
+
+### Added
 - schemas/pzmapforge.proof-packet.v0.10.schema.json: proof packet schema bumped to v0.10.
   Adds dotnet_validation_summary section (test_total, core_tests, cli_tests, process/contract
   booleans, artifact_count, artifact list, note). PS validation_summary counts updated:

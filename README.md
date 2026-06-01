@@ -38,8 +38,9 @@ dotnet build PZMapForge.slnx
 dotnet test PZMapForge.slnx
 ```
 
-Run the full image-to-planning pipeline in one command (full-pipeline) — writes
-parsed-cell.json, regions.json, primitives.json, plan-recommendations.json, plan-report.md:
+Run the full image-to-planning pipeline in one command (full-pipeline) — writes 7 artifacts:
+parsed-cell.json, regions.json, regions-report.md, primitives.json, primitives-report.md,
+plan-recommendations.json, plan-report.md:
 
 ```
 dotnet run --project src/PZMapForge.Cli -- full-pipeline --path .local/mapforge/sample-input.png --palette source/image-palette.json --output .local/mapforge
@@ -118,7 +119,7 @@ for future typed parsing and generation capabilities.
 
 ## Quickstart
 
-Run the local validation (creates a sample image, runs the tool, runs 285 assertions):
+Run the local validation pipeline (creates a sample image, runs all sub-scripts, 381 PS assertions):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File "scripts\validate.ps1"
@@ -207,6 +208,7 @@ examples/
 - [Genesis](docs/GENESIS.md) — why this tool exists
 - [Constitution](docs/CONSTITUTION.md) — non-negotiable rules
 - [Implementation](docs/IMPLEMENTATION.md) — current state, ratified vs. provisional
+- [Validation ledger](docs/VALIDATION_LEDGER.md) — both validation lanes, expected counts, commands
 - [Tool usage](docs/TOOL_USAGE.md) — parameters, examples, palette format
 - [Claim boundary](docs/CLAIM_BOUNDARY.md) — what is verified, what is not
 - [Roadmap](docs/ROADMAP.md) — phase plan
