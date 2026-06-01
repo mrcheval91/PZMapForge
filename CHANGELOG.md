@@ -9,6 +9,32 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- schemas/pzmapforge.proof-packet.v0.12.schema.json: bump from v0.11. Adds
+  layer_validate_present (true) and layer_validate_writes_artifacts (false) to
+  dotnet_validation_summary. Updates test_total 184->197, core_tests 154->162,
+  cli_tests 30->35. Updates proof_packet 79->81, total_expected_assertions 391->393.
+
+### Changed
+- scripts/write-proof-packet.ps1: schema v0.12; dotnet counts updated; two new
+  fields added; markdown report updated.
+- scripts/test-proof-packet.ps1: schema sentinel v0.12; dotnet assertions updated;
+  2 new assertions (81 total, was 79).
+- scripts/test-schema-files.ps1: proof-packet check updated from v0.11 to v0.12
+  (same 17 top-level CheckRequired; schema sanity stays at 136).
+- scripts/validate.ps1: .NET lane constants updated (Core 162, CLI 35, total 197);
+  PS total updated to 393; version references to v0.12.
+- docs/VALIDATION_LEDGER.md: baseline commit updated; .NET counts updated; test
+  breakdowns updated; proof packet section updated to 81 assertions.
+- docs/IMPLEMENTATION.md: proof packet v0.12 row added.
+- CHANGELOG.md: this entry.
+
+dotnet build: 0 errors
+dotnet test:  197/197
+test-proof-packet.ps1: 81/81
+test-schema-files.ps1: 136/136
+validate.ps1: PS 393 + .NET 197, Validation passed
+
+### Added
 - src/PZMapForge.Core/Layers/LayerValidationLayerResult.cs: per-layer result
   (IsValid, Errors, NonDefaultPixels, InvalidPixels, Width, Height).
 - src/PZMapForge.Core/Layers/LayerValidationResult.cs: overall result
