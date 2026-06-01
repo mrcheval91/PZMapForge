@@ -38,6 +38,18 @@ dotnet build PZMapForge.slnx
 dotnet test PZMapForge.slnx
 ```
 
+Run the multi-layer image pipeline (layer-pipeline) — merges layer images via a manifest, writes 8 artifacts:
+
+```
+dotnet run --project src/PZMapForge.Cli -- layer-pipeline --layers <manifest.json> --palette source/image-palette.json --output .local/mapforge
+```
+
+With resize:
+
+```
+dotnet run --project src/PZMapForge.Cli -- layer-pipeline --layers <manifest.json> --palette source/image-palette.json --output .local/mapforge --resize
+```
+
 Run the full image-to-planning pipeline in one command (full-pipeline) — writes 7 artifacts:
 parsed-cell.json, regions.json, regions-report.md, primitives.json, primitives-report.md,
 plan-recommendations.json, plan-report.md:

@@ -230,24 +230,37 @@ Tests: 12 new (all grass, two-layer precedence, 4-layer non-overlapping,
 
 dotnet test: 176/176 (147 Core + 29 Cli). PS lane unchanged at 381.
 
-## Next implementation slice
+## Slice 2A-3: COMPLETE
 
-Slice 2A-3: Layer pipeline CLI command and artifact writer
-
-Files to add:
+Files added/modified:
   src/PZMapForge.Core/Layers/LayerMergeArtifactWriter.cs
-  CLI command: layer-pipeline --layers <manifestPath> --palette <palettePath>
-               --output <dir>
-  tests: process-level CLI test, artifact writer test
+  src/PZMapForge.Cli/Program.cs  (layer-pipeline command added)
+  tests/PZMapForge.Core.Tests/Layers/LayerMergeArtifactWriterTests.cs  (7 tests)
+  tests/PZMapForge.Cli.Tests/LayerPipelineProcessTests.cs  (1 process test)
 
-Deliverables:
-  LayerMergeArtifactWriter.Write(outputDir, result): writes
-    parsed-cell.json (from merged grid) and layer-merge-report.md.
-  layer-pipeline CLI command runs full pipeline from manifest to
-    planning artifacts (same downstream steps as full-pipeline).
-  Process test: verify artifacts written, verify claim boundary in report.
+LayerMergeArtifactWriter.Write(outputDir, manifestPath, palettePath, palette,
+  mergeResult, options): writes parsed-cell.json (loadable by ParsedCellLoader)
+  and layer-merge-report.md (claim boundary, conflict summary, per-layer table,
+  optional conflict sample table).
 
-Commit: Add layer pipeline CLI command
+layer-pipeline CLI command:
+  --layers <manifest> --palette <palette> [--output <dir>] [--resize]
+  [--tiny-threshold <int>] [--large-threshold <int>]
+  Writes 8 artifacts: parsed-cell.json, layer-merge-report.md,
+  regions.json, regions-report.md, primitives.json, primitives-report.md,
+  plan-recommendations.json, plan-report.md.
+
+dotnet test: 184/184 (154 Core + 30 Cli). PS lane unchanged at 381.
+
+## Next steps
+
+Phase 2A is functionally complete (manifest validation, layer merge, pipeline CLI).
+
+Recommended next work:
+  - Proof packet v0.11 to record updated .NET test counts (176→184)
+  - Add layer-pipeline to README.md command reference
+  - Add process test for layer-pipeline with --resize flag
+  - Add process test for layer-pipeline that refuses non-.local output
 
 ---
 

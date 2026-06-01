@@ -8,6 +8,33 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (Slice 2A-3: layer pipeline CLI command and artifact writer)
+- src/PZMapForge.Core/Layers/LayerMergeArtifactWriter.cs: Write(outputDir,
+  manifestPath, palettePath, palette, mergeResult, options) writes
+  parsed-cell.json (compatible with ParsedCellLoader, all 9 kinds in counts,
+  schema/boundary/dims validated) and layer-merge-report.md (claim boundary,
+  manifest path, dimensions, default kind, total conflict count, per-layer
+  contribution table, conflict sample table when conflicts exist).
+- tests/PZMapForge.Core.Tests/Layers/LayerMergeArtifactWriterTests.cs: 7 tests
+  (file creation, report claim boundary, contribution table, conflict count,
+  parsed-cell loadable by ParsedCellLoader, determinism).
+- tests/PZMapForge.Cli.Tests/LayerPipelineProcessTests.cs: 1 process test;
+  creates layer images + manifest in temp dir, runs layer-pipeline, asserts
+  8 artifacts present and claim boundary in merge report + plan report.
+
+### Changed
+- src/PZMapForge.Cli/Program.cs: layer-pipeline command added; duplicate using
+  directive removed; help text and UnknownCommand updated.
+- README.md: layer-pipeline command example added.
+- docs/PHASE_2_DECISION.md: Slice 2A-3 marked complete; next steps noted.
+- docs/IMPLEMENTATION.md: writer + CLI rows added; multi-layer row updated.
+- CHANGELOG.md: this entry.
+
+dotnet build: 0 errors
+dotnet test:  184/184 (154 Core + 30 Cli)
+PS lane:      381 assertions unchanged
+validate.ps1: Validation passed
+
 ### Added (Slice 2A-2: layer merger)
 - src/PZMapForge.Core/Layers/LayerMergeOptions.cs: Resize, DefaultKind.
 - src/PZMapForge.Core/Layers/LayerMergeContribution.cs: per-layer pixel

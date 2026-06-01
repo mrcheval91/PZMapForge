@@ -1,9 +1,9 @@
 using PZMapForge.Core.ImageParsing;
+using PZMapForge.Core.Layers;
 using PZMapForge.Core.Palette;
 using PZMapForge.Core.ParsedCell;
 using PZMapForge.Core.Planning;
 using PZMapForge.Core.Primitives;
-using PZMapForge.Core.Regions;
 using PZMapForge.Core.Regions;
 
 // Claim boundary: PZMapForge CLI is a planning tool only.
@@ -23,6 +23,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                    [--tiny-threshold <int>] [--large-threshold <int>]");
     Console.Error.WriteLine("  plan-check        --path <path> [--tiny-threshold <int>] [--large-threshold <int>]");
     Console.Error.WriteLine("  plan-export       --path <path> [--output <dir>] [--tiny-threshold <int>] [--large-threshold <int>]");
+    Console.Error.WriteLine("  layer-pipeline    --layers <manifest> --palette <palette> [--output <dir>] [--resize]");
+    Console.Error.WriteLine("                    [--tiny-threshold <int>] [--large-threshold <int>]");
     return 1;
 }
 
@@ -37,6 +39,7 @@ return args[0] switch
     "primitive-check"   => PrimitiveCheckCommand(args[1..]),
     "plan-check"        => PlanCheckCommand(args[1..]),
     "plan-export"       => PlanExportCommand(args[1..]),
+    "layer-pipeline"    => LayerPipelineCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -615,9 +618,135 @@ static (PlanningRuleOptions? Options, int ErrorCode) ParsePlanningOptions(string
     }
 }
 
+static int LayerPipelineCommand(string[] args)
+{
+    var manifestPath = string.Empty;
+    var palettePath  = string.Empty;
+    var outputDir    = string.Empty;
+    var resize       = false;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if      (args[i] is "--layers"  or "-l" && i + 1 < args.Length) manifestPath = args[++i];
+        else if (args[i] is "--palette"          && i + 1 < args.Length) palettePath  = args[++i];
+        else if (args[i] is "--output"  or "-o" && i + 1 < args.Length) outputDir    = args[++i];
+        else if (args[i] is "--resize")                                   resize       = true;
+    }
+
+    if (string.IsNullOrWhiteSpace(manifestPath))
+    { Console.Error.WriteLine("layer-pipeline requires --layers <manifest>"); return 1; }
+    if (string.IsNullOrWhiteSpace(palettePath))
+    { Console.Error.WriteLine("layer-pipeline requires --palette <palette>"); return 1; }
+
+    if (string.IsNullOrWhiteSpace(outputDir))
+        outputDir = Path.Combine(Directory.GetCurrentDirectory(), ".local", "mapforge");
+
+    var outputFull  = Path.GetFullPath(outputDir);
+    var localMarker = Path.DirectorySeparatorChar + ".local" + Path.DirectorySeparatorChar;
+    if (!outputFull.Contains(localMarker, StringComparison.OrdinalIgnoreCase) &&
+        !outputFull.EndsWith(Path.DirectorySeparatorChar + ".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"layer-pipeline: refusing to write outside a .local/ directory: {outputFull}");
+        return 1;
+    }
+
+    var (planOpts, planErr) = ParsePlanningOptions(args);
+    if (planErr != 0) return planErr;
+
+    // --- Step 1: load palette ---
+    var paletteResult = PaletteLoader.Load(palettePath);
+    if (!paletteResult.IsValid)
+    {
+        Console.WriteLine("Status: INVALID (palette)");
+        foreach (var e in paletteResult.Errors) Console.Error.WriteLine($"  error: {e}");
+        return 1;
+    }
+
+    // --- Step 2: merge layers ---
+    var mergeOpts = new LayerMergeOptions { Resize = resize };
+    var mergeResult = LayerMerger.Merge(manifestPath, palettePath, mergeOpts);
+    if (!mergeResult.IsValid)
+    {
+        Console.WriteLine("Status: INVALID (layer merge failed)");
+        foreach (var e in mergeResult.Errors) Console.Error.WriteLine($"  error: {e}");
+        return 1;
+    }
+
+    // --- Step 3: write parsed-cell.json + layer-merge-report.md ---
+    var (parsedCellPath, mergeMdPath) = LayerMergeArtifactWriter.Write(
+        outputFull, manifestPath, palettePath, paletteResult.Document!, mergeResult, mergeOpts);
+
+    // --- Step 4: load parsed-cell.json for downstream pipeline ---
+    var cellResult = ParsedCellLoader.Load(parsedCellPath);
+    if (!cellResult.IsValid)
+    {
+        Console.WriteLine("Status: INVALID (parsed-cell load failed)");
+        foreach (var e in cellResult.Errors) Console.Error.WriteLine($"  error: {e}");
+        return 1;
+    }
+    var grid       = cellResult.Grid!;
+    var codeToKind = cellResult.Document!.Counts
+        .ToDictionary(c => c.Code[0], c => c.Kind)
+        .AsReadOnly();
+
+    // --- Steps 5-7: regions, primitives, planning ---
+    RegionExtractionResult       regions;
+    PrimitiveClassificationResult primitives;
+    PlanningRuleResult           planResult;
+    try
+    {
+        regions    = RegionExtractor.Extract(grid, codeToKind);
+        primitives = PrimitiveClassifier.Classify(regions);
+        planResult = PlanningRuleEngine.Evaluate(primitives, planOpts!);
+    }
+    catch (ArgumentException ex)
+    {
+        Console.WriteLine("Status: INVALID (pipeline failed)");
+        Console.Error.WriteLine($"  error: {ex.Message}");
+        return 1;
+    }
+
+    // --- Step 8: write region artifacts ---
+    var (regionsJsonPath, regionsMdPath) = RegionArtifactWriter.Write(
+        outputFull, grid.Width, grid.Height,
+        Path.GetFullPath(parsedCellPath), regions);
+
+    // --- Step 9: write primitive artifacts ---
+    var (primitivesJsonPath, primitivesMdPath) = PrimitiveArtifactWriter.Write(
+        outputFull, grid.Width, grid.Height,
+        regionsJsonPath, primitives);
+
+    // --- Step 10: write plan artifacts ---
+    var (planJsonPath, planMdPath) = PlanningArtifactWriter.Write(
+        outputFull, grid.Width, grid.Height,
+        Path.GetFullPath(parsedCellPath), "PZMapForge.Cli layer-pipeline",
+        planResult, planOpts);
+
+    Console.WriteLine($"Parsed cell:        {parsedCellPath}");
+    Console.WriteLine($"Merge report:       {mergeMdPath}");
+    Console.WriteLine($"Regions JSON:       {regionsJsonPath}");
+    Console.WriteLine($"Regions report:     {regionsMdPath}");
+    Console.WriteLine($"Primitives JSON:    {primitivesJsonPath}");
+    Console.WriteLine($"Primitives report:  {primitivesMdPath}");
+    Console.WriteLine($"Plan JSON:          {planJsonPath}");
+    Console.WriteLine($"Plan report:        {planMdPath}");
+    Console.WriteLine($"Dimensions:         {grid.Width}x{grid.Height}");
+    Console.WriteLine($"Layers merged:      {mergeResult.Contributions.Count}");
+    Console.WriteLine($"Conflicts:          {mergeResult.TotalConflictCount}");
+    Console.WriteLine($"Regions:            {regions.TotalRegions}");
+    Console.WriteLine($"Primitives:         {primitives.PrimitiveCount}");
+    Console.WriteLine($"Recommendations:    {planResult.RecommendationCount}");
+    Console.WriteLine($"Warnings:           {planResult.Summary.WarningCount}");
+    Console.WriteLine("Status:             OK");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
-    Console.Error.WriteLine("Available commands: image-check, image-export, full-pipeline, palette-check, parsed-cell-check, region-check, primitive-check, plan-check, plan-export");
+    Console.Error.WriteLine("Available commands: image-check, image-export, full-pipeline, " +
+        "palette-check, parsed-cell-check, region-check, primitive-check, " +
+        "plan-check, plan-export, layer-pipeline");
     return 1;
 }
