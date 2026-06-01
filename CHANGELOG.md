@@ -8,6 +8,34 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added
+- schemas/pzmapforge.proof-packet.v0.11.schema.json: bump from v0.10. Adds
+  layer_pipeline_present, layer_pipeline_artifact_count, layer_pipeline_artifacts
+  (8 items) to dotnet_validation_summary. Updates test_total 152->184,
+  core_tests 123->154, cli_tests 29->30. Updates proof_packet 69->79,
+  total_expected_assertions 381->391.
+
+### Changed
+- scripts/write-proof-packet.ps1: schema v0.11; dotnet counts updated; layer
+  pipeline fields added; markdown report updated.
+- scripts/test-proof-packet.ps1: schema sentinel v0.11; dotnet assertions
+  updated; 10 new assertions for layer_pipeline fields (79 total, was 69).
+- scripts/test-schema-files.ps1: proof-packet check updated from v0.10 to v0.11
+  (same 17 top-level CheckRequired; schema sanity stays at 136).
+- scripts/validate.ps1: .NET lane constants updated (Core 154, CLI 30, total 184);
+  all version references updated to v0.11; PS total updated to 391.
+- docs/VALIDATION_LEDGER.md: baseline commit updated; .NET counts updated;
+  test breakdowns updated; layer-pipeline artifact surface section added;
+  proof packet section updated to 79 assertions.
+- docs/IMPLEMENTATION.md: proof packet v0.11 row added.
+- CHANGELOG.md: this entry.
+
+dotnet build: 0 errors
+dotnet test:  184/184
+test-proof-packet.ps1: 79/79
+test-schema-files.ps1: 136/136
+validate.ps1: PS 391 + .NET 184, Validation passed
+
 ### Added (Slice 2A-3: layer pipeline CLI command and artifact writer)
 - src/PZMapForge.Core/Layers/LayerMergeArtifactWriter.cs: Write(outputDir,
   manifestPath, palettePath, palette, mergeResult, options) writes

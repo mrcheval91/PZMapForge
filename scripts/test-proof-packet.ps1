@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Validates .local/mapforge/proof-packet.json against the v0.10 proof-packet contract.
+    Validates .local/mapforge/proof-packet.json against the v0.11 proof-packet contract.
 
     Runs write-proof-packet.ps1 first if proof-packet.json does not exist.
     Exits 0 if all checks pass, exits 1 if any fail.
@@ -55,7 +55,7 @@ Assert-True (Test-Path $packetMd   -PathType Leaf) "proof-packet.md exists"
 $p = Get-Content $packetJson -Raw | ConvertFrom-Json
 
 # ---------------------------------------------------------------------------
-# Required top-level fields (v0.10 adds dotnet_validation_summary)
+# Required top-level fields (v0.11 same top-level as v0.10)
 # ---------------------------------------------------------------------------
 
 Write-Output ""
@@ -83,8 +83,8 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.10') `
-    "schema == 'pzmapforge.proof-packet.v0.10' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.11') `
+    "schema == 'pzmapforge.proof-packet.v0.11' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
@@ -120,7 +120,7 @@ Assert-True ([int]$p.validation_summary.hardening_harness           -eq 36)  "ha
 Assert-True ([int]$p.validation_summary.region_extraction           -eq 24)  "region_extraction == 24"
 Assert-True ([int]$p.validation_summary.primitive_classification      -eq 22)  "primitive_classification == 22"
 Assert-True ([int]$p.validation_summary.plan_recommendations_contract -eq 28)  "plan_recommendations_contract == 28"
-Assert-True ([int]$p.validation_summary.total_expected_assertions     -eq 381) "total_expected_assertions == 381"
+Assert-True ([int]$p.validation_summary.total_expected_assertions     -eq 391) "total_expected_assertions == 391"
 
 # ---------------------------------------------------------------------------
 # dotnet_validation_summary (separate lane)
@@ -129,20 +129,31 @@ Assert-True ([int]$p.validation_summary.total_expected_assertions     -eq 381) "
 Write-Output ""
 Write-Output "--- dotnet_validation_summary ---"
 $d = $p.dotnet_validation_summary
-Assert-True ([int]$d.test_total                                -eq 152)  "dotnet test_total == 152"
-Assert-True ([int]$d.core_tests                                -eq 123)  "dotnet core_tests == 123"
-Assert-True ([int]$d.cli_tests                                 -eq 29)   "dotnet cli_tests == 29"
+Assert-True ([int]$d.test_total                                -eq 184)  "dotnet test_total == 184"
+Assert-True ([int]$d.core_tests                                -eq 154)  "dotnet core_tests == 154"
+Assert-True ([int]$d.cli_tests                                 -eq 30)   "dotnet cli_tests == 30"
 Assert-True ($d.process_cli_tests_present                      -eq $true) "process_cli_tests_present == true"
 Assert-True ($d.full_pipeline_contract_tests_present           -eq $true) "full_pipeline_contract_tests_present == true"
 Assert-True ([int]$d.full_pipeline_artifact_count              -eq 7)    "dotnet full_pipeline_artifact_count == 7"
-$arts = @($d.full_pipeline_artifacts)
-Assert-True ($arts -contains 'parsed-cell.json')          "artifacts contains 'parsed-cell.json'"
-Assert-True ($arts -contains 'regions.json')              "artifacts contains 'regions.json'"
-Assert-True ($arts -contains 'regions-report.md')         "artifacts contains 'regions-report.md'"
-Assert-True ($arts -contains 'primitives.json')           "artifacts contains 'primitives.json'"
-Assert-True ($arts -contains 'primitives-report.md')      "artifacts contains 'primitives-report.md'"
-Assert-True ($arts -contains 'plan-recommendations.json') "artifacts contains 'plan-recommendations.json'"
-Assert-True ($arts -contains 'plan-report.md')            "artifacts contains 'plan-report.md'"
+$fpArts = @($d.full_pipeline_artifacts)
+Assert-True ($fpArts -contains 'parsed-cell.json')          "full_pipeline_artifacts contains 'parsed-cell.json'"
+Assert-True ($fpArts -contains 'regions.json')              "full_pipeline_artifacts contains 'regions.json'"
+Assert-True ($fpArts -contains 'regions-report.md')         "full_pipeline_artifacts contains 'regions-report.md'"
+Assert-True ($fpArts -contains 'primitives.json')           "full_pipeline_artifacts contains 'primitives.json'"
+Assert-True ($fpArts -contains 'primitives-report.md')      "full_pipeline_artifacts contains 'primitives-report.md'"
+Assert-True ($fpArts -contains 'plan-recommendations.json') "full_pipeline_artifacts contains 'plan-recommendations.json'"
+Assert-True ($fpArts -contains 'plan-report.md')            "full_pipeline_artifacts contains 'plan-report.md'"
+Assert-True ($d.layer_pipeline_present                         -eq $true) "layer_pipeline_present == true"
+Assert-True ([int]$d.layer_pipeline_artifact_count             -eq 8)    "dotnet layer_pipeline_artifact_count == 8"
+$lpArts = @($d.layer_pipeline_artifacts)
+Assert-True ($lpArts -contains 'parsed-cell.json')          "layer_pipeline_artifacts contains 'parsed-cell.json'"
+Assert-True ($lpArts -contains 'layer-merge-report.md')     "layer_pipeline_artifacts contains 'layer-merge-report.md'"
+Assert-True ($lpArts -contains 'regions.json')              "layer_pipeline_artifacts contains 'regions.json'"
+Assert-True ($lpArts -contains 'regions-report.md')         "layer_pipeline_artifacts contains 'regions-report.md'"
+Assert-True ($lpArts -contains 'primitives.json')           "layer_pipeline_artifacts contains 'primitives.json'"
+Assert-True ($lpArts -contains 'primitives-report.md')      "layer_pipeline_artifacts contains 'primitives-report.md'"
+Assert-True ($lpArts -contains 'plan-recommendations.json') "layer_pipeline_artifacts contains 'plan-recommendations.json'"
+Assert-True ($lpArts -contains 'plan-report.md')            "layer_pipeline_artifacts contains 'plan-report.md'"
 
 # ---------------------------------------------------------------------------
 # Safety flags

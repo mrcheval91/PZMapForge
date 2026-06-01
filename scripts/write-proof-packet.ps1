@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.10) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.11) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
     planning recommendation artifacts, plan-recommendations contract (incl. thresholds_used),
     and a separate dotnet_validation_summary section tracking .NET xUnit test counts.
@@ -147,7 +147,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.10'
+    schema                  = 'pzmapforge.proof-packet.v0.11'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -181,18 +181,30 @@ $packet = [ordered]@{
         region_extraction           = 24
         primitive_classification    = 22
         plan_recommendations_contract = 28
-        proof_packet                = 69
-        total_expected_assertions   = 381
+        proof_packet                = 79
+        total_expected_assertions   = 391
     }
     dotnet_validation_summary = [ordered]@{
-        test_total                          = 152
-        core_tests                          = 123
-        cli_tests                           = 29
+        test_total                          = 184
+        core_tests                          = 154
+        cli_tests                           = 30
         process_cli_tests_present           = $true
         full_pipeline_contract_tests_present = $true
         full_pipeline_artifact_count        = 7
         full_pipeline_artifacts             = [string[]]@(
             'parsed-cell.json',
+            'regions.json',
+            'regions-report.md',
+            'primitives.json',
+            'primitives-report.md',
+            'plan-recommendations.json',
+            'plan-report.md'
+        )
+        layer_pipeline_present              = $true
+        layer_pipeline_artifact_count       = 8
+        layer_pipeline_artifacts            = [string[]]@(
+            'parsed-cell.json',
+            'layer-merge-report.md',
             'regions.json',
             'regions-report.md',
             'primitives.json',
@@ -226,7 +238,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.10
+Schema: pzmapforge.proof-packet.v0.11
 
 ## Claim boundary
 
@@ -283,20 +295,23 @@ planning_artifact_only_not_pz_load_tested
 | Region extraction | 24 |
 | Primitive classification | 22 |
 | Plan recommendations contract | 28 |
-| Proof packet | 69 |
-| Total | 381 |
+| Proof packet | 79 |
+| Total | 391 |
 
 ## .NET validation summary (separate lane)
 
 | Field | Value |
 |---|---|
-| test_total | 152 |
-| core_tests | 123 |
-| cli_tests | 29 |
+| test_total | 184 |
+| core_tests | 154 |
+| cli_tests | 30 |
 | process_cli_tests_present | true |
 | full_pipeline_contract_tests_present | true |
 | full_pipeline_artifact_count | 7 |
 | full_pipeline_artifacts | parsed-cell.json, regions.json, regions-report.md, primitives.json, primitives-report.md, plan-recommendations.json, plan-report.md |
+| layer_pipeline_present | true |
+| layer_pipeline_artifact_count | 8 |
+| layer_pipeline_artifacts | parsed-cell.json, layer-merge-report.md, regions.json, regions-report.md, primitives.json, primitives-report.md, plan-recommendations.json, plan-report.md |
 
 Note: .NET test counts are tracked separately and are not included in total_expected_assertions.
 

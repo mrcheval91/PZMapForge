@@ -3,7 +3,7 @@
 PZMapForge maintains two parallel, intentionally separate validation lanes.
 This document is the operator-readable reference for both.
 
-Baseline commit: cac517c
+Baseline commit: f1b18e1 (Phase 2A complete)
 
 ---
 
@@ -70,7 +70,7 @@ They are recorded in proof-packet.json as validation_summary.total_expected_asse
 ## Lane 2: .NET / xUnit typed engine validation
 
 Covers: .NET core library correctness, CLI process behavior, full-pipeline
-artifact completeness, and markdown report content contracts.
+artifact completeness, layer pipeline (Phase 2A), and markdown report content contracts.
 
 ### Commands
 
@@ -82,18 +82,20 @@ artifact completeness, and markdown report content contracts.
 | Check | Expected |
 |---|---:|
 | dotnet build | 0 errors |
-| dotnet test (total) | 152 |
-| PZMapForge.Core.Tests | 123 |
-| PZMapForge.Cli.Tests | 29 |
+| dotnet test (total) | 184 |
+| PZMapForge.Core.Tests | 154 |
+| PZMapForge.Cli.Tests | 30 |
 | Process CLI tests present | true |
 | Full-pipeline contract tests present | true |
 | Full-pipeline artifact count | 7 |
+| Layer-pipeline present | true |
+| Layer-pipeline artifact count | 8 |
 
 These counts are recorded in proof-packet.json as dotnet_validation_summary.
 They are intentionally not added to validation_summary.total_expected_assertions.
 The two lanes measure different things and must remain separate.
 
-### Test breakdown: PZMapForge.Core.Tests (123)
+### Test breakdown: PZMapForge.Core.Tests (154)
 
 - PaletteLoader: 8 tests
 - ImageMapForgeParser: 10 tests
@@ -109,12 +111,16 @@ The two lanes measure different things and must remain separate.
 - PlanningRuleOptions: 8 tests
 - PlanningArtifactWriter: 10 tests
 - PlanningArtifactCrossVerification: 3 tests
+- LayerManifestLoader: 12 tests (Phase 2A-1)
+- LayerMerger: 12 tests (Phase 2A-2)
+- LayerMergeArtifactWriter: 7 tests (Phase 2A-3)
 
-### Test breakdown: PZMapForge.Cli.Tests (29)
+### Test breakdown: PZMapForge.Cli.Tests (30)
 
 - CliSmokeTests: 13 tests
 - CliProcessTests: 10 process-level integration tests
 - FullPipelineContractTests: 6 content contract tests (via IClassFixture)
+- LayerPipelineProcessTests: 1 process-level test (Phase 2A-3)
 
 ### What this lane covers
 
@@ -139,7 +145,7 @@ The proof packet records both separately and labels each clearly.
 The proof packet records the state of both validation lanes plus artifact
 SHA-256 hashes and git state.
 
-Schema: pzmapforge.proof-packet.v0.10
+Schema: pzmapforge.proof-packet.v0.11
 
 ### Commands
 
@@ -164,10 +170,11 @@ Schema: pzmapforge.proof-packet.v0.10
     2  sentinels (schema version, claim_boundary)
    11  SHA-256 format checks
     9  PowerShell validation_summary counts
-   13  dotnet_validation_summary (test_total, core/cli counts, booleans, 7 artifacts)
+   23  dotnet_validation_summary (test_total, core/cli counts, booleans,
+       7 full-pipeline artifacts, layer_pipeline booleans, 8 layer artifacts)
     4  safety flags
    --
-   69  total
+   79  total
 
 ---
 
@@ -193,6 +200,22 @@ Content contracts checked:
 
 ---
 
+## Layer-pipeline artifact surface (Phase 2A)
+
+The .NET layer-pipeline command accepts a layer manifest and emits 8 artifacts:
+
+    parsed-cell.json
+    layer-merge-report.md
+    regions.json
+    regions-report.md
+    primitives.json
+    primitives-report.md
+    plan-recommendations.json
+    plan-report.md
+
+All 8 are verified by LayerPipelineProcessTests (process-level, single run).
+Claim boundary in layer-merge-report.md and plan-report.md verified by that test.
+
 ## Full validation run (all commands in order)
 
     dotnet build PZMapForge.slnx
@@ -202,7 +225,7 @@ Content contracts checked:
     powershell -ExecutionPolicy Bypass -File ".\scripts\test-proof-packet.ps1"
     powershell -ExecutionPolicy Bypass -File ".\scripts\validate.ps1"
 
-Expected outcome: 0 errors, 152 tests, 136 schema assertions, 69 proof packet
+Expected outcome: 0 errors, 184 tests, 136 schema assertions, 79 proof packet
 assertions, validate.ps1 exits 0 and prints "Validation passed."
 
 ---
