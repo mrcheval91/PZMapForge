@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Validates .local/mapforge/proof-packet.json against the v0.9 proof-packet contract.
+    Validates .local/mapforge/proof-packet.json against the v0.10 proof-packet contract.
 
     Runs write-proof-packet.ps1 first if proof-packet.json does not exist.
     Exits 0 if all checks pass, exits 1 if any fail.
@@ -55,7 +55,7 @@ Assert-True (Test-Path $packetMd   -PathType Leaf) "proof-packet.md exists"
 $p = Get-Content $packetJson -Raw | ConvertFrom-Json
 
 # ---------------------------------------------------------------------------
-# Required top-level fields (v0.3 adds primitive artifact fields)
+# Required top-level fields (v0.10 adds dotnet_validation_summary)
 # ---------------------------------------------------------------------------
 
 Write-Output ""
@@ -71,7 +71,7 @@ $requiredFields = @(
     'primitives_json_sha256', 'primitives_report_sha256',
     'plan_recommendations_path', 'plan_report_path',
     'plan_recommendations_sha256', 'plan_report_sha256',
-    'claim_boundary', 'validation_summary', 'safety'
+    'claim_boundary', 'validation_summary', 'dotnet_validation_summary', 'safety'
 )
 foreach ($field in $requiredFields) {
     Assert-True ($null -ne $p.PSObject.Properties[$field]) "Field '$field' present"
@@ -83,8 +83,8 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.9') `
-    "schema == 'pzmapforge.proof-packet.v0.9' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.10') `
+    "schema == 'pzmapforge.proof-packet.v0.10' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
@@ -107,12 +107,12 @@ foreach ($field in $shaFields) {
 }
 
 # ---------------------------------------------------------------------------
-# Validation summary counts
+# Validation summary counts (PowerShell lane only)
 # ---------------------------------------------------------------------------
 
 Write-Output ""
-Write-Output "--- Validation summary ---"
-Assert-True ([int]$p.validation_summary.schema_file_sanity          -eq 134) "schema_file_sanity == 134"
+Write-Output "--- Validation summary (PowerShell lane) ---"
+Assert-True ([int]$p.validation_summary.schema_file_sanity          -eq 136) "schema_file_sanity == 136"
 Assert-True ([int]$p.validation_summary.artifact_contract           -eq 40)  "artifact_contract == 40"
 Assert-True ([int]$p.validation_summary.palette_sha256_verification -eq 5)   "palette_sha256_verification == 5"
 Assert-True ([int]$p.validation_summary.tmx_integrity               -eq 21)  "tmx_integrity == 21"
@@ -120,7 +120,29 @@ Assert-True ([int]$p.validation_summary.hardening_harness           -eq 36)  "ha
 Assert-True ([int]$p.validation_summary.region_extraction           -eq 24)  "region_extraction == 24"
 Assert-True ([int]$p.validation_summary.primitive_classification      -eq 22)  "primitive_classification == 22"
 Assert-True ([int]$p.validation_summary.plan_recommendations_contract -eq 28)  "plan_recommendations_contract == 28"
-Assert-True ([int]$p.validation_summary.total_expected_assertions     -eq 365) "total_expected_assertions == 365"
+Assert-True ([int]$p.validation_summary.total_expected_assertions     -eq 381) "total_expected_assertions == 381"
+
+# ---------------------------------------------------------------------------
+# dotnet_validation_summary (separate lane)
+# ---------------------------------------------------------------------------
+
+Write-Output ""
+Write-Output "--- dotnet_validation_summary ---"
+$d = $p.dotnet_validation_summary
+Assert-True ([int]$d.test_total                                -eq 152)  "dotnet test_total == 152"
+Assert-True ([int]$d.core_tests                                -eq 123)  "dotnet core_tests == 123"
+Assert-True ([int]$d.cli_tests                                 -eq 29)   "dotnet cli_tests == 29"
+Assert-True ($d.process_cli_tests_present                      -eq $true) "process_cli_tests_present == true"
+Assert-True ($d.full_pipeline_contract_tests_present           -eq $true) "full_pipeline_contract_tests_present == true"
+Assert-True ([int]$d.full_pipeline_artifact_count              -eq 7)    "dotnet full_pipeline_artifact_count == 7"
+$arts = @($d.full_pipeline_artifacts)
+Assert-True ($arts -contains 'parsed-cell.json')          "artifacts contains 'parsed-cell.json'"
+Assert-True ($arts -contains 'regions.json')              "artifacts contains 'regions.json'"
+Assert-True ($arts -contains 'regions-report.md')         "artifacts contains 'regions-report.md'"
+Assert-True ($arts -contains 'primitives.json')           "artifacts contains 'primitives.json'"
+Assert-True ($arts -contains 'primitives-report.md')      "artifacts contains 'primitives-report.md'"
+Assert-True ($arts -contains 'plan-recommendations.json') "artifacts contains 'plan-recommendations.json'"
+Assert-True ($arts -contains 'plan-report.md')            "artifacts contains 'plan-report.md'"
 
 # ---------------------------------------------------------------------------
 # Safety flags

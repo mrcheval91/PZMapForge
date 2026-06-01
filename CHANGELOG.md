@@ -9,6 +9,31 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- schemas/pzmapforge.proof-packet.v0.10.schema.json: proof packet schema bumped to v0.10.
+  Adds dotnet_validation_summary section (test_total, core_tests, cli_tests, process/contract
+  booleans, artifact_count, artifact list, note). PS validation_summary counts updated:
+  schema_file_sanity=136, proof_packet=69, total_expected_assertions=381.
+
+### Changed
+- scripts/write-proof-packet.ps1: schema → v0.10; dotnet_validation_summary block added;
+  validation_summary counts updated (136/69/381); markdown report updated.
+- scripts/test-proof-packet.ps1: schema sentinel → v0.10; dotnet_validation_summary field
+  added to required check; 13 new dotnet section assertions (69 total, was 55).
+- scripts/test-schema-files.ps1: proof-packet check updated from v0.9 to v0.10;
+  dotnet_validation_summary added to CheckRequired (136 total, was 134).
+- docs/IMPLEMENTATION.md: proof packet row updated to v0.10.
+
+dotnet build: 0 errors
+dotnet test:  152/152 (123 Core + 29 Cli)
+scripts/test-schema-files.ps1: 136 assertions pass
+scripts/test-proof-packet.ps1: 69 assertions pass (6 new dotnet lane checks)
+scripts/validate.ps1: 69 assertions pass, Validation passed
+
+---
+
+## Previous
+
+### Added
 - tests/PZMapForge.Cli.Tests/FullPipelineContractTests.cs: FullPipelineContractFixture
   (IClassFixture) runs full-pipeline once against a temp 300x300 grass image.
   6 contract tests: exit code, regions-report.md claim boundary + summary-by-kind,
