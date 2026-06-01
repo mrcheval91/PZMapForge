@@ -8,6 +8,32 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (Slice 2A-2: layer merger)
+- src/PZMapForge.Core/Layers/LayerMergeOptions.cs: Resize, DefaultKind.
+- src/PZMapForge.Core/Layers/LayerMergeContribution.cs: per-layer pixel
+  contribution stats (contributed, ignoredDefault, invalid, chosen, overridden).
+- src/PZMapForge.Core/Layers/LayerMergeConflict.cs: conflict record (x, y,
+  chosenLayer, chosenKind, losingLayers, losingKinds).
+- src/PZMapForge.Core/Layers/LayerMergeResult.cs: IsValid, Errors, Width,
+  Height, Rows, Grid, Contributions, TotalConflictCount, ConflictSample,
+  ClaimBoundary.
+- src/PZMapForge.Core/Layers/LayerMerger.cs: Merge(manifestPath, palettePath,
+  options) - validates manifest, loads palette, resolves and parses all layer
+  images via ImageMapForgeParser, validates allowed_kinds, merges into one
+  SemanticGrid using precedence (highest-first), tracks per-layer contributions
+  and conflicts (sample capped at 100).
+- tests/PZMapForge.Core.Tests/Layers/LayerMergerTests.cs: 12 tests.
+
+### Changed
+- docs/PHASE_2_DECISION.md: Slice 2A-2 marked complete; Slice 2A-3 defined.
+- docs/IMPLEMENTATION.md: merger row added; multi-layer row updated.
+- CHANGELOG.md: this entry.
+
+dotnet build: 0 errors
+dotnet test:  176/176 (147 Core + 29 Cli)
+PS lane:      381 assertions unchanged
+validate.ps1: Validation passed
+
 ### Added (Slice 2A-1: layer manifest schema and loader foundation)
 - schemas/pzmapforge.layer-manifest.v0.1.schema.json: JSON Schema for the
   layer manifest format (schema, claim_boundary, width, height, layers array,

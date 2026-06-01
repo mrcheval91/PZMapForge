@@ -206,25 +206,48 @@ Tests: 12 new (valid fixture, missing file, wrong schema, wrong claim boundary,
 
 dotnet test: 164/164 (135 Core + 29 Cli). PS lane unchanged at 381.
 
-## Next implementation slice
+## Slice 2A-2: COMPLETE
 
-Slice 2A-2: Layer merger
-
-Files to add:
-  src/PZMapForge.Core/Layers/LayerMerger.cs
+Files added:
+  src/PZMapForge.Core/Layers/LayerMergeOptions.cs
+  src/PZMapForge.Core/Layers/LayerMergeContribution.cs
+  src/PZMapForge.Core/Layers/LayerMergeConflict.cs
   src/PZMapForge.Core/Layers/LayerMergeResult.cs
-  src/PZMapForge.Core/Layers/LayerMergeReport.cs
+  src/PZMapForge.Core/Layers/LayerMerger.cs
   tests/PZMapForge.Core.Tests/Layers/LayerMergerTests.cs
 
-Deliverables:
-  LayerMerger.Merge(manifest, palettePath): resolves layer image paths,
-    parses each image, merges into one SemanticGrid using precedence order.
-  Default kind for cells with no layer contribution: grass (or configurable).
-  Layer merge report: conflict count, per-layer pixel contribution summary.
-  Unit tests: single layer, two layers with overlap, full 4-layer fixture,
-    missing image file (error), conflict count correct.
+LayerMerger.Merge(manifestPath, palettePath, options):
+  validates manifest, loads palette, resolves image paths relative to
+  manifest directory, parses each layer image via ImageMapForgeParser,
+  validates allowed_kinds, merges into one SemanticGrid using precedence,
+  reports per-layer contributions, total conflict count, and up to 100
+  sampled conflicts.
 
-Commit: Add layer merger
+Tests: 12 new (all grass, two-layer precedence, 4-layer non-overlapping,
+  missing image, disallowed kind, conflict count, conflict sample capped,
+  resize true/false, determinism, grid passable to RegionExtractor,
+  claim boundary).
+
+dotnet test: 176/176 (147 Core + 29 Cli). PS lane unchanged at 381.
+
+## Next implementation slice
+
+Slice 2A-3: Layer pipeline CLI command and artifact writer
+
+Files to add:
+  src/PZMapForge.Core/Layers/LayerMergeArtifactWriter.cs
+  CLI command: layer-pipeline --layers <manifestPath> --palette <palettePath>
+               --output <dir>
+  tests: process-level CLI test, artifact writer test
+
+Deliverables:
+  LayerMergeArtifactWriter.Write(outputDir, result): writes
+    parsed-cell.json (from merged grid) and layer-merge-report.md.
+  layer-pipeline CLI command runs full pipeline from manifest to
+    planning artifacts (same downstream steps as full-pipeline).
+  Process test: verify artifacts written, verify claim boundary in report.
+
+Commit: Add layer pipeline CLI command
 
 ---
 

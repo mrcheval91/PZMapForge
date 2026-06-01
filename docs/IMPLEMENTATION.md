@@ -33,6 +33,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | validate.ps1 ledger summary | Ratified | Final output reports PS lane (381 total) and .NET lane (152 total) separately; claim boundary stated |
 | Phase 2 decision record (docs/PHASE_2_DECISION.md) | Ratified | Option A (multi-layer image conventions) chosen; Option B (PZ tile IDs) deferred; Slice 2A-1 complete |
 | LayerManifestLoader (Slice 2A-1) | Ratified | 12 xUnit tests; valid fixture, missing file, schema/boundary/dims, dup names, precedence errors, unknown kinds, empty kinds/path |
+| LayerMerger (Slice 2A-2) | Ratified | 12 xUnit tests; single layer, two-layer precedence, 4-layer non-overlapping, missing image, disallowed kind, conflict count/sample cap, resize true/false, determinism, RegionExtractor passthrough, claim boundary |
 | .NET plan artifact cross-verification | Ratified | PlanningArtifactCrossVerificationTests: 3 [Fact] methods verify header fields, all 13 recommendations, and summary against committed fixture |
 | Semantic region extraction (4-neighbor BFS) | Ratified | test-region-extraction.ps1: 24 assertions pass |
 | Primitive classification (9 kinds to 7 types) | Ratified | test-primitive-classification.ps1: 22 assertions pass |
@@ -75,7 +76,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 |---|---|
 | lotpack / lotheader / bin generation | Phase 4. Requires WorldEd format research. |
 | Semantic kind -> PZ tile ID mapping | Phase 3. Requires local PZ install config. |
-| Multi-layer image conventions | Phase 2. Slice 2A-1 complete (manifest loader). Slice 2A-2 (layer merger) is next. |
+| Multi-layer image conventions | Phase 2. Slice 2A-1 complete (manifest loader). Slice 2A-2 complete (layer merger). Slice 2A-3 (CLI command + artifact writer) is next. |
 | Build 42 compatibility | Unverified. No load test performed. |
 | Steam Workshop packaging | Not planned. |
 
