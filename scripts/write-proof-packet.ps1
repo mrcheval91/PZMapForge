@@ -1,9 +1,9 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.8) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.9) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
-    planning recommendation artifacts, and plan-recommendations contract. Hardening harness covers -Resize (36 assertions).
+    planning recommendation artifacts, and plan-recommendations contract (incl. thresholds_used). Hardening harness covers -Resize (36 assertions).
 
     Reads parsed-cell.json, regions.json, primitives.json and companion files,
     computes SHA-256 hashes, captures git state, and writes:
@@ -145,7 +145,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.8'
+    schema                  = 'pzmapforge.proof-packet.v0.9'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -178,9 +178,9 @@ $packet = [ordered]@{
         hardening_harness           = 36
         region_extraction           = 24
         primitive_classification    = 22
-        plan_recommendations_contract = 21
+        plan_recommendations_contract = 28
         proof_packet                = 55
-        total_expected_assertions   = 358
+        total_expected_assertions   = 365
     }
     safety = [ordered]@{
         local_only_outputs      = $true
@@ -206,7 +206,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.8
+Schema: pzmapforge.proof-packet.v0.9
 
 ## Claim boundary
 
@@ -262,9 +262,9 @@ planning_artifact_only_not_pz_load_tested
 | Hardening harness | 36 |
 | Region extraction | 24 |
 | Primitive classification | 22 |
-| Plan recommendations contract | 21 |
+| Plan recommendations contract | 28 |
 | Proof packet | 55 |
-| Total | 358 |
+| Total | 365 |
 
 ## Safety
 

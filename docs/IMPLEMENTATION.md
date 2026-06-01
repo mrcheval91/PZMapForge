@@ -18,8 +18,8 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Palette SHA-256 verification (parsed-cell vs source/image-palette.json) | Ratified | test-palette-sha256.ps1: 5 assertions pass; Gap 3 closed |
 | ImageMapForge -Resize flag (150x150 scaled to 300x300) | Ratified | test-image-mapforge.ps1 Test 11: 8 assertions; Gap 1 closed |
 | Plan-recommendations schema sanity | Ratified | test-schema-files.ps1: 134 total (was 104; +26 plan-recs +4 proof-packet v0.7) |
-| Plan-recommendations artifact contract | Ratified | test-plan-recommendations-contract.ps1: 21 assertions pass |
-| Proof packet v0.8 (plan contract; total=358) | Ratified | test-proof-packet.ps1: 55 assertions pass |
+| Plan-recommendations artifact contract | Ratified | test-plan-recommendations-contract.ps1: 28 assertions pass (+7 thresholds_used checks) |
+| Proof packet v0.9 (plan contract=28; total=365) | Ratified | test-proof-packet.ps1: 55 assertions pass |
 | .NET plan artifact cross-verification | Ratified | PlanningArtifactCrossVerificationTests: 3 [Fact] methods verify header fields, all 13 recommendations, and summary against committed fixture |
 | Semantic region extraction (4-neighbor BFS) | Ratified | test-region-extraction.ps1: 24 assertions pass |
 | Primitive classification (9 kinds to 7 types) | Ratified | test-primitive-classification.ps1: 22 assertions pass |

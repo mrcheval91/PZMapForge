@@ -120,6 +120,30 @@ Assert-True ($sevSum -eq [int]$a.recommendation_count) `
     "counts_by_severity values sum == recommendation_count (got $sevSum)"
 
 # ---------------------------------------------------------------------------
+# Thresholds used
+# ---------------------------------------------------------------------------
+
+Write-Output ""
+Write-Output "--- Thresholds ---"
+Assert-True ($null -ne $a.PSObject.Properties['thresholds_used']) "thresholds_used field exists"
+
+if ($null -ne $a.PSObject.Properties['thresholds_used']) {
+    $t = $a.thresholds_used
+    Assert-True ($null -ne $t.PSObject.Properties['tiny_building_pixel_threshold']) `
+        "thresholds_used.tiny_building_pixel_threshold exists"
+    Assert-True ($null -ne $t.PSObject.Properties['large_ground_pixel_threshold']) `
+        "thresholds_used.large_ground_pixel_threshold exists"
+    Assert-True ([int]$t.tiny_building_pixel_threshold -ge 0) `
+        "tiny_building_pixel_threshold >= 0 (got $($t.tiny_building_pixel_threshold))"
+    Assert-True ([int]$t.large_ground_pixel_threshold -ge 0) `
+        "large_ground_pixel_threshold >= 0 (got $($t.large_ground_pixel_threshold))"
+    Assert-True ([int]$t.tiny_building_pixel_threshold -eq 9) `
+        "tiny_building_pixel_threshold == 9 (got $($t.tiny_building_pixel_threshold))"
+    Assert-True ([int]$t.large_ground_pixel_threshold -eq 50000) `
+        "large_ground_pixel_threshold == 50000 (got $($t.large_ground_pixel_threshold))"
+}
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 

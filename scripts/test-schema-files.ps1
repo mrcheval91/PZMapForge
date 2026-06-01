@@ -85,8 +85,8 @@ Test-Schema `
 # ---------------------------------------------------------------------------
 
 Test-Schema `
-    -FileName    'pzmapforge.proof-packet.v0.8.schema.json' `
-    -ExpectedId  'pzmapforge.proof-packet.v0.8' `
+    -FileName    'pzmapforge.proof-packet.v0.9.schema.json' `
+    -ExpectedId  'pzmapforge.proof-packet.v0.9' `
     -CheckRequired @(
         'schema', 'generated_at_utc', 'repo_root',
         'git_branch', 'git_commit',

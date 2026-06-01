@@ -9,6 +9,28 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- schemas/pzmapforge.proof-packet.v0.9.schema.json: plan_recommendations_contract
+  const=28, proof_packet const=55, total_expected_assertions const=365.
+
+### Changed
+- scripts/test-plan-recommendations-contract.ps1: thresholds_used section
+  added (+7 assertions): field exists, tiny/large sub-fields exist,
+  both >= 0, tiny==9, large==50000. 28 total (was 21).
+- scripts/write-proof-packet.ps1: bumped to v0.9; plan_recommendations_contract=28,
+  total=365.
+- scripts/test-proof-packet.ps1: v0.9; plan_recommendations_contract==28;
+  total==365. 55 assertions (unchanged count).
+- scripts/test-schema-files.ps1: proof-packet -> v0.9; total 134 unchanged.
+- docs/IMPLEMENTATION.md: contract and proof packet rows updated.
+
+Full PowerShell pipeline: 134+40+5+21+36+24+22+28+55 = 365 assertions. All pass.
+dotnet test: 89/89 unchanged.
+
+---
+
+## [Unreleased - prev25]
+
+### Added
 - plan-recommendations.json now includes thresholds_used object
   (tiny_building_pixel_threshold, large_ground_pixel_threshold) recording
   the PlanningRuleOptions values active during export.
