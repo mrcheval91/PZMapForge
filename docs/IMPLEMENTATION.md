@@ -36,6 +36,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Layer fixture generator (Slice 2B-2) | Ratified | new-example-images.ps1 generates 4 deterministic PNGs; generated-layer-manifest.json; generated/ gitignored; pipeline verified (36 conflicts, Status OK) |
 | LayerValidator (layer-validate CLI) | Ratified | 8 Core xUnit tests + 5 process tests; validates manifest + images without writing artifacts; exits 0/1; --resize supported |
 | Proof packet v0.12 (layer-validate; .NET 197; PS total=393) | Ratified | test-proof-packet.ps1: 81 assertions pass; layer_validate_present + layer_validate_writes_artifacts added |
+| Phase 3 local PZ config spec (docs/PHASE_3_LOCAL_PZ_CONFIG_SPEC.md) | Ratified | Precondition documentation; local config contract, 8 safety checks, 5 proposed slices (3A-1 through 3A-5); not implemented |
 | Validation ledger (docs/VALIDATION_LEDGER.md) | Ratified | Both lanes documented; baseline cac517c; commands and expected counts recorded |
 | validate.ps1 ledger summary | Ratified | Final output reports PS lane (381 total) and .NET lane (152 total) separately; claim boundary stated |
 | Phase 2 decision record (docs/PHASE_2_DECISION.md) | Ratified | Option A (multi-layer image conventions) chosen; Option B (PZ tile IDs) deferred; Slice 2A-1 complete |

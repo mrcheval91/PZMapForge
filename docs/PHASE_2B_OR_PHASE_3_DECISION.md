@@ -182,14 +182,29 @@ Generates 4 deterministic PNGs (terrain, roads, buildings, markers).
 Pipeline verified: 4 layers, 36 expected conflicts (spawn inside row_house),
 15 regions, Status OK. Generated/ is gitignored.
 
-## Next steps
+## Phase 3 precondition: STARTED
 
-Phase 2B documentation is complete.
+docs/PHASE_3_LOCAL_PZ_CONFIG_SPEC.md has been added.
 
-Candidate work:
-  - Continue toward Phase 3 conditions:
-    Document the local PZ install config mechanism spec before coding it.
-  - OR add a layer-validate CLI command (check manifest + images without merging).
+The document defines:
+  - What Phase 3 is and is not allowed to do
+  - Proposed local config file path (.local/pzmapforge/pz-install-config.json)
+  - Proposed config schema shape
+  - 8 mandatory safety checks before any tile mapping
+  - Evidence required before implementation begins
+  - 5 proposed future slices (3A-1 through 3A-5)
+
+Phase 3 implementation must not begin until the precondition doc is reviewed
+and operator evidence (local install path, tilesheet layout, tile naming) is
+documented in a Phase 3A decision record.
+
+## Conditions to begin Phase 3A-1 implementation
+
+1. This spec document is ratified (committed in main -- done).
+2. A local PZ installation is accessible to the operator.
+3. A tilesheet layout survey is documented.
+4. A tile naming convention spec for the semantic kinds exists.
+5. A Phase 3A decision record is written.
 
 ---
 

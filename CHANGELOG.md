@@ -9,6 +9,25 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- docs/PHASE_3_LOCAL_PZ_CONFIG_SPEC.md: precondition documentation for Phase 3
+  local PZ install / tile ID mapping. Defines what Phase 3 may and may not do,
+  proposed local config path (.local/pzmapforge/pz-install-config.json), proposed
+  config schema shape, local install path handling, tilesheet discovery rules,
+  tile reference rules, no-copy/no-write/no-playable-export rules, 8 mandatory
+  safety checks, evidence required before implementation, and 5 proposed slices
+  (3A-1: config loader, 3A-2: install validator, 3A-3: tile catalog, 3A-4: kind
+  mapping, 3A-5: local-tile TMX export). Status: precondition doc only.
+
+### Changed
+- README.md: link to PHASE_3_LOCAL_PZ_CONFIG_SPEC.md added.
+- docs/IMPLEMENTATION.md: Phase 3 precondition row added.
+- docs/PHASE_2B_OR_PHASE_3_DECISION.md: Phase 3 precondition marked started;
+  conditions to begin 3A-1 listed.
+- CHANGELOG.md: this entry.
+
+No code changes. No validation count changes.
+
+### Added
 - schemas/pzmapforge.proof-packet.v0.12.schema.json: bump from v0.11. Adds
   layer_validate_present (true) and layer_validate_writes_artifacts (false) to
   dotnet_validation_summary. Updates test_total 184->197, core_tests 154->162,
