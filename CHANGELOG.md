@@ -9,6 +9,32 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- tests/PZMapForge.Cli.Tests/CliProcessTests.cs: 10 process-level integration
+  tests invoking the CLI via dotnet run and verifying exit codes and artifacts.
+  1. image-check 300x300 -> exit 0, Status OK
+  2. image-check 150x150 without --resize -> exit 1
+  3. image-check 150x150 with --resize -> exit 0
+  4. image-export writes parsed-cell.json
+  5. plan-check on valid fixture -> exit 0
+  6. plan-export writes plan-recommendations.json + plan-report.md
+  7. full-pipeline writes all 3 artifacts
+  8. full-pipeline refuses non-.local output -> exit 1
+  9. plan-check --tiny-threshold abc -> exit 1
+  10. plan-check --tiny-threshold -1 -> exit 1
+
+### Changed
+- tests/PZMapForge.Cli.Tests/PZMapForge.Cli.Tests.csproj: System.Drawing.Common
+  10.0.8 added for programmatic test image creation.
+
+dotnet build: 0 errors, 0 warnings
+dotnet test:  130/130 (107 Core + 23 Cli)
+scripts/validate.ps1: 365 PS assertions unchanged.
+
+---
+
+## [Unreleased - prev31]
+
+### Added
 - src/PZMapForge.Cli/Program.cs: full-pipeline --path --palette [--output]
   [--resize] [--tiny-threshold] [--large-threshold]. Chains:
   ImageMapForgeParser -> ImageMapForgeArtifactWriter (parsed-cell.json) ->
