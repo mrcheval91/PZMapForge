@@ -14,8 +14,10 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | .NET CLI image-check command | Ratified | Exits 0; prints dims/rows/kinds/exact/nearest/unmapped/sha256/status; --resize flag supported |
 | ImageMapForgeArtifactWriter (image -> parsed-cell.json) | Ratified | 9 xUnit tests; schema/claim/dims/rows/counts/resized/determinism/loadable by ParsedCellLoader |
 | .NET CLI image-export command | Ratified | Writes parsed-cell.json to .local/; refuses non-.local output; --resize flag supported |
-| .NET CLI full-pipeline command | Ratified | Chains image parse -> parsed-cell.json -> regions -> primitives -> plan artifacts in one command; --resize and --tiny/large-threshold supported |
-| Process-level CLI integration tests | Ratified | 10 process tests cover image-check/export/full-pipeline exits, artifact creation, path guard, and invalid threshold args |
+| .NET CLI full-pipeline command | Ratified | Writes parsed-cell.json, regions.json, primitives.json, plan-recommendations.json, plan-report.md; --resize and thresholds supported |
+| RegionArtifactWriter (regions.json) | Ratified | 5 xUnit tests; schema, claim_boundary, region_count, pixel total == 90000 |
+| PrimitiveArtifactWriter (primitives.json) | Ratified | 5 xUnit tests; schema, claim_boundary, primitive_count, pixel total == 90000 |
+| Process-level CLI integration tests | Ratified | 10 process tests; test 7 now verifies 5 artifacts including regions.json and primitives.json |
 | Image pixel scan (exact colour match) | Ratified | Test 9: exact grass pixel matched correctly |
 | Nearest-colour fallback with drift cache | Ratified | Test 9: near-grass mapped to grass, dist 1.73 |
 | parsed-cell.json (counts, legend, drift) | Ratified | Test 6: all 5 outputs written |

@@ -4,6 +4,7 @@ using PZMapForge.Core.ParsedCell;
 using PZMapForge.Core.Planning;
 using PZMapForge.Core.Primitives;
 using PZMapForge.Core.Regions;
+using PZMapForge.Core.Regions;
 
 // Claim boundary: PZMapForge CLI is a planning tool only.
 // It does not produce a playable Project Zomboid export.
@@ -533,13 +534,25 @@ static int FullPipelineCommand(string[] args)
         return 1;
     }
 
-    // --- Step 7: write plan artifacts ---
+    // --- Step 7: write regions.json ---
+    var regionsJsonPath = RegionArtifactWriter.Write(
+        outputFull, grid.Width, grid.Height,
+        Path.GetFullPath(parsedCellPath), regions);
+
+    // --- Step 8: write primitives.json ---
+    var primitivesJsonPath = PrimitiveArtifactWriter.Write(
+        outputFull, grid.Width, grid.Height,
+        regionsJsonPath, primitives);
+
+    // --- Step 9: write plan artifacts ---
     var (planJsonPath, planMdPath) = PlanningArtifactWriter.Write(
         outputFull, grid.Width, grid.Height,
         Path.GetFullPath(parsedCellPath), "PZMapForge.Cli full-pipeline",
         planResult, planOpts);
 
     Console.WriteLine($"Parsed cell:      {parsedCellPath}");
+    Console.WriteLine($"Regions JSON:     {regionsJsonPath}");
+    Console.WriteLine($"Primitives JSON:  {primitivesJsonPath}");
     Console.WriteLine($"Plan JSON:        {planJsonPath}");
     Console.WriteLine($"Plan report:      {planMdPath}");
     Console.WriteLine($"Dimensions:       {grid.Width}x{grid.Height}");

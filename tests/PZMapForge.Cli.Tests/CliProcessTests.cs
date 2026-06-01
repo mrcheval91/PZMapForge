@@ -196,6 +196,8 @@ public sealed class CliProcessTests : IDisposable
 
         Assert.Equal(0, code);
         Assert.True(File.Exists(Path.Combine(OutputDir, "parsed-cell.json")));
+        Assert.True(File.Exists(Path.Combine(OutputDir, "regions.json")));
+        Assert.True(File.Exists(Path.Combine(OutputDir, "primitives.json")));
         Assert.True(File.Exists(Path.Combine(OutputDir, "plan-recommendations.json")));
         Assert.True(File.Exists(Path.Combine(OutputDir, "plan-report.md")));
     }

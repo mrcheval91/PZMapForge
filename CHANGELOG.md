@@ -9,6 +9,30 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- src/PZMapForge.Core/Regions/RegionArtifactWriter.cs: Write(outputDir, width,
+  height, sourcePath, RegionExtractionResult) -> regions.json. Schema sentinel,
+  claim_boundary, source, width/height, total_regions, regions[], summary_by_kind[].
+- src/PZMapForge.Core/Primitives/PrimitiveArtifactWriter.cs: Write(outputDir,
+  width, height, sourcePath, PrimitiveClassificationResult) -> primitives.json.
+  Schema sentinel, claim_boundary, source, width/height, primitive_count,
+  primitives[], summary_by_primitive_type[].
+- tests/PZMapForge.Core.Tests/Regions/RegionArtifactWriterTests.cs: 5 tests.
+- tests/PZMapForge.Core.Tests/Primitives/PrimitiveArtifactWriterTests.cs: 5 tests.
+
+### Changed
+- src/PZMapForge.Cli/Program.cs: full-pipeline now writes regions.json and
+  primitives.json after RegionExtractor and PrimitiveClassifier respectively.
+  Prints both paths in output. Test 7 updated to verify 5 artifacts.
+
+dotnet build: 0 errors, 0 warnings
+dotnet test:  140/140 (117 Core + 23 Cli)
+scripts/validate.ps1: 365 PS assertions unchanged.
+
+---
+
+## [Unreleased - prev32]
+
+### Added
 - tests/PZMapForge.Cli.Tests/CliProcessTests.cs: 10 process-level integration
   tests invoking the CLI via dotnet run and verifying exit codes and artifacts.
   1. image-check 300x300 -> exit 0, Status OK

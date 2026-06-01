@@ -38,7 +38,8 @@ dotnet build PZMapForge.slnx
 dotnet test PZMapForge.slnx
 ```
 
-Run the full image-to-planning pipeline in one command (full-pipeline):
+Run the full image-to-planning pipeline in one command (full-pipeline) — writes
+parsed-cell.json, regions.json, primitives.json, plan-recommendations.json, plan-report.md:
 
 ```
 dotnet run --project src/PZMapForge.Cli -- full-pipeline --path .local/mapforge/sample-input.png --palette source/image-palette.json --output .local/mapforge
