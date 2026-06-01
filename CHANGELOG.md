@@ -9,24 +9,28 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
-- src/PZMapForge.Core/Regions/RegionArtifactWriter.cs: Write(outputDir, width,
-  height, sourcePath, RegionExtractionResult) -> regions.json. Schema sentinel,
-  claim_boundary, source, width/height, total_regions, regions[], summary_by_kind[].
-- src/PZMapForge.Core/Primitives/PrimitiveArtifactWriter.cs: Write(outputDir,
-  width, height, sourcePath, PrimitiveClassificationResult) -> primitives.json.
-  Schema sentinel, claim_boundary, source, width/height, primitive_count,
-  primitives[], summary_by_primitive_type[].
-- tests/PZMapForge.Core.Tests/Regions/RegionArtifactWriterTests.cs: 5 tests.
-- tests/PZMapForge.Core.Tests/Primitives/PrimitiveArtifactWriterTests.cs: 5 tests.
+- src/PZMapForge.Core/Regions/RegionArtifactWriter.cs: Write() now returns
+  (string JsonPath, string MdPath) and also writes regions-report.md with
+  claim boundary, summary-by-kind table, top-20-regions table.
+- src/PZMapForge.Core/Primitives/PrimitiveArtifactWriter.cs: Write() now returns
+  (string JsonPath, string MdPath) and also writes primitives-report.md with
+  claim boundary, summary-by-primitive-type table, top-20-primitives table.
+- tests/PZMapForge.Core.Tests/Regions/RegionArtifactWriterTests.cs: 8 tests
+  (5 JSON + 3 markdown: file exists, claim boundary, summary-by-kind).
+- tests/PZMapForge.Core.Tests/Primitives/PrimitiveArtifactWriterTests.cs: 8 tests
+  (5 JSON + 3 markdown: file exists, claim boundary, summary-by-primitive-type).
 
 ### Changed
-- src/PZMapForge.Cli/Program.cs: full-pipeline now writes regions.json and
-  primitives.json after RegionExtractor and PrimitiveClassifier respectively.
-  Prints both paths in output. Test 7 updated to verify 5 artifacts.
+- src/PZMapForge.Cli/Program.cs: full-pipeline now prints regions-report.md and
+  primitives-report.md paths. 7 artifacts emitted total.
+- tests/PZMapForge.Cli.Tests/CliProcessTests.cs: Test 7 now verifies 7 artifacts
+  including regions-report.md and primitives-report.md.
+- docs/IMPLEMENTATION.md: artifact writer rows updated to 8 tests each.
+- docs/IMAGE_MAPFORGE.md: full-pipeline artifact list updated.
 
 dotnet build: 0 errors, 0 warnings
-dotnet test:  140/140 (117 Core + 23 Cli)
-scripts/validate.ps1: 365 PS assertions unchanged.
+dotnet test:  146/146 (123 Core + 23 Cli)
+scripts/validate.ps1: 55 PS assertions pass.
 
 ---
 

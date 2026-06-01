@@ -34,28 +34,28 @@ public sealed class PrimitiveArtifactWriterTests : IDisposable
         return PrimitiveClassifier.Classify(regions);
     }
 
-    private (string JsonPath, PrimitiveClassificationResult Result) WriteDefault()
+    private (string JsonPath, string MdPath, PrimitiveClassificationResult Result) WriteDefault()
     {
-        var result = ClassifyFromFixture();
-        var path   = PrimitiveArtifactWriter.Write(_tempDir, 300, 300, "regions.json", result);
-        return (path, result);
+        var result     = ClassifyFromFixture();
+        var (json, md) = PrimitiveArtifactWriter.Write(_tempDir, 300, 300, "regions.json", result);
+        return (json, md, result);
     }
 
     // -----------------------------------------------------------------------
-    // Tests
+    // JSON tests
     // -----------------------------------------------------------------------
 
     [Fact]
     public void Write_CreatesPrimitivesJson()
     {
-        var (json, _) = WriteDefault();
+        var (json, _, _) = WriteDefault();
         Assert.True(File.Exists(json));
     }
 
     [Fact]
     public void Write_Schema_IsCorrect()
     {
-        var (json, _) = WriteDefault();
+        var (json, _, _) = WriteDefault();
         var doc = JsonDocument.Parse(File.ReadAllText(json));
         Assert.Equal("pzmapforge.primitives.v0.1",
             doc.RootElement.GetProperty("schema").GetString());
@@ -64,7 +64,7 @@ public sealed class PrimitiveArtifactWriterTests : IDisposable
     [Fact]
     public void Write_ClaimBoundary_IsCorrect()
     {
-        var (json, _) = WriteDefault();
+        var (json, _, _) = WriteDefault();
         var doc = JsonDocument.Parse(File.ReadAllText(json));
         Assert.Equal("planning_artifact_only_not_pz_load_tested",
             doc.RootElement.GetProperty("claim_boundary").GetString());
@@ -73,7 +73,7 @@ public sealed class PrimitiveArtifactWriterTests : IDisposable
     [Fact]
     public void Write_PrimitiveCount_Matches()
     {
-        var (json, result) = WriteDefault();
+        var (json, _, result) = WriteDefault();
         var doc = JsonDocument.Parse(File.ReadAllText(json));
         Assert.Equal(result.PrimitiveCount,
             doc.RootElement.GetProperty("primitive_count").GetInt32());
@@ -82,9 +82,37 @@ public sealed class PrimitiveArtifactWriterTests : IDisposable
     [Fact]
     public void Write_SummaryPixelTotal_Is90000()
     {
-        var (json, _) = WriteDefault();
+        var (json, _, _) = WriteDefault();
         var doc     = JsonDocument.Parse(File.ReadAllText(json));
         var summary = doc.RootElement.GetProperty("summary_by_primitive_type").EnumerateArray();
         Assert.Equal(90000, summary.Sum(s => s.GetProperty("total_pixels").GetInt32()));
+    }
+
+    // -----------------------------------------------------------------------
+    // Markdown tests
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Write_CreatesPrimitivesReportMd()
+    {
+        var (_, md, _) = WriteDefault();
+        Assert.True(File.Exists(md));
+    }
+
+    [Fact]
+    public void Write_Markdown_ContainsClaimBoundary()
+    {
+        var (_, md, _) = WriteDefault();
+        Assert.Contains("planning_artifact_only_not_pz_load_tested",
+            File.ReadAllText(md), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Write_Markdown_ContainsSummaryByPrimitiveType()
+    {
+        var (_, md, _) = WriteDefault();
+        var content = File.ReadAllText(md);
+        Assert.Contains("Summary by primitive type", content, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ground_region", content, StringComparison.OrdinalIgnoreCase);
     }
 }

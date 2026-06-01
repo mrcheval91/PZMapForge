@@ -37,6 +37,7 @@ full-pipeline --path <image> --palette <palette> [--output <dir>] [--resize]
               [--tiny-threshold <int>] [--large-threshold <int>]
 ```
 Full image-to-planning pipeline in one command. Writes `parsed-cell.json`,
+`regions.json`, `regions-report.md`, `primitives.json`, `primitives-report.md`,
 `plan-recommendations.json`, and `plan-report.md`. Accepts all image and
 planning options. Refuses output outside `.local/`.
 

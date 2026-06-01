@@ -534,13 +534,13 @@ static int FullPipelineCommand(string[] args)
         return 1;
     }
 
-    // --- Step 7: write regions.json ---
-    var regionsJsonPath = RegionArtifactWriter.Write(
+    // --- Step 7: write regions.json + regions-report.md ---
+    var (regionsJsonPath, regionsMdPath) = RegionArtifactWriter.Write(
         outputFull, grid.Width, grid.Height,
         Path.GetFullPath(parsedCellPath), regions);
 
-    // --- Step 8: write primitives.json ---
-    var primitivesJsonPath = PrimitiveArtifactWriter.Write(
+    // --- Step 8: write primitives.json + primitives-report.md ---
+    var (primitivesJsonPath, primitivesMdPath) = PrimitiveArtifactWriter.Write(
         outputFull, grid.Width, grid.Height,
         regionsJsonPath, primitives);
 
@@ -552,7 +552,9 @@ static int FullPipelineCommand(string[] args)
 
     Console.WriteLine($"Parsed cell:      {parsedCellPath}");
     Console.WriteLine($"Regions JSON:     {regionsJsonPath}");
+    Console.WriteLine($"Regions report:   {regionsMdPath}");
     Console.WriteLine($"Primitives JSON:  {primitivesJsonPath}");
+    Console.WriteLine($"Primitives report:{primitivesMdPath}");
     Console.WriteLine($"Plan JSON:        {planJsonPath}");
     Console.WriteLine($"Plan report:      {planMdPath}");
     Console.WriteLine($"Dimensions:       {grid.Width}x{grid.Height}");
