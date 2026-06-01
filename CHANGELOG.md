@@ -9,6 +9,21 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- docs/PHASE_3A_LOCAL_INSTALL_SURVEY.md: operator survey guide for local PZ
+  install inventory. Provides 8-step PowerShell survey (locate install, check
+  build version, list media/, survey tiles/, sample tilesheet names, count
+  asset types, search naming conventions, capture output to .local/).
+  Specifies placeholder table for committed PHASE_3A_DECISION.md, what not to
+  copy/commit, and the next decision gate before any code is written.
+
+### Changed
+- README.md: link to PHASE_3A_LOCAL_INSTALL_SURVEY.md added.
+- docs/IMPLEMENTATION.md: Phase 3A survey row added.
+- CHANGELOG.md: this entry.
+
+No code changes. No validation count changes.
+
+### Added
 - docs/PHASE_3_LOCAL_PZ_CONFIG_SPEC.md: precondition documentation for Phase 3
   local PZ install / tile ID mapping. Defines what Phase 3 may and may not do,
   proposed local config path (.local/pzmapforge/pz-install-config.json), proposed
