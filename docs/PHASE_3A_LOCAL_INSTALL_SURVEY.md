@@ -2,7 +2,7 @@
 
 Date: 2026-06-01
 Baseline commit: 6529000
-Status: OPERATOR ACTION REQUIRED -- survey not yet completed
+Status: OPERATOR ACTION REQUIRED -- automated discovery found no install
 
 ---
 
@@ -45,6 +45,56 @@ The survey is read-only. Nothing is copied, committed, or modified.
 Survey results go to .local/pzmapforge/surveys/ (gitignored).
 Never paste paths, file lists, or asset details into committed docs.
 Committed docs use placeholders: [PZ_INSTALL_ROOT], [tiles_count], etc.
+
+---
+
+## Latest automated survey status
+
+Last run: 2026-06-01
+
+Automated discovery was attempted using scripts/Run-Phase3ALocalPzSurvey.ps1.
+
+Result: No Project Zomboid installation was found at the searched default paths.
+
+    C:\Program Files (x86)\Steam\steamapps\common\ProjectZomboid  -- not found
+    D:\SteamLibrary\steamapps\common\ProjectZomboid               -- not found
+    E:\SteamLibrary\steamapps\common\ProjectZomboid               -- not found
+    F:\SteamLibrary\steamapps\common\ProjectZomboid               -- not found
+
+Survey output files were written to .local/pzmapforge/surveys/ (gitignored).
+No local paths, tilesheet names, tile IDs, or GIDs are committed.
+
+### Phase 3 implementation status
+
+NOT STARTED. Must not begin until this survey is completed.
+
+### Required operator action
+
+1. Locate the Project Zomboid install path using Steam:
+   Library > Project Zomboid > right-click > Manage > Browse local files
+
+2. Re-run the survey helper with the explicit path:
+
+       powershell -ExecutionPolicy Bypass `
+           -File "scripts\Run-Phase3ALocalPzSurvey.ps1" `
+           -PzRoot "<your PZ install path>"
+
+3. Review .local/pzmapforge/surveys/pz-install-survey-redacted-latest.md
+   after the re-run. It will report yes/no flags without exposing paths.
+
+4. Manually verify which tile sheets correspond to which semantic planning kinds
+   (grass, road, sidewalk, row_house, depanneur, garage, industrial_yard,
+   landmark, spawn). This step cannot be automated.
+
+5. Write docs/PHASE_3A_DECISION.md using the placeholder table from the
+   "What to paste back" section below. Use placeholders only -- no real paths,
+   no tilesheet file names, no GIDs.
+
+6. After docs/PHASE_3A_DECISION.md is committed, Slice 3A-1 (local config
+   schema and loader, no real PZ install required for tests) can begin.
+
+Do not commit .local/pzmapforge/surveys/ outputs.
+Do not write Phase 3 implementation code before step 5 is complete.
 
 ---
 

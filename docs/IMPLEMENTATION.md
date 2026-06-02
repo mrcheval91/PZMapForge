@@ -39,6 +39,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Phase 3 local PZ config spec (docs/PHASE_3_LOCAL_PZ_CONFIG_SPEC.md) | Ratified | Precondition documentation; local config contract, 8 safety checks, 5 proposed slices (3A-1 through 3A-5); not implemented |
 | Phase 3A local install survey (docs/PHASE_3A_LOCAL_INSTALL_SURVEY.md) | Ratified | Operator survey guide; 8-step PowerShell inventory; placeholder table; survey output to .local/ (gitignored); decision gate defined |
 | Phase 3A survey helper (scripts/Run-Phase3ALocalPzSurvey.ps1) | Ratified | Read-only automated survey; writes pz-install-survey-latest.txt and pz-install-survey-redacted-latest.md to .local/ (gitignored); exits 0 even if PZ not found |
+| Phase 3A survey status | Recorded | Automated run 2026-06-01: no PZ install found at default paths. Operator must pass -PzRoot. Phase 3 implementation NOT STARTED. |
 | Validation ledger (docs/VALIDATION_LEDGER.md) | Ratified | Both lanes documented; baseline cac517c; commands and expected counts recorded |
 | validate.ps1 ledger summary | Ratified | Final output reports PS lane (381 total) and .NET lane (152 total) separately; claim boundary stated |
 | Phase 2 decision record (docs/PHASE_2_DECISION.md) | Ratified | Option A (multi-layer image conventions) chosen; Option B (PZ tile IDs) deferred; Slice 2A-1 complete |

@@ -8,6 +8,17 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Changed
+- docs/PHASE_3A_LOCAL_INSTALL_SURVEY.md: status updated to "automated
+  discovery found no install"; "Latest automated survey status" section added
+  (run date, 4 paths checked, result, Phase 3 implementation status NOT STARTED,
+  6-step operator action sequence). No real paths or asset data included.
+- docs/IMPLEMENTATION.md: Phase 3A survey status row added.
+- CHANGELOG.md: this entry.
+
+No code changes. No validation count changes.
+Phase 3 implementation status: NOT STARTED.
+
 ### Added
 - scripts/Run-Phase3ALocalPzSurvey.ps1: read-only Phase 3A survey helper.
   Accepts optional -PzRoot parameter. Searches 4 common Steam paths for PZ.
