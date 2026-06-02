@@ -299,3 +299,8 @@ The local config schema and loader have been implemented.
 This implementation validates only the config document and required safety flags.
 It does not require the configured Project Zomboid install path to exist.
 It does not inspect, copy, parse, or redistribute Project Zomboid assets.
+## Slice 3A-2 implementation status
+
+The local install validator has been implemented.
+
+This validator is read-only. It checks configured directory existence and counts file extensions under the configured tiles root. It does not read PZ asset contents, copy assets, write into media/maps, generate a tile catalog, map semantic kinds, or produce a playable export.

@@ -107,3 +107,5 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 4. The contract test validates the artifact structure but does not validate
    field types beyond what ConvertFrom-Json infers. A JSON Schema validator
    (against schemas/pzmapforge.parsed-cell.v0.1.schema.json) would close this gap.
+
+| Local PZ install validator (Slice 3A-2) | Ratified | Read-only filesystem validation; checks install root, tiles root, extension counts, and safety flags; no asset content reading/copying; no media/maps writes |

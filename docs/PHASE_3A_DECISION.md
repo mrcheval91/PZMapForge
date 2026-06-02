@@ -195,3 +195,19 @@ Scope:
 - No semantic kind mapping.
 - No media/maps writes.
 - No playable export claim.
+## Slice 3A-2 status
+
+Implemented: local PZ install validator.
+
+Scope:
+- Loads local config through LocalPzInstallConfigLoader.
+- Checks install root existence.
+- Checks configured tiles root existence.
+- Counts file extensions under the configured tiles root.
+- Reports likely tile-data presence from extension categories only.
+- Does not read PZ asset contents.
+- Does not copy PZ assets.
+- Does not write into media/maps.
+- Does not generate tile catalogs.
+- Does not map semantic kinds.
+- Does not claim playable export.

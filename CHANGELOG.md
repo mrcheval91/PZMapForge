@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to PZMapForge will be documented here.
 
@@ -8,6 +8,24 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added
+
+- src/PZMapForge.Core/LocalPz/LocalPzInstallValidator.cs: read-only local install validator for Slice 3A-2.
+- src/PZMapForge.Core/LocalPz/LocalPzInstallValidationResult.cs: validator result model.
+- src/PZMapForge.Core/LocalPz/LocalPzInstallValidationSummary.cs: extension count and safety summary model.
+- tests/PZMapForge.Core.Tests/LocalPz/LocalPzInstallValidatorTests.cs: validator tests using temporary fake installs only.
+
+### Changed
+
+- docs/PHASE_3A_DECISION.md: Slice 3A-2 status added.
+- docs/PHASE_3_LOCAL_PZ_CONFIG_SPEC.md: local install validator status added.
+- docs/IMPLEMENTATION.md: LocalPz validator row added.
+
+No real PZ install is required for tests.
+No PZ assets are copied.
+No PZ asset contents are read.
+No media/maps writes.
+No tile catalog, semantic mapping, lotpack, lotheader, bin, or playable export claim.
 ### Added
 - docs/PHASE_3A_DECISION.md: Phase 3A decision record. Media layout survey
   2026-06-02 confirmed: local install present, media/ layout known (33 subdirs),
@@ -407,9 +425,9 @@ validate.ps1: Validation passed (no count changes)
   schema_file_sanity=136, proof_packet=69, total_expected_assertions=381.
 
 ### Changed
-- scripts/write-proof-packet.ps1: schema → v0.10; dotnet_validation_summary block added;
+- scripts/write-proof-packet.ps1: schema â†’ v0.10; dotnet_validation_summary block added;
   validation_summary counts updated (136/69/381); markdown report updated.
-- scripts/test-proof-packet.ps1: schema sentinel → v0.10; dotnet_validation_summary field
+- scripts/test-proof-packet.ps1: schema sentinel â†’ v0.10; dotnet_validation_summary field
   added to required check; 13 new dotnet section assertions (69 total, was 55).
 - scripts/test-schema-files.ps1: proof-packet check updated from v0.9 to v0.10;
   dotnet_validation_summary added to CheckRequired (136 total, was 134).
@@ -1098,11 +1116,11 @@ and correct the counts.
 - scripts/write-proof-packet.ps1: bumped to v0.2. Now hashes regions.json and
   regions-report.md; runs extract-regions.ps1 if regions.json is missing;
   updated validation_summary counts.
-- scripts/test-proof-packet.ps1: updated for v0.2 contract — 39 assertions
+- scripts/test-proof-packet.ps1: updated for v0.2 contract â€” 39 assertions
   (was 32): 4 new required fields, 2 new SHA-256 checks, region_extraction=24,
   total=209.
 - scripts/test-schema-files.ps1: proof-packet section now validates v0.2
-  (12 checked fields, was 10) — 78 total schema assertions (unchanged count
+  (12 checked fields, was 10) â€” 78 total schema assertions (unchanged count
   since proof-packet gained 4 but the total was already recomputed correctly).
 - docs/IMPLEMENTATION.md: proof packet row updated to v0.2.
 
@@ -1127,7 +1145,7 @@ and correct the counts.
 - docs/REGION_EXTRACTION.md: 4-neighbor BFS docs, sort order, output fields,
   PS5.1 [int] rounding bug note.
 - scripts/test-schema-files.ps1: extended to validate all 3 schemas
-  (parsed-cell, proof-packet, regions) — 74 total assertions (was 28).
+  (parsed-cell, proof-packet, regions) â€” 74 total assertions (was 28).
 - scripts/validate.ps1: region extraction step (extract + test) added before
   proof packet.
 - docs/IMPLEMENTATION.md: region extraction and updated schema sanity row.
@@ -1211,3 +1229,4 @@ and correct the counts.
 - Local sample image generator and validation wrapper.
 - Claim boundary, ImageMapForge, and roadmap documentation.
 - Drift tracking port from pz-sud-ouest-montreal (ff0a21f).
+
