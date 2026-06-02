@@ -291,3 +291,11 @@ Slice 3A-5: TileZed planning export with local tile references
     Artifact is still claim_boundary = planning_artifact_only_not_pz_load_tested
     until a real load test is performed and documented.
   Commit: Add local-tile-reference TMX export (non-playable, planning only)
+
+## Slice 3A-1 implementation status
+
+The local config schema and loader have been implemented.
+
+This implementation validates only the config document and required safety flags.
+It does not require the configured Project Zomboid install path to exist.
+It does not inspect, copy, parse, or redistribute Project Zomboid assets.

@@ -16,6 +16,10 @@ Format: Keep a Changelog.
   config schema + loader) is unblocked. Tile catalog, semantic kind mapping, and
   PZ export remain blocked. Slice 3A-1 definition included. Safety rules listed.
   No real paths, file names, or asset data committed.
+- schemas/pzmapforge.local-pz-install-config.v0.1.schema.json: local-only Phase 3A config schema.
+- src/PZMapForge.Core/LocalPz/: typed loader for local PZ install config documents.
+- tests/PZMapForge.Core.Tests/LocalPz/LocalPzInstallConfigLoaderTests.cs: config loader tests.
+- tests/fixtures/local-pz/valid-local-pz-install-config.json: placeholder-only valid config fixture.
 
 ### Changed
 - docs/PHASE_3A_LOCAL_INSTALL_SURVEY.md: status updated (COMPLETE); media
@@ -23,7 +27,15 @@ Format: Keep a Changelog.
 - README.md: link to PHASE_3A_DECISION.md added.
 - docs/IMPLEMENTATION.md: Phase 3A decision record row added.
 - CHANGELOG.md: this entry.
+- docs/PHASE_3A_DECISION.md: Slice 3A-1 marked implemented.
+- docs/PHASE_3_LOCAL_PZ_CONFIG_SPEC.md: local config schema/loader status updated.
+- docs/IMPLEMENTATION.md: local PZ config loader row added.
 
+No real PZ install is required.
+No PZ assets inspected or copied.
+No .local config committed.
+No media/maps writes.
+No tile catalog, semantic mapping, lotpack, lotheader, bin, or playable export claim.
 No code changes. No validation count changes.
 Phase 3A-1: UNBLOCKED -- config schema + loader may now be implemented.
 

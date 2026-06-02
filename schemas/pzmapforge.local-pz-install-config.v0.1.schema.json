@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pzmapforge.local-pz-install-config.v0.1",
+  "title": "PZMapForge Local PZ Install Config v0.1",
+  "description": "Local-only operator configuration for Phase 3A. Points to a local Project Zomboid installation. Must NOT be committed. allow_asset_copy and allow_media_maps_write must be false. Planning artifact only.",
+  "type": "object",
+  "required": [
+    "schema", "claim_boundary", "pz_install_root", "tiles_root",
+    "allow_asset_copy", "allow_media_maps_write", "tile_reference_mode"
+  ],
+  "properties": {
+    "schema":               { "type": "string", "const": "pzmapforge.local-pz-install-config.v0.1" },
+    "claim_boundary":       { "type": "string", "const": "planning_artifact_only_not_pz_load_tested" },
+    "pz_install_root":      { "type": "string", "minLength": 1 },
+    "tiles_root":           { "type": "string", "minLength": 1 },
+    "allow_asset_copy":     { "type": "boolean", "const": false },
+    "allow_media_maps_write":  { "type": "boolean", "const": false },
+    "tile_reference_mode":  { "type": "string", "const": "local_reference_only" },
+    "notes":                { "type": "string" }
+  },
+  "additionalProperties": false
+}

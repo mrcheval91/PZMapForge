@@ -181,3 +181,17 @@ Tests required:
 - loader does NOT require real PZ install to exist (path is validated later)
 
 Commit: Add local PZ install config schema and loader
+
+## Slice 3A-1 status
+
+Implemented: local PZ install config schema and loader.
+
+Scope:
+- Config document validation only.
+- Real local PZ install is not required for tests.
+- No PZ asset inspection.
+- No PZ asset copying.
+- No tile catalog.
+- No semantic kind mapping.
+- No media/maps writes.
+- No playable export claim.

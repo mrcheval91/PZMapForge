@@ -6,6 +6,8 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 
 ## Ratified: what is proven and committed
 
+| Local PZ install config loader (Slice 3A-1) | Ratified | Schema + typed loader; validates document and safety flags only; does not require real PZ install; no asset inspection/copying |
+
 | Capability | Status | Evidence |
 |---|---|---|
 | RGB palette loading and validation | Ratified | 28-assertion test harness passes |

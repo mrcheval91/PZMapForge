@@ -1,0 +1,10 @@
+{
+  "schema": "pzmapforge.local-pz-install-config.v0.1",
+  "claim_boundary": "planning_artifact_only_not_pz_load_tested",
+  "pz_install_root": "[LOCAL_PZ_INSTALL_ROOT]",
+  "tiles_root": "media",
+  "allow_asset_copy": false,
+  "allow_media_maps_write": false,
+  "tile_reference_mode": "local_reference_only",
+  "notes": "Local operator config. Do not commit real local paths."
+}
