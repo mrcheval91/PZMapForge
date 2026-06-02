@@ -2,7 +2,7 @@
 
 Date: 2026-06-01
 Baseline commit: 6529000
-Status: OPERATOR ACTION REQUIRED -- automated discovery found no install
+Status: OPERATOR ACTION REQUIRED -- install found, tile directory not yet located
 
 ---
 
@@ -45,6 +45,107 @@ The survey is read-only. Nothing is copied, committed, or modified.
 Survey results go to .local/pzmapforge/surveys/ (gitignored).
 Never paste paths, file lists, or asset details into committed docs.
 Committed docs use placeholders: [PZ_INSTALL_ROOT], [tiles_count], etc.
+
+---
+
+## Latest manual-path survey status
+
+Last run: 2026-06-01 (with -PzRoot)
+
+### Redacted result
+
+| Field | Value |
+|---|---|
+| Install found | yes |
+| media/ present | yes |
+| media/ subdirectory count | 33 |
+| media/tiles/ present | no |
+| Tile files found | no |
+| Semantic kind naming clues | skipped (media/tiles/ absent) |
+| Build version auto-detected | no |
+| Operator action required | yes |
+
+### Interpretation
+
+The local Project Zomboid installation exists and has a media/ directory with
+33 subdirectories. However, the expected media/tiles/ path was not present.
+
+This means either:
+- Tile definitions, tilesets, or tile pack files are located in a differently
+  named subdirectory (e.g. media/textures/, media/assets/, or similar), or
+- The install layout for this build differs from the classic tiles/ convention.
+
+The next required step is to identify where tile-bearing files actually live in
+this specific install before any Phase 3 code can be written.
+
+### Phase 3 implementation status
+
+BLOCKED. The install exists but the tile-bearing directory has not been located.
+Do not begin Slice 3A-1 until the tile directory is documented and the
+placeholder table in the PHASE_3A_DECISION.md template is completed.
+
+---
+
+## Next manual survey step: locate tile-bearing directories
+
+Run the following PowerShell block to list directory names and extension counts
+under media/ without copying any files.
+
+Set $pzRoot to your PZ install path before running:
+
+    $pzRoot = "<your PZ install path>"   # set this first
+
+    $surveyDir = Join-Path (Get-Location) ".local\pzmapforge\surveys"
+    New-Item -ItemType Directory -Force -Path $surveyDir | Out-Null
+    $out = Join-Path $surveyDir "pz-install-media-layout-redacted-latest.txt"
+
+    "Survey date: $(Get-Date)"                                       | Out-File $out -Encoding UTF8
+    "Purpose: identify tile-bearing directories without copying assets" `
+                                                                     | Out-File $out -Encoding UTF8 -Append
+    ""                                                               | Out-File $out -Encoding UTF8 -Append
+
+    $mediaDir = Join-Path $pzRoot "media"
+
+    "--- media/ subdirectories only ---"                             | Out-File $out -Encoding UTF8 -Append
+    Get-ChildItem $mediaDir -Directory |
+        Select-Object Name | Sort-Object Name | Format-Table -AutoSize |
+        Out-String                                                   | Out-File $out -Encoding UTF8 -Append
+
+    "--- extension counts under media/ ---"                          | Out-File $out -Encoding UTF8 -Append
+    Get-ChildItem $mediaDir -Recurse -File -ErrorAction SilentlyContinue |
+        Group-Object Extension | Sort-Object Count -Descending |
+        Select-Object Name, Count | Format-Table -AutoSize |
+        Out-String                                                   | Out-File $out -Encoding UTF8 -Append
+
+    "--- tile-related directory keyword search ---"                  | Out-File $out -Encoding UTF8 -Append
+    $keywords = @("tile", "tiles", "texture", "pack", "sprite", "world", "map")
+    foreach ($kw in $keywords) {
+        "keyword: $kw"                                               | Out-File $out -Encoding UTF8 -Append
+        Get-ChildItem $mediaDir -Recurse -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -match $kw } |
+            Select-Object -First 20 Name | Format-Table -AutoSize |
+            Out-String                                               | Out-File $out -Encoding UTF8 -Append
+    }
+
+    Write-Output "Wrote local survey file: $out"
+    Write-Output "Do not commit this file."
+
+The output file goes to .local/pzmapforge/surveys/ (gitignored).
+Do NOT commit it.
+
+### What to paste back
+
+After running the block above, record a redacted summary here or in
+docs/PHASE_3A_DECISION.md using placeholders only:
+
+| Field | Value |
+|---|---|
+| Candidate tile-related directories found | yes / no |
+| Extension categories found (e.g. .pack, .png, .tiles, other) | list categories, not counts |
+| Likely tile format present | unknown / yes / no |
+| Build version still unknown | yes / no |
+
+No file names, no real local paths, no asset contents in committed docs.
 
 ---
 

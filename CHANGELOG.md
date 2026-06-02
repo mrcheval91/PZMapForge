@@ -9,6 +9,20 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Changed
+- docs/PHASE_3A_LOCAL_INSTALL_SURVEY.md: status updated; "Latest manual-path
+  survey status" section added (redacted result: install found, 33 media/
+  subdirs, media/tiles/ absent, tile files not found, Phase 3 BLOCKED).
+  Interpretation added (tile directory not at expected path; next step needed).
+  "Next manual survey step: locate tile-bearing directories" section added
+  with safe PS commands and redacted placeholder table. No real paths or
+  asset data committed.
+- docs/IMPLEMENTATION.md: Phase 3A survey status row updated.
+- CHANGELOG.md: this entry.
+
+No code changes. No validation count changes.
+Phase 3 implementation status: BLOCKED.
+
+### Changed
 - docs/PHASE_3A_LOCAL_INSTALL_SURVEY.md: status updated to "automated
   discovery found no install"; "Latest automated survey status" section added
   (run date, 4 paths checked, result, Phase 3 implementation status NOT STARTED,
