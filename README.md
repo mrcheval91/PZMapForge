@@ -225,6 +225,7 @@ examples/
 - [Phase 2B / Phase 3 decision](docs/PHASE_2B_OR_PHASE_3_DECISION.md) — Phase 2B (layer authoring) chosen over Phase 3 (PZ tile IDs)
 - [Phase 3 local PZ config spec](docs/PHASE_3_LOCAL_PZ_CONFIG_SPEC.md) — precondition documentation for local tile ID mapping; not implemented
 - [Phase 3A local install survey](docs/PHASE_3A_LOCAL_INSTALL_SURVEY.md) — operator survey guide: locate PZ install, inventory tiles, document findings
+- [Phase 3A decision record](docs/PHASE_3A_DECISION.md) — survey complete; Phase 3A-1 (local config schema + loader) unblocked
 
 Run the automated read-only survey helper (writes to `.local/`, gitignored):
 

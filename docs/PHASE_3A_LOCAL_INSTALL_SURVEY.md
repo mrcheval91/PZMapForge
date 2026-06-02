@@ -2,7 +2,7 @@
 
 Date: 2026-06-01
 Baseline commit: 6529000
-Status: OPERATOR ACTION REQUIRED -- install found, tile directory not yet located
+Status: COMPLETE -- survey sufficient for Phase 3A-1 decision (see PHASE_3A_DECISION.md)
 
 ---
 
@@ -48,7 +48,19 @@ Committed docs use placeholders: [PZ_INSTALL_ROOT], [tiles_count], etc.
 
 ---
 
-## Latest manual-path survey status
+## Media layout survey result
+
+Second run 2026-06-02 (media layout commands).
+Redacted result recorded in docs/PHASE_3A_DECISION.md.
+
+Key finding: media/tiles/ absent; .pack (~20) and .tiles (~7) files are
+the tile-bearing formats. Sufficient evidence to proceed with Slice 3A-1.
+
+Phase 3A decision: see docs/PHASE_3A_DECISION.md.
+
+---
+
+## First manual-path survey status (archived)
 
 Last run: 2026-06-01 (with -PzRoot)
 

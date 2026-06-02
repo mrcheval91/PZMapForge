@@ -40,6 +40,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Phase 3A local install survey (docs/PHASE_3A_LOCAL_INSTALL_SURVEY.md) | Ratified | Operator survey guide; 8-step PowerShell inventory; placeholder table; survey output to .local/ (gitignored); decision gate defined |
 | Phase 3A survey helper (scripts/Run-Phase3ALocalPzSurvey.ps1) | Ratified | Read-only automated survey; writes pz-install-survey-latest.txt and pz-install-survey-redacted-latest.md to .local/ (gitignored); exits 0 even if PZ not found |
 | Phase 3A survey status | Recorded | Manual-path run 2026-06-01: install found, media/ present (33 subdirs), media/tiles/ absent. Tile directory not yet located. Phase 3 BLOCKED. |
+| Phase 3A decision record (docs/PHASE_3A_DECISION.md) | Ratified | Media layout survey 2026-06-02: .pack (~20) and .tiles (~7) formats confirmed. Phase 3A-1 (config schema + loader) unblocked. Tile catalog and kind mapping remain blocked. |
 | Validation ledger (docs/VALIDATION_LEDGER.md) | Ratified | Both lanes documented; baseline cac517c; commands and expected counts recorded |
 | validate.ps1 ledger summary | Ratified | Final output reports PS lane (381 total) and .NET lane (152 total) separately; claim boundary stated |
 | Phase 2 decision record (docs/PHASE_2_DECISION.md) | Ratified | Option A (multi-layer image conventions) chosen; Option B (PZ tile IDs) deferred; Slice 2A-1 complete |

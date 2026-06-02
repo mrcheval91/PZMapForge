@@ -8,6 +8,25 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added
+- docs/PHASE_3A_DECISION.md: Phase 3A decision record. Media layout survey
+  2026-06-02 confirmed: local install present, media/ layout known (33 subdirs),
+  .pack (~20) and .tiles (~7) formats confirmed as likely tile containers,
+  media/tiles/ absent (tiles not in classic path). Decision: Phase 3A-1 (local
+  config schema + loader) is unblocked. Tile catalog, semantic kind mapping, and
+  PZ export remain blocked. Slice 3A-1 definition included. Safety rules listed.
+  No real paths, file names, or asset data committed.
+
+### Changed
+- docs/PHASE_3A_LOCAL_INSTALL_SURVEY.md: status updated (COMPLETE); media
+  layout survey result section added; first survey archived.
+- README.md: link to PHASE_3A_DECISION.md added.
+- docs/IMPLEMENTATION.md: Phase 3A decision record row added.
+- CHANGELOG.md: this entry.
+
+No code changes. No validation count changes.
+Phase 3A-1: UNBLOCKED -- config schema + loader may now be implemented.
+
 ### Changed
 - docs/PHASE_3A_LOCAL_INSTALL_SURVEY.md: status updated; "Latest manual-path
   survey status" section added (redacted result: install found, 33 media/
