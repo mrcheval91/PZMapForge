@@ -1,4 +1,4 @@
-# Validation Ledger
+﻿# Validation Ledger
 
 PZMapForge maintains two parallel, intentionally separate validation lanes.
 This document is the operator-readable reference for both.
@@ -250,3 +250,4 @@ The following are not claimed and must not be added without documented evidence:
 
 The claim boundary does not advance without a real local load test and
 a documented decision record.
+

@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Schema file sanity validator for all PZMapForge schemas.
@@ -85,8 +85,8 @@ Test-Schema `
 # ---------------------------------------------------------------------------
 
 Test-Schema `
-    -FileName    'pzmapforge.proof-packet.v0.13.schema.json' `
-    -ExpectedId  'pzmapforge.proof-packet.v0.13' `
+    -FileName    'pzmapforge.proof-packet.v0.14.schema.json' `
+    -ExpectedId  'pzmapforge.proof-packet.v0.14' `
     -CheckRequired @(
         'schema', 'generated_at_utc', 'repo_root',
         'git_branch', 'git_commit',

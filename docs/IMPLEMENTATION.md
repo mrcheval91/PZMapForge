@@ -1,4 +1,4 @@
-# Implementation
+﻿# Implementation
 
 Current-state mapping of what PZMapForge actually does vs. what it claims.
 
@@ -25,7 +25,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | parsed-cell.json (counts, legend, drift) | Ratified | Test 6: all 5 outputs written |
 | parsed-cell.json artifact contract | Ratified | test-parsed-cell-contract.ps1: 40 assertions pass |
 | TMX structural integrity (base64, gzip, GID range) | Ratified | test-tmx-integrity.ps1: 21 assertions pass |
-| Schema file sanity — all 4 schemas | Ratified | test-schema-files.ps1: 104 assertions pass (4 schemas, proof-packet on v0.3) |
+| Schema file sanity â€” all 4 schemas | Ratified | test-schema-files.ps1: 104 assertions pass (4 schemas, proof-packet on v0.3) |
 | Palette SHA-256 verification (parsed-cell vs source/image-palette.json) | Ratified | test-palette-sha256.ps1: 5 assertions pass; Gap 3 closed |
 | ImageMapForge -Resize flag (150x150 scaled to 300x300) | Ratified | test-image-mapforge.ps1 Test 11: 8 assertions; Gap 1 closed |
 | Plan-recommendations schema sanity | Ratified | test-schema-files.ps1: 134 total (was 104; +26 plan-recs +4 proof-packet v0.7) |
@@ -98,14 +98,15 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 
 ## Known gaps
 
-1. ~~-Resize flag not test-covered~~ — Closed by test-image-mapforge.ps1 Test 11.
+1. ~~-Resize flag not test-covered~~ â€” Closed by test-image-mapforge.ps1 Test 11.
 
-2. ~~TMX structural validation~~ — Closed by Slice 10 (test-tmx-integrity.ps1).
+2. ~~TMX structural validation~~ â€” Closed by Slice 10 (test-tmx-integrity.ps1).
 
-3. ~~palette_sha256 not verified~~ — Closed by test-palette-sha256.ps1.
+3. ~~palette_sha256 not verified~~ â€” Closed by test-palette-sha256.ps1.
 
 4. The contract test validates the artifact structure but does not validate
    field types beyond what ConvertFrom-Json infers. A JSON Schema validator
    (against schemas/pzmapforge.parsed-cell.v0.1.schema.json) would close this gap.
 
 | Local PZ install validator (Slice 3A-2) | Ratified | Read-only filesystem validation; checks install root, tiles root, extension counts, and safety flags; no asset content reading/copying; no media/maps writes |
+
