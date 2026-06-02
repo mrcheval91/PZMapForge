@@ -7,7 +7,7 @@
 
     Final output reports the complete PowerShell validation lane total (381)
     and the .NET lane total (152) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.12 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.13 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -133,12 +133,12 @@ Write-Output "PZMapForge validation summary"
 Write-Output "========================================"
 
 # ---------------------------------------------------------------------------
-# Ledger constants — sourced from proof-packet v0.12 / docs/VALIDATION_LEDGER.md.
+# Ledger constants — sourced from proof-packet v0.13 / docs/VALIDATION_LEDGER.md.
 # Update here when counts change; update the proof packet schema and ledger too.
 # ---------------------------------------------------------------------------
 
 $psChecks = [ordered]@{
-    'Schema file sanity'            = 136
+    'Schema file sanity'            = 156
     'Artifact contract'             = 40
     'Palette SHA-256 verification'  = 5
     'TMX integrity'                 = 21
@@ -146,16 +146,16 @@ $psChecks = [ordered]@{
     'Region extraction'             = 24
     'Primitive classification'      = 22
     'Plan recommendations contract' = 28
-    'Proof packet'                  = 81
+    'Proof packet'                  = 85
 }
-$psTotal = 393   # = validation_summary.total_expected_assertions in proof-packet v0.12
+$psTotal = 417   # = validation_summary.total_expected_assertions in proof-packet v0.13
 
-$dnCoreTests = 162   # PZMapForge.Core.Tests
+$dnCoreTests = 171   # PZMapForge.Core.Tests
 $dnCliTests  = 35    # PZMapForge.Cli.Tests
-$dnTotal     = 197   # = dotnet_validation_summary.test_total in proof-packet v0.12
+$dnTotal     = 206   # = dotnet_validation_summary.test_total in proof-packet v0.13
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.12):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.13):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -163,7 +163,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.12 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.13 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

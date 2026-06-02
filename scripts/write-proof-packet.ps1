@@ -1,7 +1,7 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.12) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.13) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
     planning recommendation artifacts, plan-recommendations contract (incl. thresholds_used),
     and a separate dotnet_validation_summary section tracking .NET xUnit test counts.
@@ -147,7 +147,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.12'
+    schema                  = 'pzmapforge.proof-packet.v0.13'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -173,7 +173,7 @@ $packet = [ordered]@{
     plan_report_sha256          = $planMdSha
     claim_boundary          = 'planning_artifact_only_not_pz_load_tested'
     validation_summary      = [ordered]@{
-        schema_file_sanity          = 136
+        schema_file_sanity          = 156
         artifact_contract           = 40
         palette_sha256_verification = 5
         tmx_integrity               = 21
@@ -181,12 +181,12 @@ $packet = [ordered]@{
         region_extraction           = 24
         primitive_classification    = 22
         plan_recommendations_contract = 28
-        proof_packet                = 81
-        total_expected_assertions   = 393
+        proof_packet                = 85
+        total_expected_assertions   = 417
     }
     dotnet_validation_summary = [ordered]@{
-        test_total                          = 197
-        core_tests                          = 162
+        test_total                          = 206
+        core_tests                          = 171
         cli_tests                           = 35
         process_cli_tests_present           = $true
         full_pipeline_contract_tests_present = $true
@@ -214,6 +214,10 @@ $packet = [ordered]@{
         )
         layer_validate_present          = $true
         layer_validate_writes_artifacts = $false
+	local_pz_config_loader_present = $true
+	local_pz_config_loader_requires_real_install = $false
+	local_pz_config_loader_inspects_assets = $false
+	local_pz_config_loader_copies_assets = $false
         note = 'Dotnet validation is tracked separately from the PowerShell artifact validation pipeline.'
     }
     safety = [ordered]@{
@@ -240,7 +244,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.12
+Schema: pzmapforge.proof-packet.v0.13
 
 ## Claim boundary
 
@@ -289,7 +293,7 @@ planning_artifact_only_not_pz_load_tested
 
 | Check | Expected assertions |
 |---|---:|
-| Schema file sanity | 136 |
+| Schema file sanity | 156 |
 | Artifact contract | 40 |
 | Palette SHA-256 verification | 5 |
 | TMX integrity | 21 |
@@ -297,15 +301,15 @@ planning_artifact_only_not_pz_load_tested
 | Region extraction | 24 |
 | Primitive classification | 22 |
 | Plan recommendations contract | 28 |
-| Proof packet | 81 |
-| Total | 393 |
+| Proof packet | 85 |
+| Total | 417 |
 
 ## .NET validation summary (separate lane)
 
 | Field | Value |
 |---|---|
-| test_total | 197 |
-| core_tests | 162 |
+| test_total | 206 |
+| core_tests | 171 |
 | cli_tests | 35 |
 | process_cli_tests_present | true |
 | full_pipeline_contract_tests_present | true |
@@ -316,6 +320,10 @@ planning_artifact_only_not_pz_load_tested
 | layer_pipeline_artifacts | parsed-cell.json, layer-merge-report.md, regions.json, regions-report.md, primitives.json, primitives-report.md, plan-recommendations.json, plan-report.md |
 | layer_validate_present | true |
 | layer_validate_writes_artifacts | false |
+| local_pz_config_loader_present | true |
+| local_pz_config_loader_requires_real_install | false |
+| local_pz_config_loader_inspects_assets | false |
+| local_pz_config_loader_copies_assets | false |
 
 Note: .NET test counts are tracked separately and are not included in total_expected_assertions.
 

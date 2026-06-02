@@ -85,8 +85,8 @@ Test-Schema `
 # ---------------------------------------------------------------------------
 
 Test-Schema `
-    -FileName    'pzmapforge.proof-packet.v0.12.schema.json' `
-    -ExpectedId  'pzmapforge.proof-packet.v0.12' `
+    -FileName    'pzmapforge.proof-packet.v0.13.schema.json' `
+    -ExpectedId  'pzmapforge.proof-packet.v0.13' `
     -CheckRequired @(
         'schema', 'generated_at_utc', 'repo_root',
         'git_branch', 'git_commit',
@@ -97,6 +97,18 @@ Test-Schema `
         'plan_recommendations_sha256', 'plan_report_sha256'
     )
 
+Test-Schema `
+    -FileName    'pzmapforge.local-pz-install-config.v0.1.schema.json' `
+    -ExpectedId  'pzmapforge.local-pz-install-config.v0.1' `
+    -CheckRequired @(
+        'schema',
+        'claim_boundary',
+        'pz_install_root',
+        'tiles_root',
+        'allow_asset_copy',
+        'allow_media_maps_write',
+        'tile_reference_mode'
+    )
 # ---------------------------------------------------------------------------
 # regions schema
 # ---------------------------------------------------------------------------
