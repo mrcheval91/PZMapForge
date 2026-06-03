@@ -1,5 +1,6 @@
 using PZMapForge.Core.ImageParsing;
 using PZMapForge.Core.Layers;
+using PZMapForge.Core.LocalPz;
 using PZMapForge.Core.Palette;
 using PZMapForge.Core.ParsedCell;
 using PZMapForge.Core.Planning;
@@ -26,6 +27,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  layer-pipeline    --layers <manifest> --palette <palette> [--output <dir>] [--resize]");
     Console.Error.WriteLine("                    [--tiny-threshold <int>] [--large-threshold <int>]");
     Console.Error.WriteLine("  layer-validate    --layers <manifest> --palette <palette> [--resize]");
+    Console.Error.WriteLine("  local-tile-survey --config <path> [--output <dir>]");
     return 1;
 }
 
@@ -42,6 +44,7 @@ return args[0] switch
     "plan-export"       => PlanExportCommand(args[1..]),
     "layer-pipeline"    => LayerPipelineCommand(args[1..]),
     "layer-validate"    => LayerValidateCommand(args[1..]),
+    "local-tile-survey" => LocalTileSurveyCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -796,11 +799,72 @@ static int LayerValidateCommand(string[] args)
     return 0;
 }
 
+static int LocalTileSurveyCommand(string[] args)
+{
+    var configPath = string.Empty;
+    var outputDir  = string.Empty;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if      (args[i] is "--config" or "-c" && i + 1 < args.Length) configPath = args[++i];
+        else if (args[i] is "--output" or "-o" && i + 1 < args.Length) outputDir  = args[++i];
+    }
+
+    if (string.IsNullOrWhiteSpace(configPath))
+    { Console.Error.WriteLine("local-tile-survey requires --config <path>"); return 1; }
+
+    if (string.IsNullOrWhiteSpace(outputDir))
+        outputDir = Path.Combine(Directory.GetCurrentDirectory(), ".local");
+
+    // The output dir must be (or end with) a .local directory segment.
+    // The writer appends nothing extra; it writes directly to this directory.
+    var fullOutput = Path.GetFullPath(
+        outputDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+
+    var lastSegment = Path.GetFileName(fullOutput);
+    if (!lastSegment.Equals(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"local-tile-survey: --output must end with a .local directory: {fullOutput}");
+        return 1;
+    }
+
+    // repoRoot is the parent of .local; the writer writes to <repoRoot>/.local/
+    var repoRoot = Path.GetDirectoryName(fullOutput) ?? Directory.GetCurrentDirectory();
+
+    var validationResult = LocalPzInstallValidator.Validate(configPath);
+
+    if (!validationResult.IsValid)
+    {
+        Console.WriteLine("Status:                   INVALID (config validation failed)");
+        foreach (var e in validationResult.Errors)
+            Console.Error.WriteLine($"  error: {e}");
+        return 1;
+    }
+
+    var survey   = LocalTileReferenceSurveyWriter.Write(validationResult, configPath, repoRoot);
+    var jsonPath = Path.Combine(fullOutput, LocalTileReferenceSurveyWriter.JsonFileName);
+    var mdPath   = Path.Combine(fullOutput, LocalTileReferenceSurveyWriter.MarkdownFileName);
+
+    Console.WriteLine($"Schema:                   {survey.Schema}");
+    Console.WriteLine($"Claim boundary:           {survey.ClaimBoundary}");
+    Console.WriteLine($"Install root exists:      {survey.InstallRootExists}");
+    Console.WriteLine($"Tiles root exists:        {survey.TilesRootExists}");
+    Console.WriteLine($"Likely tile data present: {survey.LikelyTileDataPresent}");
+    Console.WriteLine($"Survey JSON:              {jsonPath}");
+    Console.WriteLine($"Survey MD:                {mdPath}");
+    Console.WriteLine($"PZ assets copied:         {survey.PzAssetsCopied}");
+    Console.WriteLine($"media/maps touched:       {survey.MediaMapsTouched}");
+    Console.WriteLine($"Playable export claimed:  {survey.PlayableExportClaimed}");
+    Console.WriteLine("Status:                   OK");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
     Console.Error.WriteLine("Available commands: image-check, image-export, full-pipeline, " +
         "palette-check, parsed-cell-check, region-check, primitive-check, " +
-        "plan-check, plan-export, layer-pipeline, layer-validate");
+        "plan-check, plan-export, layer-pipeline, layer-validate, local-tile-survey");
     return 1;
 }

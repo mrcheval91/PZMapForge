@@ -8,6 +8,29 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (Slice 3A-4: local tile reference survey CLI command)
+- local-tile-survey CLI command: --config <path> [--output <dir>].
+  Loads local PZ install config via LocalPzInstallConfigLoader, validates
+  the install filesystem via LocalPzInstallValidator, writes survey artifacts
+  via LocalTileReferenceSurveyWriter. --output must end with a .local
+  directory segment (refused otherwise). Defaults to <cwd>/.local. Prints
+  schema, claim_boundary, install/tiles presence, artifact paths, and all
+  safety flag values. No assets read or copied. No media/maps writes.
+- tests/PZMapForge.Cli.Tests/LocalTileSurveyProcessTests.cs: 5 process tests
+  using temp fake install directories (no real PZ install required). Tests:
+  valid config writes artifacts, non-.local output refused, missing --config
+  exits 1, JSON contains claim boundary fields, markdown contains non-claims.
+  All tests use --configuration Release --no-build.
+
+### Changed
+- src/PZMapForge.Cli/Program.cs: local-tile-survey command added; using added;
+  help text and UnknownCommand updated.
+- docs/IMPLEMENTATION.md: Slice 3A-4 row added.
+- CHANGELOG.md: this entry.
+
+No PZ assets copied or read. No media/maps writes.
+claim_boundary = planning_artifact_only_not_pz_load_tested preserved.
+
 ### Added
 
 - schemas/pzmapforge.proof-packet.v0.15.schema.json: proof packet schema synchronized after Slice 3A-3.
