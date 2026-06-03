@@ -516,12 +516,15 @@ public sealed class AppExportSvgFixture : IDisposable
             bmp.Save(imgPath, System.Drawing.Imaging.ImageFormat.Png);
         }
 
-        // minimal SVG annotation
+        // richer SVG with g, path, polygon, text, id, class attributes
         var svgPath = Path.Combine(_root, "reference.svg");
         File.WriteAllText(svgPath,
             "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"300\" height=\"300\">" +
-            "<rect width=\"300\" height=\"300\" fill=\"none\" stroke=\"red\"/>" +
-            "<text x=\"10\" y=\"20\">District A</text></svg>",
+            "<g id=\"districts\" class=\"reference\">" +
+            "<path id=\"path-a\" d=\"M10 10 L290 10 L290 290 Z\"/>" +
+            "<polygon id=\"polygon-b\" points=\"50,50 250,50 250,250\"/>" +
+            "<text x=\"20\" y=\"30\" class=\"label\">District A</text>" +
+            "</g></svg>",
             System.Text.Encoding.UTF8);
 
         var repoRoot   = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
@@ -553,13 +556,19 @@ public sealed class AppExportSvgFixture : IDisposable
 
         var svgImagePath   = Path.Combine(OutputDir, "images", "annotation-image.svg");
         var svgSummaryPath = Path.Combine(OutputDir, "artifacts", "svg-reference-summary.json");
-        IndexHtml       = ExitCode == 0 && File.Exists(Path.Combine(OutputDir, "index.html"))
+        var svgStructurePath = Path.Combine(OutputDir, "artifacts", "svg-reference-structure.json");
+        IndexHtml         = ExitCode == 0 && File.Exists(Path.Combine(OutputDir, "index.html"))
             ? File.ReadAllText(Path.Combine(OutputDir, "index.html"))
             : string.Empty;
-        SvgImageExists   = File.Exists(svgImagePath);
-        SvgSummaryExists = File.Exists(svgSummaryPath);
-        SvgSummaryJson   = SvgSummaryExists ? File.ReadAllText(svgSummaryPath) : string.Empty;
+        SvgImageExists    = File.Exists(svgImagePath);
+        SvgSummaryExists  = File.Exists(svgSummaryPath);
+        SvgSummaryJson    = SvgSummaryExists  ? File.ReadAllText(svgSummaryPath)    : string.Empty;
+        SvgStructureExists = File.Exists(svgStructurePath);
+        SvgStructureJson   = SvgStructureExists ? File.ReadAllText(svgStructurePath) : string.Empty;
     }
+
+    public bool   SvgStructureExists { get; }
+    public string SvgStructureJson   { get; }
 
     public void Dispose()
     {
@@ -597,4 +606,34 @@ public sealed class AppExportSvgAnnotationTests : IClassFixture<AppExportSvgFixt
     [Fact]
     public void AppExport_Svg_SummaryContainsParsedAsGeometryFalse() =>
         Assert.Contains("\"parsed_as_geometry\": false", _fix.SvgSummaryJson, StringComparison.OrdinalIgnoreCase);
+
+    // SVG-2: structure inspector tests
+
+    [Fact]
+    public void AppExport_Svg_WritesSvgReferenceStructure() =>
+        Assert.True(_fix.SvgStructureExists, "svg-reference-structure.json was not written");
+
+    [Fact]
+    public void AppExport_Svg_StructureContainsParsedAsGeometryFalse() =>
+        Assert.Contains("\"parsed_as_geometry\": false", _fix.SvgStructureJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_StructureContainsConvertedToMapGeometryFalse() =>
+        Assert.Contains("\"converted_to_map_geometry\": false", _fix.SvgStructureJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_StructureElementCountsIncludePath() =>
+        Assert.Contains("\"path\":", _fix.SvgStructureJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_StructureSampleIdsIncludeDistrictsId() =>
+        Assert.Contains("districts", _fix.SvgStructureJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_StructureSampleTextLabelsIncludeDistrictA() =>
+        Assert.Contains("District A", _fix.SvgStructureJson, StringComparison.Ordinal);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsSvgStructure() =>
+        Assert.Contains("SVG Structure", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 }

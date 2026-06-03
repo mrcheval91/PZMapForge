@@ -1,6 +1,6 @@
 # Image-to-Map App Export
 
-Status: Slice 3A-6 implemented; APP-2 visual viewer; APP-3 blockout UX; APP-4 workbench layout; APP-5 palette health + parsed preview; APP-6 annotation workflow; APP-7 SVG annotation
+Status: Slice 3A-6 implemented; APP-2–7 app export improvements; SVG-2 structure inspector
 
 Claim boundary: planning_artifact_only_not_pz_load_tested
 
@@ -159,6 +159,19 @@ Added in APP-7:
   `parsed_as_geometry` (false), and all safety flags.
 - SVG annotation is displayed via a standard `<img src="...">` reference — browser
   renders inline SVG from file. No SVG parsing or geometry conversion.
+
+Added in SVG-2:
+
+- **`artifacts/svg-reference-structure.json`** written when annotation is SVG. Contains
+  schema v0.1, element counts (svg/g/path/polyline/polygon/line/rect/circle/ellipse/
+  text/image/use), id\_count, class\_count, sample\_ids (max 20), sample\_classes
+  (max 20), sample\_text\_labels (max 20), likely flags, and all safety flags
+  (`parsed_as_geometry: false`, `converted_to_map_geometry: false`).
+- **SVG Structure** section added to the HTML right panel when SVG annotation is
+  present, linking to `svg-reference-structure.json`.
+- SVG XML is parsed safely (DTD disabled, no external entities, no network).
+  Only element names, attribute values, and text node content are read.
+  Path coordinate geometry is counted but not extracted or interpreted.
 
 ---
 

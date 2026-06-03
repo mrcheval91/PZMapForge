@@ -1,5 +1,7 @@
 using System.Text;
 using System.Text.Json;
+using System.Xml;
+using System.Xml.Linq;
 using PZMapForge.Core.ImageParsing;
 using PZMapForge.Core.Layers;
 using PZMapForge.Core.LocalPz;
@@ -1033,14 +1035,28 @@ static int AppExportCommand(string[] args)
                 Path.Combine(artifactsDir, "svg-reference-summary.json"),
                 JsonSerializer.Serialize(svgSummary, new JsonSerializerOptions { WriteIndented = true }),
                 Encoding.UTF8);
+
+            WriteSvgStructure(annotationPath, artifactsDir);
         }
     }
+
+    var svgStructureSectionHtml = !string.IsNullOrEmpty(relativeAnnotSrc)
+        && Path.GetExtension(relativeAnnotSrc).Equals(".svg", StringComparison.OrdinalIgnoreCase)
+        ? """
+
+    <h2>SVG Structure</h2>
+    <div class="arts">
+      <div class="art"><a href="artifacts/svg-reference-structure.json">svg-reference-structure.json</a><div class="desc">SVG element counts, IDs, text labels (schema v0.1)</div></div>
+      <div class="art"><a href="artifacts/svg-reference-summary.json">svg-reference-summary.json</a><div class="desc">SVG reference summary</div></div>
+    </div>
+"""
+        : string.Empty;
 
     // Step 9: write index.html
     var htmlPath = Path.Combine(outputFull, "index.html");
     var html     = BuildAppHtml(
         relativeImgSrc, relativeParsedSrc, relativeAnnotSrc,
-        annotPanelLabel, annotGuidanceHtml,
+        annotPanelLabel, annotGuidanceHtml, svgStructureSectionHtml,
         imagePath, grid.Width, grid.Height, parseResult.Resized,
         regions.TotalRegions, primitives.PrimitiveCount,
         planResult.RecommendationCount, planResult.Summary.WarningCount,
@@ -1056,6 +1072,103 @@ static int AppExportCommand(string[] args)
     Console.WriteLine($"Warnings:         {planResult.Summary.WarningCount}");
     Console.WriteLine("Status:           OK");
     return 0;
+}
+
+static void WriteSvgStructure(string annotationPath, string artifactsDir)
+{
+    var xmlSettings = new XmlReaderSettings
+    {
+        DtdProcessing           = DtdProcessing.Prohibit,
+        XmlResolver             = null,
+        MaxCharactersInDocument = 10_000_000,
+    };
+
+    List<XElement> elements;
+    XElement?      root;
+    try
+    {
+        using var reader = XmlReader.Create(annotationPath, xmlSettings);
+        var doc  = XDocument.Load(reader);
+        root     = doc.Root;
+        elements = root?.DescendantsAndSelf().ToList() ?? [];
+    }
+    catch
+    {
+        root     = null;
+        elements = [];
+    }
+
+    var countByName = elements
+        .GroupBy(e => e.Name.LocalName.ToLowerInvariant())
+        .ToDictionary(g => g.Key, g => g.Count());
+
+    var sampleIds = elements
+        .Select(e => e.Attribute("id")?.Value)
+        .Where(v => !string.IsNullOrEmpty(v))
+        .Distinct()
+        .Take(20)
+        .ToList();
+
+    var sampleClasses = elements
+        .Select(e => e.Attribute("class")?.Value)
+        .Where(v => !string.IsNullOrEmpty(v))
+        .SelectMany(v => v!.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        .Distinct()
+        .Take(20)
+        .ToList();
+
+    var sampleTextLabels = elements
+        .Where(e => e.Name.LocalName == "text")
+        .Select(e => e.Value.Trim())
+        .Where(v => !string.IsNullOrEmpty(v))
+        .Distinct()
+        .Take(20)
+        .ToList();
+
+    var structure = new
+    {
+        schema                      = "pzmapforge.svg-reference-structure.v0.1",
+        claim_boundary              = "planning_artifact_only_not_pz_load_tested",
+        source_file_name            = Path.GetFileName(annotationPath),
+        file_size_bytes             = new FileInfo(annotationPath).Length,
+        root_element                = root?.Name.LocalName ?? "unknown",
+        width                       = root?.Attribute("width")?.Value  ?? "",
+        height                      = root?.Attribute("height")?.Value ?? "",
+        viewBox                     = root?.Attribute("viewBox")?.Value ?? "",
+        element_counts              = new
+        {
+            svg      = countByName.GetValueOrDefault("svg"),
+            g        = countByName.GetValueOrDefault("g"),
+            path     = countByName.GetValueOrDefault("path"),
+            polyline = countByName.GetValueOrDefault("polyline"),
+            polygon  = countByName.GetValueOrDefault("polygon"),
+            line     = countByName.GetValueOrDefault("line"),
+            rect     = countByName.GetValueOrDefault("rect"),
+            circle   = countByName.GetValueOrDefault("circle"),
+            ellipse  = countByName.GetValueOrDefault("ellipse"),
+            text     = countByName.GetValueOrDefault("text"),
+            image    = countByName.GetValueOrDefault("image"),
+            use      = countByName.GetValueOrDefault("use"),
+        },
+        id_count                    = sampleIds.Count,
+        class_count                 = sampleClasses.Count,
+        sample_ids                  = sampleIds,
+        sample_classes              = sampleClasses,
+        sample_text_labels          = sampleTextLabels,
+        likely_contains_text_labels = sampleTextLabels.Count > 0,
+        likely_contains_paths       = countByName.GetValueOrDefault("path") > 0,
+        likely_contains_groups      = countByName.GetValueOrDefault("g") > 0,
+        parsed_as_geometry          = false,
+        converted_to_map_geometry   = false,
+        pz_assets_copied            = false,
+        media_maps_touched          = false,
+        playable_export_claimed     = false,
+    };
+
+    File.WriteAllText(
+        Path.Combine(artifactsDir, "svg-reference-structure.json"),
+        JsonSerializer.Serialize(structure, new JsonSerializerOptions { WriteIndented = true }),
+        Encoding.UTF8);
 }
 
 static void WriteParsedPreview(
@@ -1089,6 +1202,7 @@ static string BuildAppHtml(
     string relativeAnnotSrc,
     string annotPanelLabel,
     string annotGuidanceHtml,
+    string svgStructureSectionHtml,
     string imagePath, int width, int height, bool resized,
     int regions, int primitives, int recommendations, int warnings,
     PlanningRuleOptions planOpts,
@@ -1272,6 +1386,7 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
       <div class="art"><a href="artifacts/plan-report.md">plan-report.md</a><div class="desc">Plan report</div></div>
     </div>
 
+    {{svgStructureSectionHtml}}
     <h2>Non-claims</h2>
     <ul class="nc-list">
       <li>Not a playable Project Zomboid map.</li>

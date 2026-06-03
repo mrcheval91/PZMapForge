@@ -8,6 +8,35 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (SVG-2: SVG reference structure inspector)
+- src/PZMapForge.Cli/Program.cs:
+  - using System.Xml, System.Xml.Linq added.
+  - WriteSvgStructure: safely parses SVG XML (DtdProcessing.Prohibit, XmlResolver=null,
+    10MB limit). Counts 12 element types (svg/g/path/polyline/polygon/line/rect/circle/
+    ellipse/text/image/use). Collects sample_ids, sample_classes, sample_text_labels
+    (max 20 each). Writes svg-reference-structure.json to artifacts/ with schema
+    pzmapforge.svg-reference-structure.v0.1 and all safety flags
+    (parsed_as_geometry: false, converted_to_map_geometry: false).
+  - BuildAppHtml: svgStructureSectionHtml parameter added; {{svgStructureSectionHtml}}
+    slot inserted before Non-claims in right panel.
+  - AppExportCommand: WriteSvgStructure called when annotation is SVG; svgStructure-
+    SectionHtml computed and passed to BuildAppHtml.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - AppExportSvgFixture SVG updated to include g/path/polygon/text with id/class.
+  - SvgStructureExists + SvgStructureJson properties added to fixture.
+  - AppExportSvgAnnotationTests: 7 new tests (structure file exists, parsed_as_geometry
+    false, converted_to_map_geometry false, path element count present, districts id
+    present, District A text label present, SVG Structure in HTML).
+  - Total: 267 tests (190 Core + 77 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+SVG paths are counted but not extracted or interpreted as geometry.
+No SVG-to-PZ conversion. No PZ assets. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Added (APP-7: SVG annotation reference support)
 - src/PZMapForge.Cli/Program.cs:
   - using System.Text.Json added.
