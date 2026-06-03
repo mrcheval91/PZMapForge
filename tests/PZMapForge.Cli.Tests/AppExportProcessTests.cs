@@ -310,10 +310,18 @@ public sealed class AppExportContentTests : IClassFixture<AppExportContentFixtur
         Assert.Contains("Palette", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 
     [Fact]
-    public void AppExport_Content_ContainsJsonArtifactsSection() =>
-        Assert.Contains("JSON Artifacts", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+    public void AppExport_Content_ContainsArtifactFilesSection() =>
+        Assert.Contains("Artifact Files", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 
     [Fact]
-    public void AppExport_Content_ContainsMarkdownReportsSection() =>
-        Assert.Contains("Markdown Reports", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+    public void AppExport_Content_ContainsMapPreviewSection() =>
+        Assert.Contains("Map Preview", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_ContainsSummarySection() =>
+        Assert.Contains("Summary", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_ContainsWorkbenchClass() =>
+        Assert.Contains("class=\"workbench\"", _fix.IndexHtml, StringComparison.Ordinal);
 }

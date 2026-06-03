@@ -1031,122 +1031,125 @@ static string BuildAppHtml(
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>PZMapForge &mdash; Local Map Report</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PZMapForge &mdash; Map Workbench</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:monospace;background:#111;color:#ccc;min-height:100vh}
-.hdr{background:#162016;border-bottom:2px solid #2e4a2e;padding:.8em 2em;display:flex;align-items:center;gap:.8em}
+.hdr{background:#162016;border-bottom:2px solid #2e4a2e;padding:.75em 2em;display:flex;align-items:center;gap:.8em}
 .hdr h1{color:#9acc9a;font-size:1.2em;letter-spacing:.04em}
 .badge{font-size:.72em;background:#1e3a14;border:1px solid #3d6628;color:#82bb55;padding:.15em .55em;border-radius:3px}
-.boundary{background:#1e1e0e;border-left:3px solid #777711;padding:.55em 1em;margin:1em 2em;font-size:.83em;color:#aaaa77}
+.boundary{background:#1e1e0e;border-left:3px solid #777711;padding:.5em 2em;font-size:.82em;color:#aaaa77}
 .boundary code{color:#dddd55}
-.main{padding:1em 2em;max-width:1080px}
-.cards{display:flex;flex-wrap:wrap;gap:.7em;margin:.7em 0 1.4em}
-.card{background:#181818;border:1px solid #2a2a2a;border-radius:4px;padding:.7em 1.1em;min-width:110px}
-.card .num{font-size:1.9em;font-weight:bold;line-height:1;color:#9acc9a}
+.workbench{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);align-items:start}
+.left-panel{padding:1.2em 1.5em 2em 2em;border-right:1px solid #1c1c1c;min-width:0}
+.right-panel{padding:1.2em 2em 2em 1.5em;background:#0d0d0d;min-width:0}
+h2{color:#779977;font-size:.82em;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid #222;padding-bottom:.2em;margin:1.3em 0 .6em}
+h2:first-child{margin-top:0}
+.preview-img{display:block;image-rendering:pixelated;max-width:100%;width:600px;border:1px solid #2a2a2a}
+.cards{display:flex;flex-wrap:wrap;gap:.6em;margin:.5em 0 1em}
+.card{background:#181818;border:1px solid #2a2a2a;border-radius:4px;padding:.6em 1em;min-width:90px}
+.card .num{font-size:1.7em;font-weight:bold;line-height:1;color:#9acc9a}
 .card .num.warn{color:#cc9944}
 .card .num.ok{color:#77cc77}
-.card .lbl{font-size:.7em;color:#666;margin-top:.25em;text-transform:uppercase;letter-spacing:.06em}
-h2{color:#779977;font-size:.85em;text-transform:uppercase;letter-spacing:.09em;border-bottom:1px solid #222;padding-bottom:.2em;margin:1.3em 0 .6em}
-.input-grid{display:grid;grid-template-columns:auto 1fr;gap:1.4em;align-items:start;margin-bottom:1.4em}
-.input-img{border:1px solid #2a2a2a;display:block;image-rendering:pixelated;max-width:300px;max-height:300px}
-.meta-tbl{border-collapse:collapse;width:100%}
-.meta-tbl th,.meta-tbl td{border:1px solid #2a2a2a;padding:.3em .65em;text-align:left;font-size:.87em}
-.meta-tbl th{background:#181818;color:#888;width:10em}
-.swatch{display:inline-block;width:14px;height:14px;border:1px solid #555;vertical-align:middle;margin-right:5px;border-radius:2px}
+.card .lbl{font-size:.68em;color:#666;margin-top:.25em;text-transform:uppercase;letter-spacing:.06em}
+.meta-tbl{border-collapse:collapse;width:100%;margin-bottom:.5em}
+.meta-tbl th,.meta-tbl td{border:1px solid #222;padding:.28em .6em;text-align:left;font-size:.84em}
+.meta-tbl th{background:#181818;color:#777;width:9em}
+.swatch{display:inline-block;width:13px;height:13px;border:1px solid #555;vertical-align:middle;margin-right:4px;border-radius:2px}
 .legend-tbl{border-collapse:collapse;width:100%}
-.legend-tbl th,.legend-tbl td{border:1px solid #2a2a2a;padding:.3em .65em;font-size:.85em;text-align:left}
-.legend-tbl th{background:#181818;color:#888}
-.legend-tbl .px{text-align:right;color:#999}
-.match-bar{font-size:.8em;color:#777;margin:.35em 0 .9em;padding:.4em .7em;background:#181818;border:1px solid #252525;border-radius:3px}
-.drift-tbl{border-collapse:collapse;width:100%}
-.drift-tbl th,.drift-tbl td{border:1px solid #2a2a2a;padding:.28em .6em;font-size:.8em}
-.drift-tbl th{background:#181818;color:#888}
-.section-note{font-size:.8em;color:#555;margin:.3em 0 .8em}
-.arts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.45em;margin:.5em 0 1em}
-.art{background:#161616;border:1px solid #252525;border-radius:3px;padding:.45em .7em}
-.art a{color:#77b8d8;text-decoration:none;font-size:.87em}
+.legend-tbl th,.legend-tbl td{border:1px solid #222;padding:.28em .6em;font-size:.83em;text-align:left}
+.legend-tbl th{background:#181818;color:#777}
+.legend-tbl .px{text-align:right;color:#888}
+.match-bar{font-size:.78em;color:#666;margin:.3em 0 .7em;padding:.38em .65em;background:#181818;border:1px solid #222;border-radius:3px}
+.drift-tbl{border-collapse:collapse;width:100%;margin-top:.4em}
+.drift-tbl th,.drift-tbl td{border:1px solid #222;padding:.25em .55em;font-size:.78em}
+.drift-tbl th{background:#181818;color:#777}
+.section-note{font-size:.78em;color:#555;margin:.25em 0 .7em}
+.arts{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.4em;margin:.4em 0 .8em}
+.art{background:#161616;border:1px solid #222;border-radius:3px;padding:.4em .65em}
+.art a{color:#77b8d8;text-decoration:none;font-size:.84em}
 .art a:hover{text-decoration:underline}
-.art .desc{font-size:.72em;color:#555;margin-top:.1em}
-.nc-list{list-style:none;font-size:.82em;color:#886644}
-.nc-list li{padding:.18em 0}
+.art .desc{font-size:.7em;color:#555;margin-top:.1em}
+.nc-list{list-style:none;font-size:.8em;color:#886644}
+.nc-list li{padding:.15em 0}
 .nc-list li::before{content:"-- "}
-footer{margin-top:2em;padding:.7em 2em;border-top:1px solid #1e1e1e;font-size:.72em;color:#444}
+footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444}
+@media(max-width:860px){
+.workbench{grid-template-columns:1fr}
+.left-panel{border-right:none;border-bottom:1px solid #1c1c1c}
+}
 </style>
 </head>
 <body>
 
 <div class="hdr">
   <h1>PZMapForge</h1>
-  <span class="badge">Local Map Report</span>
+  <span class="badge">Map Workbench</span>
   <span class="badge">planning artifact only</span>
 </div>
 
 <div class="boundary">
   Claim boundary: <code>planning_artifact_only_not_pz_load_tested</code> &mdash;
-  This is a local planning artifact. It is not a playable Project Zomboid export.
+  local planning artifact only &mdash; not a playable Project Zomboid export
 </div>
 
-<div class="main">
+<div class="workbench">
 
-<h2>Pipeline Summary</h2>
-<div class="cards">
-  <div class="card"><div class="num">{{width}}&times;{{height}}</div><div class="lbl">Dimensions px</div></div>
-  <div class="card"><div class="num">{{regions}}</div><div class="lbl">Regions</div></div>
-  <div class="card"><div class="num">{{primitives}}</div><div class="lbl">Primitives</div></div>
-  <div class="card"><div class="num">{{recommendations}}</div><div class="lbl">Recommendations</div></div>
-  <div class="card"><div class="num {{warnClass}}">{{warnings}}</div><div class="lbl">Warnings</div></div>
-  <div class="card"><div class="num">{{kindCount}}</div><div class="lbl">Palette kinds</div></div>
-</div>
+  <div class="left-panel">
+    <h2>Map Preview</h2>
+    <img class="preview-img" src="{{relativeImgSrc}}" alt="Input: {{imageName}}">
 
-<h2>Input</h2>
-<div class="input-grid">
-  <img class="input-img" src="{{relativeImgSrc}}" alt="Input: {{imageName}}" width="300" height="300">
-  <div>
+    <h2>Visual Legend</h2>
+    <div class="match-bar">{{matchSummary}}</div>
+    <table class="legend-tbl">
+      <tr><th>Color</th><th>Kind</th><th>Code</th><th class="px">Pixels</th></tr>
+      {{legendRows}}
+    </table>
+    {{driftSection}}
+  </div>
+
+  <div class="right-panel">
+    <h2>Summary</h2>
+    <div class="cards">
+      <div class="card"><div class="num">{{width}}&times;{{height}}</div><div class="lbl">Dimensions</div></div>
+      <div class="card"><div class="num">{{regions}}</div><div class="lbl">Regions</div></div>
+      <div class="card"><div class="num">{{primitives}}</div><div class="lbl">Primitives</div></div>
+      <div class="card"><div class="num">{{recommendations}}</div><div class="lbl">Recs</div></div>
+      <div class="card"><div class="num {{warnClass}}">{{warnings}}</div><div class="lbl">Warnings</div></div>
+      <div class="card"><div class="num">{{kindCount}}</div><div class="lbl">Kinds</div></div>
+    </div>
     <table class="meta-tbl">
       <tr><th>Image</th><td>{{imageName}}</td></tr>
       <tr><th>Palette</th><td>{{paletteName}} ({{kindCount}} kinds)</td></tr>
       <tr><th>Dimensions</th><td>{{width}} &times; {{height}} px</td></tr>
       <tr><th>Resized</th><td>{{resized}}</td></tr>
-      <tr><th>Tiny threshold</th><td>{{planOpts.TinyBuildingPixelThreshold}} px</td></tr>
-      <tr><th>Large threshold</th><td>{{planOpts.LargeGroundPixelThreshold}} px</td></tr>
+      <tr><th>Tiny px</th><td>{{planOpts.TinyBuildingPixelThreshold}}</td></tr>
+      <tr><th>Large px</th><td>{{planOpts.LargeGroundPixelThreshold}}</td></tr>
       <tr><th>Generated</th><td>{{now}}</td></tr>
     </table>
+
+    <h2>Artifact Files</h2>
+    <div class="arts">
+      <div class="art"><a href="artifacts/parsed-cell.json">parsed-cell.json</a><div class="desc">Parsed cell grid</div></div>
+      <div class="art"><a href="artifacts/regions.json">regions.json</a><div class="desc">Extracted regions</div></div>
+      <div class="art"><a href="artifacts/primitives.json">primitives.json</a><div class="desc">Classified primitives</div></div>
+      <div class="art"><a href="artifacts/plan-recommendations.json">plan-recommendations.json</a><div class="desc">Plan recommendations</div></div>
+      <div class="art"><a href="artifacts/regions-report.md">regions-report.md</a><div class="desc">Regions report</div></div>
+      <div class="art"><a href="artifacts/primitives-report.md">primitives-report.md</a><div class="desc">Primitives report</div></div>
+      <div class="art"><a href="artifacts/plan-report.md">plan-report.md</a><div class="desc">Plan report</div></div>
+    </div>
+
+    <h2>Non-claims</h2>
+    <ul class="nc-list">
+      <li>Not a playable Project Zomboid map.</li>
+      <li>No PZ assets copied or read.</li>
+      <li>No media/maps directory written.</li>
+      <li>No lotpack, lotheader, or bin files generated.</li>
+      <li>Tile GIDs not assigned. No TileZed tile references.</li>
+      <li>Build 41 / Build 42 compatibility not claimed.</li>
+    </ul>
   </div>
-</div>
-
-<h2>Visual Legend</h2>
-<div class="match-bar">{{matchSummary}}</div>
-<table class="legend-tbl">
-  <tr><th>Color</th><th>Kind</th><th>Code</th><th class="px">Pixels</th></tr>
-  {{legendRows}}
-</table>
-{{driftSection}}
-
-<h2>JSON Artifacts</h2>
-<div class="arts">
-  <div class="art"><a href="artifacts/parsed-cell.json">artifacts/parsed-cell.json</a><div class="desc">Parsed cell grid (schema v0.1)</div></div>
-  <div class="art"><a href="artifacts/regions.json">artifacts/regions.json</a><div class="desc">Extracted regions</div></div>
-  <div class="art"><a href="artifacts/primitives.json">artifacts/primitives.json</a><div class="desc">Classified primitives</div></div>
-  <div class="art"><a href="artifacts/plan-recommendations.json">artifacts/plan-recommendations.json</a><div class="desc">Plan recommendations (schema v0.1)</div></div>
-</div>
-
-<h2>Markdown Reports</h2>
-<div class="arts">
-  <div class="art"><a href="artifacts/regions-report.md">artifacts/regions-report.md</a><div class="desc">Regions report</div></div>
-  <div class="art"><a href="artifacts/primitives-report.md">artifacts/primitives-report.md</a><div class="desc">Primitives report</div></div>
-  <div class="art"><a href="artifacts/plan-report.md">artifacts/plan-report.md</a><div class="desc">Plan report</div></div>
-</div>
-
-<h2>Non-claims</h2>
-<ul class="nc-list">
-  <li>This report does not represent a playable Project Zomboid map.</li>
-  <li>No Project Zomboid assets were copied or read.</li>
-  <li>No media/maps directory was written.</li>
-  <li>No lotpack, lotheader, or bin files were generated.</li>
-  <li>Tile GIDs are not assigned. No TileZed tile references are included.</li>
-  <li>Build 41 / Build 42 compatibility is not claimed.</li>
-</ul>
 
 </div>
 <footer>Generated by PZMapForge &mdash; planning_artifact_only_not_pz_load_tested</footer>

@@ -8,6 +8,26 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Changed (APP-4: improve image-to-map app workbench layout)
+- src/PZMapForge.Cli/Program.cs: BuildAppHtml redesigned as two-column workbench.
+  Left panel: Map Preview (image up to 600px, pixelated) + Visual Legend + drift.
+  Right panel: Summary cards + metadata table + Artifact Files + Non-claims.
+  Responsive media query stacks to single column below 860px. Section headers
+  renamed: Map Preview, Summary, Visual Legend, Artifact Files, Non-claims.
+  Artifact Files section combines all 7 links (JSON + MD). @media closing braces
+  split to avoid raw string literal parse conflict.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs: ContainsJsonArtifactsSection
+  and ContainsMarkdownReportsSection replaced by ContainsArtifactFilesSection;
+  added ContainsMapPreviewSection, ContainsSummarySection, ContainsWorkbenchClass.
+  Total: 245 tests (190 Core + 55 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No proof packet update. No PZ assets read/copied. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Changed (APP-3: improve image-to-map app blockout UX)
 - src/PZMapForge.Cli/Program.cs:
   - --run-name <name>: output goes to <output>/<sanitized-name>/; unsafe chars

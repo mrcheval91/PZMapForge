@@ -6,6 +6,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 
 ## Ratified: what is proven and committed
 
+| app-export workbench layout (APP-4) | Ratified | two-column workbench grid (left: Map Preview 600px + Visual Legend; right: Summary + Artifact Files + Non-claims); responsive at 860px; section headers: Map Preview/Summary/Visual Legend/Artifact Files/Non-claims; 4 new content tests (workbench class, Map Preview, Summary, Artifact Files) |
 | app-export blockout UX improvement (APP-3) | Ratified | --run-name <name> subdirectory support; visual legend with color swatches + pixel counts; color match summary bar; nearest drift table; split JSON/MD artifact sections; palette kinds card; 8 new tests (2 run-name process + 6 content contract) |
 | app-export HTML viewer improvement (APP-2) | Ratified | index.html: summary cards (dimensions/regions/primitives/recs/warnings), input image display (copied to images/), dark themed static CSS; tests assert image copy + card markup present |
 | app-export CLI command and HTML viewer (Slice 3A-6 app) | Ratified | app-export runs full pipeline, writes artifacts/ + index.html to .local/; 5 process tests; static HTML, no server, no JS framework; no PZ assets read/copied; claim boundary enforced |

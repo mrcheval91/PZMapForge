@@ -1,6 +1,6 @@
 # Image-to-Map App Export
 
-Status: Slice 3A-6 implemented; APP-2 visual viewer; APP-3 blockout UX applied
+Status: Slice 3A-6 implemented; APP-2 visual viewer; APP-3 blockout UX; APP-4 workbench layout
 
 Claim boundary: planning_artifact_only_not_pz_load_tested
 
@@ -106,14 +106,20 @@ Additional sections added in APP-3:
   parsed cell. Shows exact/nearest/unmapped color match summary.
 - **Nearest Color Drift**: table of pixels that had no exact palette match, showing
   source RGB, count, nearest kind, and distance. Omitted if all pixels matched exactly.
-- **JSON Artifacts** and **Markdown Reports** split into separate sections for faster
-  navigation.
-- **Palette kinds card** in the Pipeline Summary row.
+- **Palette kinds card** in the Summary row.
 - **`--run-name <name>`**: writes output to `<output>/<sanitized-name>/` to support
   multiple named runs from the same source image.
 
-The report uses plain static HTML and CSS. No JavaScript framework. No server.
-Open directly from the filesystem.
+Workbench layout added in APP-4:
+
+- **Two-column workbench layout** (`div.workbench`): left panel (Map Preview + Visual
+  Legend) and right panel (Summary cards + metadata + Artifact Files + Non-claims).
+- **Map Preview** section: input image displayed up to 600px wide with pixelated
+  rendering. Expands to fill the left panel.
+- **Artifact Files** section in the right panel: all seven artifact links in a compact
+  grid (JSON and markdown combined).
+- Responsive: stacks to single column below 860px.
+- Section headers: Map Preview, Summary, Visual Legend, Artifact Files, Non-claims.
 
 ---
 
