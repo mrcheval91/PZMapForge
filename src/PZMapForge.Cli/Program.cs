@@ -29,7 +29,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("                    [--tiny-threshold <int>] [--large-threshold <int>]");
     Console.Error.WriteLine("  layer-validate    --layers <manifest> --palette <palette> [--resize]");
     Console.Error.WriteLine("  local-tile-survey --config <path> [--output <dir>]");
-    Console.Error.WriteLine("  app-export        --path <image> --palette <palette> [--output <dir>] [--run-name <name>] [--resize]");
+    Console.Error.WriteLine("  app-export        --path <image> --palette <palette> [--output <dir>] [--run-name <name>] [--annotation <image>] [--resize]");
     Console.Error.WriteLine("                    [--tiny-threshold <int>] [--large-threshold <int>]");
     return 1;
 }
@@ -866,25 +866,30 @@ static int LocalTileSurveyCommand(string[] args)
 
 static int AppExportCommand(string[] args)
 {
-    var imagePath   = string.Empty;
-    var palettePath = string.Empty;
-    var outputDir   = string.Empty;
-    var runName     = string.Empty;
-    var resize      = false;
+    var imagePath      = string.Empty;
+    var palettePath    = string.Empty;
+    var outputDir      = string.Empty;
+    var runName        = string.Empty;
+    var annotationPath = string.Empty;
+    var resize         = false;
 
     for (var i = 0; i < args.Length; i++)
     {
-        if      (args[i] is "--path"      or "-p" && i + 1 < args.Length) imagePath   = args[++i];
-        else if (args[i] is "--palette"            && i + 1 < args.Length) palettePath = args[++i];
-        else if (args[i] is "--output"    or "-o" && i + 1 < args.Length) outputDir   = args[++i];
-        else if (args[i] is "--run-name"  or "-n" && i + 1 < args.Length) runName     = args[++i];
-        else if (args[i] is "--resize")                                     resize      = true;
+        if      (args[i] is "--path"       or "-p" && i + 1 < args.Length) imagePath      = args[++i];
+        else if (args[i] is "--palette"             && i + 1 < args.Length) palettePath    = args[++i];
+        else if (args[i] is "--output"     or "-o" && i + 1 < args.Length) outputDir      = args[++i];
+        else if (args[i] is "--run-name"   or "-n" && i + 1 < args.Length) runName        = args[++i];
+        else if (args[i] is "--annotation" or "-a" && i + 1 < args.Length) annotationPath = args[++i];
+        else if (args[i] is "--resize")                                      resize         = true;
     }
 
     if (string.IsNullOrWhiteSpace(imagePath))
     { Console.Error.WriteLine("app-export requires --path <image>");     return 1; }
     if (string.IsNullOrWhiteSpace(palettePath))
     { Console.Error.WriteLine("app-export requires --palette <palette>"); return 1; }
+
+    if (!string.IsNullOrWhiteSpace(annotationPath) && !File.Exists(annotationPath))
+    { Console.Error.WriteLine($"app-export: --annotation file not found: {annotationPath}"); return 1; }
 
     if (string.IsNullOrWhiteSpace(outputDir))
         outputDir = Path.Combine(Directory.GetCurrentDirectory(), ".local", "app");
@@ -992,10 +997,20 @@ static int AppExportCommand(string[] args)
     WriteParsedPreview(imagesDir, grid, cellResult.Document!);
     var relativeParsedSrc = "images/parsed-preview.png";
 
+    // Step 8c: copy annotation image if provided
+    var relativeAnnotSrc = string.Empty;
+    if (!string.IsNullOrWhiteSpace(annotationPath))
+    {
+        var annotExt      = Path.GetExtension(annotationPath).ToLowerInvariant();
+        var annotCopied   = "annotation-image" + (string.IsNullOrEmpty(annotExt) ? ".png" : annotExt);
+        File.Copy(annotationPath, Path.Combine(imagesDir, annotCopied), overwrite: true);
+        relativeAnnotSrc  = "images/" + annotCopied;
+    }
+
     // Step 9: write index.html
     var htmlPath = Path.Combine(outputFull, "index.html");
     var html     = BuildAppHtml(
-        relativeImgSrc, relativeParsedSrc,
+        relativeImgSrc, relativeParsedSrc, relativeAnnotSrc,
         imagePath, grid.Width, grid.Height, parseResult.Resized,
         regions.TotalRegions, primitives.PrimitiveCount,
         planResult.RecommendationCount, planResult.Summary.WarningCount,
@@ -1041,6 +1056,7 @@ static void WriteParsedPreview(
 static string BuildAppHtml(
     string relativeImgSrc,
     string relativeParsedSrc,
+    string relativeAnnotSrc,
     string imagePath, int width, int height, bool resized,
     int regions, int primitives, int recommendations, int warnings,
     PlanningRuleOptions planOpts,
@@ -1077,6 +1093,15 @@ static string BuildAppHtml(
         healthGuidance = string.Empty;
     }
 
+    var annotColHtml = string.IsNullOrEmpty(relativeAnnotSrc) ? string.Empty :
+        $"""
+
+      <div class="preview-col">
+        <div class="preview-lbl">Annotation Reference</div>
+        <img class="preview-img" src="{relativeAnnotSrc}" alt="Annotation reference">
+      </div>
+""";
+
     return $$"""
 <!DOCTYPE html>
 <html lang="en">
@@ -1097,8 +1122,8 @@ body{font-family:monospace;background:#111;color:#ccc;min-height:100vh}
 .right-panel{padding:1.2em 2em 2em 1.5em;background:#0d0d0d;min-width:0}
 h2{color:#779977;font-size:.82em;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid #222;padding-bottom:.2em;margin:1.3em 0 .6em}
 h2:first-child{margin-top:0}
-.preview-pair{display:grid;grid-template-columns:1fr 1fr;gap:.8em;margin-bottom:.6em}
-.preview-col{}
+.preview-row{display:flex;flex-wrap:wrap;gap:.8em;margin-bottom:.6em}
+.preview-col{flex:1 1 180px;min-width:0}
 .preview-lbl{font-size:.72em;color:#666;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.3em}
 .preview-img{display:block;image-rendering:pixelated;max-width:100%;border:1px solid #2a2a2a}
 .cards{display:flex;flex-wrap:wrap;gap:.6em;margin:.5em 0 1em}
@@ -1158,15 +1183,15 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
 
   <div class="left-panel">
     <h2>Map Preview</h2>
-    <div class="preview-pair">
+    <div class="preview-row">
       <div class="preview-col">
-        <div class="preview-lbl">Original Input</div>
-        <img class="preview-img" src="{{relativeImgSrc}}" alt="Input: {{imageName}}">
+        <div class="preview-lbl">Analysis Input</div>
+        <img class="preview-img" src="{{relativeImgSrc}}" alt="Analysis input: {{imageName}}">
       </div>
       <div class="preview-col">
         <div class="preview-lbl">Parsed Preview</div>
         <img class="preview-img" src="{{relativeParsedSrc}}" alt="Parsed preview">
-      </div>
+      </div>{{annotColHtml}}
     </div>
 
     <h2>Visual Legend</h2>
@@ -1201,7 +1226,7 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
     <h2>Palette Health</h2>
     <div class="health-badge {{healthClass}}">{{healthLabel}}</div>
     <p class="health-note">{{healthGuidance}}</p>
-    <p class="health-note">A blockout is <strong>not palette-clean</strong> when it contains colors outside the defined palette. Text labels and antialiasing can affect parsing. For accurate results, use a clean analysis image without text overlays or anti-aliased edges.</p>
+    <p class="health-note">Use <code>--path</code> for a <strong>clean palette-only analysis image</strong>. Text labels and antialiasing should not be part of the analysis image &mdash; they produce a <em>not palette-clean</em> result. Use <code>--annotation</code> to include a separate labeled reference image without affecting parsing.</p>
 
     <h2>Artifact Files</h2>
     <div class="arts">

@@ -8,6 +8,33 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (APP-6: annotation-safe app export workflow)
+- src/PZMapForge.Cli/Program.cs:
+  - --annotation <image>: optional argument parsed with -a shortform.
+  - If provided and file does not exist, exits 1 with clear error.
+  - Annotation image copied to images/annotation-image.<ext> (not parsed).
+  - BuildAppHtml: Annotation Reference panel added conditionally when annotation
+    is provided (annotColHtml injected into preview-row flex container).
+  - "Original Input" label renamed to "Analysis Input" throughout.
+  - preview-pair grid replaced with preview-row flex (handles 2 or 3 images).
+  - Palette Health guidance updated to: "Use --path for a clean palette-only
+    analysis image. Text labels and antialiasing should not be part of the
+    analysis image -- they produce a not palette-clean result."
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - ContainsOriginalInputLabel renamed to ContainsAnalysisInputLabel.
+  - ContainsTextLabelsGuidance assertion updated to new guidance text.
+  - ContainsCleanPaletteOnlyGuidance added (+1 content test).
+  - AppExportAnnotationTests class: WithAnnotation_WritesFileAndUpdatesHtml,
+    MissingAnnotationFile_ExitsOne (+2 process tests).
+  - Total: 254 tests (190 Core + 64 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No proof packet update. No PZ assets read/copied. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Added (APP-5: palette health and parsed preview)
 - src/PZMapForge.Cli/Program.cs:
   - WriteParsedPreview: generates images/parsed-preview.png by rendering each pixel

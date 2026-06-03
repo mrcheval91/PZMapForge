@@ -336,8 +336,8 @@ public sealed class AppExportContentTests : IClassFixture<AppExportContentFixtur
         Assert.True(_fix.ParsedPreviewExists, "parsed-preview.png was not written");
 
     [Fact]
-    public void AppExport_Content_ContainsOriginalInputLabel() =>
-        Assert.Contains("Original Input", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+    public void AppExport_Content_ContainsAnalysisInputLabel() =>
+        Assert.Contains("Analysis Input", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 
     [Fact]
     public void AppExport_Content_ContainsParsedPreviewLabel() =>
@@ -353,5 +353,133 @@ public sealed class AppExportContentTests : IClassFixture<AppExportContentFixtur
 
     [Fact]
     public void AppExport_Content_ContainsTextLabelsGuidance() =>
-        Assert.Contains("Text labels and antialiasing can affect parsing", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Text labels and antialiasing should not be part of the analysis image", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_ContainsCleanPaletteOnlyGuidance() =>
+        Assert.Contains("clean palette-only analysis image", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+}
+
+// ---------------------------------------------------------------------------
+// Annotation workflow process tests
+// ---------------------------------------------------------------------------
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+public sealed class AppExportAnnotationTests : IDisposable
+{
+    private readonly string _tempDir =
+        Path.Combine(Path.GetTempPath(), "pzmapforge-annotation-tests", Path.GetRandomFileName());
+
+    public AppExportAnnotationTests() => Directory.CreateDirectory(_tempDir);
+
+    public void Dispose()
+    {
+        try { if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, recursive: true); }
+        catch { /* best effort */ }
+    }
+
+    private static string RepoRoot =>
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+
+    private static string CliProjectPath =>
+        Path.Combine(RepoRoot, "src", "PZMapForge.Cli");
+
+    private static string PalettePath =>
+        Path.Combine(RepoRoot, "source", "image-palette.json");
+
+    private string CreateAnalysisImage()
+    {
+        var imgPath = Path.Combine(_tempDir, "analysis.png");
+        using var bmp = new System.Drawing.Bitmap(300, 300);
+        using var g   = System.Drawing.Graphics.FromImage(bmp);
+        g.Clear(System.Drawing.Color.FromArgb(255, 100, 140, 70));
+        bmp.Save(imgPath, System.Drawing.Imaging.ImageFormat.Png);
+        return imgPath;
+    }
+
+    private string CreateAnnotationImage()
+    {
+        var imgPath = Path.Combine(_tempDir, "annotation.png");
+        using var bmp = new System.Drawing.Bitmap(300, 300);
+        using var g   = System.Drawing.Graphics.FromImage(bmp);
+        g.Clear(System.Drawing.Color.FromArgb(255, 100, 140, 70));
+        g.DrawString("District A", new System.Drawing.Font("Arial", 12),
+            System.Drawing.Brushes.Red, 10, 10);
+        bmp.Save(imgPath, System.Drawing.Imaging.ImageFormat.Png);
+        return imgPath;
+    }
+
+    private static (int ExitCode, string Stdout, string Stderr) RunCli(params string[] args)
+    {
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName               = "dotnet",
+            WorkingDirectory       = RepoRoot,
+            RedirectStandardOutput = true,
+            RedirectStandardError  = true,
+            UseShellExecute        = false,
+        };
+        psi.ArgumentList.Add("run");
+        psi.ArgumentList.Add("--project");
+        psi.ArgumentList.Add(CliProjectPath);
+        psi.ArgumentList.Add("--configuration");
+        psi.ArgumentList.Add("Release");
+        psi.ArgumentList.Add("--no-build");
+        psi.ArgumentList.Add("--");
+        foreach (var a in args) psi.ArgumentList.Add(a);
+
+        using var proc = System.Diagnostics.Process.Start(psi)!;
+        var stdout = proc.StandardOutput.ReadToEnd();
+        var stderr = proc.StandardError.ReadToEnd();
+        proc.WaitForExit();
+        return (proc.ExitCode, stdout, stderr);
+    }
+
+    // -----------------------------------------------------------------------
+    // Test: --annotation writes annotation-image.png and updates index.html
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void AppExport_WithAnnotation_WritesFileAndUpdatesHtml()
+    {
+        var analysisPath   = CreateAnalysisImage();
+        var annotationPath = CreateAnnotationImage();
+        var outputDir      = Path.Combine(_tempDir, ".local", "app");
+
+        var (code, stdout, stderr) = RunCli(
+            "app-export",
+            "--path",       analysisPath,
+            "--palette",    PalettePath,
+            "--output",     outputDir,
+            "--annotation", annotationPath);
+
+        Assert.True(code == 0, $"Exited {code}. Stdout: {stdout}. Stderr: {stderr}");
+        Assert.True(File.Exists(Path.Combine(outputDir, "images", "annotation-image.png")),
+            "annotation-image.png was not written");
+
+        var html = File.ReadAllText(Path.Combine(outputDir, "index.html"));
+        Assert.Contains("Annotation Reference", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // -----------------------------------------------------------------------
+    // Test: missing --annotation file exits nonzero
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void AppExport_MissingAnnotationFile_ExitsOne()
+    {
+        var analysisPath = CreateAnalysisImage();
+        var outputDir    = Path.Combine(_tempDir, ".local", "app");
+        var missingPath  = Path.Combine(_tempDir, "nonexistent-annotation.png");
+
+        var (code, _, stderr) = RunCli(
+            "app-export",
+            "--path",       analysisPath,
+            "--palette",    PalettePath,
+            "--output",     outputDir,
+            "--annotation", missingPath);
+
+        Assert.Equal(1, code);
+        Assert.Contains("annotation", stderr, StringComparison.OrdinalIgnoreCase);
+    }
 }

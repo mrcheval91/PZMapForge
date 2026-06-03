@@ -1,6 +1,6 @@
 # Image-to-Map App Export
 
-Status: Slice 3A-6 implemented; APP-2 visual viewer; APP-3 blockout UX; APP-4 workbench layout; APP-5 palette health + parsed preview
+Status: Slice 3A-6 implemented; APP-2 visual viewer; APP-3 blockout UX; APP-4 workbench layout; APP-5 palette health + parsed preview; APP-6 annotation workflow
 
 Claim boundary: planning_artifact_only_not_pz_load_tested
 
@@ -31,6 +31,7 @@ pzmapforge app-export --path <image> --palette <palette> [--output <dir>] [--run
 | `--palette <palette>` | Yes | Palette JSON file |
 | `--output <dir>` | No | Output root (must contain `.local`; defaults to `.\.local\app`) |
 | `--run-name <name>` | No | Named subdirectory under `--output`; unsafe chars sanitized to `-` |
+| `--annotation <image>` | No | Labeled reference image; copied to `images/` and shown as Annotation Reference panel; not used for parsing |
 | `--resize` | No | Resize image to 300x300 before parsing |
 | `--tiny-threshold <int>` | No | Tiny building pixel threshold (default from PlanningRuleOptions) |
 | `--large-threshold <int>` | No | Large ground pixel threshold (default from PlanningRuleOptions) |
@@ -133,6 +134,18 @@ Added in APP-5:
   affect parsing" is always shown.
 - `images/parsed-preview.png` written alongside `images/input-image.<ext>` in the
   output directory.
+
+Added in APP-6:
+
+- **Annotation Reference** panel: when `--annotation <image>` is provided, the image
+  is copied to `images/annotation-image.<ext>` and displayed as a third preview panel
+  labelled "Annotation Reference". Not used for parsing.
+- **Analysis Input** label replaces "Original Input" to clarify the split between the
+  clean analysis image (used for parsing) and the annotated reference image.
+- Palette Health guidance explicitly states: "Use `--path` for a clean palette-only
+  analysis image. Text labels and antialiasing should not be part of the analysis image."
+- If `--annotation` is provided but the file does not exist, the command exits 1 with
+  a clear error message.
 
 ---
 
