@@ -8,6 +8,36 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (SVG-6: classify full SVG metadata candidate inventory)
+- src/PZMapForge.Cli/Program.cs:
+  - SvgStructureResult: AllIds, AllClasses, AllTextLabels properties (bounded at 500,
+    deduplicated, in-memory only — not written to svg-reference-structure.json).
+  - WriteSvgStructure: computes allIds/allClasses/allTextLabels alongside sample lists.
+  - WriteSvgLayerCandidates: uses AllIds/AllClasses/AllTextLabels for classification
+    instead of bounded sample lists.
+  - svg-layer-candidates.json: adds total_id_values_inspected,
+    total_class_values_inspected, total_text_labels_inspected,
+    total_metadata_values_inspected. borough_or_district_candidates.count now
+    reflects full classified set; samples still capped at 30.
+  - SvgLayerCandidatesResult: BoroughOrDistrictFullCount, TotalIds/Classes/Labels
+    Inspected properties.
+  - BuildSvgLayerCandidatesHtml: shows "Metadata Values Inspected" totals line.
+  - AppendCandidateBucket: optional fullCount parameter; shows truncation note when
+    count > samples.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - 5 new assertions in AppExportSvgAnnotationTests (total fields x4, HTML total).
+  - AppExportSvgFullInventoryFixture: creates SVG with 35 unique borough IDs to
+    exercise sample truncation.
+  - AppExportSvgFullInventoryTests: 2 tests (exit 0, count=35 proves count > 30 limit).
+  - Total: 300 tests (190 Core + 110 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No coordinate extraction. No geometry conversion. No PZ assets. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Changed (SVG-5: tune Montreal SVG layer candidate classification)
 - src/PZMapForge.Cli/Program.cs:
   - ContainsWord: word-boundary match helper (fixes "Plateau" false-positive in water

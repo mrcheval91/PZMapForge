@@ -180,6 +180,11 @@ Added in SVG-2:
   street/route, transit/station, park/green\_space, labels, unknown. Method:
   `metadata_name_pattern_only`. Includes `candidate_generation_notes` (rules applied) and
   `inspected_metadata_sources`. No coordinates read. All safety flags false.
+- Classification now uses all collected IDs/classes/text labels (up to 500 each, deduplicated),
+  not just the 20-item samples. JSON reports `total_id_values_inspected`,
+  `total_class_values_inspected`, `total_text_labels_inspected`,
+  `total_metadata_values_inspected`. Bucket counts reflect the full classified set;
+  samples are still capped at 30. HTML shows "Metadata Values Inspected" totals.
 - Word-boundary matching for "eau"/"lac" prevents false positives like "Plateau" → water.
 - All-caps alphabetic text labels (length ≥ 4) classified as transit/station candidates.
 - **SVG Layer Candidates** HTML panel: chip display of each bucket with count, plus

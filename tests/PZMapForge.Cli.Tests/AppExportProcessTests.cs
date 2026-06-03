@@ -757,4 +757,115 @@ public sealed class AppExportSvgAnnotationTests : IClassFixture<AppExportSvgFixt
     [Fact]
     public void AppExport_Svg_IndexHtmlStillContainsNoGeometryConverted() =>
         Assert.Contains("No SVG geometry is converted", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    // SVG-6: full metadata inventory
+
+    [Fact]
+    public void AppExport_Svg_LayerCandidatesContainsTotalIdField() =>
+        Assert.Contains("total_id_values_inspected", _fix.SvgLayerCandidatesJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_LayerCandidatesContainsTotalClassField() =>
+        Assert.Contains("total_class_values_inspected", _fix.SvgLayerCandidatesJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_LayerCandidatesContainsTotalTextLabelsField() =>
+        Assert.Contains("total_text_labels_inspected", _fix.SvgLayerCandidatesJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_LayerCandidatesContainsTotalMetadataField() =>
+        Assert.Contains("total_metadata_values_inspected", _fix.SvgLayerCandidatesJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsMetadataValuesInspected() =>
+        Assert.Contains("Metadata Values Inspected", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+}
+
+// ---------------------------------------------------------------------------
+// Full inventory fixture: 35 borough IDs — proves count can exceed sample limit
+// ---------------------------------------------------------------------------
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+public sealed class AppExportSvgFullInventoryFixture : IDisposable
+{
+    private readonly string _root;
+    public string OutputDir              { get; }
+    public int    ExitCode               { get; }
+    public string SvgLayerCandidatesJson { get; }
+
+    public AppExportSvgFullInventoryFixture()
+    {
+        _root     = Path.Combine(Path.GetTempPath(), "pzmapforge-svg-full-inv", Path.GetRandomFileName());
+        OutputDir = Path.Combine(_root, ".local", "app");
+        Directory.CreateDirectory(OutputDir);
+
+        var imgPath = Path.Combine(_root, "analysis.png");
+        using (var bmp = new System.Drawing.Bitmap(300, 300))
+        using (var g   = System.Drawing.Graphics.FromImage(bmp))
+        {
+            g.Clear(System.Drawing.Color.FromArgb(255, 100, 140, 70));
+            bmp.Save(imgPath, System.Drawing.Imaging.ImageFormat.Png);
+        }
+
+        // SVG with 35 unique non-matching IDs (all go to borough_or_district).
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"300\" height=\"300\">");
+        for (var i = 1; i <= 35; i++)
+            sb.Append($"<g id=\"zone-{i:D2}\"/>");
+        sb.Append("</svg>");
+
+        var svgPath = Path.Combine(_root, "large-reference.svg");
+        File.WriteAllText(svgPath, sb.ToString(), System.Text.Encoding.UTF8);
+
+        var repoRoot   = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        var cliProject = Path.Combine(repoRoot, "src", "PZMapForge.Cli");
+        var palette    = Path.Combine(repoRoot, "source", "image-palette.json");
+
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName               = "dotnet",
+            WorkingDirectory       = repoRoot,
+            RedirectStandardOutput = true,
+            RedirectStandardError  = true,
+            UseShellExecute        = false,
+        };
+        foreach (var a in new[]
+            { "run", "--project", cliProject, "--configuration", "Release", "--no-build", "--",
+              "app-export", "--path", imgPath, "--palette", palette,
+              "--output", OutputDir, "--annotation", svgPath })
+            psi.ArgumentList.Add(a);
+
+        using var proc = System.Diagnostics.Process.Start(psi)!;
+        proc.StandardOutput.ReadToEnd();
+        proc.StandardError.ReadToEnd();
+        proc.WaitForExit();
+        ExitCode = proc.ExitCode;
+
+        var candidatesPath       = Path.Combine(OutputDir, "artifacts", "svg-layer-candidates.json");
+        SvgLayerCandidatesJson   = File.Exists(candidatesPath) ? File.ReadAllText(candidatesPath) : string.Empty;
+    }
+
+    public void Dispose()
+    {
+        try { if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true); }
+        catch { /* best effort */ }
+    }
+}
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+public sealed class AppExportSvgFullInventoryTests : IClassFixture<AppExportSvgFullInventoryFixture>
+{
+    private readonly AppExportSvgFullInventoryFixture _fix;
+    public AppExportSvgFullInventoryTests(AppExportSvgFullInventoryFixture fix) => _fix = fix;
+
+    [Fact]
+    public void AppExport_SvgFullInventory_ExitsZero() =>
+        Assert.Equal(0, _fix.ExitCode);
+
+    [Fact]
+    public void AppExport_SvgFullInventory_BoroughCountExceedsSampleLimit()
+    {
+        // 35 IDs + svg root (no id) — borough bucket should have 35 items but samples capped at 30.
+        Assert.Contains("\"count\": 35", _fix.SvgLayerCandidatesJson, StringComparison.Ordinal);
+    }
 }

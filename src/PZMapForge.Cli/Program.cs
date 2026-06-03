@@ -1104,6 +1104,7 @@ static SvgStructureResult WriteSvgStructure(string annotationPath, string artifa
         .GroupBy(e => e.Name.LocalName.ToLowerInvariant())
         .ToDictionary(g => g.Key, g => g.Count());
 
+    // Sample lists (bounded to 20) for structure artifact display.
     var sampleIds = elements
         .Select(e => e.Attribute("id")?.Value)
         .Where(v => !string.IsNullOrEmpty(v))
@@ -1126,6 +1127,31 @@ static SvgStructureResult WriteSvgStructure(string annotationPath, string artifa
         .Where(v => !string.IsNullOrEmpty(v))
         .Distinct()
         .Take(20)
+        .ToList();
+
+    // Full lists (bounded at 500, deduplicated) for complete candidate classification.
+    var allIds = elements
+        .Select(e => e.Attribute("id")?.Value)
+        .Where(v => !string.IsNullOrEmpty(v))
+        .Select(v => v!)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .Take(500)
+        .ToList();
+
+    var allClasses = elements
+        .Select(e => e.Attribute("class")?.Value)
+        .Where(v => !string.IsNullOrEmpty(v))
+        .SelectMany(v => v!.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .Take(500)
+        .ToList();
+
+    var allTextLabels = elements
+        .Where(e => e.Name.LocalName == "text")
+        .Select(e => e.Value.Trim())
+        .Where(v => !string.IsNullOrEmpty(v))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .Take(500)
         .ToList();
 
     var structure = new
@@ -1196,6 +1222,9 @@ static SvgStructureResult WriteSvgStructure(string annotationPath, string artifa
         SampleIds        = sampleIds.AsReadOnly(),
         SampleClasses    = sampleClasses.AsReadOnly(),
         SampleTextLabels = sampleTextLabels.AsReadOnly(),
+        AllIds           = allIds.AsReadOnly(),
+        AllClasses       = allClasses.AsReadOnly(),
+        AllTextLabels    = allTextLabels.AsReadOnly(),
     };
 }
 
@@ -1614,7 +1643,7 @@ static SvgLayerCandidatesResult WriteSvgLayerCandidates(SvgStructureResult r, st
     var street    = new List<string>();
     var borough   = new List<string>();
 
-    foreach (var s in r.SampleIds.Concat(r.SampleClasses).Distinct(StringComparer.OrdinalIgnoreCase))
+    foreach (var s in r.AllIds.Concat(r.AllClasses).Distinct(StringComparer.OrdinalIgnoreCase))
     {
         if      (IsWater(s))     water.Add(s);
         else if (IsOutline(s))   outline.Add(s);
@@ -1627,15 +1656,19 @@ static SvgLayerCandidatesResult WriteSvgLayerCandidates(SvgStructureResult r, st
     var park    = new List<string>();
     var labels  = new List<string>();
 
-    foreach (var t in r.SampleTextLabels)
+    foreach (var t in r.AllTextLabels)
     {
         if      (IsTransitLabel(t)) transit.Add(t);
         else if (IsParkLabel(t))    park.Add(t);
         else                        labels.Add(t);
     }
 
+    var totalIdsInspected     = r.AllIds.Count;
+    var totalClassesInspected = r.AllClasses.Count;
+    var totalLabelsInspected  = r.AllTextLabels.Count;
+
     var unknown = borough.Where(s => s.Length <= 1).Take(30).ToList();
-    var trueBorough = borough.Where(s => s.Length > 1).Take(30).ToList();
+    var trueBorough = borough.Where(s => s.Length > 1).ToList();
 
     var generationNotes = new[]
     {
@@ -1654,13 +1687,17 @@ static SvgLayerCandidatesResult WriteSvgLayerCandidates(SvgStructureResult r, st
         WaterCandidates              = water.Take(30).ToList().AsReadOnly(),
         OutlineCandidates            = outline.Take(30).ToList().AsReadOnly(),
         TechnicalLayerCandidates     = technical.Take(30).ToList().AsReadOnly(),
-        BoroughOrDistrictCandidates  = trueBorough.AsReadOnly(),
+        BoroughOrDistrictCandidates  = trueBorough.Take(30).ToList().AsReadOnly(),
+        BoroughOrDistrictFullCount   = trueBorough.Count,
         StreetOrRouteCandidates      = street.Take(30).ToList().AsReadOnly(),
         TransitOrStationCandidates   = transit.Take(30).ToList().AsReadOnly(),
         ParkOrGreenSpaceCandidates   = park.Take(30).ToList().AsReadOnly(),
         LabelCandidates              = labels.Take(30).ToList().AsReadOnly(),
         UnknownCandidates            = unknown.AsReadOnly(),
         GenerationNotes              = generationNotes,
+        TotalIdsInspected            = totalIdsInspected,
+        TotalClassesInspected        = totalClassesInspected,
+        TotalLabelsInspected         = totalLabelsInspected,
     };
 
     var artifact = new
@@ -1672,6 +1709,10 @@ static SvgLayerCandidatesResult WriteSvgLayerCandidates(SvgStructureResult r, st
         candidate_generation_method    = "metadata_name_pattern_only",
         candidate_generation_notes     = result.GenerationNotes,
         inspected_metadata_sources     = new[] { "ids", "classes", "text_labels" },
+        total_id_values_inspected      = totalIdsInspected,
+        total_class_values_inspected   = totalClassesInspected,
+        total_text_labels_inspected    = totalLabelsInspected,
+        total_metadata_values_inspected = totalIdsInspected + totalClassesInspected + totalLabelsInspected,
         parsed_as_geometry             = false,
         converted_to_map_geometry      = false,
         pz_assets_copied               = false,
@@ -1680,7 +1721,7 @@ static SvgLayerCandidatesResult WriteSvgLayerCandidates(SvgStructureResult r, st
         water_candidates               = new { count = result.WaterCandidates.Count,             samples = result.WaterCandidates },
         outline_candidates             = new { count = result.OutlineCandidates.Count,            samples = result.OutlineCandidates },
         technical_layer_candidates     = new { count = result.TechnicalLayerCandidates.Count,     samples = result.TechnicalLayerCandidates },
-        borough_or_district_candidates = new { count = result.BoroughOrDistrictCandidates.Count, samples = result.BoroughOrDistrictCandidates },
+        borough_or_district_candidates = new { count = result.BoroughOrDistrictFullCount,        samples = result.BoroughOrDistrictCandidates },
         street_or_route_candidates     = new { count = result.StreetOrRouteCandidates.Count,      samples = result.StreetOrRouteCandidates },
         transit_or_station_candidates  = new { count = result.TransitOrStationCandidates.Count,   samples = result.TransitOrStationCandidates },
         park_or_green_space_candidates = new { count = result.ParkOrGreenSpaceCandidates.Count,   samples = result.ParkOrGreenSpaceCandidates },
@@ -1701,12 +1742,14 @@ static string BuildSvgLayerCandidatesHtml(SvgLayerCandidatesResult c)
     var sb = new StringBuilder();
     sb.Append("\n    <h2>SVG Layer Candidates</h2>\n");
     sb.Append("    <p class=\"svg-note\">These are metadata candidates only. No SVG geometry is converted. Candidates are derived from element IDs, class names, and text labels using name pattern matching only.</p>\n");
+    var total = c.TotalIdsInspected + c.TotalClassesInspected + c.TotalLabelsInspected;
+    sb.Append($"    <p class=\"section-note\">Metadata Values Inspected: {total:N0} ({c.TotalIdsInspected:N0} IDs &middot; {c.TotalClassesInspected:N0} class tokens &middot; {c.TotalLabelsInspected:N0} text labels)</p>\n");
     sb.Append("    <p class=\"section-note\">Method: metadata_name_pattern_only</p>\n");
 
     AppendCandidateBucket(sb, "Water",              c.WaterCandidates);
     AppendCandidateBucket(sb, "Outline / Boundary", c.OutlineCandidates);
     AppendCandidateBucket(sb, "Technical Layers",   c.TechnicalLayerCandidates);
-    AppendCandidateBucket(sb, "Borough / District", c.BoroughOrDistrictCandidates);
+    AppendCandidateBucket(sb, "Borough / District", c.BoroughOrDistrictCandidates, c.BoroughOrDistrictFullCount);
     AppendCandidateBucket(sb, "Street / Route",     c.StreetOrRouteCandidates);
     AppendCandidateBucket(sb, "Transit / Station",  c.TransitOrStationCandidates);
     AppendCandidateBucket(sb, "Park / Green Space", c.ParkOrGreenSpaceCandidates);
@@ -1720,10 +1763,12 @@ static string BuildSvgLayerCandidatesHtml(SvgLayerCandidatesResult c)
     return sb.ToString();
 }
 
-static void AppendCandidateBucket(StringBuilder sb, string label, IReadOnlyList<string> items)
+static void AppendCandidateBucket(StringBuilder sb, string label, IReadOnlyList<string> items, int? fullCount = null)
 {
-    if (items.Count == 0) return;
-    sb.Append($"    <p class=\"svg-sub\">{HtmlEncode(label)} ({items.Count})</p>\n");
+    var displayCount = fullCount ?? items.Count;
+    if (displayCount == 0) return;
+    var truncNote = fullCount.HasValue && fullCount.Value > items.Count ? $" — showing {items.Count}" : string.Empty;
+    sb.Append($"    <p class=\"svg-sub\">{HtmlEncode(label)} ({displayCount}{HtmlEncode(truncNote)})</p>\n");
     sb.Append("    <div class=\"svg-chips\">");
     foreach (var item in items)
         sb.Append($"<span class=\"svg-chip\">{HtmlEncode(item)}</span>");
@@ -1736,12 +1781,16 @@ sealed class SvgLayerCandidatesResult
     public IReadOnlyList<string>  OutlineCandidates            { get; init; } = [];
     public IReadOnlyList<string>  TechnicalLayerCandidates     { get; init; } = [];
     public IReadOnlyList<string>  BoroughOrDistrictCandidates  { get; init; } = [];
+    public int                    BoroughOrDistrictFullCount   { get; init; }
     public IReadOnlyList<string>  StreetOrRouteCandidates      { get; init; } = [];
     public IReadOnlyList<string>  TransitOrStationCandidates   { get; init; } = [];
     public IReadOnlyList<string>  ParkOrGreenSpaceCandidates   { get; init; } = [];
     public IReadOnlyList<string>  LabelCandidates              { get; init; } = [];
     public IReadOnlyList<string>  UnknownCandidates            { get; init; } = [];
     public IReadOnlyList<string>  GenerationNotes              { get; init; } = [];
+    public int                    TotalIdsInspected            { get; init; }
+    public int                    TotalClassesInspected        { get; init; }
+    public int                    TotalLabelsInspected         { get; init; }
 }
 
 sealed class SvgStructureResult
@@ -1764,4 +1813,8 @@ sealed class SvgStructureResult
     public IReadOnlyList<string> SampleIds        { get; init; } = [];
     public IReadOnlyList<string> SampleClasses    { get; init; } = [];
     public IReadOnlyList<string> SampleTextLabels { get; init; } = [];
+    // Full lists for classification (not written to structure JSON).
+    public IReadOnlyList<string> AllIds           { get; init; } = [];
+    public IReadOnlyList<string> AllClasses       { get; init; } = [];
+    public IReadOnlyList<string> AllTextLabels    { get; init; } = [];
 }
