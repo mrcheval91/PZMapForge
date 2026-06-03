@@ -483,3 +483,118 @@ public sealed class AppExportAnnotationTests : IDisposable
         Assert.Contains("annotation", stderr, StringComparison.OrdinalIgnoreCase);
     }
 }
+
+// ---------------------------------------------------------------------------
+// Shared fixture: one SVG annotation pipeline run, multiple assertions
+// ---------------------------------------------------------------------------
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+public sealed class AppExportSvgFixture : IDisposable
+{
+    private readonly string _root;
+
+    public string OutputDir  { get; }
+    public int    ExitCode   { get; }
+    public string IndexHtml  { get; }
+
+    public bool SvgImageExists    { get; }
+    public bool SvgSummaryExists  { get; }
+    public string SvgSummaryJson  { get; }
+
+    public AppExportSvgFixture()
+    {
+        _root     = Path.Combine(Path.GetTempPath(), "pzmapforge-svg-tests", Path.GetRandomFileName());
+        OutputDir = Path.Combine(_root, ".local", "app");
+        Directory.CreateDirectory(OutputDir);
+
+        // analysis image: solid grass colour, 300x300
+        var imgPath = Path.Combine(_root, "analysis.png");
+        using (var bmp = new System.Drawing.Bitmap(300, 300))
+        using (var g   = System.Drawing.Graphics.FromImage(bmp))
+        {
+            g.Clear(System.Drawing.Color.FromArgb(255, 100, 140, 70));
+            bmp.Save(imgPath, System.Drawing.Imaging.ImageFormat.Png);
+        }
+
+        // minimal SVG annotation
+        var svgPath = Path.Combine(_root, "reference.svg");
+        File.WriteAllText(svgPath,
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"300\" height=\"300\">" +
+            "<rect width=\"300\" height=\"300\" fill=\"none\" stroke=\"red\"/>" +
+            "<text x=\"10\" y=\"20\">District A</text></svg>",
+            System.Text.Encoding.UTF8);
+
+        var repoRoot   = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        var cliProject = Path.Combine(repoRoot, "src", "PZMapForge.Cli");
+        var palette    = Path.Combine(repoRoot, "source", "image-palette.json");
+
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName               = "dotnet",
+            WorkingDirectory       = repoRoot,
+            RedirectStandardOutput = true,
+            RedirectStandardError  = true,
+            UseShellExecute        = false,
+        };
+        foreach (var a in new[]
+            { "run", "--project", cliProject, "--configuration", "Release", "--no-build", "--",
+              "app-export",
+              "--path",       imgPath,
+              "--palette",    palette,
+              "--output",     OutputDir,
+              "--annotation", svgPath })
+            psi.ArgumentList.Add(a);
+
+        using var proc = System.Diagnostics.Process.Start(psi)!;
+        proc.StandardOutput.ReadToEnd();
+        proc.StandardError.ReadToEnd();
+        proc.WaitForExit();
+        ExitCode = proc.ExitCode;
+
+        var svgImagePath   = Path.Combine(OutputDir, "images", "annotation-image.svg");
+        var svgSummaryPath = Path.Combine(OutputDir, "artifacts", "svg-reference-summary.json");
+        IndexHtml       = ExitCode == 0 && File.Exists(Path.Combine(OutputDir, "index.html"))
+            ? File.ReadAllText(Path.Combine(OutputDir, "index.html"))
+            : string.Empty;
+        SvgImageExists   = File.Exists(svgImagePath);
+        SvgSummaryExists = File.Exists(svgSummaryPath);
+        SvgSummaryJson   = SvgSummaryExists ? File.ReadAllText(svgSummaryPath) : string.Empty;
+    }
+
+    public void Dispose()
+    {
+        try { if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true); }
+        catch { /* best effort */ }
+    }
+}
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+public sealed class AppExportSvgAnnotationTests : IClassFixture<AppExportSvgFixture>
+{
+    private readonly AppExportSvgFixture _fix;
+    public AppExportSvgAnnotationTests(AppExportSvgFixture fix) => _fix = fix;
+
+    [Fact]
+    public void AppExport_Svg_ExitsZero() =>
+        Assert.Equal(0, _fix.ExitCode);
+
+    [Fact]
+    public void AppExport_Svg_WritesAnnotationSvg() =>
+        Assert.True(_fix.SvgImageExists, "annotation-image.svg was not written to images/");
+
+    [Fact]
+    public void AppExport_Svg_WritesSvgReferenceSummary() =>
+        Assert.True(_fix.SvgSummaryExists, "svg-reference-summary.json was not written to artifacts/");
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsSvgVectorReference() =>
+        Assert.Contains("SVG Vector Reference", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsSvgNotParsedGeometry() =>
+        Assert.Contains("SVG is not parsed into map geometry", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_SummaryContainsParsedAsGeometryFalse() =>
+        Assert.Contains("\"parsed_as_geometry\": false", _fix.SvgSummaryJson, StringComparison.OrdinalIgnoreCase);
+}

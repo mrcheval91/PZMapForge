@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using PZMapForge.Core.ImageParsing;
 using PZMapForge.Core.Layers;
 using PZMapForge.Core.LocalPz;
@@ -997,20 +998,49 @@ static int AppExportCommand(string[] args)
     WriteParsedPreview(imagesDir, grid, cellResult.Document!);
     var relativeParsedSrc = "images/parsed-preview.png";
 
-    // Step 8c: copy annotation image if provided
-    var relativeAnnotSrc = string.Empty;
+    // Step 8c: copy annotation if provided; detect SVG; write svg-reference-summary.json
+    var relativeAnnotSrc  = string.Empty;
+    var annotPanelLabel   = "Annotation Reference";
+    var annotGuidanceHtml = string.Empty;
+
     if (!string.IsNullOrWhiteSpace(annotationPath))
     {
-        var annotExt      = Path.GetExtension(annotationPath).ToLowerInvariant();
-        var annotCopied   = "annotation-image" + (string.IsNullOrEmpty(annotExt) ? ".png" : annotExt);
+        var annotExt    = Path.GetExtension(annotationPath).ToLowerInvariant();
+        var annotCopied = "annotation-image" + (string.IsNullOrEmpty(annotExt) ? ".png" : annotExt);
         File.Copy(annotationPath, Path.Combine(imagesDir, annotCopied), overwrite: true);
-        relativeAnnotSrc  = "images/" + annotCopied;
+        relativeAnnotSrc = "images/" + annotCopied;
+
+        if (annotExt == ".svg")
+        {
+            annotPanelLabel   = "SVG Vector Reference";
+            annotGuidanceHtml = "<p class=\"svg-note\">SVG is displayed as a reference only. SVG is not parsed into map geometry. Streets, borough limits, IDs, labels, and paths are not converted in this slice.</p>";
+
+            var svgSummary = new
+            {
+                schema                 = "pzmapforge.svg-reference-summary.v0.1",
+                claim_boundary         = "planning_artifact_only_not_pz_load_tested",
+                source_file_name       = Path.GetFileName(annotationPath),
+                copied_file_name       = annotCopied,
+                file_size_bytes        = new FileInfo(annotationPath).Length,
+                extension              = annotExt,
+                detected_svg           = true,
+                parsed_as_geometry     = false,
+                pz_assets_copied       = false,
+                media_maps_touched     = false,
+                playable_export_claimed = false,
+            };
+            File.WriteAllText(
+                Path.Combine(artifactsDir, "svg-reference-summary.json"),
+                JsonSerializer.Serialize(svgSummary, new JsonSerializerOptions { WriteIndented = true }),
+                Encoding.UTF8);
+        }
     }
 
     // Step 9: write index.html
     var htmlPath = Path.Combine(outputFull, "index.html");
     var html     = BuildAppHtml(
         relativeImgSrc, relativeParsedSrc, relativeAnnotSrc,
+        annotPanelLabel, annotGuidanceHtml,
         imagePath, grid.Width, grid.Height, parseResult.Resized,
         regions.TotalRegions, primitives.PrimitiveCount,
         planResult.RecommendationCount, planResult.Summary.WarningCount,
@@ -1057,6 +1087,8 @@ static string BuildAppHtml(
     string relativeImgSrc,
     string relativeParsedSrc,
     string relativeAnnotSrc,
+    string annotPanelLabel,
+    string annotGuidanceHtml,
     string imagePath, int width, int height, bool resized,
     int regions, int primitives, int recommendations, int warnings,
     PlanningRuleOptions planOpts,
@@ -1097,8 +1129,8 @@ static string BuildAppHtml(
         $"""
 
       <div class="preview-col">
-        <div class="preview-lbl">Annotation Reference</div>
-        <img class="preview-img" src="{relativeAnnotSrc}" alt="Annotation reference">
+        <div class="preview-lbl">{HtmlEncode(annotPanelLabel)}</div>
+        <img class="preview-img" src="{relativeAnnotSrc}" alt="{HtmlEncode(annotPanelLabel)}">
       </div>
 """;
 
@@ -1145,6 +1177,7 @@ h2:first-child{margin-top:0}
 .drift-tbl th,.drift-tbl td{border:1px solid #222;padding:.25em .55em;font-size:.78em}
 .drift-tbl th{background:#181818;color:#777}
 .section-note{font-size:.78em;color:#555;margin:.25em 0 .7em}
+.svg-note{font-size:.79em;color:#7799aa;margin:.5em 0 .3em;padding:.38em .65em;background:#0e1a22;border:1px solid #1e3a4a;border-radius:3px}
 .health-badge{display:inline-block;font-size:.79em;font-weight:bold;padding:.28em .75em;border-radius:3px;margin:.35em 0 .65em}
 .health-badge.clean{background:#162216;border:1px solid #2e5a2e;color:#77cc77}
 .health-badge.dirty{background:#261616;border:1px solid #6a2a2a;color:#cc7766}
@@ -1193,7 +1226,7 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
         <img class="preview-img" src="{{relativeParsedSrc}}" alt="Parsed preview">
       </div>{{annotColHtml}}
     </div>
-
+    {{annotGuidanceHtml}}
     <h2>Visual Legend</h2>
     <div class="match-bar">{{matchSummary}}</div>
     <table class="legend-tbl">

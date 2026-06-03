@@ -1,6 +1,6 @@
 # Image-to-Map App Export
 
-Status: Slice 3A-6 implemented; APP-2 visual viewer; APP-3 blockout UX; APP-4 workbench layout; APP-5 palette health + parsed preview; APP-6 annotation workflow
+Status: Slice 3A-6 implemented; APP-2 visual viewer; APP-3 blockout UX; APP-4 workbench layout; APP-5 palette health + parsed preview; APP-6 annotation workflow; APP-7 SVG annotation
 
 Claim boundary: planning_artifact_only_not_pz_load_tested
 
@@ -146,6 +146,19 @@ Added in APP-6:
   analysis image. Text labels and antialiasing should not be part of the analysis image."
 - If `--annotation` is provided but the file does not exist, the command exits 1 with
   a clear error message.
+
+Added in APP-7:
+
+- **SVG annotation detection**: when `--annotation` extension is `.svg`, the panel
+  label changes to "SVG Vector Reference" and a guidance note appears in the viewer.
+- **Guidance text** (always visible when SVG): "SVG is displayed as a reference only.
+  SVG is not parsed into map geometry. Streets, borough limits, IDs, labels, and paths
+  are not converted in this slice."
+- **`artifacts/svg-reference-summary.json`** written when annotation is SVG. Contains
+  schema, claim boundary, source/copied file names, file size, extension, `detected_svg`,
+  `parsed_as_geometry` (false), and all safety flags.
+- SVG annotation is displayed via a standard `<img src="...">` reference — browser
+  renders inline SVG from file. No SVG parsing or geometry conversion.
 
 ---
 

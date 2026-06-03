@@ -8,6 +8,32 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (APP-7: SVG annotation reference support)
+- src/PZMapForge.Cli/Program.cs:
+  - using System.Text.Json added.
+  - Step 8c: SVG extension detection (annotExt == ".svg").
+  - When SVG: annotPanelLabel = "SVG Vector Reference"; annotGuidanceHtml set with
+    "SVG is not parsed into map geometry" guidance note; svg-reference-summary.json
+    written to artifacts/ with schema v0.1 and all safety flags (parsed_as_geometry:
+    false, pz_assets_copied: false, media_maps_touched: false, playable_export_claimed:
+    false).
+  - BuildAppHtml: annotPanelLabel + annotGuidanceHtml parameters added; annotColHtml
+    uses annotPanelLabel; {{annotGuidanceHtml}} slot inserted after preview row;
+    .svg-note CSS class added.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - AppExportSvgFixture: shared fixture runs once with minimal SVG annotation.
+  - AppExportSvgAnnotationTests: 6 tests (exit 0, SVG file written, summary JSON
+    written, SVG Vector Reference in HTML, not-parsed-geometry in HTML,
+    parsed_as_geometry:false in JSON).
+  - Total: 260 tests (190 Core + 70 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No proof packet update. No SVG parsing. No PZ assets read/copied. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Added (APP-6: annotation-safe app export workflow)
 - src/PZMapForge.Cli/Program.cs:
   - --annotation <image>: optional argument parsed with -a shortform.
