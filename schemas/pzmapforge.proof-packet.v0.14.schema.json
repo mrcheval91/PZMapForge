@@ -61,7 +61,7 @@
         "region_extraction":               { "type": "integer", "const": 24  },
         "primitive_classification":        { "type": "integer", "const": 22  },
         "plan_recommendations_contract":   { "type": "integer", "const": 28  },
-        "proof_packet":                    { "type": "integer", "const": 85  },
+        "proof_packet":                    { "type": "integer", "const": 90  },
         "total_expected_assertions":       { "type": "integer", "const": 417 }
       },
       "additionalProperties": false
@@ -120,4 +120,3 @@
     }
   }
 }
-

@@ -146,7 +146,7 @@ $psChecks = [ordered]@{
     'Region extraction'             = 24
     'Primitive classification'      = 22
     'Plan recommendations contract' = 28
-    'Proof packet'                  = 85
+    'Proof packet'                  = 90
 }
 $psTotal = 422   # = validation_summary.total_expected_assertions in proof-packet v0.14
 
