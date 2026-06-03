@@ -1229,4 +1229,3 @@ and correct the counts.
 - Local sample image generator and validation wrapper.
 - Claim boundary, ImageMapForge, and roadmap documentation.
 - Drift tracking port from pz-sud-ouest-montreal (ff0a21f).
-

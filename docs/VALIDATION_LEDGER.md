@@ -250,4 +250,3 @@ The following are not claimed and must not be added without documented evidence:
 
 The claim boundary does not advance without a real local load test and
 a documented decision record.
-

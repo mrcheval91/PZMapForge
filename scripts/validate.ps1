@@ -176,5 +176,3 @@ Write-Output ""
 Write-Output "========================================"
 Write-Output "Validation passed."
 Write-Output "========================================"
-
-

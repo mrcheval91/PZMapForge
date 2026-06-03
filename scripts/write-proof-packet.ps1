@@ -306,7 +306,7 @@ planning_artifact_only_not_pz_load_tested
 | Region extraction | 24 |
 | Primitive classification | 22 |
 | Plan recommendations contract | 28 |
-| Proof packet | 85 |
+| Proof packet | 90 |
 | Total | 422 |
 
 ## .NET validation summary (separate lane)
@@ -350,5 +350,3 @@ Note: .NET test counts are tracked separately and are not included in total_expe
 Set-Content -Path $packetMd -Value $md -Encoding UTF8
 Write-Output "Proof packet MD:   $packetMd"
 Write-Output "Done."
-
-
