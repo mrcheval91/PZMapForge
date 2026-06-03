@@ -988,10 +988,15 @@ static int AppExportCommand(string[] args)
     File.Copy(imagePath, Path.Combine(imagesDir, copiedName), overwrite: true);
     var relativeImgSrc = "images/" + copiedName;
 
+    // Step 8b: generate parsed-preview.png from snapped palette colors
+    WriteParsedPreview(imagesDir, grid, cellResult.Document!);
+    var relativeParsedSrc = "images/parsed-preview.png";
+
     // Step 9: write index.html
     var htmlPath = Path.Combine(outputFull, "index.html");
     var html     = BuildAppHtml(
-        relativeImgSrc, imagePath, grid.Width, grid.Height, parseResult.Resized,
+        relativeImgSrc, relativeParsedSrc,
+        imagePath, grid.Width, grid.Height, parseResult.Resized,
         regions.TotalRegions, primitives.PrimitiveCount,
         planResult.RecommendationCount, planResult.Summary.WarningCount,
         planOpts!, cellResult.Document!);
@@ -1008,8 +1013,34 @@ static int AppExportCommand(string[] args)
     return 0;
 }
 
+static void WriteParsedPreview(
+    string imagesDir,
+    PZMapForge.Core.ParsedCell.SemanticGrid grid,
+    PZMapForge.Core.ParsedCell.ParsedCellDocument doc)
+{
+    var codeToColor = doc.Legend
+        .Where(e => e.Rgb.Length >= 3 && e.Code.Length > 0)
+        .ToDictionary(
+            e => e.Code[0],
+            e => System.Drawing.Color.FromArgb(255, e.Rgb[0], e.Rgb[1], e.Rgb[2]));
+
+    var fallback = System.Drawing.Color.FromArgb(255, 40, 40, 40);
+
+    using var bmp = new System.Drawing.Bitmap(grid.Width, grid.Height);
+    for (var y = 0; y < grid.Height; y++)
+        for (var x = 0; x < grid.Width; x++)
+        {
+            var code  = grid.GetCode(x, y);
+            bmp.SetPixel(x, y, codeToColor.TryGetValue(code, out var c) ? c : fallback);
+        }
+
+    bmp.Save(Path.Combine(imagesDir, "parsed-preview.png"),
+        System.Drawing.Imaging.ImageFormat.Png);
+}
+
 static string BuildAppHtml(
     string relativeImgSrc,
+    string relativeParsedSrc,
     string imagePath, int width, int height, bool resized,
     int regions, int primitives, int recommendations, int warnings,
     PlanningRuleOptions planOpts,
@@ -1025,6 +1056,26 @@ static string BuildAppHtml(
     var matchSummary = doc.Matching is { } m
         ? $"Exact: {m.ExactPixels:N0} px &nbsp;|&nbsp; Nearest: {m.NearestPixels:N0} px &nbsp;|&nbsp; Unmapped colors: {m.UnmappedExactColours} &nbsp;|&nbsp; Unique source colors: {m.UniqueSourceColours}"
         : "Color match data not available.";
+
+    string healthLabel, healthClass, healthGuidance;
+    if (doc.Matching is { } mh && mh.UnmappedExactColours > 0)
+    {
+        healthLabel    = "Not palette-clean";
+        healthClass    = "dirty";
+        healthGuidance = $"{mh.UnmappedExactColours} off-palette color(s) snapped to nearest kind. Review the blockout for text overlays, anti-aliased edges, or colors outside the palette.";
+    }
+    else if (doc.Matching is not null)
+    {
+        healthLabel    = "Palette clean";
+        healthClass    = "clean";
+        healthGuidance = "All pixels matched the palette exactly.";
+    }
+    else
+    {
+        healthLabel    = "Unknown";
+        healthClass    = "unknown";
+        healthGuidance = string.Empty;
+    }
 
     return $$"""
 <!DOCTYPE html>
@@ -1046,7 +1097,10 @@ body{font-family:monospace;background:#111;color:#ccc;min-height:100vh}
 .right-panel{padding:1.2em 2em 2em 1.5em;background:#0d0d0d;min-width:0}
 h2{color:#779977;font-size:.82em;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid #222;padding-bottom:.2em;margin:1.3em 0 .6em}
 h2:first-child{margin-top:0}
-.preview-img{display:block;image-rendering:pixelated;max-width:100%;width:600px;border:1px solid #2a2a2a}
+.preview-pair{display:grid;grid-template-columns:1fr 1fr;gap:.8em;margin-bottom:.6em}
+.preview-col{}
+.preview-lbl{font-size:.72em;color:#666;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.3em}
+.preview-img{display:block;image-rendering:pixelated;max-width:100%;border:1px solid #2a2a2a}
 .cards{display:flex;flex-wrap:wrap;gap:.6em;margin:.5em 0 1em}
 .card{background:#181818;border:1px solid #2a2a2a;border-radius:4px;padding:.6em 1em;min-width:90px}
 .card .num{font-size:1.7em;font-weight:bold;line-height:1;color:#9acc9a}
@@ -1066,6 +1120,12 @@ h2:first-child{margin-top:0}
 .drift-tbl th,.drift-tbl td{border:1px solid #222;padding:.25em .55em;font-size:.78em}
 .drift-tbl th{background:#181818;color:#777}
 .section-note{font-size:.78em;color:#555;margin:.25em 0 .7em}
+.health-badge{display:inline-block;font-size:.79em;font-weight:bold;padding:.28em .75em;border-radius:3px;margin:.35em 0 .65em}
+.health-badge.clean{background:#162216;border:1px solid #2e5a2e;color:#77cc77}
+.health-badge.dirty{background:#261616;border:1px solid #6a2a2a;color:#cc7766}
+.health-badge.unknown{background:#1e1e1e;border:1px solid #444;color:#888}
+.health-guidance{font-size:.8em;color:#cc9966;margin:.4em 0 .5em;padding:.4em .65em;background:#1e160a;border:1px solid #3a2e10;border-radius:3px}
+.health-note{font-size:.77em;color:#666;margin:.3em 0 .2em}
 .arts{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.4em;margin:.4em 0 .8em}
 .art{background:#161616;border:1px solid #222;border-radius:3px;padding:.4em .65em}
 .art a{color:#77b8d8;text-decoration:none;font-size:.84em}
@@ -1098,7 +1158,16 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
 
   <div class="left-panel">
     <h2>Map Preview</h2>
-    <img class="preview-img" src="{{relativeImgSrc}}" alt="Input: {{imageName}}">
+    <div class="preview-pair">
+      <div class="preview-col">
+        <div class="preview-lbl">Original Input</div>
+        <img class="preview-img" src="{{relativeImgSrc}}" alt="Input: {{imageName}}">
+      </div>
+      <div class="preview-col">
+        <div class="preview-lbl">Parsed Preview</div>
+        <img class="preview-img" src="{{relativeParsedSrc}}" alt="Parsed preview">
+      </div>
+    </div>
 
     <h2>Visual Legend</h2>
     <div class="match-bar">{{matchSummary}}</div>
@@ -1128,6 +1197,11 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
       <tr><th>Large px</th><td>{{planOpts.LargeGroundPixelThreshold}}</td></tr>
       <tr><th>Generated</th><td>{{now}}</td></tr>
     </table>
+
+    <h2>Palette Health</h2>
+    <div class="health-badge {{healthClass}}">{{healthLabel}}</div>
+    <p class="health-note">{{healthGuidance}}</p>
+    <p class="health-note">A blockout is <strong>not palette-clean</strong> when it contains colors outside the defined palette. Text labels and antialiasing can affect parsing. For accurate results, use a clean analysis image without text overlays or anti-aliased edges.</p>
 
     <h2>Artifact Files</h2>
     <div class="arts">

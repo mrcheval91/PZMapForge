@@ -8,6 +8,32 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (APP-5: palette health and parsed preview)
+- src/PZMapForge.Cli/Program.cs:
+  - WriteParsedPreview: generates images/parsed-preview.png by rendering each pixel
+    in its snapped palette color from the SemanticGrid + Legend. Uses System.Drawing.
+    Fallback color #282828 for unrecognized codes. Written under images/ alongside
+    the copied input image.
+  - BuildAppHtml: Map Preview section now shows "Original Input" and "Parsed Preview"
+    side by side (preview-pair grid). Added Palette Health section to right panel:
+    health badge (Palette clean / Not palette-clean / Unknown), conditional guidance
+    text, and always-visible note "A blockout is not palette-clean when... Text labels
+    and antialiasing can affect parsing."
+  - healthLabel/healthClass/healthGuidance computed from doc.Matching.UnmappedExactColours.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - Test 1 now also asserts images/parsed-preview.png exists.
+  - AppExportContentFixture: ParsedPreviewExists property added.
+  - AppExportContentTests: 6 new assertions (WritesParsedPreview, OriginalInputLabel,
+    ParsedPreviewLabel, PaletteHealthSection, NotPaletteCleanText, TextLabelsGuidance).
+  - Total: 251 tests (190 Core + 61 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No proof packet update. No PZ assets read/copied. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Changed (APP-4: improve image-to-map app workbench layout)
 - src/PZMapForge.Cli/Program.cs: BuildAppHtml redesigned as two-column workbench.
   Left panel: Map Preview (image up to 600px, pixelated) + Visual Legend + drift.

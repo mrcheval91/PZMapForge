@@ -1,6 +1,6 @@
 # Image-to-Map App Export
 
-Status: Slice 3A-6 implemented; APP-2 visual viewer; APP-3 blockout UX; APP-4 workbench layout
+Status: Slice 3A-6 implemented; APP-2 visual viewer; APP-3 blockout UX; APP-4 workbench layout; APP-5 palette health + parsed preview
 
 Claim boundary: planning_artifact_only_not_pz_load_tested
 
@@ -119,7 +119,20 @@ Workbench layout added in APP-4:
 - **Artifact Files** section in the right panel: all seven artifact links in a compact
   grid (JSON and markdown combined).
 - Responsive: stacks to single column below 860px.
-- Section headers: Map Preview, Summary, Visual Legend, Artifact Files, Non-claims.
+- Section headers: Map Preview, Summary, Visual Legend, Palette Health, Artifact Files, Non-claims.
+
+Added in APP-5:
+
+- **Original Input / Parsed Preview** side-by-side in the Map Preview section. The
+  parsed preview renders each pixel in its snapped palette color, showing what the
+  pipeline actually interpreted.
+- **Palette Health** section in the right panel: health badge (Palette clean /
+  Not palette-clean / Unknown), color match stats, and guidance text. The badge
+  reflects whether the blockout contained off-palette colors (text labels,
+  antialiasing, gradients). The guidance note "Text labels and antialiasing can
+  affect parsing" is always shown.
+- `images/parsed-preview.png` written alongside `images/input-image.<ext>` in the
+  output directory.
 
 ---
 

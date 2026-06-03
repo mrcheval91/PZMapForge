@@ -6,6 +6,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 
 ## Ratified: what is proven and committed
 
+| app-export palette health and parsed preview (APP-5) | Ratified | WriteParsedPreview: bitmap rendered from snapped palette colors, written to images/parsed-preview.png; Original Input + Parsed Preview side-by-side; Palette Health section (health badge clean/dirty/unknown, guidance, not-palette-clean text, text-labels guidance); 6 new tests (file exists, Original Input, Parsed Preview, Palette Health, not-palette-clean, text-labels); total 251 tests |
 | app-export workbench layout (APP-4) | Ratified | two-column workbench grid (left: Map Preview 600px + Visual Legend; right: Summary + Artifact Files + Non-claims); responsive at 860px; section headers: Map Preview/Summary/Visual Legend/Artifact Files/Non-claims; 4 new content tests (workbench class, Map Preview, Summary, Artifact Files) |
 | app-export blockout UX improvement (APP-3) | Ratified | --run-name <name> subdirectory support; visual legend with color swatches + pixel counts; color match summary bar; nearest drift table; split JSON/MD artifact sections; palette kinds card; 8 new tests (2 run-name process + 6 content contract) |
 | app-export HTML viewer improvement (APP-2) | Ratified | index.html: summary cards (dimensions/regions/primitives/recs/warnings), input image display (copied to images/), dark themed static CSS; tests assert image copy + card markup present |

@@ -92,6 +92,8 @@ public sealed class AppExportProcessTests : IDisposable
             "index.html was not written");
         Assert.True(File.Exists(Path.Combine(outputDir, "images", "input-image.png")),
             "input image was not copied to images/");
+        Assert.True(File.Exists(Path.Combine(outputDir, "images", "parsed-preview.png")),
+            "parsed-preview.png was not written to images/");
     }
 
     // -----------------------------------------------------------------------
@@ -274,11 +276,15 @@ public sealed class AppExportContentFixture : IDisposable
         proc.StandardOutput.ReadToEnd();
         proc.StandardError.ReadToEnd();
         proc.WaitForExit();
-        ExitCode  = proc.ExitCode;
-        IndexHtml = ExitCode == 0
+        ExitCode         = proc.ExitCode;
+        IndexHtml        = ExitCode == 0
             ? File.ReadAllText(Path.Combine(OutputDir, "index.html"))
             : string.Empty;
+        ParsedPreviewExists = ExitCode == 0 &&
+            File.Exists(Path.Combine(OutputDir, "images", "parsed-preview.png"));
     }
+
+    public bool ParsedPreviewExists { get; }
 
     public void Dispose()
     {
@@ -324,4 +330,28 @@ public sealed class AppExportContentTests : IClassFixture<AppExportContentFixtur
     [Fact]
     public void AppExport_Content_ContainsWorkbenchClass() =>
         Assert.Contains("class=\"workbench\"", _fix.IndexHtml, StringComparison.Ordinal);
+
+    [Fact]
+    public void AppExport_Content_WritesParsedPreview() =>
+        Assert.True(_fix.ParsedPreviewExists, "parsed-preview.png was not written");
+
+    [Fact]
+    public void AppExport_Content_ContainsOriginalInputLabel() =>
+        Assert.Contains("Original Input", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_ContainsParsedPreviewLabel() =>
+        Assert.Contains("Parsed Preview", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_ContainsPaletteHealthSection() =>
+        Assert.Contains("Palette Health", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_ContainsNotPaletteCleanText() =>
+        Assert.Contains("not palette-clean", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_ContainsTextLabelsGuidance() =>
+        Assert.Contains("Text labels and antialiasing can affect parsing", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 }
