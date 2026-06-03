@@ -8,6 +8,31 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (Slice 3A-6 app: local image-to-map app export)
+- src/PZMapForge.Cli/Program.cs: app-export command. Accepts --path, --palette,
+  --output, --resize, --tiny-threshold, --large-threshold. Runs full pipeline;
+  writes artifacts/ (parsed-cell.json, regions.json, regions-report.md,
+  primitives.json, primitives-report.md, plan-recommendations.json,
+  plan-report.md) and index.html to --output. Output guard: must contain .local
+  path segment. Static HTML, no JS framework, no server.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs: 5 process tests.
+  Valid image writes index.html (exit 0); index.html contains claim boundary;
+  index.html links artifact file names; non-.local output rejected (exit 1);
+  missing --path exits 1. All tests use 300x300 programmatic PNG, no real PZ install.
+- docs/IMAGE_TO_MAP_APP.md: operator guide covering command, inputs, outputs,
+  pipeline stages, HTML viewer contents, safety boundaries, non-claims, next candidates.
+
+### Changed
+- docs/IMPLEMENTATION.md: Slice 3A-6 app row added.
+- CHANGELOG.md: this entry.
+
+Tests: 235/235 (190 Core + 45 CLI).
+No PZ assets copied or read. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Added (Slice 3A-6-pre: tilesheet format investigation decision record)
 - docs/TILESHEET_FORMAT_INVESTIGATION_DECISION.md: governance gate for
   Slice 3A-6. Documents why 3A-6 is blocked, what format knowledge is
