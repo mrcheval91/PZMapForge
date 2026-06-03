@@ -1,4 +1,4 @@
-﻿# Changelog
+# Changelog
 
 All notable changes to PZMapForge will be documented here.
 
@@ -9,6 +9,12 @@ Format: Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+
+- schemas/pzmapforge.local-tile-reference-survey.v0.1.schema.json: local-only survey artifact schema for Slice 3A-3.
+- src/PZMapForge.Core/LocalPz/LocalTileReferenceSurvey.cs: survey artifact model.
+- src/PZMapForge.Core/LocalPz/LocalTileReferenceSurveyWriter.cs: writer for .local/local-tile-reference-survey.json and .local/local-tile-reference-survey.md.
+- tests/PZMapForge.Core.Tests/LocalPz/LocalTileReferenceSurveyWriterTests.cs: writer tests using validation summary data only.
+- docs/LOCAL_TILE_REFERENCE_SURVEY.md: Slice 3A-3 artifact contract.
 
 - src/PZMapForge.Core/LocalPz/LocalPzInstallValidator.cs: read-only local install validator for Slice 3A-2.
 - src/PZMapForge.Core/LocalPz/LocalPzInstallValidationResult.cs: validator result model.

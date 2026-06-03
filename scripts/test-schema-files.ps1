@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 <#
 .SYNOPSIS
     Schema file sanity validator for all PZMapForge schemas.
@@ -111,6 +111,32 @@ Test-Schema `
     )
 # ---------------------------------------------------------------------------
 # regions schema
+# ---------------------------------------------------------------------------
+# local tile reference survey schema
+# ---------------------------------------------------------------------------
+
+Test-Schema `
+    -FileName    'pzmapforge.local-tile-reference-survey.v0.1.schema.json' `
+    -ExpectedId  'pzmapforge.local-tile-reference-survey.v0.1' `
+    -CheckRequired @(
+        'schema',
+        'claim_boundary',
+        'generated_at_utc',
+        'source_config_path',
+        'install_root_exists',
+        'tiles_root_exists',
+        'extension_counts',
+        'likely_tile_data_present',
+        'png_present',
+        'pack_present',
+        'tiles_present',
+        'lotpack_present',
+        'lotheader_present',
+        'bin_present',
+        'pz_assets_copied',
+        'media_maps_touched',
+        'playable_export_claimed'
+    )
 # ---------------------------------------------------------------------------
 
 Test-Schema `

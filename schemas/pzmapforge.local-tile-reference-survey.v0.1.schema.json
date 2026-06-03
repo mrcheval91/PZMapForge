@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pzmapforge.local-tile-reference-survey.v0.1",
+  "title": "PZMapForge Local Tile Reference Survey v0.1",
+  "description": "Local-only survey artifact for Slice 3A-3. Built only from LocalPzInstallValidationResult summary data. Planning artifact only. Not a tile catalog. No PZ asset content is copied or read by this artifact writer.",
+  "type": "object",
+  "required": [
+    "schema",
+    "claim_boundary",
+    "generated_at_utc",
+    "source_config_path",
+    "install_root_exists",
+    "tiles_root_exists",
+    "extension_counts",
+    "likely_tile_data_present",
+    "png_present",
+    "pack_present",
+    "tiles_present",
+    "lotpack_present",
+    "lotheader_present",
+    "bin_present",
+    "pz_assets_copied",
+    "media_maps_touched",
+    "playable_export_claimed"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "pzmapforge.local-tile-reference-survey.v0.1"
+    },
+    "claim_boundary": {
+      "type": "string",
+      "const": "planning_artifact_only_not_pz_load_tested"
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_config_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "install_root_exists": {
+      "type": "boolean"
+    },
+    "tiles_root_exists": {
+      "type": "boolean"
+    },
+    "extension_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "likely_tile_data_present": {
+      "type": "boolean"
+    },
+    "png_present": {
+      "type": "boolean"
+    },
+    "pack_present": {
+      "type": "boolean"
+    },
+    "tiles_present": {
+      "type": "boolean"
+    },
+    "lotpack_present": {
+      "type": "boolean"
+    },
+    "lotheader_present": {
+      "type": "boolean"
+    },
+    "bin_present": {
+      "type": "boolean"
+    },
+    "pz_assets_copied": {
+      "type": "boolean",
+      "const": false
+    },
+    "media_maps_touched": {
+      "type": "boolean",
+      "const": false
+    },
+    "playable_export_claimed": {
+      "type": "boolean",
+      "const": false
+    }
+  },
+  "additionalProperties": false
+}

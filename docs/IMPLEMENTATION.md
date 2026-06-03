@@ -1,4 +1,4 @@
-﻿# Implementation
+# Implementation
 
 Current-state mapping of what PZMapForge actually does vs. what it claims.
 
@@ -109,3 +109,8 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
    (against schemas/pzmapforge.parsed-cell.v0.1.schema.json) would close this gap.
 
 | Local PZ install validator (Slice 3A-2) | Ratified | Read-only filesystem validation; checks install root, tiles root, extension counts, and safety flags; no asset content reading/copying; no media/maps writes |
+## Slice 3A-3 local tile reference survey artifact
+
+| Capability | Status | Evidence |
+|---|---|---|
+| Local tile reference survey artifact writer (Slice 3A-3) | Ratified | Writes .local/local-tile-reference-survey.json and .local/local-tile-reference-survey.md from LocalPzInstallValidationResult summary data only; no CLI command; no tile catalog; no asset content reading/copying; no media/maps writes; no playable export claim |
