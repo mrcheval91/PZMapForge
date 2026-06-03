@@ -176,4 +176,144 @@ public sealed class AppExportProcessTests : IDisposable
         Assert.Equal(1, code);
         Assert.Contains("--path", stderr, StringComparison.OrdinalIgnoreCase);
     }
+
+    // -----------------------------------------------------------------------
+    // Test 6: --run-name writes index.html in named subdirectory
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void AppExport_RunName_WritesIndexHtmlInSubdir()
+    {
+        var imgPath   = CreateTestImage();
+        var outputDir = Path.Combine(_tempDir, ".local", "app");
+
+        var (code, stdout, stderr) = RunCli(
+            "app-export",
+            "--path",     imgPath,
+            "--palette",  PalettePath,
+            "--output",   outputDir,
+            "--run-name", "smoke");
+
+        Assert.True(code == 0, $"Exited {code}. Stdout: {stdout}. Stderr: {stderr}");
+        Assert.True(File.Exists(Path.Combine(outputDir, "smoke", "index.html")),
+            "index.html was not written under smoke/ subdirectory");
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 7: unsafe run-name characters are sanitized deterministically
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void AppExport_UnsafeRunName_IsSanitized()
+    {
+        var imgPath   = CreateTestImage();
+        var outputDir = Path.Combine(_tempDir, ".local", "app");
+
+        // "my test run!" -> sanitized -> "my-test-run"
+        var (code, stdout, stderr) = RunCli(
+            "app-export",
+            "--path",     imgPath,
+            "--palette",  PalettePath,
+            "--output",   outputDir,
+            "--run-name", "my test run!");
+
+        Assert.True(code == 0, $"Exited {code}. Stdout: {stdout}. Stderr: {stderr}");
+        Assert.True(File.Exists(Path.Combine(outputDir, "my-test-run", "index.html")),
+            "sanitized run-name subdirectory not found");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Shared fixture for content contract tests (one pipeline run, many assertions)
+// ---------------------------------------------------------------------------
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+public sealed class AppExportContentFixture : IDisposable
+{
+    private readonly string _root;
+
+    public string OutputDir { get; }
+    public int    ExitCode  { get; }
+    public string IndexHtml { get; }
+
+    public AppExportContentFixture()
+    {
+        _root     = Path.Combine(Path.GetTempPath(), "pzmapforge-app-content", Path.GetRandomFileName());
+        OutputDir = Path.Combine(_root, ".local", "app");
+        Directory.CreateDirectory(OutputDir);
+
+        var imgPath = Path.Combine(_root, "grass.png");
+        using (var bmp = new System.Drawing.Bitmap(300, 300))
+        using (var g   = System.Drawing.Graphics.FromImage(bmp))
+        {
+            g.Clear(System.Drawing.Color.FromArgb(255, 100, 140, 70));
+            bmp.Save(imgPath, System.Drawing.Imaging.ImageFormat.Png);
+        }
+
+        var repoRoot   = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        var cliProject = Path.Combine(repoRoot, "src", "PZMapForge.Cli");
+        var palette    = Path.Combine(repoRoot, "source", "image-palette.json");
+
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName               = "dotnet",
+            WorkingDirectory       = repoRoot,
+            RedirectStandardOutput = true,
+            RedirectStandardError  = true,
+            UseShellExecute        = false,
+        };
+        foreach (var a in new[]
+            { "run", "--project", cliProject, "--configuration", "Release", "--no-build", "--",
+              "app-export",
+              "--path",    imgPath,
+              "--palette", palette,
+              "--output",  OutputDir })
+            psi.ArgumentList.Add(a);
+
+        using var proc = System.Diagnostics.Process.Start(psi)!;
+        proc.StandardOutput.ReadToEnd();
+        proc.StandardError.ReadToEnd();
+        proc.WaitForExit();
+        ExitCode  = proc.ExitCode;
+        IndexHtml = ExitCode == 0
+            ? File.ReadAllText(Path.Combine(OutputDir, "index.html"))
+            : string.Empty;
+    }
+
+    public void Dispose()
+    {
+        try { if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true); }
+        catch { /* best effort */ }
+    }
+}
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+public sealed class AppExportContentTests : IClassFixture<AppExportContentFixture>
+{
+    private readonly AppExportContentFixture _fix;
+    public AppExportContentTests(AppExportContentFixture fix) => _fix = fix;
+
+    [Fact]
+    public void AppExport_Content_ExitsZero() =>
+        Assert.Equal(0, _fix.ExitCode);
+
+    [Fact]
+    public void AppExport_Content_ContainsVisualLegend() =>
+        Assert.Contains("Visual Legend", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_ContainsSwatchClass() =>
+        Assert.Contains("class=\"swatch\"", _fix.IndexHtml, StringComparison.Ordinal);
+
+    [Fact]
+    public void AppExport_Content_ContainsPaletteName() =>
+        Assert.Contains("Palette", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_ContainsJsonArtifactsSection() =>
+        Assert.Contains("JSON Artifacts", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_ContainsMarkdownReportsSection() =>
+        Assert.Contains("Markdown Reports", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 }

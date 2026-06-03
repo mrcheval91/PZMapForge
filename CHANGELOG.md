@@ -8,6 +8,33 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Changed (APP-3: improve image-to-map app blockout UX)
+- src/PZMapForge.Cli/Program.cs:
+  - --run-name <name>: output goes to <output>/<sanitized-name>/; unsafe chars
+    (spaces, punctuation) sanitized to hyphens; empty result after sanitization
+    exits 1.
+  - Visual Legend section: color swatches from palette legend, pixel counts from
+    parsed-cell counts, color match summary bar (exact/nearest/unmapped/unique).
+  - Nearest Color Drift section: table of nearest-snapped pixels; omitted if all
+    exact matches.
+  - Palette kinds card added to Pipeline Summary row.
+  - Palette file name + kind count shown in Input metadata table.
+  - Artifacts split into JSON Artifacts + Markdown Reports subsections.
+  - BuildLegendHtml, BuildDriftHtml, SanitizeRunName helpers added.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - Tests 6-7: run-name subdirectory and unsafe-name sanitization process tests.
+  - AppExportContentFixture + AppExportContentTests: shared fixture (one pipeline
+    run) with 6 contract assertions: exit 0, Visual Legend, swatch class, Palette
+    name, JSON Artifacts section, Markdown Reports section.
+  - Total: 243 tests (190 Core + 53 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No proof packet update. No PZ assets read/copied. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Changed (APP-2: improve local image-to-map app viewer)
 - src/PZMapForge.Cli/Program.cs: BuildAppHtml redesigned. Added summary cards
   (dimensions, regions, primitives, recommendations, warnings). Input section

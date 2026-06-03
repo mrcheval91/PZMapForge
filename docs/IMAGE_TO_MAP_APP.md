@@ -1,6 +1,6 @@
 # Image-to-Map App Export
 
-Status: Slice 3A-6 (app-export) implemented; APP-2 visual viewer improvement applied
+Status: Slice 3A-6 implemented; APP-2 visual viewer; APP-3 blockout UX applied
 
 Claim boundary: planning_artifact_only_not_pz_load_tested
 
@@ -21,7 +21,7 @@ This is a planning artifact viewer. It is not a playable Project Zomboid export.
 ## Command
 
 ```
-pzmapforge app-export --path <image> --palette <palette> [--output <dir>] [--resize]
+pzmapforge app-export --path <image> --palette <palette> [--output <dir>] [--run-name <name>] [--resize]
                       [--tiny-threshold <int>] [--large-threshold <int>]
 ```
 
@@ -30,6 +30,7 @@ pzmapforge app-export --path <image> --palette <palette> [--output <dir>] [--res
 | `--path <image>` | Yes | Input image (PNG or BMP) |
 | `--palette <palette>` | Yes | Palette JSON file |
 | `--output <dir>` | No | Output root (must contain `.local`; defaults to `.\.local\app`) |
+| `--run-name <name>` | No | Named subdirectory under `--output`; unsafe chars sanitized to `-` |
 | `--resize` | No | Resize image to 300x300 before parsing |
 | `--tiny-threshold <int>` | No | Tiny building pixel threshold (default from PlanningRuleOptions) |
 | `--large-threshold <int>` | No | Large ground pixel threshold (default from PlanningRuleOptions) |
@@ -98,6 +99,18 @@ The `index.html` report includes:
 The viewer uses dark-themed static HTML and CSS. No JavaScript framework. No server.
 Open directly from the filesystem. The input image is shown using a local relative
 `<img>` reference (pixelated rendering for pixel-art maps).
+
+Additional sections added in APP-3:
+
+- **Visual Legend**: palette kinds with color swatches and pixel counts from the
+  parsed cell. Shows exact/nearest/unmapped color match summary.
+- **Nearest Color Drift**: table of pixels that had no exact palette match, showing
+  source RGB, count, nearest kind, and distance. Omitted if all pixels matched exactly.
+- **JSON Artifacts** and **Markdown Reports** split into separate sections for faster
+  navigation.
+- **Palette kinds card** in the Pipeline Summary row.
+- **`--run-name <name>`**: writes output to `<output>/<sanitized-name>/` to support
+  multiple named runs from the same source image.
 
 The report uses plain static HTML and CSS. No JavaScript framework. No server.
 Open directly from the filesystem.

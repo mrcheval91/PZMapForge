@@ -29,7 +29,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("                    [--tiny-threshold <int>] [--large-threshold <int>]");
     Console.Error.WriteLine("  layer-validate    --layers <manifest> --palette <palette> [--resize]");
     Console.Error.WriteLine("  local-tile-survey --config <path> [--output <dir>]");
-    Console.Error.WriteLine("  app-export        --path <image> --palette <palette> [--output <dir>] [--resize]");
+    Console.Error.WriteLine("  app-export        --path <image> --palette <palette> [--output <dir>] [--run-name <name>] [--resize]");
     Console.Error.WriteLine("                    [--tiny-threshold <int>] [--large-threshold <int>]");
     return 1;
 }
@@ -869,14 +869,16 @@ static int AppExportCommand(string[] args)
     var imagePath   = string.Empty;
     var palettePath = string.Empty;
     var outputDir   = string.Empty;
+    var runName     = string.Empty;
     var resize      = false;
 
     for (var i = 0; i < args.Length; i++)
     {
-        if      (args[i] is "--path"    or "-p" && i + 1 < args.Length) imagePath   = args[++i];
-        else if (args[i] is "--palette"          && i + 1 < args.Length) palettePath = args[++i];
-        else if (args[i] is "--output"  or "-o" && i + 1 < args.Length) outputDir   = args[++i];
-        else if (args[i] is "--resize")                                   resize      = true;
+        if      (args[i] is "--path"      or "-p" && i + 1 < args.Length) imagePath   = args[++i];
+        else if (args[i] is "--palette"            && i + 1 < args.Length) palettePath = args[++i];
+        else if (args[i] is "--output"    or "-o" && i + 1 < args.Length) outputDir   = args[++i];
+        else if (args[i] is "--run-name"  or "-n" && i + 1 < args.Length) runName     = args[++i];
+        else if (args[i] is "--resize")                                     resize      = true;
     }
 
     if (string.IsNullOrWhiteSpace(imagePath))
@@ -886,6 +888,14 @@ static int AppExportCommand(string[] args)
 
     if (string.IsNullOrWhiteSpace(outputDir))
         outputDir = Path.Combine(Directory.GetCurrentDirectory(), ".local", "app");
+
+    if (!string.IsNullOrWhiteSpace(runName))
+    {
+        var sanitized = SanitizeRunName(runName);
+        if (string.IsNullOrEmpty(sanitized))
+        { Console.Error.WriteLine($"app-export: --run-name '{runName}' produces an empty name after sanitization"); return 1; }
+        outputDir = Path.Combine(outputDir, sanitized);
+    }
 
     var outputFull  = Path.GetFullPath(outputDir);
     var localMarker = Path.DirectorySeparatorChar + ".local" + Path.DirectorySeparatorChar;
@@ -984,7 +994,7 @@ static int AppExportCommand(string[] args)
         relativeImgSrc, imagePath, grid.Width, grid.Height, parseResult.Resized,
         regions.TotalRegions, primitives.PrimitiveCount,
         planResult.RecommendationCount, planResult.Summary.WarningCount,
-        planOpts!);
+        planOpts!, cellResult.Document!);
     File.WriteAllText(htmlPath, html, Encoding.UTF8);
 
     Console.WriteLine($"App index:        {htmlPath}");
@@ -1002,11 +1012,19 @@ static string BuildAppHtml(
     string relativeImgSrc,
     string imagePath, int width, int height, bool resized,
     int regions, int primitives, int recommendations, int warnings,
-    PlanningRuleOptions planOpts)
+    PlanningRuleOptions planOpts,
+    PZMapForge.Core.ParsedCell.ParsedCellDocument doc)
 {
-    var imageName = HtmlEncode(Path.GetFileName(imagePath));
-    var now       = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + " UTC";
-    var warnClass = warnings > 0 ? "warn" : "ok";
+    var imageName    = HtmlEncode(Path.GetFileName(imagePath));
+    var paletteName  = HtmlEncode(Path.GetFileName(doc.Palette));
+    var kindCount    = doc.Legend.Count;
+    var now          = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + " UTC";
+    var warnClass    = warnings > 0 ? "warn" : "ok";
+    var legendRows   = BuildLegendHtml(doc);
+    var driftSection = BuildDriftHtml(doc);
+    var matchSummary = doc.Matching is { } m
+        ? $"Exact: {m.ExactPixels:N0} px &nbsp;|&nbsp; Nearest: {m.NearestPixels:N0} px &nbsp;|&nbsp; Unmapped colors: {m.UnmappedExactColours} &nbsp;|&nbsp; Unique source colors: {m.UniqueSourceColours}"
+        : "Color match data not available.";
 
     return $$"""
 <!DOCTYPE html>
@@ -1035,7 +1053,17 @@ h2{color:#779977;font-size:.85em;text-transform:uppercase;letter-spacing:.09em;b
 .meta-tbl{border-collapse:collapse;width:100%}
 .meta-tbl th,.meta-tbl td{border:1px solid #2a2a2a;padding:.3em .65em;text-align:left;font-size:.87em}
 .meta-tbl th{background:#181818;color:#888;width:10em}
-.arts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.45em;margin:.5em 0}
+.swatch{display:inline-block;width:14px;height:14px;border:1px solid #555;vertical-align:middle;margin-right:5px;border-radius:2px}
+.legend-tbl{border-collapse:collapse;width:100%}
+.legend-tbl th,.legend-tbl td{border:1px solid #2a2a2a;padding:.3em .65em;font-size:.85em;text-align:left}
+.legend-tbl th{background:#181818;color:#888}
+.legend-tbl .px{text-align:right;color:#999}
+.match-bar{font-size:.8em;color:#777;margin:.35em 0 .9em;padding:.4em .7em;background:#181818;border:1px solid #252525;border-radius:3px}
+.drift-tbl{border-collapse:collapse;width:100%}
+.drift-tbl th,.drift-tbl td{border:1px solid #2a2a2a;padding:.28em .6em;font-size:.8em}
+.drift-tbl th{background:#181818;color:#888}
+.section-note{font-size:.8em;color:#555;margin:.3em 0 .8em}
+.arts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.45em;margin:.5em 0 1em}
 .art{background:#161616;border:1px solid #252525;border-radius:3px;padding:.45em .7em}
 .art a{color:#77b8d8;text-decoration:none;font-size:.87em}
 .art a:hover{text-decoration:underline}
@@ -1068,6 +1096,7 @@ footer{margin-top:2em;padding:.7em 2em;border-top:1px solid #1e1e1e;font-size:.7
   <div class="card"><div class="num">{{primitives}}</div><div class="lbl">Primitives</div></div>
   <div class="card"><div class="num">{{recommendations}}</div><div class="lbl">Recommendations</div></div>
   <div class="card"><div class="num {{warnClass}}">{{warnings}}</div><div class="lbl">Warnings</div></div>
+  <div class="card"><div class="num">{{kindCount}}</div><div class="lbl">Palette kinds</div></div>
 </div>
 
 <h2>Input</h2>
@@ -1076,6 +1105,7 @@ footer{margin-top:2em;padding:.7em 2em;border-top:1px solid #1e1e1e;font-size:.7
   <div>
     <table class="meta-tbl">
       <tr><th>Image</th><td>{{imageName}}</td></tr>
+      <tr><th>Palette</th><td>{{paletteName}} ({{kindCount}} kinds)</td></tr>
       <tr><th>Dimensions</th><td>{{width}} &times; {{height}} px</td></tr>
       <tr><th>Resized</th><td>{{resized}}</td></tr>
       <tr><th>Tiny threshold</th><td>{{planOpts.TinyBuildingPixelThreshold}} px</td></tr>
@@ -1085,15 +1115,27 @@ footer{margin-top:2em;padding:.7em 2em;border-top:1px solid #1e1e1e;font-size:.7
   </div>
 </div>
 
-<h2>Artifacts</h2>
+<h2>Visual Legend</h2>
+<div class="match-bar">{{matchSummary}}</div>
+<table class="legend-tbl">
+  <tr><th>Color</th><th>Kind</th><th>Code</th><th class="px">Pixels</th></tr>
+  {{legendRows}}
+</table>
+{{driftSection}}
+
+<h2>JSON Artifacts</h2>
 <div class="arts">
   <div class="art"><a href="artifacts/parsed-cell.json">artifacts/parsed-cell.json</a><div class="desc">Parsed cell grid (schema v0.1)</div></div>
   <div class="art"><a href="artifacts/regions.json">artifacts/regions.json</a><div class="desc">Extracted regions</div></div>
-  <div class="art"><a href="artifacts/regions-report.md">artifacts/regions-report.md</a><div class="desc">Regions markdown report</div></div>
   <div class="art"><a href="artifacts/primitives.json">artifacts/primitives.json</a><div class="desc">Classified primitives</div></div>
-  <div class="art"><a href="artifacts/primitives-report.md">artifacts/primitives-report.md</a><div class="desc">Primitives markdown report</div></div>
   <div class="art"><a href="artifacts/plan-recommendations.json">artifacts/plan-recommendations.json</a><div class="desc">Plan recommendations (schema v0.1)</div></div>
-  <div class="art"><a href="artifacts/plan-report.md">artifacts/plan-report.md</a><div class="desc">Plan markdown report</div></div>
+</div>
+
+<h2>Markdown Reports</h2>
+<div class="arts">
+  <div class="art"><a href="artifacts/regions-report.md">artifacts/regions-report.md</a><div class="desc">Regions report</div></div>
+  <div class="art"><a href="artifacts/primitives-report.md">artifacts/primitives-report.md</a><div class="desc">Primitives report</div></div>
+  <div class="art"><a href="artifacts/plan-report.md">artifacts/plan-report.md</a><div class="desc">Plan report</div></div>
 </div>
 
 <h2>Non-claims</h2>
@@ -1111,6 +1153,55 @@ footer{margin-top:2em;padding:.7em 2em;border-top:1px solid #1e1e1e;font-size:.7
 </body>
 </html>
 """;
+}
+
+static string BuildLegendHtml(PZMapForge.Core.ParsedCell.ParsedCellDocument doc)
+{
+    var sb = new StringBuilder();
+    var pixelMap = doc.Counts.ToDictionary(c => c.Code, c => c.Pixels);
+    foreach (var entry in doc.Legend)
+    {
+        var rgb = entry.Rgb.Length >= 3
+            ? $"{entry.Rgb[0]},{entry.Rgb[1]},{entry.Rgb[2]}"
+            : "128,128,128";
+        pixelMap.TryGetValue(entry.Code, out var pixels);
+        sb.Append($"  <tr><td><span class=\"swatch\" style=\"background:rgb({rgb})\"></span>{HtmlEncode(entry.Kind)}</td>");
+        sb.Append($"<td>{HtmlEncode(entry.Code)}</td>");
+        sb.Append($"<td class=\"px\">{pixels:N0}</td></tr>\n");
+    }
+    return sb.ToString();
+}
+
+static string BuildDriftHtml(PZMapForge.Core.ParsedCell.ParsedCellDocument doc)
+{
+    if (doc.NearestDrift.Count == 0)
+        return "<p class=\"section-note\">Nearest color drift: none (all pixels matched exactly).</p>";
+
+    var sb = new StringBuilder();
+    sb.Append("<h2>Nearest Color Drift</h2>\n");
+    sb.Append("<p class=\"section-note\">Pixels whose source color had no exact palette match; snapped to nearest kind.</p>\n");
+    sb.Append("<table class=\"drift-tbl\">\n");
+    sb.Append("  <tr><th>Source RGB</th><th>Count</th><th>Nearest Kind</th><th>Nearest RGB</th><th>Distance</th></tr>\n");
+    foreach (var d in doc.NearestDrift)
+    {
+        sb.Append($"  <tr><td>{HtmlEncode(d.SourceRgb)}</td><td>{d.Count:N0}</td>");
+        sb.Append($"<td>{HtmlEncode(d.NearestKind)}</td><td>{HtmlEncode(d.NearestRgb)}</td>");
+        sb.Append($"<td>{d.Distance:F2}</td></tr>\n");
+    }
+    sb.Append("</table>\n");
+    return sb.ToString();
+}
+
+static string SanitizeRunName(string raw)
+{
+    var sb = new StringBuilder(raw.Length);
+    foreach (var c in raw)
+        sb.Append(char.IsLetterOrDigit(c) || c == '_' ? c : '-');
+    var result = sb.ToString().Trim('-');
+    // collapse consecutive hyphens
+    while (result.Contains("--"))
+        result = result.Replace("--", "-");
+    return result;
 }
 
 static string HtmlEncode(string s) =>

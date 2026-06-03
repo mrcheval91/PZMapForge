@@ -6,6 +6,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 
 ## Ratified: what is proven and committed
 
+| app-export blockout UX improvement (APP-3) | Ratified | --run-name <name> subdirectory support; visual legend with color swatches + pixel counts; color match summary bar; nearest drift table; split JSON/MD artifact sections; palette kinds card; 8 new tests (2 run-name process + 6 content contract) |
 | app-export HTML viewer improvement (APP-2) | Ratified | index.html: summary cards (dimensions/regions/primitives/recs/warnings), input image display (copied to images/), dark themed static CSS; tests assert image copy + card markup present |
 | app-export CLI command and HTML viewer (Slice 3A-6 app) | Ratified | app-export runs full pipeline, writes artifacts/ + index.html to .local/; 5 process tests; static HTML, no server, no JS framework; no PZ assets read/copied; claim boundary enforced |
 | Tilesheet format investigation decision record (Slice 3A-6-pre) | Ratified | docs/TILESHEET_FORMAT_INVESTIGATION_DECISION.md: governance gate; documents why 3A-6 is blocked, format knowledge required, allowed/forbidden investigation actions, 4 decision options, recommended Option B+D, evidence checklist, operator checklist; no code changes |
