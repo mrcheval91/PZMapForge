@@ -8,6 +8,34 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (SVG-8: SVG layer selection review import)
+- src/PZMapForge.Cli/Program.cs:
+  - --svg-selection <json> (-s): optional argument; exits 1 if file missing or JSON invalid.
+  - ReadSvgLayerSelection: tolerant JsonDocument parser; iterates known bucket keys;
+    collects items where selected==true into List<SelectedLayerItem>.
+  - WriteSvgLayerSelectionReview: writes svg-layer-selection-review.json (schema v0.1),
+    selection_status "reviewed", selected_count, selected_items, all safety flags false.
+  - Input file copied to artifacts/svg-layer-selection.input.json.
+  - BuildSvgLayerSelectionReviewHtml: "SVG Selection Review" h2 panel with grouped
+    chips, intended_use/operator_note spans, "This review is metadata only" note,
+    "not exported to Project Zomboid" note, artifact links.
+  - SelectedLayerItem sealed record.
+  - .review-item/.review-use/.review-note CSS added.
+  - svgReviewSectionHtml slot added to BuildAppHtml.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - AppExportAnnotationTests: MissingSvgSelectionFile_ExitsOne process test.
+  - AppExportSelectionFixture: runs once with minimal 1-item selection JSON.
+  - AppExportSelectionTests: 9 tests (exit 0, input copy, review exists, selected_count,
+    Eaux value, converted false, SVG Selection Review, metadata-only, not-exported note).
+  - Total: 318 tests (190 Core + 128 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No coordinate extraction. No geometry conversion. No PZ assets. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Added (SVG-7: SVG layer selection template)
 - src/PZMapForge.Cli/Program.cs:
   - WriteSvgLayerSelectionTemplate: writes svg-layer-selection.template.json. Each

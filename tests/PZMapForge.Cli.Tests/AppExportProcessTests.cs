@@ -482,6 +482,28 @@ public sealed class AppExportAnnotationTests : IDisposable
         Assert.Equal(1, code);
         Assert.Contains("annotation", stderr, StringComparison.OrdinalIgnoreCase);
     }
+
+    // -----------------------------------------------------------------------
+    // Test: missing --svg-selection file exits nonzero
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void AppExport_MissingSvgSelectionFile_ExitsOne()
+    {
+        var analysisPath = CreateAnalysisImage();
+        var outputDir    = Path.Combine(_tempDir, ".local", "app");
+        var missingPath  = Path.Combine(_tempDir, "nonexistent-selection.json");
+
+        var (code, _, stderr) = RunCli(
+            "app-export",
+            "--path",          analysisPath,
+            "--palette",       PalettePath,
+            "--output",        outputDir,
+            "--svg-selection", missingPath);
+
+        Assert.Equal(1, code);
+        Assert.Contains("svg-selection", stderr, StringComparison.OrdinalIgnoreCase);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -907,4 +929,136 @@ public sealed class AppExportSvgFullInventoryTests : IClassFixture<AppExportSvgF
         // 35 IDs + svg root (no id) — borough bucket should have 35 items but samples capped at 30.
         Assert.Contains("\"count\": 35", _fix.SvgLayerCandidatesJson, StringComparison.Ordinal);
     }
+}
+
+// ---------------------------------------------------------------------------
+// SVG-8: selection review fixture
+// ---------------------------------------------------------------------------
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+public sealed class AppExportSelectionFixture : IDisposable
+{
+    private readonly string _root;
+
+    public string OutputDir         { get; }
+    public int    ExitCode          { get; }
+    public string SelectionReviewJson { get; }
+    public string IndexHtml         { get; }
+
+    public AppExportSelectionFixture()
+    {
+        _root     = Path.Combine(Path.GetTempPath(), "pzmapforge-selection", Path.GetRandomFileName());
+        OutputDir = Path.Combine(_root, ".local", "app");
+        Directory.CreateDirectory(OutputDir);
+
+        var imgPath = Path.Combine(_root, "analysis.png");
+        using (var bmp = new System.Drawing.Bitmap(300, 300))
+        using (var g   = System.Drawing.Graphics.FromImage(bmp))
+        {
+            g.Clear(System.Drawing.Color.FromArgb(255, 100, 140, 70));
+            bmp.Save(imgPath, System.Drawing.Imaging.ImageFormat.Png);
+        }
+
+        // Minimal selection JSON with one selected item.
+        var selectionJson = """
+{
+  "schema": "pzmapforge.svg-layer-selection-template.v0.1",
+  "source_file_name": "test.svg",
+  "selection_status": "operator_review_required",
+  "water_candidates": [
+    { "value": "Eaux", "selected": true, "intended_use": "water body", "operator_note": "main river" }
+  ],
+  "borough_or_district_candidates": [
+    { "value": "TestBorough", "selected": false, "intended_use": "", "operator_note": "" }
+  ]
+}
+""";
+        var selPath = Path.Combine(_root, "test-selection.json");
+        File.WriteAllText(selPath, selectionJson, System.Text.Encoding.UTF8);
+
+        var repoRoot   = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        var cliProject = Path.Combine(repoRoot, "src", "PZMapForge.Cli");
+        var palette    = Path.Combine(repoRoot, "source", "image-palette.json");
+
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName               = "dotnet",
+            WorkingDirectory       = repoRoot,
+            RedirectStandardOutput = true,
+            RedirectStandardError  = true,
+            UseShellExecute        = false,
+        };
+        foreach (var a in new[]
+            { "run", "--project", cliProject, "--configuration", "Release", "--no-build", "--",
+              "app-export", "--path", imgPath, "--palette", palette,
+              "--output", OutputDir, "--svg-selection", selPath })
+            psi.ArgumentList.Add(a);
+
+        using var proc = System.Diagnostics.Process.Start(psi)!;
+        proc.StandardOutput.ReadToEnd();
+        proc.StandardError.ReadToEnd();
+        proc.WaitForExit();
+        ExitCode = proc.ExitCode;
+
+        var reviewPath = Path.Combine(OutputDir, "artifacts", "svg-layer-selection-review.json");
+        SelectionReviewJson = File.Exists(reviewPath) ? File.ReadAllText(reviewPath) : string.Empty;
+
+        var htmlPath = Path.Combine(OutputDir, "index.html");
+        IndexHtml = File.Exists(htmlPath) ? File.ReadAllText(htmlPath) : string.Empty;
+    }
+
+    public bool InputCopied =>
+        File.Exists(Path.Combine(OutputDir, "artifacts", "svg-layer-selection.input.json"));
+
+    public bool ReviewExists =>
+        File.Exists(Path.Combine(OutputDir, "artifacts", "svg-layer-selection-review.json"));
+
+    public void Dispose()
+    {
+        try { if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true); }
+        catch { /* best effort */ }
+    }
+}
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+public sealed class AppExportSelectionTests : IClassFixture<AppExportSelectionFixture>
+{
+    private readonly AppExportSelectionFixture _fix;
+    public AppExportSelectionTests(AppExportSelectionFixture fix) => _fix = fix;
+
+    [Fact]
+    public void AppExport_Selection_ExitsZero() =>
+        Assert.Equal(0, _fix.ExitCode);
+
+    [Fact]
+    public void AppExport_Selection_WritesInputCopy() =>
+        Assert.True(_fix.InputCopied, "svg-layer-selection.input.json was not copied");
+
+    [Fact]
+    public void AppExport_Selection_WritesReviewJson() =>
+        Assert.True(_fix.ReviewExists, "svg-layer-selection-review.json was not written");
+
+    [Fact]
+    public void AppExport_Selection_ReviewContainsSelectedCount() =>
+        Assert.Contains("selected_count", _fix.SelectionReviewJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_ReviewContainsSelectedValue() =>
+        Assert.Contains("\"Eaux\"", _fix.SelectionReviewJson, StringComparison.Ordinal);
+
+    [Fact]
+    public void AppExport_Selection_ReviewContainsConvertedFalse() =>
+        Assert.Contains("\"converted_to_map_geometry\": false", _fix.SelectionReviewJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_IndexHtmlContainsSvgSelectionReview() =>
+        Assert.Contains("SVG Selection Review", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_IndexHtmlContainsMetadataOnlyNote() =>
+        Assert.Contains("This review is metadata only", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_IndexHtmlContainsNotExportedNote() =>
+        Assert.Contains("not exported to Project Zomboid", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 }

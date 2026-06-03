@@ -180,6 +180,12 @@ Added in SVG-2:
   street/route, transit/station, park/green\_space, labels, unknown. Method:
   `metadata_name_pattern_only`. Includes `candidate_generation_notes` (rules applied) and
   `inspected_metadata_sources`. No coordinates read. All safety flags false.
+- **`--svg-selection <json>`** (SVG-8): optional argument accepting an operator-edited
+  selection file. Copies it to `artifacts/svg-layer-selection.input.json` and writes
+  `artifacts/svg-layer-selection-review.json` (schema v0.1, `selected_count`,
+  `selected_items` with bucket/value/intended\_use/operator\_note). HTML shows
+  "SVG Selection Review" panel with selected chips and notes that selected candidates
+  are not converted to geometry and not exported to Project Zomboid.
 - **`artifacts/svg-layer-selection.template.json`** (SVG-7): operator-editable selection
   template generated from the candidate samples. Each candidate item has `value`,
   `selected: false`, `intended_use: ""`, `operator_note: ""`. `selection_status`:

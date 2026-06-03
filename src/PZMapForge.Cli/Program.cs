@@ -32,7 +32,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("                    [--tiny-threshold <int>] [--large-threshold <int>]");
     Console.Error.WriteLine("  layer-validate    --layers <manifest> --palette <palette> [--resize]");
     Console.Error.WriteLine("  local-tile-survey --config <path> [--output <dir>]");
-    Console.Error.WriteLine("  app-export        --path <image> --palette <palette> [--output <dir>] [--run-name <name>] [--annotation <image>] [--resize]");
+    Console.Error.WriteLine("  app-export        --path <image> --palette <palette> [--output <dir>] [--run-name <name>] [--annotation <image>] [--svg-selection <json>] [--resize]");
     Console.Error.WriteLine("                    [--tiny-threshold <int>] [--large-threshold <int>]");
     return 1;
 }
@@ -869,21 +869,23 @@ static int LocalTileSurveyCommand(string[] args)
 
 static int AppExportCommand(string[] args)
 {
-    var imagePath      = string.Empty;
-    var palettePath    = string.Empty;
-    var outputDir      = string.Empty;
-    var runName        = string.Empty;
-    var annotationPath = string.Empty;
-    var resize         = false;
+    var imagePath         = string.Empty;
+    var palettePath       = string.Empty;
+    var outputDir         = string.Empty;
+    var runName           = string.Empty;
+    var annotationPath    = string.Empty;
+    var svgSelectionPath  = string.Empty;
+    var resize            = false;
 
     for (var i = 0; i < args.Length; i++)
     {
-        if      (args[i] is "--path"       or "-p" && i + 1 < args.Length) imagePath      = args[++i];
-        else if (args[i] is "--palette"             && i + 1 < args.Length) palettePath    = args[++i];
-        else if (args[i] is "--output"     or "-o" && i + 1 < args.Length) outputDir      = args[++i];
-        else if (args[i] is "--run-name"   or "-n" && i + 1 < args.Length) runName        = args[++i];
-        else if (args[i] is "--annotation" or "-a" && i + 1 < args.Length) annotationPath = args[++i];
-        else if (args[i] is "--resize")                                      resize         = true;
+        if      (args[i] is "--path"          or "-p" && i + 1 < args.Length) imagePath        = args[++i];
+        else if (args[i] is "--palette"                && i + 1 < args.Length) palettePath      = args[++i];
+        else if (args[i] is "--output"        or "-o" && i + 1 < args.Length) outputDir        = args[++i];
+        else if (args[i] is "--run-name"      or "-n" && i + 1 < args.Length) runName          = args[++i];
+        else if (args[i] is "--annotation"    or "-a" && i + 1 < args.Length) annotationPath   = args[++i];
+        else if (args[i] is "--svg-selection" or "-s" && i + 1 < args.Length) svgSelectionPath = args[++i];
+        else if (args[i] is "--resize")                                         resize           = true;
     }
 
     if (string.IsNullOrWhiteSpace(imagePath))
@@ -893,6 +895,9 @@ static int AppExportCommand(string[] args)
 
     if (!string.IsNullOrWhiteSpace(annotationPath) && !File.Exists(annotationPath))
     { Console.Error.WriteLine($"app-export: --annotation file not found: {annotationPath}"); return 1; }
+
+    if (!string.IsNullOrWhiteSpace(svgSelectionPath) && !File.Exists(svgSelectionPath))
+    { Console.Error.WriteLine($"app-export: --svg-selection file not found: {svgSelectionPath}"); return 1; }
 
     if (string.IsNullOrWhiteSpace(outputDir))
         outputDir = Path.Combine(Directory.GetCurrentDirectory(), ".local", "app");
@@ -1007,6 +1012,7 @@ static int AppExportCommand(string[] args)
     var svgStructureSectionHtml  = string.Empty;
     var svgCandidatesSectionHtml = string.Empty;
     var svgSelectionSectionHtml  = string.Empty;
+    var svgReviewSectionHtml     = string.Empty;
 
     if (!string.IsNullOrWhiteSpace(annotationPath))
     {
@@ -1050,9 +1056,20 @@ static int AppExportCommand(string[] args)
 
     // Step 9: write index.html
     var htmlPath = Path.Combine(outputFull, "index.html");
+    if (!string.IsNullOrWhiteSpace(svgSelectionPath))
+    {
+        var selJson = File.ReadAllText(svgSelectionPath, Encoding.UTF8);
+        var (selItems, selErr) = ReadSvgLayerSelection(selJson);
+        if (selErr is not null)
+        { Console.Error.WriteLine($"app-export: --svg-selection is not valid JSON: {selErr}"); return 1; }
+        File.Copy(svgSelectionPath, Path.Combine(artifactsDir, "svg-layer-selection.input.json"), overwrite: true);
+        WriteSvgLayerSelectionReview(selItems, Path.GetFileName(svgSelectionPath), artifactsDir);
+        svgReviewSectionHtml = BuildSvgLayerSelectionReviewHtml(selItems);
+    }
+
     var html     = BuildAppHtml(
         relativeImgSrc, relativeParsedSrc, relativeAnnotSrc,
-        annotPanelLabel, annotGuidanceHtml, svgStructureSectionHtml, svgCandidatesSectionHtml, svgSelectionSectionHtml,
+        annotPanelLabel, annotGuidanceHtml, svgStructureSectionHtml, svgCandidatesSectionHtml, svgSelectionSectionHtml, svgReviewSectionHtml,
         imagePath, grid.Width, grid.Height, parseResult.Resized,
         regions.TotalRegions, primitives.PrimitiveCount,
         planResult.RecommendationCount, planResult.Summary.WarningCount,
@@ -1265,6 +1282,7 @@ static string BuildAppHtml(
     string svgStructureSectionHtml,
     string svgCandidatesSectionHtml,
     string svgSelectionSectionHtml,
+    string svgReviewSectionHtml,
     string imagePath, int width, int height, bool resized,
     int regions, int primitives, int recommendations, int warnings,
     PlanningRuleOptions planOpts,
@@ -1355,6 +1373,9 @@ h2:first-child{margin-top:0}
 .section-note{font-size:.78em;color:#555;margin:.25em 0 .7em}
 .svg-note{font-size:.79em;color:#7799aa;margin:.5em 0 .3em;padding:.38em .65em;background:#0e1a22;border:1px solid #1e3a4a;border-radius:3px}
 .svg-sub{font-size:.75em;color:#7799aa;text-transform:uppercase;letter-spacing:.08em;margin:.9em 0 .3em}
+.review-item{margin:.2em 0 .35em;line-height:1.7}
+.review-use{font-size:.78em;color:#88bb88;margin-left:.4em}
+.review-note{font-size:.75em;color:#888;margin-left:.35em;font-style:italic}
 .svg-chips{margin:.25em 0 .6em;line-height:1.9}
 .svg-chip{display:inline-block;font-size:.76em;background:#162030;border:1px solid #2a4060;color:#88bbdd;padding:.1em .45em;border-radius:2px;margin:.1em .1em}
 .health-badge{display:inline-block;font-size:.79em;font-weight:bold;padding:.28em .75em;border-radius:3px;margin:.35em 0 .65em}
@@ -1454,6 +1475,7 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
     {{svgStructureSectionHtml}}
     {{svgCandidatesSectionHtml}}
     {{svgSelectionSectionHtml}}
+    {{svgReviewSectionHtml}}
     <h2>Non-claims</h2>
     <ul class="nc-list">
       <li>Not a playable Project Zomboid map.</li>
@@ -1742,6 +1764,108 @@ static SvgLayerCandidatesResult WriteSvgLayerCandidates(SvgStructureResult r, st
     return result;
 }
 
+static (List<SelectedLayerItem> Items, string? Error) ReadSvgLayerSelection(string json)
+{
+    string[] bucketNames =
+    [
+        "water_candidates", "outline_candidates", "technical_layer_candidates",
+        "borough_or_district_candidates", "street_or_route_candidates",
+        "transit_or_station_candidates", "park_or_green_space_candidates",
+        "label_candidates", "unknown_candidates",
+    ];
+
+    try
+    {
+        using var doc   = JsonDocument.Parse(json);
+        var root        = doc.RootElement;
+        var items       = new List<SelectedLayerItem>();
+
+        foreach (var bucket in bucketNames)
+        {
+            if (!root.TryGetProperty(bucket, out var arr)) continue;
+            if (arr.ValueKind != JsonValueKind.Array) continue;
+            foreach (var item in arr.EnumerateArray())
+            {
+                var selected = item.TryGetProperty("selected", out var sel)
+                    && sel.ValueKind == JsonValueKind.True;
+                if (!selected) continue;
+                var value       = item.TryGetProperty("value",        out var v) ? v.GetString() ?? "" : "";
+                var intendedUse = item.TryGetProperty("intended_use", out var u) ? u.GetString() ?? "" : "";
+                var note        = item.TryGetProperty("operator_note",out var n) ? n.GetString() ?? "" : "";
+                items.Add(new SelectedLayerItem(bucket, value, intendedUse, note));
+            }
+        }
+        return (items, null);
+    }
+    catch (JsonException ex)
+    {
+        return ([], ex.Message);
+    }
+}
+
+static void WriteSvgLayerSelectionReview(
+    List<SelectedLayerItem> items, string sourceFileName, string artifactsDir)
+{
+    var artifact = new
+    {
+        schema                   = "pzmapforge.svg-layer-selection-review.v0.1",
+        claim_boundary           = "planning_artifact_only_not_pz_load_tested",
+        source_selection_file_name = sourceFileName,
+        selection_status         = "reviewed",
+        selected_count           = items.Count,
+        selected_items           = items.Select(i => new
+        {
+            bucket        = i.Bucket,
+            value         = i.Value,
+            intended_use  = i.IntendedUse,
+            operator_note = i.OperatorNote,
+        }).ToArray(),
+        parsed_as_geometry       = false,
+        converted_to_map_geometry = false,
+        pz_assets_copied         = false,
+        media_maps_touched       = false,
+        playable_export_claimed  = false,
+    };
+
+    File.WriteAllText(
+        Path.Combine(artifactsDir, "svg-layer-selection-review.json"),
+        JsonSerializer.Serialize(artifact, new JsonSerializerOptions { WriteIndented = true }),
+        Encoding.UTF8);
+}
+
+static string BuildSvgLayerSelectionReviewHtml(List<SelectedLayerItem> items)
+{
+    var sb = new StringBuilder();
+    sb.Append("\n    <h2>SVG Selection Review</h2>\n");
+    sb.Append("    <p class=\"svg-note\">This review is metadata only. Selected candidates are not converted to SVG geometry. Selected candidates are not exported to Project Zomboid.</p>\n");
+    sb.Append($"    <p class=\"section-note\">Selected: {items.Count} item(s)</p>\n");
+
+    if (items.Count > 0)
+    {
+        var byBucket = items.GroupBy(i => i.Bucket);
+        foreach (var grp in byBucket)
+        {
+            sb.Append($"    <p class=\"svg-sub\">{HtmlEncode(grp.Key)} ({grp.Count()})</p>\n");
+            foreach (var item in grp)
+            {
+                sb.Append($"    <div class=\"review-item\"><span class=\"svg-chip\">{HtmlEncode(item.Value)}</span>");
+                if (!string.IsNullOrEmpty(item.IntendedUse))
+                    sb.Append($" <span class=\"review-use\">{HtmlEncode(item.IntendedUse)}</span>");
+                if (!string.IsNullOrEmpty(item.OperatorNote))
+                    sb.Append($" <span class=\"review-note\">{HtmlEncode(item.OperatorNote)}</span>");
+                sb.Append("</div>\n");
+            }
+        }
+    }
+
+    sb.Append("    <div class=\"arts\">\n");
+    sb.Append("      <div class=\"art\"><a href=\"artifacts/svg-layer-selection.input.json\">svg-layer-selection.input.json</a><div class=\"desc\">Operator-edited selection input</div></div>\n");
+    sb.Append("      <div class=\"art\"><a href=\"artifacts/svg-layer-selection-review.json\">svg-layer-selection-review.json</a><div class=\"desc\">Selection review (schema v0.1)</div></div>\n");
+    sb.Append("    </div>\n");
+
+    return sb.ToString();
+}
+
 static void WriteSvgLayerSelectionTemplate(
     SvgLayerCandidatesResult c, string sourceFileName, string artifactsDir)
 {
@@ -1827,6 +1951,8 @@ static void AppendCandidateBucket(StringBuilder sb, string label, IReadOnlyList<
         sb.Append($"<span class=\"svg-chip\">{HtmlEncode(item)}</span>");
     sb.Append("</div>\n");
 }
+
+sealed record SelectedLayerItem(string Bucket, string Value, string IntendedUse, string OperatorNote);
 
 sealed class SvgLayerCandidatesResult
 {
