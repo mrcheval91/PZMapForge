@@ -8,6 +8,37 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (SVG-4: SVG layer candidate inventory)
+- src/PZMapForge.Cli/Program.cs:
+  - SvgStructureResult: SampleClasses property added; WriteSvgStructure
+    populates it from sampleClasses.
+  - SvgLayerCandidatesResult sealed class: WaterCandidates, OutlineCandidates,
+    BoroughOrDistrictCandidates, StreetOrRouteCandidates, LabelCandidates,
+    UnknownCandidates (all IReadOnlyList<string>).
+  - MatchesAny: case-insensitive keyword helper.
+  - WriteSvgLayerCandidates: classifies IDs+classes against water/outline/street
+    keyword patterns; unmatched → borough_or_district; text labels → label bucket;
+    writes svg-layer-candidates.json with schema v0.1, candidate_generation_method
+    "metadata_name_pattern_only", counts+samples per bucket, all safety flags false.
+  - BuildSvgLayerCandidatesHtml + AppendCandidateBucket: "SVG Layer Candidates"
+    h2 panel with bucket chip lists and "metadata candidates only" / "No SVG
+    geometry is converted" notes.
+  - AppExportCommand: svgCandidatesSectionHtml slot; WriteSvgLayerCandidates called
+    after WriteSvgStructure; BuildAppHtml receives new parameter.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - AppExportSvgFixture: SvgLayerCandidatesExists + SvgLayerCandidatesJson added.
+  - AppExportSvgAnnotationTests: 8 new assertions (file exists, method string,
+    converted_to_map_geometry false, borough key, label key, SVG Layer Candidates
+    in HTML, metadata-candidates language, no-geometry-conversion note).
+  - Total: 285 tests (190 Core + 95 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No coordinate extraction. No geometry conversion. No PZ assets. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Added (SVG-3: SVG structure viewer panel)
 - src/PZMapForge.Cli/Program.cs:
   - SvgStructureResult sealed class: in-memory result from WriteSvgStructure.

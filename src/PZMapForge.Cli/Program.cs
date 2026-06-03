@@ -1001,10 +1001,11 @@ static int AppExportCommand(string[] args)
     var relativeParsedSrc = "images/parsed-preview.png";
 
     // Step 8c: copy annotation if provided; detect SVG; write svg-reference-summary.json
-    var relativeAnnotSrc       = string.Empty;
-    var annotPanelLabel        = "Annotation Reference";
-    var annotGuidanceHtml      = string.Empty;
-    var svgStructureSectionHtml = string.Empty;
+    var relativeAnnotSrc         = string.Empty;
+    var annotPanelLabel          = "Annotation Reference";
+    var annotGuidanceHtml        = string.Empty;
+    var svgStructureSectionHtml  = string.Empty;
+    var svgCandidatesSectionHtml = string.Empty;
 
     if (!string.IsNullOrWhiteSpace(annotationPath))
     {
@@ -1038,7 +1039,9 @@ static int AppExportCommand(string[] args)
                 Encoding.UTF8);
 
             var svgResult = WriteSvgStructure(annotationPath, artifactsDir);
-            svgStructureSectionHtml = BuildSvgStructureHtml(svgResult);
+            svgStructureSectionHtml  = BuildSvgStructureHtml(svgResult);
+            var svgCandidates        = WriteSvgLayerCandidates(svgResult, artifactsDir);
+            svgCandidatesSectionHtml = BuildSvgLayerCandidatesHtml(svgCandidates);
         }
     }
 
@@ -1046,7 +1049,7 @@ static int AppExportCommand(string[] args)
     var htmlPath = Path.Combine(outputFull, "index.html");
     var html     = BuildAppHtml(
         relativeImgSrc, relativeParsedSrc, relativeAnnotSrc,
-        annotPanelLabel, annotGuidanceHtml, svgStructureSectionHtml,
+        annotPanelLabel, annotGuidanceHtml, svgStructureSectionHtml, svgCandidatesSectionHtml,
         imagePath, grid.Width, grid.Height, parseResult.Resized,
         regions.TotalRegions, primitives.PrimitiveCount,
         planResult.RecommendationCount, planResult.Summary.WarningCount,
@@ -1191,6 +1194,7 @@ static SvgStructureResult WriteSvgStructure(string annotationPath, string artifa
         CountRect        = countByName.GetValueOrDefault("rect"),
         CountText        = countByName.GetValueOrDefault("text"),
         SampleIds        = sampleIds.AsReadOnly(),
+        SampleClasses    = sampleClasses.AsReadOnly(),
         SampleTextLabels = sampleTextLabels.AsReadOnly(),
     };
 }
@@ -1227,6 +1231,7 @@ static string BuildAppHtml(
     string annotPanelLabel,
     string annotGuidanceHtml,
     string svgStructureSectionHtml,
+    string svgCandidatesSectionHtml,
     string imagePath, int width, int height, bool resized,
     int regions, int primitives, int recommendations, int warnings,
     PlanningRuleOptions planOpts,
@@ -1414,6 +1419,7 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
     </div>
 
     {{svgStructureSectionHtml}}
+    {{svgCandidatesSectionHtml}}
     <h2>Non-claims</h2>
     <ul class="nc-list">
       <li>Not a playable Project Zomboid map.</li>
@@ -1554,6 +1560,113 @@ static int UnknownCommand(string cmd)
     return 1;
 }
 
+static bool MatchesAny(string s, string[] keywords) =>
+    keywords.Any(k => s.Contains(k, StringComparison.OrdinalIgnoreCase));
+
+static SvgLayerCandidatesResult WriteSvgLayerCandidates(SvgStructureResult r, string artifactsDir)
+{
+    var waterKw   = new[] { "eau", "water", "fleuve", "river", "canal", "lac", "lake" };
+    var outlineKw = new[] { "outline", "contour", "boundary", "limite", "border" };
+    var streetKw  = new[] { "rue", "street", "route", "road", "boulevard", "avenue", "ave",
+                             "chemin", "autoroute", "highway" };
+
+    var water   = new List<string>();
+    var outline = new List<string>();
+    var street  = new List<string>();
+    var borough = new List<string>();
+
+    foreach (var s in r.SampleIds.Concat(r.SampleClasses).Distinct(StringComparer.OrdinalIgnoreCase))
+    {
+        if      (MatchesAny(s, waterKw))   water.Add(s);
+        else if (MatchesAny(s, outlineKw)) outline.Add(s);
+        else if (MatchesAny(s, streetKw))  street.Add(s);
+        else                               borough.Add(s);
+    }
+
+    var labels  = r.SampleTextLabels.Take(30).ToList();
+    // unknown: borough entries that are clearly technical/generic (very short or all lowercase digits)
+    var trueBorough = borough.Where(s => s.Length > 1).Take(30).ToList();
+    var unknown     = borough.Except(trueBorough).Take(30).ToList();
+
+    var result = new SvgLayerCandidatesResult
+    {
+        WaterCandidates              = water.Take(30).ToList().AsReadOnly(),
+        OutlineCandidates            = outline.Take(30).ToList().AsReadOnly(),
+        BoroughOrDistrictCandidates  = trueBorough.AsReadOnly(),
+        StreetOrRouteCandidates      = street.Take(30).ToList().AsReadOnly(),
+        LabelCandidates              = labels.AsReadOnly(),
+        UnknownCandidates            = unknown.AsReadOnly(),
+    };
+
+    var artifact = new
+    {
+        schema                         = "pzmapforge.svg-layer-candidates.v0.1",
+        claim_boundary                 = "planning_artifact_only_not_pz_load_tested",
+        source_file_name               = r.SourceFileName,
+        parse_status                   = r.ParseStatus,
+        candidate_generation_method    = "metadata_name_pattern_only",
+        parsed_as_geometry             = false,
+        converted_to_map_geometry      = false,
+        pz_assets_copied               = false,
+        media_maps_touched             = false,
+        playable_export_claimed        = false,
+        water_candidates               = new { count = result.WaterCandidates.Count,              samples = result.WaterCandidates },
+        outline_candidates             = new { count = result.OutlineCandidates.Count,             samples = result.OutlineCandidates },
+        borough_or_district_candidates = new { count = result.BoroughOrDistrictCandidates.Count,  samples = result.BoroughOrDistrictCandidates },
+        street_or_route_candidates     = new { count = result.StreetOrRouteCandidates.Count,       samples = result.StreetOrRouteCandidates },
+        label_candidates               = new { count = result.LabelCandidates.Count,               samples = result.LabelCandidates },
+        unknown_candidates             = new { count = result.UnknownCandidates.Count,             samples = result.UnknownCandidates },
+    };
+
+    File.WriteAllText(
+        Path.Combine(artifactsDir, "svg-layer-candidates.json"),
+        JsonSerializer.Serialize(artifact, new JsonSerializerOptions { WriteIndented = true }),
+        Encoding.UTF8);
+
+    return result;
+}
+
+static string BuildSvgLayerCandidatesHtml(SvgLayerCandidatesResult c)
+{
+    var sb = new StringBuilder();
+    sb.Append("\n    <h2>SVG Layer Candidates</h2>\n");
+    sb.Append("    <p class=\"svg-note\">These are metadata candidates only. No SVG geometry is converted. Candidates are derived from element IDs, class names, and text labels using name pattern matching only.</p>\n");
+    sb.Append("    <p class=\"section-note\">Method: metadata_name_pattern_only</p>\n");
+
+    AppendCandidateBucket(sb, "Water",             c.WaterCandidates);
+    AppendCandidateBucket(sb, "Outline / Boundary", c.OutlineCandidates);
+    AppendCandidateBucket(sb, "Borough / District", c.BoroughOrDistrictCandidates);
+    AppendCandidateBucket(sb, "Street / Route",    c.StreetOrRouteCandidates);
+    AppendCandidateBucket(sb, "Text Labels",       c.LabelCandidates);
+    AppendCandidateBucket(sb, "Unknown",           c.UnknownCandidates);
+
+    sb.Append("    <div class=\"arts\">\n");
+    sb.Append("      <div class=\"art\"><a href=\"artifacts/svg-layer-candidates.json\">svg-layer-candidates.json</a><div class=\"desc\">SVG layer candidate inventory (schema v0.1)</div></div>\n");
+    sb.Append("    </div>\n");
+
+    return sb.ToString();
+}
+
+static void AppendCandidateBucket(StringBuilder sb, string label, IReadOnlyList<string> items)
+{
+    if (items.Count == 0) return;
+    sb.Append($"    <p class=\"svg-sub\">{HtmlEncode(label)} ({items.Count})</p>\n");
+    sb.Append("    <div class=\"svg-chips\">");
+    foreach (var item in items)
+        sb.Append($"<span class=\"svg-chip\">{HtmlEncode(item)}</span>");
+    sb.Append("</div>\n");
+}
+
+sealed class SvgLayerCandidatesResult
+{
+    public IReadOnlyList<string> WaterCandidates              { get; init; } = [];
+    public IReadOnlyList<string> OutlineCandidates            { get; init; } = [];
+    public IReadOnlyList<string> BoroughOrDistrictCandidates  { get; init; } = [];
+    public IReadOnlyList<string> StreetOrRouteCandidates      { get; init; } = [];
+    public IReadOnlyList<string> LabelCandidates              { get; init; } = [];
+    public IReadOnlyList<string> UnknownCandidates            { get; init; } = [];
+}
+
 sealed class SvgStructureResult
 {
     public string ParseStatus      { get; init; } = "parsed";
@@ -1572,5 +1685,6 @@ sealed class SvgStructureResult
     public int    CountRect        { get; init; }
     public int    CountText        { get; init; }
     public IReadOnlyList<string> SampleIds        { get; init; } = [];
+    public IReadOnlyList<string> SampleClasses    { get; init; } = [];
     public IReadOnlyList<string> SampleTextLabels { get; init; } = [];
 }

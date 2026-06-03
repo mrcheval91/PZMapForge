@@ -565,9 +565,14 @@ public sealed class AppExportSvgFixture : IDisposable
         SvgSummaryJson    = SvgSummaryExists  ? File.ReadAllText(svgSummaryPath)    : string.Empty;
         SvgStructureExists = File.Exists(svgStructurePath);
         SvgStructureJson   = SvgStructureExists ? File.ReadAllText(svgStructurePath) : string.Empty;
+        var svgCandidatesPath = Path.Combine(OutputDir, "artifacts", "svg-layer-candidates.json");
+        SvgLayerCandidatesExists = File.Exists(svgCandidatesPath);
+        SvgLayerCandidatesJson   = SvgLayerCandidatesExists ? File.ReadAllText(svgCandidatesPath) : string.Empty;
     }
 
-    public bool   SvgStructureExists { get; }
+    public bool   SvgStructureExists      { get; }
+    public bool   SvgLayerCandidatesExists { get; }
+    public string SvgLayerCandidatesJson   { get; }
     public string SvgStructureJson   { get; }
 
     public void Dispose()
@@ -680,4 +685,38 @@ public sealed class AppExportSvgAnnotationTests : IClassFixture<AppExportSvgFixt
     [Fact]
     public void AppExport_Svg_IndexHtmlContainsNotConvertedLanguage() =>
         Assert.Contains("not converted to map geometry", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    // SVG-4: layer candidate inventory
+
+    [Fact]
+    public void AppExport_Svg_WritesSvgLayerCandidates() =>
+        Assert.True(_fix.SvgLayerCandidatesExists, "svg-layer-candidates.json was not written");
+
+    [Fact]
+    public void AppExport_Svg_LayerCandidatesContainsMethod() =>
+        Assert.Contains("metadata_name_pattern_only", _fix.SvgLayerCandidatesJson, StringComparison.Ordinal);
+
+    [Fact]
+    public void AppExport_Svg_LayerCandidatesContainsConvertedFalse() =>
+        Assert.Contains("\"converted_to_map_geometry\": false", _fix.SvgLayerCandidatesJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_LayerCandidatesContainsBoroughKey() =>
+        Assert.Contains("borough_or_district_candidates", _fix.SvgLayerCandidatesJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_LayerCandidatesContainsLabelKey() =>
+        Assert.Contains("label_candidates", _fix.SvgLayerCandidatesJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsSvgLayerCandidates() =>
+        Assert.Contains("SVG Layer Candidates", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsMetadataCandidatesLanguage() =>
+        Assert.Contains("metadata candidates only", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsNoGeometryConversionNote() =>
+        Assert.Contains("No SVG geometry is converted", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 }
