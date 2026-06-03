@@ -1076,15 +1076,20 @@ static int AppExportCommand(string[] args)
 
 static void WriteSvgStructure(string annotationPath, string artifactsDir)
 {
+    const long MaxChars = 50_000_000;
+
     var xmlSettings = new XmlReaderSettings
     {
         DtdProcessing           = DtdProcessing.Prohibit,
         XmlResolver             = null,
-        MaxCharactersInDocument = 10_000_000,
+        MaxCharactersInDocument = MaxChars,
     };
 
     List<XElement> elements;
     XElement?      root;
+    string         parseStatus = "parsed";
+    string         parseError  = string.Empty;
+
     try
     {
         using var reader = XmlReader.Create(annotationPath, xmlSettings);
@@ -1092,10 +1097,12 @@ static void WriteSvgStructure(string annotationPath, string artifactsDir)
         root     = doc.Root;
         elements = root?.DescendantsAndSelf().ToList() ?? [];
     }
-    catch
+    catch (Exception ex)
     {
-        root     = null;
-        elements = [];
+        root        = null;
+        elements    = [];
+        parseStatus = "failed";
+        parseError  = ex.Message;
     }
 
     var countByName = elements
@@ -1127,15 +1134,18 @@ static void WriteSvgStructure(string annotationPath, string artifactsDir)
 
     var structure = new
     {
-        schema                      = "pzmapforge.svg-reference-structure.v0.1",
-        claim_boundary              = "planning_artifact_only_not_pz_load_tested",
-        source_file_name            = Path.GetFileName(annotationPath),
-        file_size_bytes             = new FileInfo(annotationPath).Length,
-        root_element                = root?.Name.LocalName ?? "unknown",
-        width                       = root?.Attribute("width")?.Value  ?? "",
-        height                      = root?.Attribute("height")?.Value ?? "",
-        viewBox                     = root?.Attribute("viewBox")?.Value ?? "",
-        element_counts              = new
+        schema                       = "pzmapforge.svg-reference-structure.v0.1",
+        claim_boundary               = "planning_artifact_only_not_pz_load_tested",
+        parse_status                 = parseStatus,
+        parse_error                  = parseError,
+        max_characters_in_document   = MaxChars,
+        source_file_name             = Path.GetFileName(annotationPath),
+        file_size_bytes              = new FileInfo(annotationPath).Length,
+        root_element                 = root?.Name.LocalName ?? "unknown",
+        width                        = root?.Attribute("width")?.Value  ?? "",
+        height                       = root?.Attribute("height")?.Value ?? "",
+        viewBox                      = root?.Attribute("viewBox")?.Value ?? "",
+        element_counts               = new
         {
             svg      = countByName.GetValueOrDefault("svg"),
             g        = countByName.GetValueOrDefault("g"),
@@ -1150,19 +1160,19 @@ static void WriteSvgStructure(string annotationPath, string artifactsDir)
             image    = countByName.GetValueOrDefault("image"),
             use      = countByName.GetValueOrDefault("use"),
         },
-        id_count                    = sampleIds.Count,
-        class_count                 = sampleClasses.Count,
-        sample_ids                  = sampleIds,
-        sample_classes              = sampleClasses,
-        sample_text_labels          = sampleTextLabels,
-        likely_contains_text_labels = sampleTextLabels.Count > 0,
-        likely_contains_paths       = countByName.GetValueOrDefault("path") > 0,
-        likely_contains_groups      = countByName.GetValueOrDefault("g") > 0,
-        parsed_as_geometry          = false,
-        converted_to_map_geometry   = false,
-        pz_assets_copied            = false,
-        media_maps_touched          = false,
-        playable_export_claimed     = false,
+        id_count                     = sampleIds.Count,
+        class_count                  = sampleClasses.Count,
+        sample_ids                   = sampleIds,
+        sample_classes               = sampleClasses,
+        sample_text_labels           = sampleTextLabels,
+        likely_contains_text_labels  = sampleTextLabels.Count > 0,
+        likely_contains_paths        = countByName.GetValueOrDefault("path") > 0,
+        likely_contains_groups       = countByName.GetValueOrDefault("g") > 0,
+        parsed_as_geometry           = false,
+        converted_to_map_geometry    = false,
+        pz_assets_copied             = false,
+        media_maps_touched           = false,
+        playable_export_claimed      = false,
     };
 
     File.WriteAllText(

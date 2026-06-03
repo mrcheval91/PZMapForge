@@ -8,6 +8,27 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Fixed (SVG-2A: large SVG structure inspection)
+- src/PZMapForge.Cli/Program.cs: WriteSvgStructure
+  - MaxCharactersInDocument raised from 10_000_000 to 50_000_000 to handle
+    real-world SVG files (e.g., 12.3 MB Montreal arrondissements SVG).
+  - catch block now captures Exception.Message instead of discarding it.
+  - Three new fields added to svg-reference-structure.json:
+    parse_status ("parsed" or "failed"), parse_error (error message or ""),
+    max_characters_in_document (50_000_000).
+  - Parse failures are recorded honestly; structure JSON is always written.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - 4 new assertions in AppExportSvgAnnotationTests: parse_status present,
+    parse_status is "parsed", parse_error is empty, max_characters_in_document
+    present. Total: 271 tests (190 Core + 81 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+SVG paths are counted but not converted. No PZ assets. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Added (SVG-2: SVG reference structure inspector)
 - src/PZMapForge.Cli/Program.cs:
   - using System.Xml, System.Xml.Linq added.

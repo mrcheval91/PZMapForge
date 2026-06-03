@@ -636,4 +636,22 @@ public sealed class AppExportSvgAnnotationTests : IClassFixture<AppExportSvgFixt
     [Fact]
     public void AppExport_Svg_IndexHtmlContainsSvgStructure() =>
         Assert.Contains("SVG Structure", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    // SVG-2A: parse status fields
+
+    [Fact]
+    public void AppExport_Svg_StructureContainsParseStatus() =>
+        Assert.Contains("parse_status", _fix.SvgStructureJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_StructureParseStatusIsParsed() =>
+        Assert.Contains("\"parsed\"", _fix.SvgStructureJson, StringComparison.Ordinal);
+
+    [Fact]
+    public void AppExport_Svg_StructureParseErrorIsEmpty() =>
+        Assert.Contains("\"parse_error\": \"\"", _fix.SvgStructureJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_StructureContainsMaxCharactersField() =>
+        Assert.Contains("max_characters_in_document", _fix.SvgStructureJson, StringComparison.OrdinalIgnoreCase);
 }
