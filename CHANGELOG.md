@@ -8,6 +8,24 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (Slice 3A-6-pre: tilesheet format investigation decision record)
+- docs/TILESHEET_FORMAT_INVESTIGATION_DECISION.md: governance gate for
+  Slice 3A-6. Documents why 3A-6 is blocked, what format knowledge is
+  required, allowed investigation sources, forbidden actions, 4 decision
+  options (A-D), recommended decision (Option B + D), evidence checklist,
+  and operator checklist. No code changes.
+
+### Changed
+- docs/IMPLEMENTATION.md: Slice 3A-6-pre row added.
+- CHANGELOG.md: this entry.
+
+No code changes. No new tests. No proof packet bump.
+No PZ assets copied or read. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Added (Slice 3A-5: local tile survey CLI hardening and docs)
 - docs/LOCAL_TILE_SURVEY_CLI.md: operator-facing CLI reference for the
   local-tile-survey command. Covers purpose, command syntax, fake-path
