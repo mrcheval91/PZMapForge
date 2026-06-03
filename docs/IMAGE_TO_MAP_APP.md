@@ -256,6 +256,33 @@ Added in SVG-10:
   `No Project Zomboid export generated`; zero-selected HTML contains "no selected SVG
   metadata was available". Total: 335 tests (190 Core + 145 CLI).
 
+Added in SVG-11:
+
+- **`scripts/smoke-montreal-svg-planning-manifest.ps1`**: local-only, reproducible smoke
+  helper for the real Montreal SVG planning manifest chain. Not committed to validate.ps1
+  (requires machine-local files). Run manually from repo root:
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File .\scripts\smoke-montreal-svg-planning-manifest.ps1
+  ```
+  Requires (not committed):
+  - `E:\Omni\Zomboid\assets\arrondissements-quartiers-montreal-200802.svg`
+  - `E:\Omni\Zomboid\scratch\worlded-canal-garage-cell\source\canal-garage-cell-analysis-clean-v3.png`
+
+  Two-pass workflow:
+  1. **Source run** (`mtl-svg-selection-source-smoke`): `app-export` with SVG annotation;
+     generates SVG structure, candidates, and selection template.
+  2. **Selection JSON**: script writes a 9-item operator selection (Eaux, Outline_MTL,
+     SudOuest, VilleMarie, Plateau, NDG_CDN, ANGRIGNON, Pte-Angus, Cap-Saint-Jacques)
+     into the source run artifacts directory.
+  3. **Review run** (`mtl-svg-planning-manifest-smoke`): `app-export` with
+     `--svg-selection`; generates selection review and planning manifest.
+  4. **Verification** (10 checks): file existence, `selected_count == 9`,
+     `planning_status`, `exported_to_project_zomboid == false`,
+     `converted_to_map_geometry == false`, markdown non-claims, HTML section heading.
+
+  All output under `.local/` (gitignored). No SVG geometry converted. No coordinates
+  extracted. No PZ assets. No media/maps writes.
+
 ---
 
 ## Pipeline stages

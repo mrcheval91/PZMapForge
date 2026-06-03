@@ -8,6 +8,37 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (SVG-11: Montreal SVG planning manifest smoke script)
+- scripts/smoke-montreal-svg-planning-manifest.ps1: local-only, reproducible
+  two-pass smoke for the real Montreal SVG planning manifest chain.
+  - Pass 1 (source run): app-export with SVG annotation
+    (arrondissements-quartiers-montreal-200802.svg); generates SVG structure,
+    candidate inventory, and selection template under
+    .local/app/mtl-svg-selection-source-smoke.
+  - Writes 9-item operator selection JSON into source run artifacts:
+    Eaux (water_reference), Outline_MTL (city_boundary_reference),
+    SudOuest / VilleMarie / Plateau / NDG_CDN (borough_boundary),
+    ANGRIGNON (transit_landmark), Pte-Angus / Cap-Saint-Jacques (park_reference).
+  - Pass 2 (review run): app-export --svg-selection; generates selection review
+    and planning manifest under .local/app/mtl-svg-planning-manifest-smoke.
+  - 10 verification checks: file existence (index.html, selection-review.json,
+    manifest.json, manifest.md), selected_count == 9, planning_status ==
+    operator_selected_metadata_only, exported_to_project_zomboid == false,
+    converted_to_map_geometry == false, markdown contains "No SVG geometry
+    converted", HTML contains "SVG Planning Manifest".
+  - Exits 1 with clear message if required machine-local files are absent
+    (SVG and analysis PNG not committed to repo).
+  - All output under .local/ (gitignored). No SVG geometry converted.
+    No coordinates extracted. No PZ assets. No media/maps writes.
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No coordinate extraction. No geometry conversion. No path d= extraction.
+No PZ assets. No media/maps writes. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (SVG-10: planning manifest visible summary)
 - src/PZMapForge.Cli/Program.cs:
   - BuildSvgPlanningManifestHtml now accepts List<SelectedLayerItem> items and
