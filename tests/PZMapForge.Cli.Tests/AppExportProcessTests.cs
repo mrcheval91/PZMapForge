@@ -516,14 +516,18 @@ public sealed class AppExportSvgFixture : IDisposable
             bmp.Save(imgPath, System.Drawing.Imaging.ImageFormat.Png);
         }
 
-        // richer SVG with g, path, polygon, text, id, class attributes
+        // richer SVG: technical layer, transit label, district, park, path, polygon, text
         var svgPath = Path.Combine(_root, "reference.svg");
         File.WriteAllText(svgPath,
             "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"300\" height=\"300\">" +
-            "<g id=\"districts\" class=\"reference\">" +
+            "<g id=\"fond_arrond\" class=\"background\">" +
             "<path id=\"path-a\" d=\"M10 10 L290 10 L290 290 Z\"/>" +
             "<polygon id=\"polygon-b\" points=\"50,50 250,50 250,250\"/>" +
-            "<text x=\"20\" y=\"30\" class=\"label\">District A</text>" +
+            "</g>" +
+            "<g id=\"districts\">" +
+            "<text x=\"20\" y=\"30\">District A</text>" +
+            "<text x=\"20\" y=\"50\">ANGRIGNON</text>" +
+            "<text x=\"20\" y=\"70\">Pte-Angus</text>" +
             "</g></svg>",
             System.Text.Encoding.UTF8);
 
@@ -718,5 +722,39 @@ public sealed class AppExportSvgAnnotationTests : IClassFixture<AppExportSvgFixt
 
     [Fact]
     public void AppExport_Svg_IndexHtmlContainsNoGeometryConversionNote() =>
+        Assert.Contains("No SVG geometry is converted", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    // SVG-5: tuned classification
+
+    [Fact]
+    public void AppExport_Svg_LayerCandidatesContainsTransitKey() =>
+        Assert.Contains("transit_or_station_candidates", _fix.SvgLayerCandidatesJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_LayerCandidatesContainsTechnicalKey() =>
+        Assert.Contains("technical_layer_candidates", _fix.SvgLayerCandidatesJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_LayerCandidatesContainsGenerationNotes() =>
+        Assert.Contains("candidate_generation_notes", _fix.SvgLayerCandidatesJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_LayerCandidatesContainsInspectedSources() =>
+        Assert.Contains("inspected_metadata_sources", _fix.SvgLayerCandidatesJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsTransitStation() =>
+        Assert.Contains("Transit / Station", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsTechnicalLayers() =>
+        Assert.Contains("Technical Layers", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlStillContainsMetadataCandidatesOnly() =>
+        Assert.Contains("metadata candidates only", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlStillContainsNoGeometryConverted() =>
         Assert.Contains("No SVG geometry is converted", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 }

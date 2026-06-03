@@ -1563,39 +1563,104 @@ static int UnknownCommand(string cmd)
 static bool MatchesAny(string s, string[] keywords) =>
     keywords.Any(k => s.Contains(k, StringComparison.OrdinalIgnoreCase));
 
+// Word-boundary match: keyword must be delimited by non-letter chars or string edges.
+static bool ContainsWord(string s, string word)
+{
+    var idx = s.IndexOf(word, StringComparison.OrdinalIgnoreCase);
+    while (idx >= 0)
+    {
+        var before = idx == 0 || !char.IsLetter(s[idx - 1]);
+        var after  = idx + word.Length >= s.Length || !char.IsLetter(s[idx + word.Length]);
+        if (before && after) return true;
+        idx = s.IndexOf(word, idx + 1, StringComparison.OrdinalIgnoreCase);
+    }
+    return false;
+}
+
+// All alphabetic characters in s are uppercase (transit/landmark heuristic).
+static bool IsAllCapsAlpha(string s) =>
+    s.Where(char.IsLetter).Any() && s.Where(char.IsLetter).All(char.IsUpper);
+
 static SvgLayerCandidatesResult WriteSvgLayerCandidates(SvgStructureResult r, string artifactsDir)
 {
-    var waterKw   = new[] { "eau", "water", "fleuve", "river", "canal", "lac", "lake" };
-    var outlineKw = new[] { "outline", "contour", "boundary", "limite", "border" };
-    var streetKw  = new[] { "rue", "street", "route", "road", "boulevard", "avenue", "ave",
-                             "chemin", "autoroute", "highway" };
+    // Water: use word-boundary for "eau"/"lac" to avoid false matches like "Plateau".
+    static bool IsWater(string s) =>
+        ContainsWord(s, "eau") || ContainsWord(s, "eaux") || ContainsWord(s, "lac") ||
+        MatchesAny(s, ["fleuve", "river", "canal", "water", "ruisseau", "lake"]);
 
-    var water   = new List<string>();
-    var outline = new List<string>();
-    var street  = new List<string>();
-    var borough = new List<string>();
+    static bool IsOutline(string s) =>
+        MatchesAny(s, ["outline", "contour", "boundary", "limite", "border"]);
+
+    static bool IsTechnical(string s) =>
+        ContainsWord(s, "fond") || ContainsWord(s, "base") || ContainsWord(s, "layer") ||
+        MatchesAny(s, ["background", "template", "debug"]);
+
+    static bool IsStreet(string s) =>
+        MatchesAny(s, ["rue", "street", "route", "road", "boulevard", "avenue",
+                        "ave", "chemin", "autoroute", "highway"]);
+
+    static bool IsTransitLabel(string s) =>
+        IsAllCapsAlpha(s) && s.Length >= 4 ||
+        MatchesAny(s, ["station", "metro", "métro", "gare", "terminal", "transit"]);
+
+    static bool IsParkLabel(string s) =>
+        MatchesAny(s, ["pte", "parc", "park", "anse", "cap-", "trail", "garden",
+                        "boise", "boisé", "bois", "vert", "green", "forest",
+                        "forêt", "nature", "island", "ile", "île"]);
+
+    var water     = new List<string>();
+    var outline   = new List<string>();
+    var technical = new List<string>();
+    var street    = new List<string>();
+    var borough   = new List<string>();
 
     foreach (var s in r.SampleIds.Concat(r.SampleClasses).Distinct(StringComparer.OrdinalIgnoreCase))
     {
-        if      (MatchesAny(s, waterKw))   water.Add(s);
-        else if (MatchesAny(s, outlineKw)) outline.Add(s);
-        else if (MatchesAny(s, streetKw))  street.Add(s);
-        else                               borough.Add(s);
+        if      (IsWater(s))     water.Add(s);
+        else if (IsOutline(s))   outline.Add(s);
+        else if (IsTechnical(s)) technical.Add(s);
+        else if (IsStreet(s))    street.Add(s);
+        else                     borough.Add(s);
     }
 
-    var labels  = r.SampleTextLabels.Take(30).ToList();
-    // unknown: borough entries that are clearly technical/generic (very short or all lowercase digits)
+    var transit = new List<string>();
+    var park    = new List<string>();
+    var labels  = new List<string>();
+
+    foreach (var t in r.SampleTextLabels)
+    {
+        if      (IsTransitLabel(t)) transit.Add(t);
+        else if (IsParkLabel(t))    park.Add(t);
+        else                        labels.Add(t);
+    }
+
+    var unknown = borough.Where(s => s.Length <= 1).Take(30).ToList();
     var trueBorough = borough.Where(s => s.Length > 1).Take(30).ToList();
-    var unknown     = borough.Except(trueBorough).Take(30).ToList();
+
+    var generationNotes = new[]
+    {
+        "Water: word-boundary match for eau/eaux/lac; substring match for fleuve/river/canal/water/lake.",
+        "Outline: substring match for outline/contour/boundary/limite/border.",
+        "Technical: word-boundary match for fond/base/layer; substring match for background/template.",
+        "Street/Route: substring match for rue/street/route/road/boulevard/avenue/chemin/autoroute.",
+        "Transit/Station: all-caps alphabetic labels (length >= 4) or station/metro/gare keywords.",
+        "Park/Green: substring match for pte/parc/park/anse/trail/garden/bois/nature/forest/island.",
+        "Borough/District: remaining IDs and classes not matched by the above patterns.",
+        "Label: remaining text labels not classified as transit or park.",
+    };
 
     var result = new SvgLayerCandidatesResult
     {
         WaterCandidates              = water.Take(30).ToList().AsReadOnly(),
         OutlineCandidates            = outline.Take(30).ToList().AsReadOnly(),
+        TechnicalLayerCandidates     = technical.Take(30).ToList().AsReadOnly(),
         BoroughOrDistrictCandidates  = trueBorough.AsReadOnly(),
         StreetOrRouteCandidates      = street.Take(30).ToList().AsReadOnly(),
-        LabelCandidates              = labels.AsReadOnly(),
+        TransitOrStationCandidates   = transit.Take(30).ToList().AsReadOnly(),
+        ParkOrGreenSpaceCandidates   = park.Take(30).ToList().AsReadOnly(),
+        LabelCandidates              = labels.Take(30).ToList().AsReadOnly(),
         UnknownCandidates            = unknown.AsReadOnly(),
+        GenerationNotes              = generationNotes,
     };
 
     var artifact = new
@@ -1605,17 +1670,22 @@ static SvgLayerCandidatesResult WriteSvgLayerCandidates(SvgStructureResult r, st
         source_file_name               = r.SourceFileName,
         parse_status                   = r.ParseStatus,
         candidate_generation_method    = "metadata_name_pattern_only",
+        candidate_generation_notes     = result.GenerationNotes,
+        inspected_metadata_sources     = new[] { "ids", "classes", "text_labels" },
         parsed_as_geometry             = false,
         converted_to_map_geometry      = false,
         pz_assets_copied               = false,
         media_maps_touched             = false,
         playable_export_claimed        = false,
-        water_candidates               = new { count = result.WaterCandidates.Count,              samples = result.WaterCandidates },
-        outline_candidates             = new { count = result.OutlineCandidates.Count,             samples = result.OutlineCandidates },
-        borough_or_district_candidates = new { count = result.BoroughOrDistrictCandidates.Count,  samples = result.BoroughOrDistrictCandidates },
-        street_or_route_candidates     = new { count = result.StreetOrRouteCandidates.Count,       samples = result.StreetOrRouteCandidates },
-        label_candidates               = new { count = result.LabelCandidates.Count,               samples = result.LabelCandidates },
-        unknown_candidates             = new { count = result.UnknownCandidates.Count,             samples = result.UnknownCandidates },
+        water_candidates               = new { count = result.WaterCandidates.Count,             samples = result.WaterCandidates },
+        outline_candidates             = new { count = result.OutlineCandidates.Count,            samples = result.OutlineCandidates },
+        technical_layer_candidates     = new { count = result.TechnicalLayerCandidates.Count,     samples = result.TechnicalLayerCandidates },
+        borough_or_district_candidates = new { count = result.BoroughOrDistrictCandidates.Count, samples = result.BoroughOrDistrictCandidates },
+        street_or_route_candidates     = new { count = result.StreetOrRouteCandidates.Count,      samples = result.StreetOrRouteCandidates },
+        transit_or_station_candidates  = new { count = result.TransitOrStationCandidates.Count,   samples = result.TransitOrStationCandidates },
+        park_or_green_space_candidates = new { count = result.ParkOrGreenSpaceCandidates.Count,   samples = result.ParkOrGreenSpaceCandidates },
+        label_candidates               = new { count = result.LabelCandidates.Count,              samples = result.LabelCandidates },
+        unknown_candidates             = new { count = result.UnknownCandidates.Count,            samples = result.UnknownCandidates },
     };
 
     File.WriteAllText(
@@ -1633,12 +1703,15 @@ static string BuildSvgLayerCandidatesHtml(SvgLayerCandidatesResult c)
     sb.Append("    <p class=\"svg-note\">These are metadata candidates only. No SVG geometry is converted. Candidates are derived from element IDs, class names, and text labels using name pattern matching only.</p>\n");
     sb.Append("    <p class=\"section-note\">Method: metadata_name_pattern_only</p>\n");
 
-    AppendCandidateBucket(sb, "Water",             c.WaterCandidates);
+    AppendCandidateBucket(sb, "Water",              c.WaterCandidates);
     AppendCandidateBucket(sb, "Outline / Boundary", c.OutlineCandidates);
+    AppendCandidateBucket(sb, "Technical Layers",   c.TechnicalLayerCandidates);
     AppendCandidateBucket(sb, "Borough / District", c.BoroughOrDistrictCandidates);
-    AppendCandidateBucket(sb, "Street / Route",    c.StreetOrRouteCandidates);
-    AppendCandidateBucket(sb, "Text Labels",       c.LabelCandidates);
-    AppendCandidateBucket(sb, "Unknown",           c.UnknownCandidates);
+    AppendCandidateBucket(sb, "Street / Route",     c.StreetOrRouteCandidates);
+    AppendCandidateBucket(sb, "Transit / Station",  c.TransitOrStationCandidates);
+    AppendCandidateBucket(sb, "Park / Green Space", c.ParkOrGreenSpaceCandidates);
+    AppendCandidateBucket(sb, "Text Labels",        c.LabelCandidates);
+    AppendCandidateBucket(sb, "Unknown",            c.UnknownCandidates);
 
     sb.Append("    <div class=\"arts\">\n");
     sb.Append("      <div class=\"art\"><a href=\"artifacts/svg-layer-candidates.json\">svg-layer-candidates.json</a><div class=\"desc\">SVG layer candidate inventory (schema v0.1)</div></div>\n");
@@ -1659,12 +1732,16 @@ static void AppendCandidateBucket(StringBuilder sb, string label, IReadOnlyList<
 
 sealed class SvgLayerCandidatesResult
 {
-    public IReadOnlyList<string> WaterCandidates              { get; init; } = [];
-    public IReadOnlyList<string> OutlineCandidates            { get; init; } = [];
-    public IReadOnlyList<string> BoroughOrDistrictCandidates  { get; init; } = [];
-    public IReadOnlyList<string> StreetOrRouteCandidates      { get; init; } = [];
-    public IReadOnlyList<string> LabelCandidates              { get; init; } = [];
-    public IReadOnlyList<string> UnknownCandidates            { get; init; } = [];
+    public IReadOnlyList<string>  WaterCandidates              { get; init; } = [];
+    public IReadOnlyList<string>  OutlineCandidates            { get; init; } = [];
+    public IReadOnlyList<string>  TechnicalLayerCandidates     { get; init; } = [];
+    public IReadOnlyList<string>  BoroughOrDistrictCandidates  { get; init; } = [];
+    public IReadOnlyList<string>  StreetOrRouteCandidates      { get; init; } = [];
+    public IReadOnlyList<string>  TransitOrStationCandidates   { get; init; } = [];
+    public IReadOnlyList<string>  ParkOrGreenSpaceCandidates   { get; init; } = [];
+    public IReadOnlyList<string>  LabelCandidates              { get; init; } = [];
+    public IReadOnlyList<string>  UnknownCandidates            { get; init; } = [];
+    public IReadOnlyList<string>  GenerationNotes              { get; init; } = [];
 }
 
 sealed class SvgStructureResult

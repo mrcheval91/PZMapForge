@@ -175,9 +175,13 @@ Added in SVG-2:
 - SVG XML is parsed safely (DTD disabled, no external entities, no network).
   Only element names, attribute values, and text node content are read.
   Path coordinate geometry is counted but not extracted or interpreted.
-- **`artifacts/svg-layer-candidates.json`** (SVG-4): pattern-classifies IDs, class names, and
-  text labels into candidate buckets (water, outline, borough/district, street/route, labels,
-  unknown). Method: `metadata_name_pattern_only`. No coordinates read. All safety flags false.
+- **`artifacts/svg-layer-candidates.json`** (SVG-4/5): pattern-classifies IDs, class names, and
+  text labels into candidate buckets: water, outline, technical\_layer, borough/district,
+  street/route, transit/station, park/green\_space, labels, unknown. Method:
+  `metadata_name_pattern_only`. Includes `candidate_generation_notes` (rules applied) and
+  `inspected_metadata_sources`. No coordinates read. All safety flags false.
+- Word-boundary matching for "eau"/"lac" prevents false positives like "Plateau" → water.
+- All-caps alphabetic text labels (length ≥ 4) classified as transit/station candidates.
 - **SVG Layer Candidates** HTML panel: chip display of each bucket with count, plus
   explicit note "These are metadata candidates only. No SVG geometry is converted."
 - Parse cap raised to 50 MB (`max_characters_in_document: 50_000_000`).

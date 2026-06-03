@@ -8,6 +8,40 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Changed (SVG-5: tune Montreal SVG layer candidate classification)
+- src/PZMapForge.Cli/Program.cs:
+  - ContainsWord: word-boundary match helper (fixes "Plateau" false-positive in water
+    bucket caused by substring "eau").
+  - IsAllCapsAlpha: detects all-caps alphabetic text labels (transit heuristic).
+  - WriteSvgLayerCandidates: 3 new classification buckets:
+    technical_layer_candidates (fond/base/layer/background keywords),
+    transit_or_station_candidates (all-caps labels >= 4 chars, or station/metro/gare),
+    park_or_green_space_candidates (pte/parc/anse/trail/bois/nature/forest keywords).
+    Priority order: water > outline > technical > street > borough for IDs/classes.
+    Text labels: transit > park > label (remaining).
+  - candidate_generation_notes: string array documenting each pattern rule.
+  - inspected_metadata_sources: ["ids", "classes", "text_labels"].
+  - SvgLayerCandidatesResult: 3 new properties + GenerationNotes.
+  - BuildSvgLayerCandidatesHtml: shows new buckets via AppendCandidateBucket.
+  - Test fixture SVG updated: fond_arrond (technical), ANGRIGNON (transit),
+    Pte-Angus (park), background class.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - 8 new assertions (transit key, technical key, generation_notes, metadata_sources,
+    Transit/Station in HTML, Technical Layers in HTML, still metadata-only, still
+    no-geometry note). Total: 293 tests (190 Core + 103 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+Real Montreal SVG result (SVG-5):
+  water: Eaux (1)  |  technical: Fond_arrond (1)  |  outline: Outline_MTL (1)
+  transit: ANGRIGNON (1)  |  borough: 17  |  park: 13 (Pte-Angus, Cap-Saint-Jacques...)
+  "Plateau" correctly in borough (no longer false-positive water match)
+
+No coordinate extraction. No geometry conversion. No PZ assets. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Added (SVG-4: SVG layer candidate inventory)
 - src/PZMapForge.Cli/Program.cs:
   - SvgStructureResult: SampleClasses property added; WriteSvgStructure
