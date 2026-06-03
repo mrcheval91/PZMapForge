@@ -180,6 +180,12 @@ Added in SVG-2:
   street/route, transit/station, park/green\_space, labels, unknown. Method:
   `metadata_name_pattern_only`. Includes `candidate_generation_notes` (rules applied) and
   `inspected_metadata_sources`. No coordinates read. All safety flags false.
+- **`artifacts/svg-layer-selection.template.json`** (SVG-7): operator-editable selection
+  template generated from the candidate samples. Each candidate item has `value`,
+  `selected: false`, `intended_use: ""`, `operator_note: ""`. `selection_status`:
+  `"operator_review_required"`. Selecting an item here does not convert SVG geometry.
+- **SVG Layer Selection Template** HTML panel: links to the template and explicitly
+  states "Selecting a candidate does not convert SVG geometry."
 - Classification now uses all collected IDs/classes/text labels (up to 500 each, deduplicated),
   not just the 20-item samples. JSON reports `total_id_values_inspected`,
   `total_class_values_inspected`, `total_text_labels_inspected`,

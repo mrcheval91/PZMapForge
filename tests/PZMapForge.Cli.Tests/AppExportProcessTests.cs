@@ -572,11 +572,16 @@ public sealed class AppExportSvgFixture : IDisposable
         var svgCandidatesPath = Path.Combine(OutputDir, "artifacts", "svg-layer-candidates.json");
         SvgLayerCandidatesExists = File.Exists(svgCandidatesPath);
         SvgLayerCandidatesJson   = SvgLayerCandidatesExists ? File.ReadAllText(svgCandidatesPath) : string.Empty;
+        var svgSelectionPath  = Path.Combine(OutputDir, "artifacts", "svg-layer-selection.template.json");
+        SvgLayerSelectionExists = File.Exists(svgSelectionPath);
+        SvgLayerSelectionJson   = SvgLayerSelectionExists ? File.ReadAllText(svgSelectionPath) : string.Empty;
     }
 
-    public bool   SvgStructureExists      { get; }
-    public bool   SvgLayerCandidatesExists { get; }
-    public string SvgLayerCandidatesJson   { get; }
+    public bool   SvgStructureExists       { get; }
+    public bool   SvgLayerCandidatesExists  { get; }
+    public string SvgLayerCandidatesJson    { get; }
+    public bool   SvgLayerSelectionExists   { get; }
+    public string SvgLayerSelectionJson     { get; }
     public string SvgStructureJson   { get; }
 
     public void Dispose()
@@ -779,6 +784,40 @@ public sealed class AppExportSvgAnnotationTests : IClassFixture<AppExportSvgFixt
     [Fact]
     public void AppExport_Svg_IndexHtmlContainsMetadataValuesInspected() =>
         Assert.Contains("Metadata Values Inspected", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    // SVG-7: layer selection template
+
+    [Fact]
+    public void AppExport_Svg_WritesLayerSelectionTemplate() =>
+        Assert.True(_fix.SvgLayerSelectionExists, "svg-layer-selection.template.json was not written");
+
+    [Fact]
+    public void AppExport_Svg_SelectionTemplateContainsOperatorReviewRequired() =>
+        Assert.Contains("operator_review_required", _fix.SvgLayerSelectionJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_SelectionTemplateContainsSelectedFalse() =>
+        Assert.Contains("\"selected\": false", _fix.SvgLayerSelectionJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_SelectionTemplateContainsIntendedUse() =>
+        Assert.Contains("\"intended_use\"", _fix.SvgLayerSelectionJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_SelectionTemplateContainsConvertedFalse() =>
+        Assert.Contains("\"converted_to_map_geometry\": false", _fix.SvgLayerSelectionJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsSvgLayerSelectionTemplate() =>
+        Assert.Contains("SVG Layer Selection Template", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsOperatorReviewRequired() =>
+        Assert.Contains("Operator review required", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsDoesNotConvertGeometry() =>
+        Assert.Contains("does not convert SVG geometry", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 }
 
 // ---------------------------------------------------------------------------

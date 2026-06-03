@@ -8,6 +8,30 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (SVG-7: SVG layer selection template)
+- src/PZMapForge.Cli/Program.cs:
+  - WriteSvgLayerSelectionTemplate: writes svg-layer-selection.template.json. Each
+    bucket's sample items become objects with value/selected/intended_use/operator_note.
+    selection_status: "operator_review_required". All safety flags false. Generated
+    from candidate sample lists (bounded, not full metadata lists).
+  - BuildSvgLayerSelectionHtml: "SVG Layer Selection Template" h2 section with notes:
+    "Operator review required", "Selecting a candidate does not convert SVG geometry",
+    "This template is for future planning decisions only." Artifact link included.
+  - svgSelectionSectionHtml slot added to BuildAppHtml (new parameter).
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - AppExportSvgFixture: SvgLayerSelectionExists + SvgLayerSelectionJson properties.
+  - AppExportSvgAnnotationTests: 8 new assertions (file exists, operator_review_required,
+    selected false, intended_use, converted false, SVG Layer Selection Template in HTML,
+    Operator review required in HTML, does-not-convert note in HTML).
+  - Total: 308 tests (190 Core + 118 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No coordinate extraction. No geometry conversion. No PZ assets. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Added (SVG-6: classify full SVG metadata candidate inventory)
 - src/PZMapForge.Cli/Program.cs:
   - SvgStructureResult: AllIds, AllClasses, AllTextLabels properties (bounded at 500,

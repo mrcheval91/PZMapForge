@@ -1006,6 +1006,7 @@ static int AppExportCommand(string[] args)
     var annotGuidanceHtml        = string.Empty;
     var svgStructureSectionHtml  = string.Empty;
     var svgCandidatesSectionHtml = string.Empty;
+    var svgSelectionSectionHtml  = string.Empty;
 
     if (!string.IsNullOrWhiteSpace(annotationPath))
     {
@@ -1042,6 +1043,8 @@ static int AppExportCommand(string[] args)
             svgStructureSectionHtml  = BuildSvgStructureHtml(svgResult);
             var svgCandidates        = WriteSvgLayerCandidates(svgResult, artifactsDir);
             svgCandidatesSectionHtml = BuildSvgLayerCandidatesHtml(svgCandidates);
+            WriteSvgLayerSelectionTemplate(svgCandidates, svgResult.SourceFileName, artifactsDir);
+            svgSelectionSectionHtml  = BuildSvgLayerSelectionHtml();
         }
     }
 
@@ -1049,7 +1052,7 @@ static int AppExportCommand(string[] args)
     var htmlPath = Path.Combine(outputFull, "index.html");
     var html     = BuildAppHtml(
         relativeImgSrc, relativeParsedSrc, relativeAnnotSrc,
-        annotPanelLabel, annotGuidanceHtml, svgStructureSectionHtml, svgCandidatesSectionHtml,
+        annotPanelLabel, annotGuidanceHtml, svgStructureSectionHtml, svgCandidatesSectionHtml, svgSelectionSectionHtml,
         imagePath, grid.Width, grid.Height, parseResult.Resized,
         regions.TotalRegions, primitives.PrimitiveCount,
         planResult.RecommendationCount, planResult.Summary.WarningCount,
@@ -1261,6 +1264,7 @@ static string BuildAppHtml(
     string annotGuidanceHtml,
     string svgStructureSectionHtml,
     string svgCandidatesSectionHtml,
+    string svgSelectionSectionHtml,
     string imagePath, int width, int height, bool resized,
     int regions, int primitives, int recommendations, int warnings,
     PlanningRuleOptions planOpts,
@@ -1449,6 +1453,7 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
 
     {{svgStructureSectionHtml}}
     {{svgCandidatesSectionHtml}}
+    {{svgSelectionSectionHtml}}
     <h2>Non-claims</h2>
     <ul class="nc-list">
       <li>Not a playable Project Zomboid map.</li>
@@ -1735,6 +1740,54 @@ static SvgLayerCandidatesResult WriteSvgLayerCandidates(SvgStructureResult r, st
         Encoding.UTF8);
 
     return result;
+}
+
+static void WriteSvgLayerSelectionTemplate(
+    SvgLayerCandidatesResult c, string sourceFileName, string artifactsDir)
+{
+    static object[] ToItems(IReadOnlyList<string> candidates) =>
+        [.. candidates.Select(v => new { value = v, selected = false, intended_use = "", operator_note = "" })];
+
+    var template = new
+    {
+        schema                         = "pzmapforge.svg-layer-selection-template.v0.1",
+        claim_boundary                 = "planning_artifact_only_not_pz_load_tested",
+        source_file_name               = sourceFileName,
+        selection_status               = "operator_review_required",
+        generated_from                 = "svg-layer-candidates.json",
+        candidate_generation_method    = "metadata_name_pattern_only",
+        parsed_as_geometry             = false,
+        converted_to_map_geometry      = false,
+        pz_assets_copied               = false,
+        media_maps_touched             = false,
+        playable_export_claimed        = false,
+        water_candidates               = ToItems(c.WaterCandidates),
+        outline_candidates             = ToItems(c.OutlineCandidates),
+        technical_layer_candidates     = ToItems(c.TechnicalLayerCandidates),
+        borough_or_district_candidates = ToItems(c.BoroughOrDistrictCandidates),
+        street_or_route_candidates     = ToItems(c.StreetOrRouteCandidates),
+        transit_or_station_candidates  = ToItems(c.TransitOrStationCandidates),
+        park_or_green_space_candidates = ToItems(c.ParkOrGreenSpaceCandidates),
+        label_candidates               = ToItems(c.LabelCandidates),
+        unknown_candidates             = ToItems(c.UnknownCandidates),
+    };
+
+    File.WriteAllText(
+        Path.Combine(artifactsDir, "svg-layer-selection.template.json"),
+        JsonSerializer.Serialize(template, new JsonSerializerOptions { WriteIndented = true }),
+        Encoding.UTF8);
+}
+
+static string BuildSvgLayerSelectionHtml()
+{
+    var sb = new StringBuilder();
+    sb.Append("\n    <h2>SVG Layer Selection Template</h2>\n");
+    sb.Append("    <p class=\"svg-note\">Operator review required. Review the candidates and edit the template to mark intended layers.</p>\n");
+    sb.Append("    <p class=\"section-note\">Selecting a candidate does not convert SVG geometry. This template is for future planning decisions only.</p>\n");
+    sb.Append("    <div class=\"arts\">\n");
+    sb.Append("      <div class=\"art\"><a href=\"artifacts/svg-layer-selection.template.json\">svg-layer-selection.template.json</a><div class=\"desc\">Operator-editable layer selection template (schema v0.1)</div></div>\n");
+    sb.Append("    </div>\n");
+    return sb.ToString();
 }
 
 static string BuildSvgLayerCandidatesHtml(SvgLayerCandidatesResult c)
