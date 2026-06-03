@@ -6,6 +6,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 
 ## Ratified: what is proven and committed
 
+| local-tile-survey CLI hardening and docs (Slice 3A-5) | Ratified | docs/LOCAL_TILE_SURVEY_CLI.md added; operator guide with syntax, fake-path example, output files, validation behavior, safety guarantees, non-claims, troubleshooting; no code changes; no new tests required |
 | Proof packet v0.16 (Slice 3A-4 CLI; .NET 230; PS total=474) | Ratified | test-proof-packet.ps1: 102 assertions pass; local_tile_survey_cli evidence flags added |
 | local-tile-survey CLI command (Slice 3A-4) | Ratified | Loads config, validates install, writes local-tile-reference-survey.json + .md to --output (.local guard enforced); 5 process tests; no real PZ install required; no assets read/copied |
 | Local PZ install config loader (Slice 3A-1) | Ratified | Schema + typed loader; validates document and safety flags only; does not require real PZ install; no asset inspection/copying |

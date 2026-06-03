@@ -6,6 +6,23 @@ Format: Keep a Changelog.
 
 ---
 
+## [Unreleased]
+
+### Added (Slice 3A-5: local tile survey CLI hardening and docs)
+- docs/LOCAL_TILE_SURVEY_CLI.md: operator-facing CLI reference for the
+  local-tile-survey command. Covers purpose, command syntax, fake-path
+  example, output files, validation behavior, safety guarantees, non-claims,
+  and troubleshooting table.
+
+### Changed
+- docs/IMPLEMENTATION.md: Slice 3A-5 row added.
+- CHANGELOG.md: this entry.
+
+No code changes. No new tests. No proof packet bump.
+No PZ assets copied or read. No media/maps writes.
+
+---
+
 ## [Unreleased - v0.16 proof packet sync]
 
 ### Added
