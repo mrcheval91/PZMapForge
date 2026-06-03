@@ -970,10 +970,18 @@ static int AppExportCommand(string[] args)
         Path.GetFullPath(parsedCellPath), "PZMapForge.Cli app-export",
         planResult, planOpts);
 
-    // Step 8: write index.html
+    // Step 8: copy input image to images/
+    var imagesDir  = Path.Combine(outputFull, "images");
+    Directory.CreateDirectory(imagesDir);
+    var inputExt   = Path.GetExtension(imagePath).ToLowerInvariant();
+    var copiedName = "input-image" + (string.IsNullOrEmpty(inputExt) ? ".png" : inputExt);
+    File.Copy(imagePath, Path.Combine(imagesDir, copiedName), overwrite: true);
+    var relativeImgSrc = "images/" + copiedName;
+
+    // Step 9: write index.html
     var htmlPath = Path.Combine(outputFull, "index.html");
     var html     = BuildAppHtml(
-        imagePath, grid.Width, grid.Height, parseResult.Resized,
+        relativeImgSrc, imagePath, grid.Width, grid.Height, parseResult.Resized,
         regions.TotalRegions, primitives.PrimitiveCount,
         planResult.RecommendationCount, planResult.Summary.WarningCount,
         planOpts!);
@@ -991,6 +999,7 @@ static int AppExportCommand(string[] args)
 }
 
 static string BuildAppHtml(
+    string relativeImgSrc,
     string imagePath, int width, int height, bool resized,
     int regions, int primitives, int recommendations, int warnings,
     PlanningRuleOptions planOpts)
@@ -1004,74 +1013,101 @@ static string BuildAppHtml(
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>PZMapForge - Local Image-to-Map Report</title>
+<title>PZMapForge &mdash; Local Map Report</title>
 <style>
-body { font-family: monospace; max-width: 900px; margin: 2em auto; padding: 0 1em; background: #1a1a1a; color: #d4d4d4; }
-h1 { color: #a8d8a8; border-bottom: 1px solid #444; padding-bottom: 0.3em; }
-h2 { color: #88b888; margin-top: 1.5em; }
-.boundary { background: #2a2a1a; border: 1px solid #666633; padding: 0.7em 1em; margin: 1em 0; }
-.boundary code { color: #cccc66; }
-table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
-th, td { border: 1px solid #444; padding: 0.4em 0.7em; text-align: left; }
-th { background: #2a2a2a; color: #aaa; }
-a { color: #88c4e8; }
-.nonclaim { color: #cc9966; }
-.ok { color: #88d888; }
-.warn { color: #ddaa55; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:monospace;background:#111;color:#ccc;min-height:100vh}
+.hdr{background:#162016;border-bottom:2px solid #2e4a2e;padding:.8em 2em;display:flex;align-items:center;gap:.8em}
+.hdr h1{color:#9acc9a;font-size:1.2em;letter-spacing:.04em}
+.badge{font-size:.72em;background:#1e3a14;border:1px solid #3d6628;color:#82bb55;padding:.15em .55em;border-radius:3px}
+.boundary{background:#1e1e0e;border-left:3px solid #777711;padding:.55em 1em;margin:1em 2em;font-size:.83em;color:#aaaa77}
+.boundary code{color:#dddd55}
+.main{padding:1em 2em;max-width:1080px}
+.cards{display:flex;flex-wrap:wrap;gap:.7em;margin:.7em 0 1.4em}
+.card{background:#181818;border:1px solid #2a2a2a;border-radius:4px;padding:.7em 1.1em;min-width:110px}
+.card .num{font-size:1.9em;font-weight:bold;line-height:1;color:#9acc9a}
+.card .num.warn{color:#cc9944}
+.card .num.ok{color:#77cc77}
+.card .lbl{font-size:.7em;color:#666;margin-top:.25em;text-transform:uppercase;letter-spacing:.06em}
+h2{color:#779977;font-size:.85em;text-transform:uppercase;letter-spacing:.09em;border-bottom:1px solid #222;padding-bottom:.2em;margin:1.3em 0 .6em}
+.input-grid{display:grid;grid-template-columns:auto 1fr;gap:1.4em;align-items:start;margin-bottom:1.4em}
+.input-img{border:1px solid #2a2a2a;display:block;image-rendering:pixelated;max-width:300px;max-height:300px}
+.meta-tbl{border-collapse:collapse;width:100%}
+.meta-tbl th,.meta-tbl td{border:1px solid #2a2a2a;padding:.3em .65em;text-align:left;font-size:.87em}
+.meta-tbl th{background:#181818;color:#888;width:10em}
+.arts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.45em;margin:.5em 0}
+.art{background:#161616;border:1px solid #252525;border-radius:3px;padding:.45em .7em}
+.art a{color:#77b8d8;text-decoration:none;font-size:.87em}
+.art a:hover{text-decoration:underline}
+.art .desc{font-size:.72em;color:#555;margin-top:.1em}
+.nc-list{list-style:none;font-size:.82em;color:#886644}
+.nc-list li{padding:.18em 0}
+.nc-list li::before{content:"-- "}
+footer{margin-top:2em;padding:.7em 2em;border-top:1px solid #1e1e1e;font-size:.72em;color:#444}
 </style>
 </head>
 <body>
-<h1>PZMapForge &mdash; Local Image-to-Map Report</h1>
+
+<div class="hdr">
+  <h1>PZMapForge</h1>
+  <span class="badge">Local Map Report</span>
+  <span class="badge">planning artifact only</span>
+</div>
 
 <div class="boundary">
-<strong>Claim boundary:</strong> <code>planning_artifact_only_not_pz_load_tested</code><br>
-This report is a local planning artifact only. It is not a playable Project Zomboid export.
+  Claim boundary: <code>planning_artifact_only_not_pz_load_tested</code> &mdash;
+  This is a local planning artifact. It is not a playable Project Zomboid export.
+</div>
+
+<div class="main">
+
+<h2>Pipeline Summary</h2>
+<div class="cards">
+  <div class="card"><div class="num">{{width}}&times;{{height}}</div><div class="lbl">Dimensions px</div></div>
+  <div class="card"><div class="num">{{regions}}</div><div class="lbl">Regions</div></div>
+  <div class="card"><div class="num">{{primitives}}</div><div class="lbl">Primitives</div></div>
+  <div class="card"><div class="num">{{recommendations}}</div><div class="lbl">Recommendations</div></div>
+  <div class="card"><div class="num {{warnClass}}">{{warnings}}</div><div class="lbl">Warnings</div></div>
 </div>
 
 <h2>Input</h2>
-<table>
-<tr><th>Field</th><th>Value</th></tr>
-<tr><td>Image</td><td>{{imageName}}</td></tr>
-<tr><td>Dimensions</td><td>{{width}} x {{height}} px</td></tr>
-<tr><td>Resized</td><td>{{resized}}</td></tr>
-<tr><td>Generated</td><td>{{now}}</td></tr>
-</table>
-
-<h2>Pipeline Results</h2>
-<table>
-<tr><th>Stage</th><th>Result</th></tr>
-<tr><td>Regions</td><td>{{regions}}</td></tr>
-<tr><td>Primitives</td><td>{{primitives}}</td></tr>
-<tr><td>Plan recommendations</td><td>{{recommendations}}</td></tr>
-<tr><td>Warnings</td><td><span class="{{warnClass}}">{{warnings}}</span></td></tr>
-<tr><td>Tiny threshold</td><td>{{planOpts.TinyBuildingPixelThreshold}} px</td></tr>
-<tr><td>Large threshold</td><td>{{planOpts.LargeGroundPixelThreshold}} px</td></tr>
-</table>
+<div class="input-grid">
+  <img class="input-img" src="{{relativeImgSrc}}" alt="Input: {{imageName}}" width="300" height="300">
+  <div>
+    <table class="meta-tbl">
+      <tr><th>Image</th><td>{{imageName}}</td></tr>
+      <tr><th>Dimensions</th><td>{{width}} &times; {{height}} px</td></tr>
+      <tr><th>Resized</th><td>{{resized}}</td></tr>
+      <tr><th>Tiny threshold</th><td>{{planOpts.TinyBuildingPixelThreshold}} px</td></tr>
+      <tr><th>Large threshold</th><td>{{planOpts.LargeGroundPixelThreshold}} px</td></tr>
+      <tr><th>Generated</th><td>{{now}}</td></tr>
+    </table>
+  </div>
+</div>
 
 <h2>Artifacts</h2>
-<table>
-<tr><th>File</th><th>Description</th></tr>
-<tr><td><a href="artifacts/parsed-cell.json">artifacts/parsed-cell.json</a></td><td>Parsed cell grid (schema v0.1)</td></tr>
-<tr><td><a href="artifacts/regions.json">artifacts/regions.json</a></td><td>Extracted regions</td></tr>
-<tr><td><a href="artifacts/regions-report.md">artifacts/regions-report.md</a></td><td>Regions report</td></tr>
-<tr><td><a href="artifacts/primitives.json">artifacts/primitives.json</a></td><td>Classified primitives</td></tr>
-<tr><td><a href="artifacts/primitives-report.md">artifacts/primitives-report.md</a></td><td>Primitives report</td></tr>
-<tr><td><a href="artifacts/plan-recommendations.json">artifacts/plan-recommendations.json</a></td><td>Plan recommendations (schema v0.1)</td></tr>
-<tr><td><a href="artifacts/plan-report.md">artifacts/plan-report.md</a></td><td>Plan report</td></tr>
-</table>
+<div class="arts">
+  <div class="art"><a href="artifacts/parsed-cell.json">artifacts/parsed-cell.json</a><div class="desc">Parsed cell grid (schema v0.1)</div></div>
+  <div class="art"><a href="artifacts/regions.json">artifacts/regions.json</a><div class="desc">Extracted regions</div></div>
+  <div class="art"><a href="artifacts/regions-report.md">artifacts/regions-report.md</a><div class="desc">Regions markdown report</div></div>
+  <div class="art"><a href="artifacts/primitives.json">artifacts/primitives.json</a><div class="desc">Classified primitives</div></div>
+  <div class="art"><a href="artifacts/primitives-report.md">artifacts/primitives-report.md</a><div class="desc">Primitives markdown report</div></div>
+  <div class="art"><a href="artifacts/plan-recommendations.json">artifacts/plan-recommendations.json</a><div class="desc">Plan recommendations (schema v0.1)</div></div>
+  <div class="art"><a href="artifacts/plan-report.md">artifacts/plan-report.md</a><div class="desc">Plan markdown report</div></div>
+</div>
 
-<h2 class="nonclaim">Non-claims</h2>
-<ul class="nonclaim">
-<li>This report does not represent a playable Project Zomboid map.</li>
-<li>No Project Zomboid assets were copied or read.</li>
-<li>No media/maps directory was written.</li>
-<li>No lotpack, lotheader, or bin files were generated.</li>
-<li>Tile GIDs are not assigned. No TileZed tile references are included.</li>
-<li>Build 41 / Build 42 compatibility is not claimed.</li>
+<h2>Non-claims</h2>
+<ul class="nc-list">
+  <li>This report does not represent a playable Project Zomboid map.</li>
+  <li>No Project Zomboid assets were copied or read.</li>
+  <li>No media/maps directory was written.</li>
+  <li>No lotpack, lotheader, or bin files were generated.</li>
+  <li>Tile GIDs are not assigned. No TileZed tile references are included.</li>
+  <li>Build 41 / Build 42 compatibility is not claimed.</li>
 </ul>
 
-<hr>
-<p style="color:#666">Generated by PZMapForge &mdash; planning_artifact_only_not_pz_load_tested</p>
+</div>
+<footer>Generated by PZMapForge &mdash; planning_artifact_only_not_pz_load_tested</footer>
 </body>
 </html>
 """;

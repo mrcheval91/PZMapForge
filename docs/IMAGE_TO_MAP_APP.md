@@ -1,6 +1,6 @@
 # Image-to-Map App Export
 
-Status: Slice 3A-6 (app-export) implemented
+Status: Slice 3A-6 (app-export) implemented; APP-2 visual viewer improvement applied
 
 Claim boundary: planning_artifact_only_not_pz_load_tested
 
@@ -78,6 +78,7 @@ contain a `.local` path segment.
 | `artifacts/primitives-report.md` | Primitives markdown report |
 | `artifacts/plan-recommendations.json` | Plan recommendations (schema v0.1) |
 | `artifacts/plan-report.md` | Plan markdown report |
+| `images/input-image.<ext>` | Copy of input image (local only) |
 
 None of these files should be committed. The `.local/` directory is gitignored.
 
@@ -87,12 +88,16 @@ None of these files should be committed. The `.local/` directory is gitignored.
 
 The `index.html` report includes:
 
-- Claim boundary notice.
-- Input table: image file name, pixel dimensions, resize flag, generation timestamp.
-- Pipeline results table: region count, primitive count, recommendation count,
-  warning count, thresholds used.
-- Artifact links table: relative links to all JSON and markdown artifact files.
+- Claim boundary notice (prominent, top of page).
+- Pipeline summary cards: dimensions, regions, primitives, recommendations, warnings.
+- Input section: the input image displayed alongside a metadata table (file name,
+  dimensions, resize flag, thresholds, generation timestamp).
+- Artifact links: card-style links to all JSON and markdown artifact files.
 - Non-claims section: explicit list of what is not produced or claimed.
+
+The viewer uses dark-themed static HTML and CSS. No JavaScript framework. No server.
+Open directly from the filesystem. The input image is shown using a local relative
+`<img>` reference (pixelated rendering for pixel-art maps).
 
 The report uses plain static HTML and CSS. No JavaScript framework. No server.
 Open directly from the filesystem.

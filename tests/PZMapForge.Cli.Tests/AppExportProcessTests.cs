@@ -90,6 +90,8 @@ public sealed class AppExportProcessTests : IDisposable
         Assert.True(code == 0, $"Exited {code}. Stdout: {stdout}. Stderr: {stderr}");
         Assert.True(File.Exists(Path.Combine(outputDir, "index.html")),
             "index.html was not written");
+        Assert.True(File.Exists(Path.Combine(outputDir, "images", "input-image.png")),
+            "input image was not copied to images/");
     }
 
     // -----------------------------------------------------------------------
@@ -137,6 +139,9 @@ public sealed class AppExportProcessTests : IDisposable
         Assert.Contains("regions.json",              html, StringComparison.Ordinal);
         Assert.Contains("primitives.json",           html, StringComparison.Ordinal);
         Assert.Contains("plan-recommendations.json", html, StringComparison.Ordinal);
+        Assert.Contains("<img ",                     html, StringComparison.Ordinal);
+        Assert.Contains("images/input-image",        html, StringComparison.Ordinal);
+        Assert.Contains("class=\"card\"",            html, StringComparison.Ordinal);
     }
 
     // -----------------------------------------------------------------------

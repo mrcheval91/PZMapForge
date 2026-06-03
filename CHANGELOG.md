@@ -8,6 +8,24 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Changed (APP-2: improve local image-to-map app viewer)
+- src/PZMapForge.Cli/Program.cs: BuildAppHtml redesigned. Added summary cards
+  (dimensions, regions, primitives, recommendations, warnings). Input section
+  now shows input image (copied to images/input-image.<ext>) alongside metadata
+  table. Artifact section uses card-style links. Dark-themed CSS. No JS framework.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs: tests 1 and 3 updated to
+  assert input image file is copied and index.html contains img element and card
+  markup. All 235 tests pass (190 Core + 45 CLI).
+- docs/IMAGE_TO_MAP_APP.md: viewer description updated.
+- docs/IMPLEMENTATION.md: APP-2 row added.
+- CHANGELOG.md: this entry.
+
+No proof packet update. No PZ assets read/copied. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Added (Slice 3A-6 app: local image-to-map app export)
 - src/PZMapForge.Cli/Program.cs: app-export command. Accepts --path, --palette,
   --output, --resize, --tiny-threshold, --large-threshold. Runs full pipeline;
