@@ -10,6 +10,9 @@ Format: Keep a Changelog.
 
 ### Fixed (SVG-2A: large SVG structure inspection)
 - src/PZMapForge.Cli/Program.cs: WriteSvgStructure
+  - DtdProcessing changed from Prohibit to Ignore so SVGs with DOCTYPE
+    declarations (e.g., real Montreal arrondissements SVG) parse correctly.
+    XmlResolver=null still blocks all external entity resolution.
   - MaxCharactersInDocument raised from 10_000_000 to 50_000_000 to handle
     real-world SVG files (e.g., 12.3 MB Montreal arrondissements SVG).
   - catch block now captures Exception.Message instead of discarding it.

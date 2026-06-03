@@ -1078,9 +1078,11 @@ static void WriteSvgStructure(string annotationPath, string artifactsDir)
 {
     const long MaxChars = 50_000_000;
 
+    // DtdProcessing.Ignore: skip DOCTYPE declarations without processing them.
+    // XmlResolver=null: block all external entity/resource resolution.
     var xmlSettings = new XmlReaderSettings
     {
-        DtdProcessing           = DtdProcessing.Prohibit,
+        DtdProcessing           = DtdProcessing.Ignore,
         XmlResolver             = null,
         MaxCharactersInDocument = MaxChars,
     };
