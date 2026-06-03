@@ -358,6 +358,28 @@ public sealed class AppExportContentTests : IClassFixture<AppExportContentFixtur
     [Fact]
     public void AppExport_Content_ContainsCleanPaletteOnlyGuidance() =>
         Assert.Contains("clean palette-only analysis image", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    // APP-8: run summary cockpit
+
+    [Fact]
+    public void AppExport_Content_CockpitContainsRunSummary() =>
+        Assert.Contains("Run Summary", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_CockpitContainsPlayableExportFalse() =>
+        Assert.Contains("playable export generated: false", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_CockpitContainsPzAssetsFalse() =>
+        Assert.Contains("PZ assets copied/read: false", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_CockpitContainsMediaMapsFalse() =>
+        Assert.Contains("media/maps touched: false", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_CockpitContainsClaimBoundaryIntact() =>
+        Assert.Contains("claim_boundary: intact", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 }
 
 // ---------------------------------------------------------------------------
@@ -840,6 +862,16 @@ public sealed class AppExportSvgAnnotationTests : IClassFixture<AppExportSvgFixt
     [Fact]
     public void AppExport_Svg_IndexHtmlContainsDoesNotConvertGeometry() =>
         Assert.Contains("does not convert SVG geometry", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    // APP-8: run summary cockpit
+
+    [Fact]
+    public void AppExport_Svg_CockpitContainsSvgAnnotationPresent() =>
+        Assert.Contains("SVG annotation: present", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_CockpitContainsSvgParseParsed() =>
+        Assert.Contains("SVG parse: parsed", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 }
 
 // ---------------------------------------------------------------------------
@@ -1134,6 +1166,12 @@ public sealed class AppExportSelectionTests : IClassFixture<AppExportSelectionFi
     [Fact]
     public void AppExport_Selection_IndexHtmlManifestContainsNoProjectZomboidExportGenerated() =>
         Assert.Contains("No Project Zomboid export generated", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    // APP-8: run summary cockpit
+
+    [Fact]
+    public void AppExport_Selection_CockpitContainsPlanningManifestPresent() =>
+        Assert.Contains("Planning manifest: present", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 }
 
 // ---------------------------------------------------------------------------

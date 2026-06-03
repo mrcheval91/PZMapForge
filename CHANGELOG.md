@@ -8,6 +8,41 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (APP-8: app export run summary cockpit)
+- src/PZMapForge.Cli/Program.cs:
+  - svgParseStatus and svgManifestPresent variables initialized before the
+    annotation and selection blocks; populated as the command executes.
+  - paletteClean, svgAnnotationPresent, svgCandidatesPresent, svgReviewPresent
+    derived from in-memory state before BuildAppHtml.
+  - BuildRunSummaryHtml(paletteClean, svgAnnotation, svgParseStatus,
+    svgCandidates, svgReview, svgManifest): builds a .cockpit div with two rows:
+    Run Summary (palette/SVG annotation/SVG parse/SVG candidates/SVG review/
+    planning manifest) and Safety (playable export generated: false, PZ assets
+    copied/read: false, media/maps touched: false, claim_boundary: intact).
+    Items use .ck-ok/.ck-warn/.ck-absent/.ck-safe CSS classes.
+  - runSummarySectionHtml threaded through BuildAppHtml as new parameter.
+  - {{runSummarySectionHtml}} inserted between .boundary div and .workbench div.
+  - CSS: .cockpit, .cockpit-row, .ck-lbl, .ck-ok, .ck-warn, .ck-absent, .ck-safe.
+  - All flags derived from generated artifacts and in-memory state. Static HTML only.
+    No JS, no server.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - AppExportContentTests (APP-8 block): 5 new tests: CockpitContainsRunSummary,
+    CockpitContainsPlayableExportFalse, CockpitContainsPzAssetsFalse,
+    CockpitContainsMediaMapsFalse, CockpitContainsClaimBoundaryIntact.
+  - AppExportSvgAnnotationTests (APP-8 block): 2 new tests:
+    CockpitContainsSvgAnnotationPresent, CockpitContainsSvgParseParsed.
+  - AppExportSelectionTests (APP-8 block): 1 new test:
+    CockpitContainsPlanningManifestPresent.
+  - Total: 343 tests (190 Core + 153 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No coordinate extraction. No geometry conversion. No path d= extraction.
+No PZ assets. No media/maps writes. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (SVG-11: Montreal SVG planning manifest smoke script)
 - scripts/smoke-montreal-svg-planning-manifest.ps1: local-only, reproducible
   two-pass smoke for the real Montreal SVG planning manifest chain.

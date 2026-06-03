@@ -256,6 +256,24 @@ Added in SVG-10:
   `No Project Zomboid export generated`; zero-selected HTML contains "no selected SVG
   metadata was available". Total: 335 tests (190 Core + 145 CLI).
 
+Added in APP-8:
+
+- **Run Summary cockpit**: a compact status bar is inserted between the claim boundary
+  notice and the workbench, visible before any SVG or artifact panels. It shows two rows:
+  - **Run Summary row**: Palette status (clean / not clean), SVG annotation present/absent,
+    SVG parse status (parsed / failed / absent), SVG candidates present/absent,
+    SVG review present/absent, Planning manifest present/absent.
+  - **Safety row**: four hard-coded false safety claims visible on every run:
+    `playable export generated: false`, `PZ assets copied/read: false`,
+    `media/maps touched: false`, `claim_boundary: intact`.
+- All flags are derived from in-memory state at generation time, not from ungrounded prose.
+- Static HTML only. No JS. No server. CSS uses new `.cockpit`, `.cockpit-row`, `.ck-*`
+  classes. Responsive (wraps on narrow viewports).
+- 8 new tests: `Run Summary` present, `playable export generated: false`,
+  `PZ assets copied/read: false`, `media/maps touched: false`,
+  `claim_boundary: intact`, `SVG annotation: present`, `SVG parse: parsed`,
+  `Planning manifest: present`. Total: 343 tests (190 Core + 153 CLI).
+
 Added in SVG-11:
 
 - **`scripts/smoke-montreal-svg-planning-manifest.ps1`**: local-only, reproducible smoke

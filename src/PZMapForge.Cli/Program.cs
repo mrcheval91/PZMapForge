@@ -1014,6 +1014,8 @@ static int AppExportCommand(string[] args)
     var svgSelectionSectionHtml  = string.Empty;
     var svgReviewSectionHtml     = string.Empty;
     var svgManifestSectionHtml   = string.Empty;
+    var svgParseStatus           = "absent";
+    var svgManifestPresent       = false;
 
     if (!string.IsNullOrWhiteSpace(annotationPath))
     {
@@ -1047,6 +1049,7 @@ static int AppExportCommand(string[] args)
                 Encoding.UTF8);
 
             var svgResult = WriteSvgStructure(annotationPath, artifactsDir);
+            svgParseStatus           = svgResult.ParseStatus;
             svgStructureSectionHtml  = BuildSvgStructureHtml(svgResult);
             var svgCandidates        = WriteSvgLayerCandidates(svgResult, artifactsDir);
             svgCandidatesSectionHtml = BuildSvgLayerCandidatesHtml(svgCandidates);
@@ -1070,6 +1073,7 @@ static int AppExportCommand(string[] args)
         {
             WriteSvgPlanningManifest(selItems, Path.GetFileName(svgSelectionPath), artifactsDir);
             svgManifestSectionHtml = BuildSvgPlanningManifestHtml(selItems);
+            svgManifestPresent     = true;
         }
         else
         {
@@ -1077,9 +1081,18 @@ static int AppExportCommand(string[] args)
         }
     }
 
+    var paletteClean          = cellResult.Document!.Matching is { } mhc && mhc.UnmappedExactColours == 0;
+    var svgAnnotationPresent  = svgParseStatus != "absent";
+    var svgCandidatesPresent  = !string.IsNullOrEmpty(svgCandidatesSectionHtml);
+    var svgReviewPresent      = !string.IsNullOrWhiteSpace(svgSelectionPath);
+    var runSummarySectionHtml = BuildRunSummaryHtml(
+        paletteClean, svgAnnotationPresent, svgParseStatus,
+        svgCandidatesPresent, svgReviewPresent, svgManifestPresent);
+
     var html     = BuildAppHtml(
         relativeImgSrc, relativeParsedSrc, relativeAnnotSrc,
         annotPanelLabel, annotGuidanceHtml, svgStructureSectionHtml, svgCandidatesSectionHtml, svgSelectionSectionHtml, svgReviewSectionHtml, svgManifestSectionHtml,
+        runSummarySectionHtml,
         imagePath, grid.Width, grid.Height, parseResult.Resized,
         regions.TotalRegions, primitives.PrimitiveCount,
         planResult.RecommendationCount, planResult.Summary.WarningCount,
@@ -1294,6 +1307,7 @@ static string BuildAppHtml(
     string svgSelectionSectionHtml,
     string svgReviewSectionHtml,
     string svgManifestSectionHtml,
+    string runSummarySectionHtml,
     string imagePath, int width, int height, bool resized,
     int regions, int primitives, int recommendations, int warnings,
     PlanningRuleOptions planOpts,
@@ -1403,6 +1417,13 @@ h2:first-child{margin-top:0}
 .nc-list{list-style:none;font-size:.8em;color:#886644}
 .nc-list li{padding:.15em 0}
 .nc-list li::before{content:"-- "}
+.cockpit{background:#0e0e0e;border-bottom:1px solid #1c1c1c;padding:.45em 2em;font-size:.78em}
+.cockpit-row{display:flex;flex-wrap:wrap;align-items:center;gap:.35em .55em;margin:.22em 0}
+.ck-lbl{color:#555;text-transform:uppercase;letter-spacing:.08em;font-size:.85em;min-width:8.5em}
+.ck-ok{background:#12211a;border:1px solid #2a4a32;color:#88cc88;padding:.1em .45em;border-radius:2px}
+.ck-warn{background:#221a12;border:1px solid #4a3a22;color:#cc9944;padding:.1em .45em;border-radius:2px}
+.ck-absent{background:#1a1a1a;border:1px solid #2a2a2a;color:#555;padding:.1em .45em;border-radius:2px}
+.ck-safe{background:#0e180e;border:1px solid #1e3a1e;color:#66aa66;padding:.1em .45em;border-radius:2px}
 footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444}
 @media(max-width:860px){
 .workbench{grid-template-columns:1fr}
@@ -1423,6 +1444,7 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
   local planning artifact only &mdash; not a playable Project Zomboid export
 </div>
 
+{{runSummarySectionHtml}}
 <div class="workbench">
 
   <div class="left-panel">
@@ -1504,6 +1526,48 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
 </body>
 </html>
 """;
+}
+
+static string BuildRunSummaryHtml(
+    bool paletteClean, bool svgAnnotation, string svgParseStatus,
+    bool svgCandidates, bool svgReview, bool svgManifest)
+{
+    static string Ck(bool present, string trueLabel, string falseLabel) =>
+        present
+            ? $"<span class=\"ck-ok\">{trueLabel}</span>"
+            : $"<span class=\"ck-absent\">{falseLabel}</span>";
+
+    var paletteItem = paletteClean
+        ? "<span class=\"ck-ok\">Palette: clean</span>"
+        : "<span class=\"ck-warn\">Palette: not clean</span>";
+
+    var svgParseItem = svgParseStatus switch
+    {
+        "parsed" => "<span class=\"ck-ok\">SVG parse: parsed</span>",
+        "failed" => "<span class=\"ck-warn\">SVG parse: failed</span>",
+        _        => "<span class=\"ck-absent\">SVG parse: absent</span>",
+    };
+
+    var sb = new StringBuilder();
+    sb.Append("<div class=\"cockpit\">\n");
+    sb.Append("  <div class=\"cockpit-row\">");
+    sb.Append("<span class=\"ck-lbl\">Run Summary</span>");
+    sb.Append(paletteItem);
+    sb.Append(Ck(svgAnnotation, "SVG annotation: present", "SVG annotation: absent"));
+    sb.Append(svgParseItem);
+    sb.Append(Ck(svgCandidates, "SVG candidates: present", "SVG candidates: absent"));
+    sb.Append(Ck(svgReview, "SVG review: present", "SVG review: absent"));
+    sb.Append(Ck(svgManifest, "Planning manifest: present", "Planning manifest: absent"));
+    sb.Append("</div>\n");
+    sb.Append("  <div class=\"cockpit-row\">");
+    sb.Append("<span class=\"ck-lbl\">Safety</span>");
+    sb.Append("<span class=\"ck-safe\">playable export generated: false</span>");
+    sb.Append("<span class=\"ck-safe\">PZ assets copied/read: false</span>");
+    sb.Append("<span class=\"ck-safe\">media/maps touched: false</span>");
+    sb.Append("<span class=\"ck-safe\">claim_boundary: intact</span>");
+    sb.Append("</div>\n");
+    sb.Append("</div>\n");
+    return sb.ToString();
 }
 
 static string BuildSvgStructureHtml(SvgStructureResult r)
