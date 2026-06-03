@@ -114,3 +114,4 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | Capability | Status | Evidence |
 |---|---|---|
 | Local tile reference survey artifact writer (Slice 3A-3) | Ratified | Writes .local/local-tile-reference-survey.json and .local/local-tile-reference-survey.md from LocalPzInstallValidationResult summary data only; no CLI command; no tile catalog; no asset content reading/copying; no media/maps writes; no playable export claim |
+| Proof packet v0.15 (Slice 3A-3 sync) | Ratified | Schema file sanity 196; proof packet 96; PS total 468; .NET total 225; LocalTileReferenceSurveyWriter evidence flags added |

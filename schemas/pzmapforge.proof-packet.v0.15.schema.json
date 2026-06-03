@@ -1,0 +1,163 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pzmapforge.proof-packet.v0.15",
+  "title": "PZMapForge Proof Packet v0.15",
+  "description": "Proof packet synchronized after Slice 3A-3 local tile reference survey artifact. Planning artifact only.",
+  "type": "object",
+  "required": [
+    "schema", "generated_at_utc", "repo_root",
+    "git_branch", "git_commit", "git_status_short",
+    "parsed_cell_path", "parsed_cell_sha256",
+    "report_sha256", "preview_sha256", "tiles_sha256", "tmx_sha256",
+    "regions_json_path", "regions_report_path",
+    "regions_json_sha256", "regions_report_sha256",
+    "primitives_json_path", "primitives_report_path",
+    "primitives_json_sha256", "primitives_report_sha256",
+    "plan_recommendations_path", "plan_report_path",
+    "plan_recommendations_sha256", "plan_report_sha256",
+    "claim_boundary", "validation_summary", "dotnet_validation_summary", "safety"
+  ],
+  "properties": {
+    "schema": { "type": "string", "const": "pzmapforge.proof-packet.v0.15" },
+    "generated_at_utc": { "type": "string", "minLength": 1 },
+    "repo_root": { "type": "string", "minLength": 1 },
+    "git_branch": { "type": "string" },
+    "git_commit": { "type": "string" },
+    "git_status_short": { "type": "string" },
+    "parsed_cell_path": { "type": "string", "minLength": 1 },
+    "parsed_cell_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "report_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "preview_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "tiles_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "tmx_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "regions_json_path": { "type": "string", "minLength": 1 },
+    "regions_report_path": { "type": "string", "minLength": 1 },
+    "regions_json_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "regions_report_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "primitives_json_path": { "type": "string", "minLength": 1 },
+    "primitives_report_path": { "type": "string", "minLength": 1 },
+    "primitives_json_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "primitives_report_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "plan_recommendations_path": { "type": "string", "minLength": 1 },
+    "plan_report_path": { "type": "string", "minLength": 1 },
+    "plan_recommendations_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "plan_report_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "claim_boundary": {
+      "type": "string",
+      "const": "planning_artifact_only_not_pz_load_tested"
+    },
+    "validation_summary": {
+      "type": "object",
+      "description": "PowerShell validation lane assertion counts. Separate from dotnet_validation_summary.",
+      "required": [
+        "schema_file_sanity", "artifact_contract", "palette_sha256_verification",
+        "tmx_integrity", "hardening_harness", "region_extraction",
+        "primitive_classification", "plan_recommendations_contract",
+        "proof_packet", "total_expected_assertions"
+      ],
+      "properties": {
+        "schema_file_sanity": { "type": "integer", "const": 196 },
+        "artifact_contract": { "type": "integer", "const": 40 },
+        "palette_sha256_verification": { "type": "integer", "const": 5 },
+        "tmx_integrity": { "type": "integer", "const": 21 },
+        "hardening_harness": { "type": "integer", "const": 36 },
+        "region_extraction": { "type": "integer", "const": 24 },
+        "primitive_classification": { "type": "integer", "const": 22 },
+        "plan_recommendations_contract": { "type": "integer", "const": 28 },
+        "proof_packet": { "type": "integer", "const": 96 },
+        "total_expected_assertions": { "type": "integer", "const": 468 }
+      },
+      "additionalProperties": false
+    },
+    "dotnet_validation_summary": {
+      "type": "object",
+      "description": ".NET xUnit test counts. Tracked separately from the PowerShell validation lane.",
+      "required": [
+        "test_total", "core_tests", "cli_tests",
+        "process_cli_tests_present",
+        "full_pipeline_contract_tests_present",
+        "full_pipeline_artifact_count",
+        "full_pipeline_artifacts",
+        "layer_pipeline_present",
+        "layer_pipeline_artifact_count",
+        "layer_pipeline_artifacts",
+        "layer_validate_present",
+        "layer_validate_writes_artifacts",
+        "local_pz_config_loader_present",
+        "local_pz_config_loader_requires_real_install",
+        "local_pz_config_loader_inspects_assets",
+        "local_pz_config_loader_copies_assets",
+        "local_pz_install_validator_present",
+        "local_pz_install_validator_requires_real_install",
+        "local_pz_install_validator_reads_asset_contents",
+        "local_pz_install_validator_copies_assets",
+        "local_pz_install_validator_touches_media_maps",
+        "local_tile_reference_survey_writer_present",
+        "local_tile_reference_survey_writer_requires_real_install",
+        "local_tile_reference_survey_writer_reads_asset_contents",
+        "local_tile_reference_survey_writer_copies_assets",
+        "local_tile_reference_survey_writer_touches_media_maps",
+        "local_tile_reference_survey_writer_outputs_local_only",
+        "note"
+      ],
+      "properties": {
+        "test_total": { "type": "integer", "const": 225 },
+        "core_tests": { "type": "integer", "const": 190 },
+        "cli_tests": { "type": "integer", "const": 35 },
+        "process_cli_tests_present": { "type": "boolean", "const": true },
+        "full_pipeline_contract_tests_present": { "type": "boolean", "const": true },
+        "full_pipeline_artifact_count": { "type": "integer", "const": 7 },
+        "full_pipeline_artifacts": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 7,
+          "maxItems": 7
+        },
+        "layer_pipeline_present": { "type": "boolean", "const": true },
+        "layer_pipeline_artifact_count": { "type": "integer", "const": 8 },
+        "layer_pipeline_artifacts": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 8,
+          "maxItems": 8
+        },
+        "layer_validate_present": { "type": "boolean", "const": true },
+        "layer_validate_writes_artifacts": { "type": "boolean", "const": false },
+        "local_pz_config_loader_present": { "type": "boolean", "const": true },
+        "local_pz_config_loader_requires_real_install": { "type": "boolean", "const": false },
+        "local_pz_config_loader_inspects_assets": { "type": "boolean", "const": false },
+        "local_pz_config_loader_copies_assets": { "type": "boolean", "const": false },
+        "local_pz_install_validator_present": { "type": "boolean", "const": true },
+        "local_pz_install_validator_requires_real_install": { "type": "boolean", "const": false },
+        "local_pz_install_validator_reads_asset_contents": { "type": "boolean", "const": false },
+        "local_pz_install_validator_copies_assets": { "type": "boolean", "const": false },
+        "local_pz_install_validator_touches_media_maps": { "type": "boolean", "const": false },
+        "local_tile_reference_survey_writer_present": { "type": "boolean", "const": true },
+        "local_tile_reference_survey_writer_requires_real_install": { "type": "boolean", "const": false },
+        "local_tile_reference_survey_writer_reads_asset_contents": { "type": "boolean", "const": false },
+        "local_tile_reference_survey_writer_copies_assets": { "type": "boolean", "const": false },
+        "local_tile_reference_survey_writer_touches_media_maps": { "type": "boolean", "const": false },
+        "local_tile_reference_survey_writer_outputs_local_only": { "type": "boolean", "const": true },
+        "note": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "safety": {
+      "type": "object",
+      "required": [
+        "local_only_outputs",
+        "media_maps_touched",
+        "pz_assets_copied",
+        "playable_export_claimed"
+      ],
+      "properties": {
+        "local_only_outputs": { "type": "boolean", "const": true },
+        "media_maps_touched": { "type": "boolean", "const": false },
+        "pz_assets_copied": { "type": "boolean", "const": false },
+        "playable_export_claimed": { "type": "boolean", "const": false }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

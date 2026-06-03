@@ -46,7 +46,7 @@ public sealed class FullPipelineContractFixture : IDisposable
             UseShellExecute        = false,
         };
         foreach (var a in new[]
-            { "run", "--project", cliProject, "--",
+            { "run", "--project", cliProject, "--configuration", "Release", "--no-build", "--",
               "full-pipeline",
               "--path",    imgPath,
               "--palette", palette,

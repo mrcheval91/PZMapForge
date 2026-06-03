@@ -10,6 +10,12 @@ Format: Keep a Changelog.
 
 ### Added
 
+- schemas/pzmapforge.proof-packet.v0.15.schema.json: proof packet schema synchronized after Slice 3A-3.
+- scripts/write-proof-packet.ps1: proof packet writer updated to v0.15 with PS 468 and .NET 225 evidence counts.
+- scripts/test-proof-packet.ps1: proof packet contract updated to v0.15 with LocalTileReferenceSurveyWriter evidence flags.
+- scripts/test-schema-files.ps1 and scripts/validate.ps1: validation counts updated for proof packet v0.15.
+- docs/VALIDATION_LEDGER.md and docs/IMPLEMENTATION.md: validation ledger and implementation status updated for v0.15.
+
 - schemas/pzmapforge.local-tile-reference-survey.v0.1.schema.json: local-only survey artifact schema for Slice 3A-3.
 - src/PZMapForge.Core/LocalPz/LocalTileReferenceSurvey.cs: survey artifact model.
 - src/PZMapForge.Core/LocalPz/LocalTileReferenceSurveyWriter.cs: writer for .local/local-tile-reference-survey.json and .local/local-tile-reference-survey.md.
@@ -23,9 +29,13 @@ Format: Keep a Changelog.
 
 ### Changed
 
+- tests/PZMapForge.Cli.Tests/FullPipelineContractTests.cs: process CLI invocation now
+  passes --configuration Release --no-build to avoid triggering nested Debug builds
+  (VBCSCompiler file lock on PZMapForge.Core.dll during parallel test execution).
+- tests/PZMapForge.Cli.Tests/LayerPipelineProcessTests.cs: same fix applied.
 - docs/PHASE_3A_DECISION.md: Slice 3A-2 status added.
 - docs/PHASE_3_LOCAL_PZ_CONFIG_SPEC.md: local install validator status added.
-- docs/IMPLEMENTATION.md: LocalPz validator row added.
+- docs/IMPLEMENTATION.md: LocalPz validator row added; CLI process test stabilization noted.
 
 No real PZ install is required for tests.
 No PZ assets are copied.

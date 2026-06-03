@@ -78,6 +78,9 @@ public sealed class LayerPipelineProcessTests : IDisposable
         psi.ArgumentList.Add("run");
         psi.ArgumentList.Add("--project");
         psi.ArgumentList.Add(CliProjectPath);
+        psi.ArgumentList.Add("--configuration");
+        psi.ArgumentList.Add("Release");
+        psi.ArgumentList.Add("--no-build");
         psi.ArgumentList.Add("--");
         foreach (var a in args) psi.ArgumentList.Add(a);
 

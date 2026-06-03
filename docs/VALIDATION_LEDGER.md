@@ -1,9 +1,9 @@
-﻿# Validation Ledger
+# Validation Ledger
 
 PZMapForge maintains two parallel, intentionally separate validation lanes.
 This document is the operator-readable reference for both.
 
-Baseline commit: 31c705b (layer-validate added)
+Baseline commit: 281b716 (Slice 3A-3 local tile reference survey artifact)
 
 ---
 
@@ -34,7 +34,7 @@ validate.ps1 runs all sub-scripts in sequence and exits nonzero if any fail.
 
 | Check | Script | Expected assertions |
 |---|---|---:|
-| Schema file sanity | test-schema-files.ps1 | 136 |
+| Schema file sanity | test-schema-files.ps1 | 196 |
 | Artifact contract | test-parsed-cell-contract.ps1 | 40 |
 | Palette SHA-256 verification | test-palette-sha256.ps1 | 5 |
 | TMX integrity | test-tmx-integrity.ps1 | 21 |
@@ -42,15 +42,15 @@ validate.ps1 runs all sub-scripts in sequence and exits nonzero if any fail.
 | Region extraction | test-region-extraction.ps1 | 24 |
 | Primitive classification | test-primitive-classification.ps1 | 22 |
 | Plan recommendations contract | test-plan-recommendations-contract.ps1 | 28 |
-| Proof packet | test-proof-packet.ps1 | 69 |
-| Total | | 381 |
+| Proof packet | test-proof-packet.ps1 | 96 |
+| Total | | 468 |
 
-These 381 assertions are the canonical PowerShell validation total.
+These 468 assertions are the canonical PowerShell validation total.
 They are recorded in proof-packet.json as validation_summary.total_expected_assertions.
 
 ### What this lane covers
 
-- JSON schema file structure (5 schemas)
+- JSON schema file structure (7 schemas)
 - parsed-cell.json artifact structure and field contracts
 - palette_sha256 cross-check (parsed-cell vs source/image-palette.json)
 - TMX base64/gzip/GID structural validity
@@ -63,7 +63,7 @@ They are recorded in proof-packet.json as validation_summary.total_expected_asse
 ### What this lane does NOT cover
 
 - .NET typed engine correctness (that is Lane 2)
-- PlayabIe Project Zomboid map load testing (not claimed)
+- Playable Project Zomboid map load testing (not claimed)
 
 ---
 
@@ -82,8 +82,8 @@ artifact completeness, layer pipeline (Phase 2A), and markdown report content co
 | Check | Expected |
 |---|---:|
 | dotnet build | 0 errors |
-| dotnet test (total) | 197 |
-| PZMapForge.Core.Tests | 162 |
+| dotnet test (total) | 225 |
+| PZMapForge.Core.Tests | 190 |
 | PZMapForge.Cli.Tests | 35 |
 | Process CLI tests present | true |
 | Full-pipeline contract tests present | true |
@@ -97,7 +97,7 @@ These counts are recorded in proof-packet.json as dotnet_validation_summary.
 They are intentionally not added to validation_summary.total_expected_assertions.
 The two lanes measure different things and must remain separate.
 
-### Test breakdown: PZMapForge.Core.Tests (162)
+### Test breakdown: PZMapForge.Core.Tests (190)
 
 - PaletteLoader: 8 tests
 - ImageMapForgeParser: 10 tests
@@ -117,6 +117,9 @@ The two lanes measure different things and must remain separate.
 - LayerMerger: 12 tests (Phase 2A-2)
 - LayerMergeArtifactWriter: 7 tests (Phase 2A-3)
 - LayerValidator: 8 tests (Phase 2B layer-validate)
+- LocalPzInstallConfigLoader: 8 tests (Slice 3A-1)
+- LocalPzInstallValidator: 10 tests (Slice 3A-2)
+- LocalTileReferenceSurveyWriter: 8 tests (Slice 3A-3)
 
 ### Test breakdown: PZMapForge.Cli.Tests (35)
 
@@ -149,7 +152,7 @@ The proof packet records both separately and labels each clearly.
 The proof packet records the state of both validation lanes plus artifact
 SHA-256 hashes and git state.
 
-Schema: pzmapforge.proof-packet.v0.12
+Schema: pzmapforge.proof-packet.v0.15
 
 ### Commands
 
