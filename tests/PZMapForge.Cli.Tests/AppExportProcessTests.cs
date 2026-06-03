@@ -1013,6 +1013,15 @@ public sealed class AppExportSelectionFixture : IDisposable
     public bool ReviewExists =>
         File.Exists(Path.Combine(OutputDir, "artifacts", "svg-layer-selection-review.json"));
 
+    public bool   ManifestJsonExists =>
+        File.Exists(Path.Combine(OutputDir, "artifacts", "svg-planning-manifest.json"));
+    public bool   ManifestMdExists =>
+        File.Exists(Path.Combine(OutputDir, "artifacts", "svg-planning-manifest.md"));
+    public string ManifestJson =>
+        ManifestJsonExists ? File.ReadAllText(Path.Combine(OutputDir, "artifacts", "svg-planning-manifest.json")) : string.Empty;
+    public string ManifestMd =>
+        ManifestMdExists  ? File.ReadAllText(Path.Combine(OutputDir, "artifacts", "svg-planning-manifest.md"))   : string.Empty;
+
     public void Dispose()
     {
         try { if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true); }
@@ -1061,4 +1070,113 @@ public sealed class AppExportSelectionTests : IClassFixture<AppExportSelectionFi
     [Fact]
     public void AppExport_Selection_IndexHtmlContainsNotExportedNote() =>
         Assert.Contains("not exported to Project Zomboid", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    // SVG-9: planning manifest
+
+    [Fact]
+    public void AppExport_Selection_WritesManifestJson() =>
+        Assert.True(_fix.ManifestJsonExists, "svg-planning-manifest.json was not written");
+
+    [Fact]
+    public void AppExport_Selection_WritesManifestMd() =>
+        Assert.True(_fix.ManifestMdExists, "svg-planning-manifest.md was not written");
+
+    [Fact]
+    public void AppExport_Selection_ManifestJsonContainsPlanningStatus() =>
+        Assert.Contains("operator_selected_metadata_only", _fix.ManifestJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_ManifestJsonContainsExportedFalse() =>
+        Assert.Contains("\"exported_to_project_zomboid\": false", _fix.ManifestJson, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_ManifestMdContainsTitle() =>
+        Assert.Contains("SVG Planning Manifest", _fix.ManifestMd, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_ManifestMdContainsNonClaim() =>
+        Assert.Contains("No SVG geometry converted", _fix.ManifestMd, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_IndexHtmlContainsSvgPlanningManifest() =>
+        Assert.Contains("SVG Planning Manifest", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_IndexHtmlContainsInertManifestNote() =>
+        Assert.Contains("inert planning manifest", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+}
+
+// ---------------------------------------------------------------------------
+// Zero-selected: does not fail, does not write manifest
+// ---------------------------------------------------------------------------
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+public sealed class AppExportZeroSelectionTests : IDisposable
+{
+    private readonly string _tempDir =
+        Path.Combine(Path.GetTempPath(), "pzmapforge-zero-sel", Path.GetRandomFileName());
+
+    public AppExportZeroSelectionTests() => Directory.CreateDirectory(_tempDir);
+
+    public void Dispose()
+    {
+        try { if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, recursive: true); }
+        catch { /* best effort */ }
+    }
+
+    private static string RepoRoot =>
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+
+    private static string PalettePath =>
+        Path.Combine(RepoRoot, "source", "image-palette.json");
+
+    [Fact]
+    public void AppExport_ZeroSelected_ExitsZeroAndNoManifest()
+    {
+        var imgPath = Path.Combine(_tempDir, "analysis.png");
+        using (var bmp = new System.Drawing.Bitmap(300, 300))
+        using (var g   = System.Drawing.Graphics.FromImage(bmp))
+        {
+            g.Clear(System.Drawing.Color.FromArgb(255, 100, 140, 70));
+            bmp.Save(imgPath, System.Drawing.Imaging.ImageFormat.Png);
+        }
+
+        var selJson = """
+{
+  "schema": "pzmapforge.svg-layer-selection-template.v0.1",
+  "water_candidates": [
+    { "value": "Eaux", "selected": false, "intended_use": "", "operator_note": "" }
+  ]
+}
+""";
+        var selPath   = Path.Combine(_tempDir, "zero-selection.json");
+        File.WriteAllText(selPath, selJson, System.Text.Encoding.UTF8);
+
+        var outputDir = Path.Combine(_tempDir, ".local", "app");
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName               = "dotnet",
+            WorkingDirectory       = RepoRoot,
+            RedirectStandardOutput = true,
+            RedirectStandardError  = true,
+            UseShellExecute        = false,
+        };
+        foreach (var a in new[]
+            { "run", "--project", Path.Combine(RepoRoot, "src", "PZMapForge.Cli"),
+              "--configuration", "Release", "--no-build", "--",
+              "app-export", "--path", imgPath, "--palette", PalettePath,
+              "--output", outputDir, "--svg-selection", selPath })
+            psi.ArgumentList.Add(a);
+
+        using var proc = System.Diagnostics.Process.Start(psi)!;
+        var stdout = proc.StandardOutput.ReadToEnd();
+        var stderr = proc.StandardError.ReadToEnd();
+        proc.WaitForExit();
+
+        Assert.True(proc.ExitCode == 0,
+            $"Exited {proc.ExitCode}. Stdout: {stdout}. Stderr: {stderr}");
+        Assert.False(
+            File.Exists(Path.Combine(outputDir, "artifacts", "svg-planning-manifest.json")),
+            "svg-planning-manifest.json should not exist when selected_count == 0");
+    }
 }

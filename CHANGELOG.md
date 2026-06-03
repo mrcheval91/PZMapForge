@@ -8,6 +8,49 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (SVG-9: selected SVG planning manifest)
+- src/PZMapForge.Cli/Program.cs:
+  - WriteSvgPlanningManifest: writes svg-planning-manifest.json (schema
+    pzmapforge.svg-planning-manifest.v0.1) when selected_count > 0.
+    Fields: schema, claim_boundary, source_selection_file_name,
+    generated_from, selected_count, selected_by_bucket (bucket/count/items
+    with value/intended_use/operator_note), intended_uses (distinct sorted),
+    operator_notes (max 50, value+note), planning_status
+    "operator_selected_metadata_only", exported_to_project_zomboid false,
+    and all safety flags false.
+  - BuildSvgPlanningManifestMarkdown: writes svg-planning-manifest.md. ASCII.
+    Title "SVG Planning Manifest", claim boundary, source, selected count,
+    planning status, items by bucket, intended uses list, non-claims:
+    "No SVG geometry converted", "No SVG coordinates extracted",
+    "No Project Zomboid export generated", "No media/maps writes",
+    "No PZ assets copied or read".
+  - BuildSvgPlanningManifestHtml: h2 "SVG Planning Manifest" section; note
+    "This is an inert planning manifest. It records selected SVG metadata
+    only. It does not convert or export SVG geometry."; artifact links for
+    svg-planning-manifest.json and svg-planning-manifest.md.
+  - Zero-selected path: does not fail; review artifact still written;
+    manifest not written; HTML says no selected SVG metadata available.
+  - svgManifestSectionHtml slot added to BuildAppHtml.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - AppExportSelectionFixture: ManifestJsonExists, ManifestMdExists,
+    ManifestJson, ManifestMd computed properties.
+  - AppExportSelectionTests (SVG-9 block): 8 new tests: WritesManifestJson,
+    WritesManifestMd, ManifestJsonContainsPlanningStatus,
+    ManifestJsonContainsExportedFalse, ManifestMdContainsTitle,
+    ManifestMdContainsNonClaim, IndexHtmlContainsSvgPlanningManifest,
+    IndexHtmlContainsInertManifestNote.
+  - AppExportZeroSelectionTests: ExitsZeroAndNoManifest (zero-selected
+    does not fail and does not write manifest).
+  - Total: 327 tests (190 Core + 137 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No coordinate extraction. No geometry conversion. No path d= extraction.
+No PZ assets. No media/maps writes. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (SVG-8: SVG layer selection review import)
 - src/PZMapForge.Cli/Program.cs:
   - --svg-selection <json> (-s): optional argument; exits 1 if file missing or JSON invalid.

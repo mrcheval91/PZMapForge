@@ -1013,6 +1013,7 @@ static int AppExportCommand(string[] args)
     var svgCandidatesSectionHtml = string.Empty;
     var svgSelectionSectionHtml  = string.Empty;
     var svgReviewSectionHtml     = string.Empty;
+    var svgManifestSectionHtml   = string.Empty;
 
     if (!string.IsNullOrWhiteSpace(annotationPath))
     {
@@ -1065,11 +1066,20 @@ static int AppExportCommand(string[] args)
         File.Copy(svgSelectionPath, Path.Combine(artifactsDir, "svg-layer-selection.input.json"), overwrite: true);
         WriteSvgLayerSelectionReview(selItems, Path.GetFileName(svgSelectionPath), artifactsDir);
         svgReviewSectionHtml = BuildSvgLayerSelectionReviewHtml(selItems);
+        if (selItems.Count > 0)
+        {
+            WriteSvgPlanningManifest(selItems, Path.GetFileName(svgSelectionPath), artifactsDir);
+            svgManifestSectionHtml = BuildSvgPlanningManifestHtml();
+        }
+        else
+        {
+            svgManifestSectionHtml = "\n    <h2>SVG Planning Manifest</h2>\n    <p class=\"section-note\">No selected SVG metadata was available for a planning manifest.</p>\n";
+        }
     }
 
     var html     = BuildAppHtml(
         relativeImgSrc, relativeParsedSrc, relativeAnnotSrc,
-        annotPanelLabel, annotGuidanceHtml, svgStructureSectionHtml, svgCandidatesSectionHtml, svgSelectionSectionHtml, svgReviewSectionHtml,
+        annotPanelLabel, annotGuidanceHtml, svgStructureSectionHtml, svgCandidatesSectionHtml, svgSelectionSectionHtml, svgReviewSectionHtml, svgManifestSectionHtml,
         imagePath, grid.Width, grid.Height, parseResult.Resized,
         regions.TotalRegions, primitives.PrimitiveCount,
         planResult.RecommendationCount, planResult.Summary.WarningCount,
@@ -1283,6 +1293,7 @@ static string BuildAppHtml(
     string svgCandidatesSectionHtml,
     string svgSelectionSectionHtml,
     string svgReviewSectionHtml,
+    string svgManifestSectionHtml,
     string imagePath, int width, int height, bool resized,
     int regions, int primitives, int recommendations, int warnings,
     PlanningRuleOptions planOpts,
@@ -1476,6 +1487,7 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
     {{svgCandidatesSectionHtml}}
     {{svgSelectionSectionHtml}}
     {{svgReviewSectionHtml}}
+    {{svgManifestSectionHtml}}
     <h2>Non-claims</h2>
     <ul class="nc-list">
       <li>Not a playable Project Zomboid map.</li>
@@ -1801,6 +1813,123 @@ static (List<SelectedLayerItem> Items, string? Error) ReadSvgLayerSelection(stri
     {
         return ([], ex.Message);
     }
+}
+
+static void WriteSvgPlanningManifest(
+    List<SelectedLayerItem> items, string sourceFileName, string artifactsDir)
+{
+    var byBucket = items
+        .GroupBy(i => i.Bucket)
+        .Select(g => new
+        {
+            bucket = g.Key,
+            count  = g.Count(),
+            items  = g.Select(i => new
+            {
+                value         = i.Value,
+                intended_use  = i.IntendedUse,
+                operator_note = i.OperatorNote,
+            }).ToArray(),
+        })
+        .ToArray();
+
+    var intendedUses = items
+        .Select(i => i.IntendedUse)
+        .Where(u => !string.IsNullOrWhiteSpace(u))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(u => u, StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
+    var operatorNotes = items
+        .Where(i => !string.IsNullOrWhiteSpace(i.OperatorNote))
+        .Take(50)
+        .Select(i => new { value = i.Value, note = i.OperatorNote })
+        .ToArray();
+
+    var manifest = new
+    {
+        schema                      = "pzmapforge.svg-planning-manifest.v0.1",
+        claim_boundary              = "planning_artifact_only_not_pz_load_tested",
+        source_selection_file_name  = sourceFileName,
+        generated_from              = "svg-layer-selection-review.json",
+        selected_count              = items.Count,
+        selected_by_bucket          = byBucket,
+        intended_uses               = intendedUses,
+        operator_notes              = operatorNotes,
+        planning_status             = "operator_selected_metadata_only",
+        parsed_as_geometry          = false,
+        converted_to_map_geometry   = false,
+        exported_to_project_zomboid = false,
+        pz_assets_copied            = false,
+        media_maps_touched          = false,
+        playable_export_claimed     = false,
+    };
+
+    File.WriteAllText(
+        Path.Combine(artifactsDir, "svg-planning-manifest.json"),
+        JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }),
+        Encoding.UTF8);
+
+    var md = BuildSvgPlanningManifestMarkdown(items, sourceFileName, intendedUses);
+    File.WriteAllText(
+        Path.Combine(artifactsDir, "svg-planning-manifest.md"),
+        md,
+        Encoding.UTF8);
+}
+
+static string BuildSvgPlanningManifestMarkdown(
+    List<SelectedLayerItem> items, string sourceFileName, string[] intendedUses)
+{
+    var sb = new StringBuilder();
+    sb.AppendLine("# SVG Planning Manifest");
+    sb.AppendLine();
+    sb.AppendLine("Claim boundary: planning_artifact_only_not_pz_load_tested");
+    sb.AppendLine();
+    sb.AppendLine($"Source: {sourceFileName}");
+    sb.AppendLine($"Selected count: {items.Count}");
+    sb.AppendLine("Planning status: operator_selected_metadata_only");
+    sb.AppendLine();
+    sb.AppendLine("## Selected Items");
+    sb.AppendLine();
+    foreach (var grp in items.GroupBy(i => i.Bucket))
+    {
+        sb.AppendLine($"### {grp.Key}");
+        foreach (var item in grp)
+        {
+            var use  = string.IsNullOrEmpty(item.IntendedUse)  ? "" : $" | intended_use: {item.IntendedUse}";
+            var note = string.IsNullOrEmpty(item.OperatorNote) ? "" : $" | note: {item.OperatorNote}";
+            sb.AppendLine($"- {item.Value}{use}{note}");
+        }
+        sb.AppendLine();
+    }
+    if (intendedUses.Length > 0)
+    {
+        sb.AppendLine("## Intended Uses");
+        sb.AppendLine();
+        foreach (var u in intendedUses)
+            sb.AppendLine($"- {u}");
+        sb.AppendLine();
+    }
+    sb.AppendLine("## Non-claims");
+    sb.AppendLine();
+    sb.AppendLine("- No SVG geometry converted.");
+    sb.AppendLine("- No SVG coordinates extracted.");
+    sb.AppendLine("- No Project Zomboid export generated.");
+    sb.AppendLine("- No media/maps writes.");
+    sb.AppendLine("- No PZ assets copied or read.");
+    return sb.ToString();
+}
+
+static string BuildSvgPlanningManifestHtml()
+{
+    var sb = new StringBuilder();
+    sb.Append("\n    <h2>SVG Planning Manifest</h2>\n");
+    sb.Append("    <p class=\"svg-note\">This is an inert planning manifest. It records selected SVG metadata only. It does not convert or export SVG geometry.</p>\n");
+    sb.Append("    <div class=\"arts\">\n");
+    sb.Append("      <div class=\"art\"><a href=\"artifacts/svg-planning-manifest.json\">svg-planning-manifest.json</a><div class=\"desc\">SVG planning manifest (schema v0.1)</div></div>\n");
+    sb.Append("      <div class=\"art\"><a href=\"artifacts/svg-planning-manifest.md\">svg-planning-manifest.md</a><div class=\"desc\">Human-readable planning manifest</div></div>\n");
+    sb.Append("    </div>\n");
+    return sb.ToString();
 }
 
 static void WriteSvgLayerSelectionReview(

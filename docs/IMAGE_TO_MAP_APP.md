@@ -1,6 +1,6 @@
 # Image-to-Map App Export
 
-Status: Slice 3A-6 implemented; APP-2–7 app export improvements; SVG-2 structure inspector
+Status: Slice 3A-6 implemented; APP-2–7 app export improvements; SVG-2 structure inspector; SVG-9 planning manifest
 
 Claim boundary: planning_artifact_only_not_pz_load_tested
 
@@ -204,6 +204,36 @@ Added in SVG-2:
 - Parse cap raised to 50 MB (`max_characters_in_document: 50_000_000`).
   `parse_status` is `"parsed"` on success or `"failed"` with `parse_error` on failure.
   Failures are recorded honestly — the structure JSON is still written.
+
+Added in SVG-9:
+
+- **`artifacts/svg-planning-manifest.json`**: written when `--svg-selection` is provided
+  and `selected_count > 0`. Schema `pzmapforge.svg-planning-manifest.v0.1`. Fields:
+  `schema`, `claim_boundary`, `source_selection_file_name`, `generated_from`,
+  `selected_count`, `selected_by_bucket` (grouped items with `value`, `intended_use`,
+  `operator_note`), `intended_uses` (distinct sorted list), `operator_notes` (bounded
+  at 50), `planning_status: "operator_selected_metadata_only"`, and all safety flags
+  (`parsed_as_geometry`, `converted_to_map_geometry`, `exported_to_project_zomboid`,
+  `pz_assets_copied`, `media_maps_touched`, `playable_export_claimed`: all false).
+- **`artifacts/svg-planning-manifest.md`**: human-readable planning manifest. Includes:
+  title "SVG Planning Manifest", claim boundary, source, selected count, planning
+  status, selected items grouped by bucket, intended uses list, and an explicit
+  non-claims section: "No SVG geometry converted", "No SVG coordinates extracted",
+  "No Project Zomboid export generated", "No media/maps writes", "No PZ assets
+  copied or read". ASCII only.
+- **SVG Planning Manifest** HTML section in the right panel. States: "This is an
+  inert planning manifest. It records selected SVG metadata only. It does not convert
+  or export SVG geometry." Links `svg-planning-manifest.json` and
+  `svg-planning-manifest.md`.
+- If `--svg-selection` is provided but `selected_count == 0`: command does not fail;
+  review artifact is still written; manifest files are not written; HTML section says
+  "No selected SVG metadata was available for a planning manifest."
+- 9 new tests: manifest JSON written, manifest MD written, manifest JSON contains
+  `operator_selected_metadata_only`, manifest JSON contains
+  `exported_to_project_zomboid: false`, manifest MD contains "SVG Planning Manifest",
+  manifest MD contains "No SVG geometry converted", index.html contains "SVG Planning
+  Manifest", index.html contains "inert planning manifest", zero-selected does not fail
+  and does not write manifest. Total: 327 tests (190 Core + 137 CLI).
 
 ---
 
