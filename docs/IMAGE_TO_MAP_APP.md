@@ -235,6 +235,27 @@ Added in SVG-9:
   Manifest", index.html contains "inert planning manifest", zero-selected does not fail
   and does not write manifest. Total: 327 tests (190 Core + 137 CLI).
 
+Added in SVG-10:
+
+- **SVG Planning Manifest HTML summary**: when `--svg-selection` is provided and
+  `selected_count > 0`, the SVG Planning Manifest section in the HTML right panel now
+  shows the manifest contents directly in-page:
+  - Metadata table: `selected_count` and `planning_status: operator_selected_metadata_only`.
+  - Intended uses: chip list of distinct `intended_use` values from selected items.
+  - Selected items grouped by bucket: chip + `intended_use` label + `operator_note`
+    (italic) per item, matching the SVG Selection Review layout.
+  - Non-claims list (inline, not only in the artifact): "No SVG geometry converted",
+    "No SVG coordinates extracted", "No Project Zomboid export generated",
+    "No media/maps writes", "No PZ assets copied or read".
+  - Artifact links to `svg-planning-manifest.json` and `svg-planning-manifest.md`
+    retained.
+- If `selected_count == 0`: behavior unchanged. HTML says "No selected SVG metadata
+  was available for a planning manifest." No table or items rendered.
+- 8 new tests: index.html contains `selected_count`, `operator_selected_metadata_only`,
+  `Eaux`, `water body`, `No SVG geometry converted`, `No SVG coordinates extracted`,
+  `No Project Zomboid export generated`; zero-selected HTML contains "no selected SVG
+  metadata was available". Total: 335 tests (190 Core + 145 CLI).
+
 ---
 
 ## Pipeline stages

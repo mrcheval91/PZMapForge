@@ -1104,6 +1104,36 @@ public sealed class AppExportSelectionTests : IClassFixture<AppExportSelectionFi
     [Fact]
     public void AppExport_Selection_IndexHtmlContainsInertManifestNote() =>
         Assert.Contains("inert planning manifest", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    // SVG-10: visible manifest summary
+
+    [Fact]
+    public void AppExport_Selection_IndexHtmlManifestContainsSelectedCount() =>
+        Assert.Contains("selected_count", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_IndexHtmlManifestContainsPlanningStatus() =>
+        Assert.Contains("operator_selected_metadata_only", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_IndexHtmlManifestContainsSelectedValueEaux() =>
+        Assert.Contains("Eaux", _fix.IndexHtml, StringComparison.Ordinal);
+
+    [Fact]
+    public void AppExport_Selection_IndexHtmlManifestContainsIntendedUseWaterBody() =>
+        Assert.Contains("water body", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_IndexHtmlManifestContainsNoSvgGeometryConverted() =>
+        Assert.Contains("No SVG geometry converted", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_IndexHtmlManifestContainsNoSvgCoordinatesExtracted() =>
+        Assert.Contains("No SVG coordinates extracted", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_IndexHtmlManifestContainsNoProjectZomboidExportGenerated() =>
+        Assert.Contains("No Project Zomboid export generated", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 }
 
 // ---------------------------------------------------------------------------
@@ -1178,5 +1208,57 @@ public sealed class AppExportZeroSelectionTests : IDisposable
         Assert.False(
             File.Exists(Path.Combine(outputDir, "artifacts", "svg-planning-manifest.json")),
             "svg-planning-manifest.json should not exist when selected_count == 0");
+    }
+
+    [Fact]
+    public void AppExport_ZeroSelected_IndexHtmlContainsNoMetadataAvailable()
+    {
+        var imgPath = Path.Combine(_tempDir, "analysis2.png");
+        using (var bmp = new System.Drawing.Bitmap(300, 300))
+        using (var g   = System.Drawing.Graphics.FromImage(bmp))
+        {
+            g.Clear(System.Drawing.Color.FromArgb(255, 100, 140, 70));
+            bmp.Save(imgPath, System.Drawing.Imaging.ImageFormat.Png);
+        }
+
+        var selJson = """
+{
+  "schema": "pzmapforge.svg-layer-selection-template.v0.1",
+  "water_candidates": [
+    { "value": "Eaux", "selected": false, "intended_use": "", "operator_note": "" }
+  ]
+}
+""";
+        var selPath   = Path.Combine(_tempDir, "zero-selection2.json");
+        File.WriteAllText(selPath, selJson, System.Text.Encoding.UTF8);
+
+        var outputDir = Path.Combine(_tempDir, ".local", "app2");
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName               = "dotnet",
+            WorkingDirectory       = RepoRoot,
+            RedirectStandardOutput = true,
+            RedirectStandardError  = true,
+            UseShellExecute        = false,
+        };
+        foreach (var a in new[]
+            { "run", "--project", Path.Combine(RepoRoot, "src", "PZMapForge.Cli"),
+              "--configuration", "Release", "--no-build", "--",
+              "app-export", "--path", imgPath, "--palette", PalettePath,
+              "--output", outputDir, "--svg-selection", selPath })
+            psi.ArgumentList.Add(a);
+
+        using var proc = System.Diagnostics.Process.Start(psi)!;
+        var stdout = proc.StandardOutput.ReadToEnd();
+        var stderr = proc.StandardError.ReadToEnd();
+        proc.WaitForExit();
+
+        Assert.True(proc.ExitCode == 0,
+            $"Exited {proc.ExitCode}. Stdout: {stdout}. Stderr: {stderr}");
+
+        var htmlPath = Path.Combine(outputDir, "index.html");
+        Assert.True(File.Exists(htmlPath), "index.html was not written");
+        var html = File.ReadAllText(htmlPath);
+        Assert.Contains("no selected SVG metadata was available", html, StringComparison.OrdinalIgnoreCase);
     }
 }

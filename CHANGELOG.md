@@ -8,6 +8,43 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (SVG-10: planning manifest visible summary)
+- src/PZMapForge.Cli/Program.cs:
+  - BuildSvgPlanningManifestHtml now accepts List<SelectedLayerItem> items and
+    renders manifest contents directly in the HTML section:
+    - Metadata table: selected_count and planning_status
+      (operator_selected_metadata_only).
+    - Intended Uses chip list (distinct intended_use values, sorted).
+    - Selected items grouped by bucket: value chip, intended_use label,
+      operator_note (italic). Layout matches SVG Selection Review.
+    - Non-claims list: "No SVG geometry converted", "No SVG coordinates
+      extracted", "No Project Zomboid export generated", "No media/maps writes",
+      "No PZ assets copied or read".
+    - Artifact links to svg-planning-manifest.json and svg-planning-manifest.md
+      retained.
+  - Zero-selected path: unchanged. HTML still says "No selected SVG metadata
+    was available for a planning manifest." No table or items rendered.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - AppExportSelectionTests (SVG-10 block): 7 new tests:
+    IndexHtmlManifestContainsSelectedCount,
+    IndexHtmlManifestContainsPlanningStatus,
+    IndexHtmlManifestContainsSelectedValueEaux,
+    IndexHtmlManifestContainsIntendedUseWaterBody,
+    IndexHtmlManifestContainsNoSvgGeometryConverted,
+    IndexHtmlManifestContainsNoSvgCoordinatesExtracted,
+    IndexHtmlManifestContainsNoProjectZomboidExportGenerated.
+  - AppExportZeroSelectionTests: IndexHtmlContainsNoMetadataAvailable (1 new
+    test: zero-selected HTML contains "no selected SVG metadata was available").
+  - Total: 335 tests (190 Core + 145 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No coordinate extraction. No geometry conversion. No path d= extraction.
+No PZ assets. No media/maps writes. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (SVG-9: selected SVG planning manifest)
 - src/PZMapForge.Cli/Program.cs:
   - WriteSvgPlanningManifest: writes svg-planning-manifest.json (schema

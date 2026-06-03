@@ -1069,7 +1069,7 @@ static int AppExportCommand(string[] args)
         if (selItems.Count > 0)
         {
             WriteSvgPlanningManifest(selItems, Path.GetFileName(svgSelectionPath), artifactsDir);
-            svgManifestSectionHtml = BuildSvgPlanningManifestHtml();
+            svgManifestSectionHtml = BuildSvgPlanningManifestHtml(selItems);
         }
         else
         {
@@ -1920,15 +1920,60 @@ static string BuildSvgPlanningManifestMarkdown(
     return sb.ToString();
 }
 
-static string BuildSvgPlanningManifestHtml()
+static string BuildSvgPlanningManifestHtml(List<SelectedLayerItem> items)
 {
     var sb = new StringBuilder();
     sb.Append("\n    <h2>SVG Planning Manifest</h2>\n");
     sb.Append("    <p class=\"svg-note\">This is an inert planning manifest. It records selected SVG metadata only. It does not convert or export SVG geometry.</p>\n");
+
+    sb.Append("    <table class=\"meta-tbl\">\n");
+    sb.Append($"      <tr><th>selected_count</th><td>{items.Count}</td></tr>\n");
+    sb.Append("      <tr><th>planning_status</th><td>operator_selected_metadata_only</td></tr>\n");
+    sb.Append("    </table>\n");
+
+    var intendedUses = items
+        .Select(i => i.IntendedUse)
+        .Where(u => !string.IsNullOrWhiteSpace(u))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(u => u, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+    if (intendedUses.Count > 0)
+    {
+        sb.Append("    <p class=\"svg-sub\">Intended Uses</p>\n");
+        sb.Append("    <div class=\"svg-chips\">");
+        foreach (var u in intendedUses)
+            sb.Append($"<span class=\"svg-chip\">{HtmlEncode(u)}</span>");
+        sb.Append("</div>\n");
+    }
+
+    foreach (var grp in items.GroupBy(i => i.Bucket))
+    {
+        sb.Append($"    <p class=\"svg-sub\">{HtmlEncode(grp.Key)} ({grp.Count()})</p>\n");
+        foreach (var item in grp)
+        {
+            sb.Append($"    <div class=\"review-item\"><span class=\"svg-chip\">{HtmlEncode(item.Value)}</span>");
+            if (!string.IsNullOrEmpty(item.IntendedUse))
+                sb.Append($" <span class=\"review-use\">{HtmlEncode(item.IntendedUse)}</span>");
+            if (!string.IsNullOrEmpty(item.OperatorNote))
+                sb.Append($" <span class=\"review-note\">{HtmlEncode(item.OperatorNote)}</span>");
+            sb.Append("</div>\n");
+        }
+    }
+
+    sb.Append("    <ul class=\"nc-list\">\n");
+    sb.Append("      <li>No SVG geometry converted.</li>\n");
+    sb.Append("      <li>No SVG coordinates extracted.</li>\n");
+    sb.Append("      <li>No Project Zomboid export generated.</li>\n");
+    sb.Append("      <li>No media/maps writes.</li>\n");
+    sb.Append("      <li>No PZ assets copied or read.</li>\n");
+    sb.Append("    </ul>\n");
+
     sb.Append("    <div class=\"arts\">\n");
     sb.Append("      <div class=\"art\"><a href=\"artifacts/svg-planning-manifest.json\">svg-planning-manifest.json</a><div class=\"desc\">SVG planning manifest (schema v0.1)</div></div>\n");
     sb.Append("      <div class=\"art\"><a href=\"artifacts/svg-planning-manifest.md\">svg-planning-manifest.md</a><div class=\"desc\">Human-readable planning manifest</div></div>\n");
     sb.Append("    </div>\n");
+
     return sb.ToString();
 }
 
