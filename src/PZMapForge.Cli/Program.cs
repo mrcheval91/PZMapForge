@@ -1001,9 +1001,10 @@ static int AppExportCommand(string[] args)
     var relativeParsedSrc = "images/parsed-preview.png";
 
     // Step 8c: copy annotation if provided; detect SVG; write svg-reference-summary.json
-    var relativeAnnotSrc  = string.Empty;
-    var annotPanelLabel   = "Annotation Reference";
-    var annotGuidanceHtml = string.Empty;
+    var relativeAnnotSrc       = string.Empty;
+    var annotPanelLabel        = "Annotation Reference";
+    var annotGuidanceHtml      = string.Empty;
+    var svgStructureSectionHtml = string.Empty;
 
     if (!string.IsNullOrWhiteSpace(annotationPath))
     {
@@ -1036,21 +1037,10 @@ static int AppExportCommand(string[] args)
                 JsonSerializer.Serialize(svgSummary, new JsonSerializerOptions { WriteIndented = true }),
                 Encoding.UTF8);
 
-            WriteSvgStructure(annotationPath, artifactsDir);
+            var svgResult = WriteSvgStructure(annotationPath, artifactsDir);
+            svgStructureSectionHtml = BuildSvgStructureHtml(svgResult);
         }
     }
-
-    var svgStructureSectionHtml = !string.IsNullOrEmpty(relativeAnnotSrc)
-        && Path.GetExtension(relativeAnnotSrc).Equals(".svg", StringComparison.OrdinalIgnoreCase)
-        ? """
-
-    <h2>SVG Structure</h2>
-    <div class="arts">
-      <div class="art"><a href="artifacts/svg-reference-structure.json">svg-reference-structure.json</a><div class="desc">SVG element counts, IDs, text labels (schema v0.1)</div></div>
-      <div class="art"><a href="artifacts/svg-reference-summary.json">svg-reference-summary.json</a><div class="desc">SVG reference summary</div></div>
-    </div>
-"""
-        : string.Empty;
 
     // Step 9: write index.html
     var htmlPath = Path.Combine(outputFull, "index.html");
@@ -1074,7 +1064,7 @@ static int AppExportCommand(string[] args)
     return 0;
 }
 
-static void WriteSvgStructure(string annotationPath, string artifactsDir)
+static SvgStructureResult WriteSvgStructure(string annotationPath, string artifactsDir)
 {
     const long MaxChars = 50_000_000;
 
@@ -1114,6 +1104,7 @@ static void WriteSvgStructure(string annotationPath, string artifactsDir)
     var sampleIds = elements
         .Select(e => e.Attribute("id")?.Value)
         .Where(v => !string.IsNullOrEmpty(v))
+        .Select(v => v!)
         .Distinct()
         .Take(20)
         .ToList();
@@ -1181,6 +1172,27 @@ static void WriteSvgStructure(string annotationPath, string artifactsDir)
         Path.Combine(artifactsDir, "svg-reference-structure.json"),
         JsonSerializer.Serialize(structure, new JsonSerializerOptions { WriteIndented = true }),
         Encoding.UTF8);
+
+    return new SvgStructureResult
+    {
+        ParseStatus      = parseStatus,
+        ParseError       = parseError,
+        SourceFileName   = Path.GetFileName(annotationPath),
+        FileSizeBytes    = new FileInfo(annotationPath).Length,
+        RootElement      = root?.Name.LocalName ?? "unknown",
+        Width            = root?.Attribute("width")?.Value  ?? "",
+        Height           = root?.Attribute("height")?.Value ?? "",
+        ViewBox          = root?.Attribute("viewBox")?.Value ?? "",
+        CountG           = countByName.GetValueOrDefault("g"),
+        CountPath        = countByName.GetValueOrDefault("path"),
+        CountPolyline    = countByName.GetValueOrDefault("polyline"),
+        CountPolygon     = countByName.GetValueOrDefault("polygon"),
+        CountLine        = countByName.GetValueOrDefault("line"),
+        CountRect        = countByName.GetValueOrDefault("rect"),
+        CountText        = countByName.GetValueOrDefault("text"),
+        SampleIds        = sampleIds.AsReadOnly(),
+        SampleTextLabels = sampleTextLabels.AsReadOnly(),
+    };
 }
 
 static void WriteParsedPreview(
@@ -1304,6 +1316,9 @@ h2:first-child{margin-top:0}
 .drift-tbl th{background:#181818;color:#777}
 .section-note{font-size:.78em;color:#555;margin:.25em 0 .7em}
 .svg-note{font-size:.79em;color:#7799aa;margin:.5em 0 .3em;padding:.38em .65em;background:#0e1a22;border:1px solid #1e3a4a;border-radius:3px}
+.svg-sub{font-size:.75em;color:#7799aa;text-transform:uppercase;letter-spacing:.08em;margin:.9em 0 .3em}
+.svg-chips{margin:.25em 0 .6em;line-height:1.9}
+.svg-chip{display:inline-block;font-size:.76em;background:#162030;border:1px solid #2a4060;color:#88bbdd;padding:.1em .45em;border-radius:2px;margin:.1em .1em}
 .health-badge{display:inline-block;font-size:.79em;font-weight:bold;padding:.28em .75em;border-radius:3px;margin:.35em 0 .65em}
 .health-badge.clean{background:#162216;border:1px solid #2e5a2e;color:#77cc77}
 .health-badge.dirty{background:#261616;border:1px solid #6a2a2a;color:#cc7766}
@@ -1417,6 +1432,67 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
 """;
 }
 
+static string BuildSvgStructureHtml(SvgStructureResult r)
+{
+    var sb = new StringBuilder();
+
+    sb.Append("\n    <h2>SVG Structure Summary</h2>\n");
+
+    var statusClass = r.ParseStatus == "parsed" ? "clean" : "dirty";
+    sb.Append($"    <div class=\"health-badge {statusClass}\">parse_status: {HtmlEncode(r.ParseStatus)}</div>\n");
+
+    if (!string.IsNullOrEmpty(r.ParseError))
+        sb.Append($"    <p class=\"health-guidance\">{HtmlEncode(r.ParseError)}</p>\n");
+
+    var sizeMb = r.FileSizeBytes / 1_000_000.0;
+    sb.Append("    <table class=\"meta-tbl\">\n");
+    sb.Append($"      <tr><th>File</th><td>{HtmlEncode(r.SourceFileName)}</td></tr>\n");
+    sb.Append($"      <tr><th>Size</th><td>{sizeMb:F1} MB ({r.FileSizeBytes:N0} bytes)</td></tr>\n");
+    sb.Append($"      <tr><th>Root</th><td>{HtmlEncode(r.RootElement)}</td></tr>\n");
+    sb.Append($"      <tr><th>Width</th><td>{HtmlEncode(r.Width)}</td></tr>\n");
+    sb.Append($"      <tr><th>Height</th><td>{HtmlEncode(r.Height)}</td></tr>\n");
+    sb.Append($"      <tr><th>ViewBox</th><td>{HtmlEncode(r.ViewBox)}</td></tr>\n");
+    sb.Append("    </table>\n");
+
+    sb.Append("    <p class=\"svg-sub\">Element Counts</p>\n");
+    sb.Append("    <table class=\"meta-tbl\">\n");
+    sb.Append($"      <tr><td>g</td><td class=\"px\">{r.CountG:N0}</td></tr>\n");
+    sb.Append($"      <tr><td>path</td><td class=\"px\">{r.CountPath:N0}</td></tr>\n");
+    sb.Append($"      <tr><td>polyline</td><td class=\"px\">{r.CountPolyline:N0}</td></tr>\n");
+    sb.Append($"      <tr><td>polygon</td><td class=\"px\">{r.CountPolygon:N0}</td></tr>\n");
+    sb.Append($"      <tr><td>line</td><td class=\"px\">{r.CountLine:N0}</td></tr>\n");
+    sb.Append($"      <tr><td>rect</td><td class=\"px\">{r.CountRect:N0}</td></tr>\n");
+    sb.Append($"      <tr><td>text</td><td class=\"px\">{r.CountText:N0}</td></tr>\n");
+    sb.Append("    </table>\n");
+
+    if (r.SampleIds.Count > 0)
+    {
+        sb.Append("    <p class=\"svg-sub\">Sample IDs</p>\n");
+        sb.Append("    <div class=\"svg-chips\">");
+        foreach (var id in r.SampleIds)
+            sb.Append($"<span class=\"svg-chip\">{HtmlEncode(id)}</span>");
+        sb.Append("</div>\n");
+    }
+
+    if (r.SampleTextLabels.Count > 0)
+    {
+        sb.Append("    <p class=\"svg-sub\">Sample Text Labels</p>\n");
+        sb.Append("    <div class=\"svg-chips\">");
+        foreach (var lbl in r.SampleTextLabels)
+            sb.Append($"<span class=\"svg-chip\">{HtmlEncode(lbl)}</span>");
+        sb.Append("</div>\n");
+    }
+
+    sb.Append("    <p class=\"svg-note\">SVG structure is metadata only. Paths, streets, boroughs, and labels are not converted to map geometry.</p>\n");
+
+    sb.Append("    <div class=\"arts\">\n");
+    sb.Append("      <div class=\"art\"><a href=\"artifacts/svg-reference-structure.json\">svg-reference-structure.json</a><div class=\"desc\">SVG element counts, IDs, text labels (schema v0.1)</div></div>\n");
+    sb.Append("      <div class=\"art\"><a href=\"artifacts/svg-reference-summary.json\">svg-reference-summary.json</a><div class=\"desc\">SVG reference summary</div></div>\n");
+    sb.Append("    </div>\n");
+
+    return sb.ToString();
+}
+
 static string BuildLegendHtml(PZMapForge.Core.ParsedCell.ParsedCellDocument doc)
 {
     var sb = new StringBuilder();
@@ -1476,4 +1552,25 @@ static int UnknownCommand(string cmd)
         "palette-check, parsed-cell-check, region-check, primitive-check, " +
         "plan-check, plan-export, layer-pipeline, layer-validate, local-tile-survey, app-export");
     return 1;
+}
+
+sealed class SvgStructureResult
+{
+    public string ParseStatus      { get; init; } = "parsed";
+    public string ParseError       { get; init; } = string.Empty;
+    public string SourceFileName   { get; init; } = string.Empty;
+    public long   FileSizeBytes    { get; init; }
+    public string RootElement      { get; init; } = "unknown";
+    public string Width            { get; init; } = string.Empty;
+    public string Height           { get; init; } = string.Empty;
+    public string ViewBox          { get; init; } = string.Empty;
+    public int    CountG           { get; init; }
+    public int    CountPath        { get; init; }
+    public int    CountPolyline    { get; init; }
+    public int    CountPolygon     { get; init; }
+    public int    CountLine        { get; init; }
+    public int    CountRect        { get; init; }
+    public int    CountText        { get; init; }
+    public IReadOnlyList<string> SampleIds        { get; init; } = [];
+    public IReadOnlyList<string> SampleTextLabels { get; init; } = [];
 }

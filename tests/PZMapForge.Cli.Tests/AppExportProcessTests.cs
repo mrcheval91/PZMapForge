@@ -654,4 +654,30 @@ public sealed class AppExportSvgAnnotationTests : IClassFixture<AppExportSvgFixt
     [Fact]
     public void AppExport_Svg_StructureContainsMaxCharactersField() =>
         Assert.Contains("max_characters_in_document", _fix.SvgStructureJson, StringComparison.OrdinalIgnoreCase);
+
+    // SVG-3: structure viewer panel
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsSvgStructureSummary() =>
+        Assert.Contains("SVG Structure Summary", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsParseStatus() =>
+        Assert.Contains("parse_status", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsElementCounts() =>
+        Assert.Contains("Element Counts", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsSampleIds() =>
+        Assert.Contains("Sample IDs", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsSampleTextLabels() =>
+        Assert.Contains("Sample Text Labels", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_IndexHtmlContainsNotConvertedLanguage() =>
+        Assert.Contains("not converted to map geometry", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 }

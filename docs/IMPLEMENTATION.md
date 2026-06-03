@@ -6,6 +6,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 
 ## Ratified: what is proven and committed
 
+| SVG structure viewer panel (SVG-3) | Ratified | BuildSvgStructureHtml: SvgStructureResult record; h2 "SVG Structure Summary", parse_status badge, metadata table, Element Counts table, Sample IDs chips, Sample Text Labels chips, not-converted-to-geometry note, artifact links; 6 new tests; total 277 tests |
 | SVG large-file parse fix (SVG-2A) | Ratified | DtdProcessing Prohibit→Ignore (SVGs with DOCTYPE now parse; XmlResolver=null still blocks external entities); MaxCharactersInDocument raised 10M→50M; parse_status/parse_error/max_characters_in_document added; 4 new tests; total 271 tests |
 | SVG reference structure inspector (SVG-2) | Ratified | WriteSvgStructure: safe XML parse (DTD prohibited, no network); element counts (12 types), id/class/text samples (max 20 each), likely flags; svg-reference-structure.json in artifacts/; SVG Structure section in HTML right panel; 7 new tests; total 267 tests |
 | SVG annotation reference support (APP-7) | Ratified | extension-based SVG detection; panel label -> "SVG Vector Reference"; annotGuidanceHtml slot in preview row; svg-reference-summary.json artifact (schema v0.1, parsed_as_geometry=false, all safety flags); AppExportSvgFixture + AppExportSvgAnnotationTests (6 tests); total 260 tests |

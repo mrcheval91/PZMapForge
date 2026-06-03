@@ -167,8 +167,11 @@ Added in SVG-2:
   text/image/use), id\_count, class\_count, sample\_ids (max 20), sample\_classes
   (max 20), sample\_text\_labels (max 20), likely flags, and all safety flags
   (`parsed_as_geometry: false`, `converted_to_map_geometry: false`).
-- **SVG Structure** section added to the HTML right panel when SVG annotation is
-  present, linking to `svg-reference-structure.json`.
+- **SVG Structure Summary** panel added to the HTML right panel when SVG annotation
+  is present. Shows: parse_status badge, metadata table (file, size, root, width,
+  height, viewBox), Element Counts table, Sample IDs chips (max 20), Sample Text
+  Labels chips (max 20), non-conversion note, artifact links. Backed by
+  `SvgStructureResult` record; no JSON re-parsing.
 - SVG XML is parsed safely (DTD disabled, no external entities, no network).
   Only element names, attribute values, and text node content are read.
   Path coordinate geometry is counted but not extracted or interpreted.

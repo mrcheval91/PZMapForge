@@ -8,6 +8,33 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (SVG-3: SVG structure viewer panel)
+- src/PZMapForge.Cli/Program.cs:
+  - SvgStructureResult sealed class: in-memory result from WriteSvgStructure.
+    Carries parse_status, parse_error, source_file_name, file_size_bytes,
+    root_element, width, height, viewBox, element counts (g/path/polyline/
+    polygon/line/rect/text), sample_ids, sample_text_labels.
+  - WriteSvgStructure now returns SvgStructureResult (changed from void).
+    JSON artifact still written identically.
+  - BuildSvgStructureHtml: builds "SVG Structure Summary" HTML panel from
+    the in-memory result (no JSON re-parse). Includes: parse_status badge
+    (clean/dirty), parse_error note when non-empty, metadata table, "Element
+    Counts" sub-table, "Sample IDs" chip list, "Sample Text Labels" chip list,
+    non-conversion note ("not converted to map geometry"), artifact links.
+  - CSS: .svg-sub, .svg-chips, .svg-chip added.
+  - svgStructureSectionHtml now populated by BuildSvgStructureHtml.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - 6 new assertions in AppExportSvgAnnotationTests: SVG Structure Summary,
+    parse_status in HTML, Element Counts, Sample IDs, Sample Text Labels,
+    not-converted language. Total: 277 tests (190 Core + 87 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No SVG geometry conversion. No PZ assets. No media/maps writes.
+
+---
+
+## [Unreleased]
+
 ### Fixed (SVG-2A: large SVG structure inspection)
 - src/PZMapForge.Cli/Program.cs: WriteSvgStructure
   - DtdProcessing changed from Prohibit to Ignore so SVGs with DOCTYPE
