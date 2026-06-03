@@ -1,7 +1,7 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Validates .local/mapforge/proof-packet.json against the v0.15 proof-packet contract.
+    Validates .local/mapforge/proof-packet.json against the v0.16 proof-packet contract.
 
     Runs write-proof-packet.ps1 first if proof-packet.json does not exist.
     Exits 0 if all checks pass, exits 1 if any fail.
@@ -55,7 +55,7 @@ Assert-True (Test-Path $packetMd   -PathType Leaf) "proof-packet.md exists"
 $p = Get-Content $packetJson -Raw | ConvertFrom-Json
 
 # ---------------------------------------------------------------------------
-# Required top-level fields (same 28 as v0.10/v0.11/v0.15)
+# Required top-level fields (same 28 as v0.10/v0.11/v0.16)
 # ---------------------------------------------------------------------------
 
 Write-Output ""
@@ -83,8 +83,8 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.15') `
-    "schema == 'pzmapforge.proof-packet.v0.15' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.16') `
+    "schema == 'pzmapforge.proof-packet.v0.16' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
@@ -120,7 +120,7 @@ Assert-True ([int]$p.validation_summary.hardening_harness           -eq 36)  "ha
 Assert-True ([int]$p.validation_summary.region_extraction           -eq 24)  "region_extraction == 24"
 Assert-True ([int]$p.validation_summary.primitive_classification      -eq 22)  "primitive_classification == 22"
 Assert-True ([int]$p.validation_summary.plan_recommendations_contract -eq 28)  "plan_recommendations_contract == 28"
-Assert-True ([int]$p.validation_summary.total_expected_assertions -eq 468) "total_expected_assertions == 468"
+Assert-True ([int]$p.validation_summary.total_expected_assertions     -eq 474) "total_expected_assertions == 474"
 
 # ---------------------------------------------------------------------------
 # dotnet_validation_summary (separate lane)
@@ -129,9 +129,9 @@ Assert-True ([int]$p.validation_summary.total_expected_assertions -eq 468) "tota
 Write-Output ""
 Write-Output "--- dotnet_validation_summary ---"
 $d = $p.dotnet_validation_summary
-Assert-True ([int]$d.test_total -eq 225)  "dotnet test_total == 225"
+Assert-True ([int]$d.test_total                                -eq 230)  "dotnet test_total == 230"
 Assert-True ([int]$d.core_tests -eq 190)  "dotnet core_tests == 190"
-Assert-True ([int]$d.cli_tests                                 -eq 35)   "dotnet cli_tests == 35"
+Assert-True ([int]$d.cli_tests                                 -eq 40)   "dotnet cli_tests == 40"
 Assert-True ($d.process_cli_tests_present                      -eq $true) "process_cli_tests_present == true"
 Assert-True ($d.full_pipeline_contract_tests_present           -eq $true) "full_pipeline_contract_tests_present == true"
 Assert-True ([int]$d.full_pipeline_artifact_count              -eq 7)    "dotnet full_pipeline_artifact_count == 7"
@@ -172,6 +172,12 @@ Assert-True ($d.local_tile_reference_survey_writer_reads_asset_contents -eq $fal
 Assert-True ($d.local_tile_reference_survey_writer_copies_assets -eq $false) "local_tile_reference_survey_writer_copies_assets == false"
 Assert-True ($d.local_tile_reference_survey_writer_touches_media_maps -eq $false) "local_tile_reference_survey_writer_touches_media_maps == false"
 Assert-True ($d.local_tile_reference_survey_writer_outputs_local_only -eq $true) "local_tile_reference_survey_writer_outputs_local_only == true"
+Assert-True ($d.local_tile_survey_cli_present                         -eq $true)  "local_tile_survey_cli_present == true"
+Assert-True ($d.local_tile_survey_cli_requires_real_install_for_tests -eq $false) "local_tile_survey_cli_requires_real_install_for_tests == false"
+Assert-True ($d.local_tile_survey_cli_outputs_local_only              -eq $true)  "local_tile_survey_cli_outputs_local_only == true"
+Assert-True ($d.local_tile_survey_cli_copies_assets                   -eq $false) "local_tile_survey_cli_copies_assets == false"
+Assert-True ($d.local_tile_survey_cli_reads_asset_contents            -eq $false) "local_tile_survey_cli_reads_asset_contents == false"
+Assert-True ($d.local_tile_survey_cli_touches_media_maps              -eq $false) "local_tile_survey_cli_touches_media_maps == false"
 
 # ---------------------------------------------------------------------------
 # Safety flags

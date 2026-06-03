@@ -1,7 +1,7 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.15) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.16) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
     planning recommendation artifacts, plan-recommendations contract (incl. thresholds_used),
     and a separate dotnet_validation_summary section tracking .NET xUnit test counts.
@@ -147,7 +147,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.15'
+    schema                  = 'pzmapforge.proof-packet.v0.16'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -181,13 +181,13 @@ $packet = [ordered]@{
         region_extraction           = 24
         primitive_classification    = 22
         plan_recommendations_contract = 28
-        proof_packet = 96
-        total_expected_assertions = 468
+        proof_packet                = 102
+        total_expected_assertions   = 474
     }
     dotnet_validation_summary = [ordered]@{
-        test_total = 225
+        test_total                          = 230
         core_tests = 190
-        cli_tests = 35
+        cli_tests                           = 40
         process_cli_tests_present           = $true
         full_pipeline_contract_tests_present = $true
         full_pipeline_artifact_count        = 7
@@ -230,6 +230,12 @@ $packet = [ordered]@{
         local_tile_reference_survey_writer_copies_assets = $false
         local_tile_reference_survey_writer_touches_media_maps = $false
         local_tile_reference_survey_writer_outputs_local_only = $true
+        local_tile_survey_cli_present                       = $true
+        local_tile_survey_cli_requires_real_install_for_tests = $false
+        local_tile_survey_cli_outputs_local_only            = $true
+        local_tile_survey_cli_copies_assets                 = $false
+        local_tile_survey_cli_reads_asset_contents          = $false
+        local_tile_survey_cli_touches_media_maps            = $false
         note = 'Dotnet validation is tracked separately from the PowerShell artifact validation pipeline.'
     }
     safety = [ordered]@{
@@ -256,7 +262,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.15
+Schema: pzmapforge.proof-packet.v0.16
 
 ## Claim boundary
 
@@ -313,16 +319,16 @@ planning_artifact_only_not_pz_load_tested
 | Region extraction | 24 |
 | Primitive classification | 22 |
 | Plan recommendations contract | 28 |
-| Proof packet | 96 |
-| Total | 468 |
+| Proof packet | 102 |
+| Total | 474 |
 
 ## .NET validation summary (separate lane)
 
 | Field | Value |
 |---|---|
-| test_total | 225 |
+| test_total | 230 |
 | core_tests | 190 |
-| cli_tests | 35 |
+| cli_tests | 40 |
 | process_cli_tests_present | true |
 | full_pipeline_contract_tests_present | true |
 | full_pipeline_artifact_count | 7 |
@@ -347,6 +353,12 @@ planning_artifact_only_not_pz_load_tested
 | local_tile_reference_survey_writer_copies_assets | false |
 | local_tile_reference_survey_writer_touches_media_maps | false |
 | local_tile_reference_survey_writer_outputs_local_only | true |
+| local_tile_survey_cli_present | true |
+| local_tile_survey_cli_requires_real_install_for_tests | false |
+| local_tile_survey_cli_outputs_local_only | true |
+| local_tile_survey_cli_copies_assets | false |
+| local_tile_survey_cli_reads_asset_contents | false |
+| local_tile_survey_cli_touches_media_maps | false |
 Note: .NET test counts are tracked separately and are not included in total_expected_assertions.
 
 ## Safety

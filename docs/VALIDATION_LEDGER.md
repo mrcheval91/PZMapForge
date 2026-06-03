@@ -1,4 +1,4 @@
-# Validation Ledger
+﻿# Validation Ledger
 
 PZMapForge maintains two parallel, intentionally separate validation lanes.
 This document is the operator-readable reference for both.
@@ -82,9 +82,9 @@ artifact completeness, layer pipeline (Phase 2A), and markdown report content co
 | Check | Expected |
 |---|---:|
 | dotnet build | 0 errors |
-| dotnet test (total) | 225 |
+| dotnet test (total) | 230 |
 | PZMapForge.Core.Tests | 190 |
-| PZMapForge.Cli.Tests | 35 |
+| PZMapForge.Cli.Tests | 40 |
 | Process CLI tests present | true |
 | Full-pipeline contract tests present | true |
 | Full-pipeline artifact count | 7 |
@@ -152,7 +152,7 @@ The proof packet records both separately and labels each clearly.
 The proof packet records the state of both validation lanes plus artifact
 SHA-256 hashes and git state.
 
-Schema: pzmapforge.proof-packet.v0.15
+Schema: pzmapforge.proof-packet.v0.16
 
 ### Commands
 
@@ -182,7 +182,7 @@ Schema: pzmapforge.proof-packet.v0.15
        layer_validate_present, layer_validate_writes_artifacts)
     4  safety flags
    --
-   81  total
+   102  total
 
 ---
 
@@ -233,7 +233,7 @@ Claim boundary in layer-merge-report.md and plan-report.md verified by that test
     powershell -ExecutionPolicy Bypass -File ".\scripts\test-proof-packet.ps1"
     powershell -ExecutionPolicy Bypass -File ".\scripts\validate.ps1"
 
-Expected outcome: 0 errors, 197 tests, 136 schema assertions, 81 proof packet
+Expected outcome: 0 errors, 230 tests, 136 schema assertions, 81 proof packet
 assertions, validate.ps1 exits 0 and prints "Validation passed."
 
 ---

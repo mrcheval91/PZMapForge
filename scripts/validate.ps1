@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Full local validation for PZMapForge.
@@ -7,7 +7,7 @@
 
     Final output reports the complete PowerShell validation lane total (381)
     and the .NET lane total (152) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.15 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.16 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -133,7 +133,7 @@ Write-Output "PZMapForge validation summary"
 Write-Output "========================================"
 
 # ---------------------------------------------------------------------------
-# Ledger constants - sourced from proof-packet v0.15 / docs/VALIDATION_LEDGER.md.
+# Ledger constants - sourced from proof-packet v0.16 / docs/VALIDATION_LEDGER.md.
 # Update here when counts change; update the proof packet schema and ledger too.
 # ---------------------------------------------------------------------------
 
@@ -146,16 +146,16 @@ $psChecks = [ordered]@{
     'Region extraction'             = 24
     'Primitive classification'      = 22
     'Plan recommendations contract' = 28
-    'Proof packet'                  = 96
+    'Proof packet'                  = 102
 }
-$psTotal = 468   # = validation_summary.total_expected_assertions in proof-packet v0.15
+$psTotal = 474   # = validation_summary.total_expected_assertions in proof-packet v0.16
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
-$dnCliTests  = 35    # PZMapForge.Cli.Tests
-$dnTotal     = 225   # = dotnet_validation_summary.test_total in proof-packet v0.15
+$dnCliTests  = 40    # PZMapForge.Cli.Tests
+$dnTotal     = 230   # = dotnet_validation_summary.test_total in proof-packet v0.16
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.15):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.16):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -163,7 +163,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.15 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.16 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

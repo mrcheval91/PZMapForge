@@ -1,4 +1,4 @@
-# Implementation
+﻿# Implementation
 
 Current-state mapping of what PZMapForge actually does vs. what it claims.
 
@@ -6,6 +6,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 
 ## Ratified: what is proven and committed
 
+| Proof packet v0.16 (Slice 3A-4 CLI; .NET 230; PS total=474) | Ratified | test-proof-packet.ps1: 102 assertions pass; local_tile_survey_cli evidence flags added |
 | local-tile-survey CLI command (Slice 3A-4) | Ratified | Loads config, validates install, writes local-tile-reference-survey.json + .md to --output (.local guard enforced); 5 process tests; no real PZ install required; no assets read/copied |
 | Local PZ install config loader (Slice 3A-1) | Ratified | Schema + typed loader; validates document and safety flags only; does not require real PZ install; no asset inspection/copying |
 
@@ -26,7 +27,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 | parsed-cell.json (counts, legend, drift) | Ratified | Test 6: all 5 outputs written |
 | parsed-cell.json artifact contract | Ratified | test-parsed-cell-contract.ps1: 40 assertions pass |
 | TMX structural integrity (base64, gzip, GID range) | Ratified | test-tmx-integrity.ps1: 21 assertions pass |
-| Schema file sanity â€” all 4 schemas | Ratified | test-schema-files.ps1: 104 assertions pass (4 schemas, proof-packet on v0.3) |
+| Schema file sanity Ã¢â‚¬â€ all 4 schemas | Ratified | test-schema-files.ps1: 104 assertions pass (4 schemas, proof-packet on v0.3) |
 | Palette SHA-256 verification (parsed-cell vs source/image-palette.json) | Ratified | test-palette-sha256.ps1: 5 assertions pass; Gap 3 closed |
 | ImageMapForge -Resize flag (150x150 scaled to 300x300) | Ratified | test-image-mapforge.ps1 Test 11: 8 assertions; Gap 1 closed |
 | Plan-recommendations schema sanity | Ratified | test-schema-files.ps1: 134 total (was 104; +26 plan-recs +4 proof-packet v0.7) |
@@ -99,11 +100,11 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 
 ## Known gaps
 
-1. ~~-Resize flag not test-covered~~ â€” Closed by test-image-mapforge.ps1 Test 11.
+1. ~~-Resize flag not test-covered~~ Ã¢â‚¬â€ Closed by test-image-mapforge.ps1 Test 11.
 
-2. ~~TMX structural validation~~ â€” Closed by Slice 10 (test-tmx-integrity.ps1).
+2. ~~TMX structural validation~~ Ã¢â‚¬â€ Closed by Slice 10 (test-tmx-integrity.ps1).
 
-3. ~~palette_sha256 not verified~~ â€” Closed by test-palette-sha256.ps1.
+3. ~~palette_sha256 not verified~~ Ã¢â‚¬â€ Closed by test-palette-sha256.ps1.
 
 4. The contract test validates the artifact structure but does not validate
    field types beyond what ConvertFrom-Json infers. A JSON Schema validator
