@@ -8,6 +8,42 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-2: dry-run map export plan command)
+- src/PZMapForge.Cli/Program.cs: map-plan command.
+  - Args: --source <path> --output <dir>.
+  - Reads pzmapforge.map-source.v0.1 JSON source file.
+  - Validates schema, claim_boundary, and cells array.
+  - Writes two inert artifacts to --output (must be under .local/):
+    - map-export-plan.json (schema pzmapforge.map-export-plan.v0.1)
+    - map-export-plan.md
+  - JSON includes: dry_run=true, execute_supported=false,
+    playable_export_generated=false, compiled_outputs_written=false,
+    local_mod_scaffold_written=false, media_maps_touched=false,
+    pz_assets_read_or_copied=false, would_write (future items only).
+  - Refuses output paths containing media/maps.
+  - Refuses output paths outside .local/.
+  - Exits 1 on missing --source, missing --output, missing file,
+    invalid JSON, wrong schema, wrong claim_boundary.
+- tests/PZMapForge.Cli.Tests/MapPlanProcessTests.cs: 9 CLI process tests.
+  - Positive: exits 0, writes both artifacts, JSON fields, markdown text.
+  - Negative: missing source, file not found, wrong schema,
+    wrong claim_boundary, media/maps output, invalid JSON.
+- scripts/validate.ps1: $dnCliTests 163->172, $dnTotal 353->362.
+- scripts/write-proof-packet.ps1: cli_tests 163->172, test_total 353->362,
+  markdown table updated.
+- scripts/test-proof-packet.ps1: assertions updated to 172/362.
+- docs/MAP_EXPORT_CONTRACT.md: map-plan subsection added; MAP-2 slice updated.
+- docs/IMPLEMENTATION.md, README.md, CHANGELOG.md: updated.
+
+No playable map export. No execute flag. No .local mod scaffold beyond the
+map-plan output. No media/maps writes. No PZ assets read or copied.
+No app-export behavior changed. No SVG geometry conversion. No coordinate math.
+No playable Project Zomboid export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-1: map source schema)
 - schemas/pzmapforge.map-source.v0.1.schema.json: v0.1 map source schema.
   - Required fields: schema, format_version, claim_boundary, map_id,

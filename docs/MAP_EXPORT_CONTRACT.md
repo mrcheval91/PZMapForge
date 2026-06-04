@@ -93,7 +93,32 @@ PZMapForge source
 
 Every future compiler command must be dry-run by default. Any write to
 playable-style output must require an explicit `--execute` flag. This flag
-does not exist yet. MAP-0 does not implement any step past dry-run planning.
+does not exist yet.
+
+**`map-plan` command (MAP-2):**
+The `map-plan` CLI command is the first step in the future pipeline. It reads a
+`pzmapforge.map-source.v0.1` JSON file and produces a deterministic dry-run
+export plan artifact. It is dry-run only.
+
+Command:
+```
+dotnet run --project src/PZMapForge.Cli -- map-plan \
+  --source examples/map-source/minimal-cell.json \
+  --output .local/map-plan/minimal-cell
+```
+
+Written files (only these two):
+- `map-export-plan.json` — machine-readable plan artifact
+- `map-export-plan.md` — human-readable plan report
+
+Not written:
+- No compiled cell files.
+- No mod.info.
+- No spawn definition.
+- No media/maps directory.
+- No playable Project Zomboid output.
+- No PZ assets read or copied.
+- No execute flag exists. No local mod scaffold is created.
 
 ---
 
@@ -311,7 +336,7 @@ file is committed and reviewed.
 | Slice | Title | Scope |
 |---|---|---|
 | MAP-1 | PZMapForge map source schema | Schema defined: schemas/pzmapforge.map-source.v0.1.schema.json; example: examples/map-source/minimal-cell.json; source format only, not exported, not compiled |
-| MAP-2 | Dry-run map export plan command | Add a `map-plan` CLI command that reads source format and outputs a dry-run export plan artifact with no file writes |
+| MAP-2 | Dry-run map export plan command | map-plan CLI command implemented; reads pzmapforge.map-source.v0.1 JSON; writes map-export-plan.json + map-export-plan.md to .local/; dry_run=true, execute_supported=false, playable_export_generated=false; no compiled outputs; no media/maps writes; no PZ assets |
 | MAP-3 | Text-only local mod scaffold writer | Add a command that writes a minimal text-only mod scaffold under `.local/` only; no binary files; no assets |
 | MAP-4 | Minimal compiled cell writer proof | Add a command that writes one minimal compiled cell under `.local/`; requires local evidence from section 14 first |
 | MAP-5 | Manual Project Zomboid load-test evidence | Operator performs load test; evidence file recorded; no public claim before this milestone |

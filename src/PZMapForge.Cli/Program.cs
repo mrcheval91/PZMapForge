@@ -34,6 +34,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  local-tile-survey --config <path> [--output <dir>]");
     Console.Error.WriteLine("  app-export        --path <image> --palette <palette> [--output <dir>] [--run-name <name>] [--annotation <image>] [--svg-selection <json>] [--resize]");
     Console.Error.WriteLine("                    [--tiny-threshold <int>] [--large-threshold <int>]");
+    Console.Error.WriteLine("  map-plan          --source <path> --output <dir>");
     return 1;
 }
 
@@ -52,6 +53,7 @@ return args[0] switch
     "layer-validate"    => LayerValidateCommand(args[1..]),
     "local-tile-survey" => LocalTileSurveyCommand(args[1..]),
     "app-export"        => AppExportCommand(args[1..]),
+    "map-plan"          => MapPlanCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -329,6 +331,239 @@ static int PlanExportCommand(string[] args)
     Console.WriteLine($"Tiny threshold:  {opts!.TinyBuildingPixelThreshold}");
     Console.WriteLine($"Large threshold: {opts!.LargeGroundPixelThreshold}");
     Console.WriteLine("Status:          OK");
+    return 0;
+}
+
+static int MapPlanCommand(string[] args)
+{
+    // Dry-run only. Writes map-export-plan.json and map-export-plan.md.
+    // Does not compile, export, or write any playable Project Zomboid output.
+    var sourcePath = string.Empty;
+    var outputDir  = string.Empty;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if      (args[i] is "--source" or "-s" && i + 1 < args.Length) sourcePath = args[++i];
+        else if (args[i] is "--output" or "-o" && i + 1 < args.Length) outputDir  = args[++i];
+    }
+
+    if (string.IsNullOrWhiteSpace(sourcePath))
+    {
+        Console.Error.WriteLine("map-plan requires --source <path>");
+        return 1;
+    }
+    if (string.IsNullOrWhiteSpace(outputDir))
+    {
+        Console.Error.WriteLine("map-plan requires --output <dir>");
+        return 1;
+    }
+
+    var outputFull = Path.GetFullPath(outputDir);
+
+    // Refuse media/maps output
+    if (outputFull.Contains("media" + Path.DirectorySeparatorChar + "maps",
+            StringComparison.OrdinalIgnoreCase) ||
+        outputFull.Contains("media/maps", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine($"map-plan: refusing to write to media/maps: {outputFull}");
+        return 1;
+    }
+
+    // Require .local/ output
+    var localMarker = Path.DirectorySeparatorChar + ".local" + Path.DirectorySeparatorChar;
+    if (!outputFull.Contains(localMarker, StringComparison.OrdinalIgnoreCase) &&
+        !outputFull.EndsWith(Path.DirectorySeparatorChar + ".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"map-plan: refusing to write outside a .local/ directory: {outputFull}");
+        return 1;
+    }
+
+    if (!File.Exists(sourcePath))
+    {
+        Console.Error.WriteLine($"map-plan: source file not found: {sourcePath}");
+        return 1;
+    }
+
+    string sourceJson;
+    try { sourceJson = File.ReadAllText(sourcePath, Encoding.UTF8); }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"map-plan: failed to read source file: {ex.Message}");
+        return 1;
+    }
+
+    JsonDocument sourceDoc;
+    try { sourceDoc = JsonDocument.Parse(sourceJson); }
+    catch (JsonException ex)
+    {
+        Console.Error.WriteLine($"map-plan: source file is not valid JSON: {ex.Message}");
+        return 1;
+    }
+
+    var root = sourceDoc.RootElement;
+
+    if (!root.TryGetProperty("schema", out var schemaProp) ||
+        schemaProp.GetString() != "pzmapforge.map-source.v0.1")
+    {
+        Console.Error.WriteLine("map-plan: source schema must be 'pzmapforge.map-source.v0.1'");
+        return 1;
+    }
+
+    if (!root.TryGetProperty("claim_boundary", out var cbProp) ||
+        cbProp.GetString() != "map_source_only_not_exported_not_pz_load_tested")
+    {
+        Console.Error.WriteLine(
+            "map-plan: claim_boundary must be 'map_source_only_not_exported_not_pz_load_tested'");
+        return 1;
+    }
+
+    var mapId    = root.TryGetProperty("map_id",    out var idProp) ? idProp.GetString()   ?? string.Empty : string.Empty;
+    var cellSize = root.TryGetProperty("cell_size", out var csProp) ? csProp.GetInt32()    : 0;
+
+    if (!root.TryGetProperty("cells", out var cellsProp) ||
+        cellsProp.ValueKind != JsonValueKind.Array)
+    {
+        Console.Error.WriteLine("map-plan: source must have a 'cells' array");
+        return 1;
+    }
+
+    var cells = cellsProp.EnumerateArray().ToList();
+    if (cells.Count == 0)
+    {
+        Console.Error.WriteLine("map-plan: cells array must not be empty");
+        return 1;
+    }
+
+    var spawnCount    = 0;
+    var zoneCount     = 0;
+    var terrainCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+    foreach (var cell in cells)
+    {
+        if (cell.TryGetProperty("spawn_points", out var sp) && sp.ValueKind == JsonValueKind.Array)
+            spawnCount += sp.GetArrayLength();
+        if (cell.TryGetProperty("zones", out var z) && z.ValueKind == JsonValueKind.Array)
+            zoneCount += z.GetArrayLength();
+        if (cell.TryGetProperty("terrain", out var t))
+        {
+            var terrain = t.GetString() ?? "unknown";
+            terrainCounts[terrain] = terrainCounts.GetValueOrDefault(terrain) + 1;
+        }
+    }
+
+    Directory.CreateDirectory(outputFull);
+
+    var sourceFileName = Path.GetFileName(sourcePath);
+    var generatedAt    = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+    var plan = new
+    {
+        schema                     = "pzmapforge.map-export-plan.v0.1",
+        source_schema              = "pzmapforge.map-source.v0.1",
+        claim_boundary             = "map_plan_only_not_exported_not_pz_load_tested",
+        generated_at_utc           = generatedAt,
+        source_file_name           = sourceFileName,
+        map_id                     = mapId,
+        cell_size                  = cellSize,
+        cell_count                 = cells.Count,
+        spawn_point_count          = spawnCount,
+        zone_count                 = zoneCount,
+        terrain_counts             = terrainCounts,
+        dry_run                    = true,
+        execute_supported          = false,
+        would_write = new[]
+        {
+            "future mod.info",
+            $"future media/maps/{mapId}/ map directory",
+            "future spawn definition",
+            "future compiled cell files"
+        },
+        written_files = new[] { "map-export-plan.json", "map-export-plan.md" },
+        compiled_outputs_written   = false,
+        local_mod_scaffold_written = false,
+        media_maps_touched         = false,
+        pz_assets_read_or_copied   = false,
+        playable_export_generated  = false,
+        notes = new[]
+        {
+            "Dry-run plan only.",
+            "No playable Project Zomboid export generated.",
+            "No media/maps writes.",
+            "No PZ assets read or copied."
+        }
+    };
+
+    var jsonOpts    = new JsonSerializerOptions { WriteIndented = true };
+    var jsonOutPath = Path.Combine(outputFull, "map-export-plan.json");
+    var mdOutPath   = Path.Combine(outputFull, "map-export-plan.md");
+
+    File.WriteAllText(jsonOutPath, JsonSerializer.Serialize(plan, jsonOpts), Encoding.UTF8);
+
+    var terrainSummary = string.Join(", ",
+        terrainCounts.Select(kv => $"{kv.Key}: {kv.Value}"));
+
+    var md = $"""
+# Map Export Plan
+
+Map ID:           {mapId}
+Source schema:    pzmapforge.map-source.v0.1
+Claim boundary:   map_plan_only_not_exported_not_pz_load_tested
+Generated:        {generatedAt}
+Source file:      {sourceFileName}
+
+## Map summary
+
+| Field | Value |
+|---|---|
+| Cell count | {cells.Count} |
+| Cell size | {cellSize} |
+| Spawn point count | {spawnCount} |
+| Zone count | {zoneCount} |
+| Terrain counts | {terrainSummary} |
+
+## Dry-run plan
+
+This is a dry-run plan only. No files are compiled or exported.
+
+The following would be written by a future compiler (not written now):
+
+- future mod.info
+- future media/maps/{mapId}/ map directory
+- future spawn definition
+- future compiled cell files
+
+Files written by this command:
+
+- map-export-plan.json
+- map-export-plan.md
+
+## Non-claims
+
+- No playable Project Zomboid export generated.
+- No compiled outputs written.
+- No local mod scaffold written.
+- No media/maps writes.
+- No PZ assets read or copied.
+- No SVG geometry converted.
+- No coordinate math performed.
+""";
+
+    File.WriteAllText(mdOutPath, md, Encoding.UTF8);
+
+    Console.WriteLine($"Plan JSON:                 {jsonOutPath}");
+    Console.WriteLine($"Plan report:               {mdOutPath}");
+    Console.WriteLine($"Map ID:                    {mapId}");
+    Console.WriteLine($"Cells:                     {cells.Count}");
+    Console.WriteLine($"Spawn points:              {spawnCount}");
+    Console.WriteLine($"Zones:                     {zoneCount}");
+    Console.WriteLine($"Dry run:                   true");
+    Console.WriteLine($"Execute supported:         false");
+    Console.WriteLine($"Compiled outputs written:  false");
+    Console.WriteLine($"Playable export generated: false");
+    Console.WriteLine($"media/maps touched:        false");
+    Console.WriteLine($"PZ assets read or copied:  false");
+    Console.WriteLine("Status:                   OK");
     return 0;
 }
 
