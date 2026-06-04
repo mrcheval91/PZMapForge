@@ -248,6 +248,7 @@ dotnet run --project src/PZMapForge.Cli -- layer-validate --layers <manifest.jso
 - [Tool usage](docs/TOOL_USAGE.md) — parameters, examples, palette format
 - [Claim boundary](docs/CLAIM_BOUNDARY.md) — what is verified, what is not
 - [Roadmap](docs/ROADMAP.md) — phase plan
+- [Map export contract](docs/MAP_EXPORT_CONTRACT.md) — contract discovery for future playable map export; not implemented
 
 ---
 

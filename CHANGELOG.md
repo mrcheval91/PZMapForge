@@ -8,6 +8,29 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-0: map export contract discovery)
+- docs/MAP_EXPORT_CONTRACT.md: contract discovery document defining all areas
+  PZMapForge must satisfy before claiming playable Project Zomboid map export.
+  - Status block: planning_artifact_only_not_pz_load_tested.
+  - Sections: purpose, current boundary, why replace TileZed/WorldEd,
+    what TileZed/WorldEd provide, target pipeline, source/editing format,
+    compiled game-load format, mod packaging, spawn/player entry,
+    in-game map features, asset boundary, local output boundary,
+    first playable proof target (MAP-4), unknowns and required local evidence,
+    forbidden claims, proposed next slices MAP-1 through MAP-6.
+  - Defines dry-run-by-default requirement for future compiler commands.
+  - Defines explicit --execute flag requirement for any playable-style output.
+  - Documents MAP-4 target: minimal local playable cell proof.
+  - Lists all unknowns requiring local evidence before compiler work can begin.
+- docs/IMPLEMENTATION.md, README.md, CHANGELOG.md: updated.
+
+No app-export behavior changed. No SVG geometry conversion. No coordinate math.
+No PZ assets. No media/maps writes. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (APP-9A: verify artifact index in Montreal SVG smoke)
 - scripts/smoke-montreal-svg-planning-manifest.ps1:
   - 19 new APP-9 artifact index checks (source run: 13 checks, review run: 6 checks).
