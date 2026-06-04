@@ -8,6 +8,28 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Fixed (PROOF-1: sync proof packet .NET test evidence)
+- scripts/write-proof-packet.ps1:
+  - test_total: 230 -> 353
+  - cli_tests: 40 -> 163
+  - core_tests: 190 (unchanged)
+  - Markdown table updated to match corrected values.
+- scripts/test-proof-packet.ps1:
+  - dotnet test_total assertion: -eq 230 -> -eq 353
+  - dotnet cli_tests assertion: -eq 40 -> -eq 163
+- scripts/validate.ps1:
+  - $dnCliTests: 40 -> 163
+  - $dnTotal: 230 -> 353
+- docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+Evidence correction only. No app-export behavior changed.
+No SVG geometry conversion. No coordinate math. No path d= extraction.
+No PZ assets. No media/maps writes. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (APP-9: app export artifact index panel)
 - src/PZMapForge.Cli/Program.cs:
   - BuildArtifactIndexHtml: compact .artifacts-idx panel inserted between
