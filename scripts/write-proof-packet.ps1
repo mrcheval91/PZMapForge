@@ -185,9 +185,9 @@ $packet = [ordered]@{
         total_expected_assertions   = 492
     }
     dotnet_validation_summary = [ordered]@{
-        test_total                          = 366
+        test_total                          = 381
         core_tests = 190
-        cli_tests                           = 176
+        cli_tests                           = 191
         process_cli_tests_present           = $true
         full_pipeline_contract_tests_present = $true
         full_pipeline_artifact_count        = 7
@@ -326,9 +326,9 @@ planning_artifact_only_not_pz_load_tested
 
 | Field | Value |
 |---|---|
-| test_total | 366 |
+| test_total | 381 |
 | core_tests | 190 |
-| cli_tests | 176 |
+| cli_tests | 191 |
 | process_cli_tests_present | true |
 | full_pipeline_contract_tests_present | true |
 | full_pipeline_artifact_count | 7 |

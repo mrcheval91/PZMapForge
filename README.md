@@ -130,6 +130,18 @@ Generate a dry-run map export plan from a map source file (map-plan) — reads a
 dotnet run --project src/PZMapForge.Cli -- map-plan --source examples/map-source/minimal-cell.json --output .local/map-plan/minimal-cell
 ```
 
+Write a text-only local mod scaffold (map-scaffold, MAP-3B) — reads a map source file and writes exactly four text files under a .local output directory; local-only, non-playable, no compiled outputs, no PZ assets:
+
+```
+dotnet run --project src/PZMapForge.Cli -- map-scaffold --source examples/map-source/minimal-cell.json --output .local/map-scaffold/minimal-cell
+```
+
+Written files (text-only scaffold, not a playable Project Zomboid map):
+- `.local/map-scaffold/minimal-cell/mod.info`
+- `.local/map-scaffold/minimal-cell/media/maps/<map_id>/map.info`
+- `.local/map-scaffold/minimal-cell/media/maps/<map_id>/spawnpoints.lua`
+- `.local/map-scaffold/minimal-cell/media/maps/<map_id>/README_PZMAPFORGE_BOUNDARY.txt`
+
 The .NET engine does not replace the PowerShell scripts. It is a foundation
 for future typed parsing and generation capabilities.
 

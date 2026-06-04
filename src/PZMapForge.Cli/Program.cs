@@ -35,6 +35,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  app-export        --path <image> --palette <palette> [--output <dir>] [--run-name <name>] [--annotation <image>] [--svg-selection <json>] [--resize]");
     Console.Error.WriteLine("                    [--tiny-threshold <int>] [--large-threshold <int>]");
     Console.Error.WriteLine("  map-plan          --source <path> --output <dir>");
+    Console.Error.WriteLine("  map-scaffold      --source <path> --output <dir>");
     return 1;
 }
 
@@ -54,6 +55,7 @@ return args[0] switch
     "local-tile-survey" => LocalTileSurveyCommand(args[1..]),
     "app-export"        => AppExportCommand(args[1..]),
     "map-plan"          => MapPlanCommand(args[1..]),
+    "map-scaffold"      => MapScaffoldCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -592,6 +594,189 @@ Written now:
     Console.WriteLine($"media/maps touched:        false");
     Console.WriteLine($"PZ assets read or copied:  false");
     Console.WriteLine("Status:                   OK");
+    return 0;
+}
+
+static int MapScaffoldCommand(string[] args)
+{
+    // Claim boundary: text-only local scaffold writer (MAP-3B).
+    // Writes exactly four text files under a .local output directory.
+    // Does not write compiled outputs, PZ assets, or playable export.
+    var sourcePath = string.Empty;
+    var outputDir  = string.Empty;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if      (args[i] is "--source" or "-s" && i + 1 < args.Length) sourcePath = args[++i];
+        else if (args[i] is "--output" or "-o" && i + 1 < args.Length) outputDir  = args[++i];
+    }
+
+    if (string.IsNullOrWhiteSpace(sourcePath))
+    {
+        Console.Error.WriteLine("map-scaffold requires --source <path>");
+        return 1;
+    }
+    if (string.IsNullOrWhiteSpace(outputDir))
+    {
+        Console.Error.WriteLine("map-scaffold requires --output <dir>");
+        return 1;
+    }
+
+    var outputFull = Path.GetFullPath(outputDir);
+
+    // Refuse media/maps output path (checked before .local guard)
+    if (outputFull.Contains("media" + Path.DirectorySeparatorChar + "maps",
+            StringComparison.OrdinalIgnoreCase) ||
+        outputFull.Contains("media/maps", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"map-scaffold: refusing to write to media/maps: {outputFull}");
+        Console.Error.WriteLine("  Pass --output to a .local/ path that is not itself a media/maps path.");
+        return 1;
+    }
+
+    // Require .local/ output
+    var localMarker = Path.DirectorySeparatorChar + ".local" + Path.DirectorySeparatorChar;
+    if (!outputFull.Contains(localMarker, StringComparison.OrdinalIgnoreCase) &&
+        !outputFull.EndsWith(Path.DirectorySeparatorChar + ".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"map-scaffold: refusing to write outside a .local/ directory: {outputFull}");
+        Console.Error.WriteLine("  Pass --output to an explicit .local/ path.");
+        return 1;
+    }
+
+    if (!File.Exists(sourcePath))
+    {
+        Console.Error.WriteLine($"map-scaffold: source file not found: {sourcePath}");
+        return 1;
+    }
+
+    string sourceJson;
+    try { sourceJson = File.ReadAllText(sourcePath, Encoding.UTF8); }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"map-scaffold: failed to read source file: {ex.Message}");
+        return 1;
+    }
+
+    JsonDocument sourceDoc;
+    try { sourceDoc = JsonDocument.Parse(sourceJson); }
+    catch (JsonException ex)
+    {
+        Console.Error.WriteLine($"map-scaffold: source file is not valid JSON: {ex.Message}");
+        return 1;
+    }
+
+    var root = sourceDoc.RootElement;
+
+    if (!root.TryGetProperty("schema", out var schemaProp) ||
+        schemaProp.GetString() != "pzmapforge.map-source.v0.1")
+    {
+        Console.Error.WriteLine("map-scaffold: source schema must be 'pzmapforge.map-source.v0.1'");
+        return 1;
+    }
+
+    if (!root.TryGetProperty("claim_boundary", out var cbProp) ||
+        cbProp.GetString() != "map_source_only_not_exported_not_pz_load_tested")
+    {
+        Console.Error.WriteLine(
+            "map-scaffold: claim_boundary must be 'map_source_only_not_exported_not_pz_load_tested'");
+        return 1;
+    }
+
+    var mapId = root.TryGetProperty("map_id", out var idProp) ? idProp.GetString() ?? string.Empty : string.Empty;
+    if (string.IsNullOrWhiteSpace(mapId))
+    {
+        Console.Error.WriteLine("map-scaffold: source must have a non-empty 'map_id'");
+        return 1;
+    }
+
+    if (!root.TryGetProperty("cells", out var cellsProp) ||
+        cellsProp.ValueKind != JsonValueKind.Array)
+    {
+        Console.Error.WriteLine("map-scaffold: source must have a 'cells' array");
+        return 1;
+    }
+
+    if (cellsProp.GetArrayLength() == 0)
+    {
+        Console.Error.WriteLine("map-scaffold: cells array must not be empty");
+        return 1;
+    }
+
+    // Create output directories
+    var mapDirPath = Path.Combine(outputFull, "media", "maps", mapId);
+    Directory.CreateDirectory(outputFull);
+    Directory.CreateDirectory(mapDirPath);
+
+    // Write 1: mod.info
+    var modInfoContent = $"""
+name=PZMapForge Minimal Scaffold - {mapId}
+id=pzmapforge_{mapId}
+description=Generated by PZMapForge MAP-3B. Text-only scaffold. Not playable. No compiled map files. No PZ assets included. Not load-tested.
+""";
+    File.WriteAllText(Path.Combine(outputFull, "mod.info"), modInfoContent, Encoding.UTF8);
+
+    // Write 2: media/maps/<map_id>/map.info
+    var mapInfoContent = $"""
+# PZMapForge MAP-3B text-only scaffold
+# Not a validated Project Zomboid map.info. Not playable. Not load-tested.
+map_id={mapId}
+claim_boundary=map_scaffold_text_only_not_compiled_not_pz_load_tested
+compiled_outputs_written=false
+playable_export_generated=false
+pz_assets_included=false
+media_maps_scope=.local_only
+""";
+    File.WriteAllText(Path.Combine(mapDirPath, "map.info"), mapInfoContent, Encoding.UTF8);
+
+    // Write 3: media/maps/<map_id>/spawnpoints.lua
+    var spawnpointsContent = """
+-- PZMapForge MAP-3B text-only scaffold
+-- Placeholder only. Not load-tested. No coordinate math performed.
+-- Source spawn points are not converted to validated Project Zomboid spawn coordinates.
+-- No playable export generated.
+-- No PZ assets included.
+-- This file requires local inspection and completion before any Project Zomboid load test.
+
+SpawnPoints = {}
+""";
+    File.WriteAllText(Path.Combine(mapDirPath, "spawnpoints.lua"), spawnpointsContent, Encoding.UTF8);
+
+    // Write 4: media/maps/<map_id>/README_PZMAPFORGE_BOUNDARY.txt
+    var readmeContent = $"""
+PZMapForge MAP-3B Text-Only Scaffold
+=====================================
+
+Generated by PZMapForge MAP-3B.
+Text-only scaffold. Not a playable Project Zomboid map.
+map_id: {mapId}
+
+Boundary:
+- No lotpack, lotheader, or bin files written.
+- No worldmap files written.
+- No PZ assets included.
+- No SVG geometry converted.
+- No coordinate math performed.
+- Not load-tested.
+- Output is under .local only.
+- No compiled outputs written.
+
+This scaffold is evidence of the file structure only.
+It does not constitute a playable Project Zomboid map export.
+""";
+    File.WriteAllText(Path.Combine(mapDirPath, "README_PZMAPFORGE_BOUNDARY.txt"), readmeContent, Encoding.UTF8);
+
+    Console.WriteLine($"Scaffold root:              {outputFull}");
+    Console.WriteLine($"Files written:              4");
+    Console.WriteLine($"Map ID:                     {mapId}");
+    Console.WriteLine($"text_only_scaffold_written: true");
+    Console.WriteLine($"compiled_outputs_written:   false");
+    Console.WriteLine($"playable_export_generated:  false");
+    Console.WriteLine($"media_maps_scope:            .local_only");
+    Console.WriteLine($"pz_assets_read_or_copied:   false");
+    Console.WriteLine("Status:                     OK");
     return 0;
 }
 

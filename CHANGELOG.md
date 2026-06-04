@@ -8,6 +8,49 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-3B: text-only local mod scaffold writer)
+- src/PZMapForge.Cli/Program.cs: map-scaffold command.
+  - Args: --source <path> --output <dir>.
+  - Reads pzmapforge.map-source.v0.1 JSON source file.
+  - Validates schema, claim_boundary, and cells array.
+  - Refuses output paths containing media/maps.
+  - Refuses output paths outside a .local/ directory.
+  - Writes exactly four text-only scaffold files under --output:
+    - mod.info (mod metadata; boundary language; not playable)
+    - media/maps/<map_id>/map.info (minimal text boundary; not a compiled map)
+    - media/maps/<map_id>/spawnpoints.lua (placeholder; no coordinate math)
+    - media/maps/<map_id>/README_PZMAPFORGE_BOUNDARY.txt (full boundary note)
+  - Every generated file contains boundary language:
+    - Text-only scaffold. Not playable. No compiled map files.
+    - No PZ assets included. Not load-tested.
+  - Stdout reports: text_only_scaffold_written: true,
+    compiled_outputs_written: false, playable_export_generated: false,
+    media_maps_scope: .local_only, pz_assets_read_or_copied: false.
+- tests/PZMapForge.Cli.Tests/MapScaffoldProcessTests.cs: 15 new CLI tests:
+  - Positive: exits 0 + writes 4 files; mod.info exists; map.info exists;
+    spawnpoints.lua exists; README_PZMAPFORGE_BOUNDARY.txt exists;
+    boundary language present in all files; stdout safety lines correct;
+    no compiled output files (.lotpack/.lotheader/.bin/.tmx/.pzw) under output.
+  - Negative: missing source; source not found; invalid JSON; wrong schema;
+    wrong claim_boundary; output outside .local; media/maps output path.
+- scripts/validate.ps1: $dnCliTests 176->191, $dnTotal 366->381.
+- scripts/write-proof-packet.ps1: cli_tests 176->191, test_total 366->381,
+  markdown table updated.
+- scripts/test-proof-packet.ps1: assertions updated to 191/381.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-3B section added; slice row updated;
+  MAP-4 remains blocked on compiled cell format evidence.
+- docs/IMPLEMENTATION.md: MAP-3B ratified row added.
+- README.md: map-scaffold command example added.
+
+No compiled outputs written. No PZ assets read or copied.
+No app-export behavior changed. No SVG geometry converted.
+No coordinate math performed. No playable Project Zomboid export claim.
+media/maps writes: inside .local output root only, never in repo media/maps.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-3A: text-only mod scaffold contract)
 - src/PZMapForge.Cli/Program.cs: map-plan JSON output extended with
   scaffold contract fields:

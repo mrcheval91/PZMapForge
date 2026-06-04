@@ -132,14 +132,37 @@ The scaffold contract section in map-export-plan.json includes:
 - `scaffold_execute_supported: false`
 - `future_scaffold_files` array — each item has `written_now: false`
 
-Future scaffold files (not written by MAP-3A or MAP-3B until explicitly approved):
-- future mod.info
-- future media/maps/<map_id>/map.info
-- future media/maps/<map_id>/spawnpoints.lua
-- future media/maps/<map_id>/README_PZMAPFORGE_BOUNDARY.txt
+**MAP-3B — text-only local mod scaffold writer (implemented):**
+MAP-3B adds the `map-scaffold` CLI command. It reads a
+`pzmapforge.map-source.v0.1` JSON source file and writes exactly four
+text-only scaffold files under a caller-provided `.local` output directory.
 
-MAP-3B would be the first actual text-only scaffold writer, if approved after
-MAP-3A evidence is reviewed. MAP-3B is not implemented. No approval has been given.
+Command:
+```
+dotnet run --project src/PZMapForge.Cli -- map-scaffold \
+  --source examples/map-source/minimal-cell.json \
+  --output .local/map-scaffold/minimal-cell
+```
+
+Written files (exactly these four):
+- `<output>/mod.info`
+- `<output>/media/maps/<map_id>/map.info`
+- `<output>/media/maps/<map_id>/spawnpoints.lua`
+- `<output>/media/maps/<map_id>/README_PZMAPFORGE_BOUNDARY.txt`
+
+Safety guarantees:
+- Output must be under a `.local/` directory. All other paths are refused.
+- Output path itself must not contain `media/maps`. The command writes
+  `media/maps/<map_id>/` only inside the provided `.local` root.
+- No compiled cell files written (no .lotpack, .lotheader, .bin, .tmx, .pzw).
+- No worldmap files written.
+- No PZ assets read or copied.
+- No coordinate math performed.
+- No SVG geometry converted.
+- Not load-tested. Not a playable Project Zomboid map.
+- Every generated file contains explicit boundary language.
+
+MAP-4 remains blocked on compiled cell format evidence (section 14).
 
 ---
 
@@ -359,7 +382,7 @@ file is committed and reviewed.
 | MAP-1 | PZMapForge map source schema | Schema defined: schemas/pzmapforge.map-source.v0.1.schema.json; example: examples/map-source/minimal-cell.json; source format only, not exported, not compiled |
 | MAP-2 | Dry-run map export plan command | map-plan CLI command implemented; reads pzmapforge.map-source.v0.1 JSON; writes map-export-plan.json + map-export-plan.md to .local/; dry_run=true, execute_supported=false, playable_export_generated=false; no compiled outputs; no media/maps writes; no PZ assets |
 | MAP-3A | Text-only mod scaffold contract | map-plan JSON extended with scaffold contract fields (scaffold_contract_version, text_only_scaffold_supported_now=false, text_only_scaffold_written=false, scaffold_execute_supported=false, future_scaffold_files with all written_now=false); Markdown extended with Future text-only scaffold contract section; no scaffold files written; no media/maps writes; no PZ assets; contract-only evidence |
-| MAP-3 | Text-only local mod scaffold writer | Add a command that writes a minimal text-only mod scaffold under `.local/` only; no binary files; no assets |
+| MAP-3B | Text-only local mod scaffold writer | map-scaffold CLI command implemented; reads pzmapforge.map-source.v0.1 JSON; validates schema/claim_boundary/cells; writes exactly four text files under .local/ (mod.info, media/maps/<map_id>/map.info, media/maps/<map_id>/spawnpoints.lua, media/maps/<map_id>/README_PZMAPFORGE_BOUNDARY.txt); refuses non-.local and media/maps output paths; no compiled outputs; no PZ assets; no playable export; every file contains boundary language; 15 CLI tests |
 | MAP-4 | Minimal compiled cell writer proof | Add a command that writes one minimal compiled cell under `.local/`; requires local evidence from section 14 first |
 | MAP-5 | Manual Project Zomboid load-test evidence | Operator performs load test; evidence file recorded; no public claim before this milestone |
 | MAP-6 | In-game map feature writer research/proof | Research and document in-game map feature file formats; prototype if evidence supports it |
