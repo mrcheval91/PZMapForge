@@ -8,6 +8,48 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-4E: lotheader string table evidence probe)
+- scripts/inspect-lotheader-string-table.ps1: .lotheader string table reader.
+  - Args: -Path <dir> -Output <.local dir> -MaxFiles (default 10, max 50)
+    -MaxBytesPerFile (default 131072, max 1048576).
+  - Refuses output outside .local/.
+  - Reads ONLY .lotheader files. NOT .lotpack. NOT .bin.
+  - Extracts: bytes 0-3 as header_zero_hex, bytes 4-7 as candidate_entry_count
+    (32-bit LE), bytes 8+ as newline-delimited ASCII tileset pack name strings.
+  - Counts: extracted_entry_count, count_matches_extracted_entries,
+    duplicate_entry_count, unique_entry_count, non_printable_byte_count_after_header.
+  - Writes lotheader-string-table-evidence.json + .md with aggregate.
+  - only_lotheader_files_read=true, lotpack_files_read=false, bin_files_read=false.
+- scripts/validate.ps1: MAP-4E inline contract section (6 checks):
+  - script exists, .local refusal, only_lotheader_files_read, lotpack_files_read,
+    bin_files_read, compiled_writer_implemented sentinels.
+  PS lane stays 492. No proof-packet sync.
+- docs/COMPILED_CELL_FORMAT_EVIDENCE.md:
+  - Header updated.
+  - Section 5: .lotheader gap refined (14/16 exact count matches across 16 files).
+  - Section 13: mismatch details added.
+  - Section 16 added: lotheader string table evidence (MAP-4E).
+    - 16/16 header-zero consistent (both mods).
+    - 14/16 exact entry count matches.
+    - Entry range: 31 to 2450 per cell.
+    - Entries are tileset pack+sprite names (e.g., blends_grassoverlays_01_0).
+    - 2 mismatches in complex cells: off by 2-3; embedded non-printable bytes.
+    - Tileset name pattern documented.
+    - Implications for minimal MAP-4 cell noted.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-4E section added.
+- docs/IMPLEMENTATION.md: MAP-4E ratified row added.
+
+.lotheader structure evidence significantly advanced.
+Writing not yet permitted: 2 mismatches unexplained; non-printable byte
+role in complex cells unknown; full format not decoded.
+No files copied. Only .lotheader read. No .lotpack/.bin read.
+No compiled writer. No playable export claim.
+PS 492 / .NET 381 unchanged. No proof-packet sync.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-4D: compiled binary header evidence probe)
 - scripts/inspect-compiled-binary-headers.ps1: bounded prefix reader.
   - Args: -Path <dir> -Output <.local dir> -MaxBytes (default 64, max 256)

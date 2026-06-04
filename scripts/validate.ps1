@@ -173,6 +173,23 @@ if ($map4dContent -notmatch '256') { throw "MAP-4D script missing MaxBytes 256 g
 Write-Output "OK: script contains MaxBytes 256 guard"
 
 Write-Output ""
+Write-Output "--- MAP-4E lotheader string table script contract ---"
+$map4eScript = Join-Path $repoRoot 'scripts\inspect-lotheader-string-table.ps1'
+if (-not (Test-Path -LiteralPath $map4eScript)) { throw "MAP-4E script missing: scripts\inspect-lotheader-string-table.ps1" }
+Write-Output "OK: scripts\inspect-lotheader-string-table.ps1"
+$map4eContent = Get-Content -LiteralPath $map4eScript -Raw
+if ($map4eContent -notmatch '\.local') { throw "MAP-4E script missing .local refusal language" }
+Write-Output "OK: script contains .local refusal language"
+if ($map4eContent -notmatch 'only_lotheader_files_read') { throw "MAP-4E script missing only_lotheader_files_read sentinel" }
+Write-Output "OK: script contains only_lotheader_files_read sentinel"
+if ($map4eContent -notmatch 'lotpack_files_read') { throw "MAP-4E script missing lotpack_files_read sentinel" }
+Write-Output "OK: script contains lotpack_files_read sentinel"
+if ($map4eContent -notmatch 'bin_files_read') { throw "MAP-4E script missing bin_files_read sentinel" }
+Write-Output "OK: script contains bin_files_read sentinel"
+if ($map4eContent -notmatch 'compiled_writer_implemented') { throw "MAP-4E script missing compiled_writer_implemented sentinel" }
+Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
 Write-Output "========================================"
 Write-Output "PZMapForge validation summary"
 Write-Output "========================================"

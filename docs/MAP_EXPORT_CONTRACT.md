@@ -273,6 +273,23 @@ Gap advances (PARTIAL only — not CLOSED):
 Still OPEN: full .lotheader semantics, full .lotpack format, minimum viable
 cell count, single-cell load test, Build 41/42 differences.
 
+**MAP-4E — lotheader string table evidence probe:**
+MAP-4E adds `scripts/inspect-lotheader-string-table.ps1`, which reads `.lotheader`
+files (not `.lotpack` or `.bin`) and extracts the candidate tileset string table
+for evidence. No files are copied. Output is under `.local/` only.
+
+Script: `scripts/inspect-lotheader-string-table.ps1 -Path <dir> -Output <.local dir>`
+
+Evidence from 16 files across 2 mods:
+- Bytes 0-3: `00000000` — consistent in 16/16 files.
+- Bytes 4-7: 32-bit LE integer = entry count — exact match in 14/16 (87.5%).
+- Bytes 8+: newline-delimited ASCII tileset pack+sprite name entries (31–2450 per cell).
+- 2 count mismatches in complex Laval cells have embedded non-printable bytes,
+  suggesting a secondary data section in some lotheaders.
+
+Writing is not permitted. The 2 mismatches and the role of embedded non-printable
+bytes in complex cells remain unexplained.
+
 MAP-4 remains blocked. The decision gate in section 8 of
 `docs/COMPILED_CELL_FORMAT_EVIDENCE.md` is not satisfied.
 

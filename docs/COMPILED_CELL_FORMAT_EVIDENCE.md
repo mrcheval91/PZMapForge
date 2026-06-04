@@ -1,7 +1,7 @@
 # Compiled Cell Format Evidence
 
 ```text
-Status:           MAP-4D binary header evidence recorded
+Status:           MAP-4E lotheader string table evidence recorded
 Claim boundary:   evidence_inventory_only_not_compiled_not_pz_load_tested
 Compiler status:  not implemented
 PZ assets:        not copied into repo
@@ -9,7 +9,8 @@ media/maps:       forbidden in repo
 Observations:     2 (Laval-Montreal workshop, RED-Speedway workshop)
 Text metadata:    map.info, mod.info, spawnpoints.lua, objects.lua read (2 mods)
 Binary prefixes:  first 64 bytes sampled (5 files per extension per mod)
-Binary formats:   PARTIAL — prefix patterns observed; full format not decoded
+Lotheader strings: 16 .lotheader files fully parsed (10 Laval + 6 RED-Speedway)
+Binary formats:   PARTIAL — lotheader structure well-supported; .lotpack prefix consistent
 ```
 
 ---
@@ -102,7 +103,7 @@ Coordinate naming convention is `<cx>_<cy>` where cx and cy are integers
 
 | Gap | Investigation method | Status |
 |---|---|---|
-| `.lotheader` binary format | Inspect byte-level content locally (hex editor or parser) | **PARTIAL** — prefix sampled (64 bytes, 10 files, 2 mods); bytes 0-3 = `00000000` (consistent); bytes 4-7 = 32-bit LE variable integer (likely entry count); bytes 8+ = newline-separated ASCII tileset names. Byte-level semantics not confirmed; full decoding required before writing |
+| `.lotheader` binary format | Inspect byte-level content locally (hex editor or parser) | **PARTIAL** — 16 files fully parsed (10 Laval + 6 RED-Speedway); bytes 0-3 = `00000000` (consistent, 16/16); bytes 4-7 = 32-bit LE entry count (14/16 exact match; 2 mismatches off by 2-3 in complex cells); bytes 8+ = newline-delimited ASCII tileset pack names (entries range 31–2450); full byte-level semantics not confirmed; writing not permitted |
 | `.lotpack` binary format | Inspect byte-level content locally (hex editor or parser) | **PARTIAL** — prefix sampled; first 8 bytes = `84030000241c0000` IDENTICAL across all 10 sampled files from both mods; bytes 8+ appear to be an offset/size table with increasing 4-byte or 8-byte LE values. Full format not decoded; writing not permitted |
 | Cell coordinate naming convention | Observe file names in a Workshop/WorldEd export | **PARTIAL** — `<cx>_<cy>` pattern confirmed in 2 observations; offset coords confirmed (25_15); zero-origin also observed |
 | Exact directory layout for cell files | Observe directory tree in a Workshop/WorldEd export | **PARTIAL** — flat layout under `media/maps/<map_id>/` confirmed in 2 observations |
@@ -281,8 +282,8 @@ All hypotheses require byte-level verification before use in a writer.
 
 MAP-4 writer implementation remains blocked. The following remain unknown:
 
-- Byte-level semantics of `.lotheader` field at bytes 4-7 (count assumed but not confirmed).
-- Exact format of `.lotheader` tileset-name list (encoding, termination, any padding).
+- Whether the 2 count mismatches in `.lotheader` (off by 2-3 for complex cells) indicate a secondary data section or encoding difference.
+- Role of non-printable bytes observed after the tileset string table in some cells (up to 9694 bytes in a 95KB lotheader).
 - Full binary format of `.lotpack` beyond the consistent 8-byte header.
 - Full binary format of `chunkdata_*.bin` beyond the `0001` prefix.
 - Whether a single cell (1x1 grid) is sufficient for a map to load.
@@ -461,6 +462,81 @@ is under `.local/` only. Only first-64-byte prefixes were read as hex strings.
 | Binary files copied into repo | false |
 | Full binary files read | false |
 | Only prefix bytes read | true (max 64 bytes per file) |
+| PZ assets copied | false |
+| media/maps touched in repo | false |
+| Playable export claimed | false |
+| Compiled writer implemented | false |
+
+---
+
+## 16. Lotheader string table evidence (MAP-4E)
+
+`scripts/inspect-lotheader-string-table.ps1` was run against both Workshop mods
+with `-MaxFiles 10 -MaxBytesPerFile 131072`. Only `.lotheader` files were read.
+No `.lotpack` or `.bin` files were read. No files were copied.
+
+### Results summary
+
+| Mod | Files sampled | Count matches | Count mismatches |
+|---|---:|---:|---:|
+| Laval-Montreal | 10 | 8 | 2 |
+| RED-Speedway | 6 | 6 | 0 |
+| **Combined** | **16** | **14** | **2** |
+
+### lotheader structure — supported observations
+
+1. **Bytes 0-3: `00000000`** — consistent across ALL 16 sampled files from both mods.
+
+2. **Bytes 4-7: 32-bit LE integer** — matches the count of newline-delimited string
+   entries in 14/16 cases (87.5%). Observed range: 31 to 2450 entries.
+
+3. **Bytes 8+: newline-delimited ASCII string table** — each line is a tileset
+   pack name such as:
+   - `blends_grassoverlays_01_0`
+   - `appliances_cooking_01_35`
+   - `BMyers_1`
+   - `DylanRandomAssetPack1_49`
+   - `BZM_Industry_extras_01_3`
+
+4. **Count mismatches (2 files):** `1_1.lotheader` (cand=798, extr=800) and
+   `1_3.lotheader` (cand=2447, extr=2450) differ by 2-3 entries. Both are
+   complex Laval-Montreal cells. These cells also have non-printable bytes
+   embedded in the string table region (1929 and 9694 bytes respectively),
+   suggesting a secondary data section may follow the string table in some cells.
+   The count may refer to the primary string table only.
+
+5. **Non-printable bytes:** Some larger files contain non-printable byte ranges
+   after the string entries (e.g., `1_2.lotheader`: 9694 non-printable bytes in
+   a 95KB file but count still matches). Role of this additional data is unknown.
+
+### tileset name pattern
+
+Observed entry naming convention: `<pack_name>_<sprite_index>` where the numeric
+suffix is a zero-based sprite/tile index within the pack. Example sequences:
+`appliances_cooking_01_0`, `appliances_cooking_01_1`, `appliances_cooking_01_2`, ...
+
+A cell with 903 entries (26_16.lotheader, complex city block) references 903
+distinct tileset pack+sprite combinations.
+
+### Implications for MAP-4
+
+A custom map cell's `.lotheader` will need to reference the tileset packs used
+by that cell. A minimal all-grass cell would reference `blends_grassoverlays_*`
+and possibly `blends_natural_*` entries. The exact minimum set for a loadable
+cell is not yet confirmed.
+
+**Writing not permitted.** The count-field role in the 2 mismatched cells and the
+role of embedded non-printable bytes remain unexplained. Full format semantics
+require further investigation before any writer is implemented.
+
+### Safety record
+
+| Property | Value |
+|---|---|
+| Only .lotheader files read | true |
+| .lotpack files read | false |
+| .bin files read | false |
+| Files copied into repo | false |
 | PZ assets copied | false |
 | media/maps touched in repo | false |
 | Playable export claimed | false |
