@@ -8,6 +8,39 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-4B: compiled cell evidence summaries)
+- docs/COMPILED_CELL_FORMAT_EVIDENCE.md: updated with two Workshop mod
+  inventory observations and derived hypotheses.
+  - Header: status updated to MAP-4B; observation count added.
+  - Section 3: file type table updated with confirmed naming patterns:
+    - lotpack is world_<cx>_<cy>.lotpack (not <cx>_<cy>.lotpack).
+    - chunk bin is chunkdata_<cx>_<cy>.bin (not map_<cx>_<cy>.bin).
+    - objects.lua and worldmap.xml.bin added (observed but not in original hypothesis).
+  - Section 4: directory layout updated with observed flat layout under
+    media/maps/<map_id>/.
+  - Section 5: gap statuses updated:
+    - Cell coordinate naming: PARTIAL.
+    - Exact directory layout: PARTIAL.
+    - Spawn file format (spawnpoints.lua): PARTIAL (presence only).
+    - map.info required fields: PARTIAL (presence only).
+    - All binary format gaps: OPEN.
+    - All load-test gaps: OPEN.
+  - Section 11: evidence observation comparison table (new).
+  - Section 12: evidence-derived hypotheses (new).
+  - Section 13: still-blocked summary (new).
+- scripts/inspect-compiled-cell-evidence.ps1: PowerShell -replace syntax fix
+  (two expressions wrapped in parentheses; no behavior change). Commit ed9e44c.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-4B section added.
+- docs/IMPLEMENTATION.md: MAP-4B ratified row added.
+
+No files copied into repo. No binary content parsed.
+No compiled writer implemented. No PZ assets. No playable export claim.
+PS 492 / .NET 381 unchanged. No proof-packet sync.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-4A: compiled cell format evidence inventory)
 - docs/COMPILED_CELL_FORMAT_EVIDENCE.md: evidence requirements and gap table.
   - 10 evidence gaps defined (lotheader/lotpack binary formats, cell coordinate

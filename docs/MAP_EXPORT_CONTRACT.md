@@ -205,8 +205,30 @@ Artifacts:
   doc/script/template exist, script contains .local refusal and
   copied_input_files sentinel); no Assert-True used, PS lane stays 492.
 
-MAP-4 remains blocked until all gaps in docs/COMPILED_CELL_FORMAT_EVIDENCE.md
-section 5 are marked CLOSED with filled local evidence templates.
+**MAP-4B — compiled cell evidence summaries recorded:**
+MAP-4B records two local Workshop mod inventories in
+`docs/COMPILED_CELL_FORMAT_EVIDENCE.md`. No files were copied into the repo.
+No binary content was parsed. No compiled writer was implemented.
+
+Observations:
+- Laval-Montreal workshop: 5x5 grid, coords 0_0 to 4_4, 25 cells each of
+  .lotheader / world_*.lotpack / chunkdata_*.bin, plus map.info, spawnpoints.lua,
+  objects.lua, worldmap.xml.bin.
+- RED-Speedway workshop: 2x3 grid, coords 25_15 to 26_17, 6 cells each of
+  .lotheader / world_*.lotpack / chunkdata_*.bin, plus map.info, spawnpoints.lua,
+  objects.lua.
+
+Gap status updates (PARTIAL only — not CLOSED):
+- Cell coordinate naming: PARTIAL (two observations confirm `<cx>_<cy>` pattern).
+- Directory layout: PARTIAL (flat layout under `media/maps/<map_id>/` confirmed).
+- map.info presence: PARTIAL (file present; content not read).
+- spawnpoints.lua presence: PARTIAL (file present; content not read).
+
+Still OPEN: .lotheader binary format, .lotpack binary format, minimum viable
+cell count, single-cell load test, spawn coordinate system, Build 41/42 differences.
+
+MAP-4 remains blocked. The decision gate in section 8 of
+`docs/COMPILED_CELL_FORMAT_EVIDENCE.md` is not satisfied.
 
 ---
 
