@@ -162,6 +162,27 @@ Safety guarantees:
 - Not load-tested. Not a playable Project Zomboid map.
 - Every generated file contains explicit boundary language.
 
+**MAP-3C — map-scaffold smoke script:**
+MAP-3C adds `scripts/smoke-map-scaffold-minimal.ps1`, a local-only smoke helper
+that proves `map-scaffold` writes the expected four text scaffold files and
+preserves the non-playable boundary. It runs 16 assertions against the real
+command output. All output stays under `.local/`. The script is a standalone
+helper; it is not wired into `validate.ps1`.
+
+Command:
+```
+powershell -ExecutionPolicy Bypass -File "scripts\smoke-map-scaffold-minimal.ps1"
+```
+
+Assertions (16):
+- source file present
+- map-scaffold exits 0
+- mod.info, map.info, spawnpoints.lua, README_PZMAPFORGE_BOUNDARY.txt each exist
+- exactly 4 files written
+- no compiled output extensions (.lotpack/.lotheader/.bin/.tmx/.pzw)
+- boundary language in files: Text-only scaffold, Not playable, No PZ assets, Not load-tested
+- stdout: text_only_scaffold_written/compiled_outputs_written/playable_export_generated/pz_assets_read_or_copied
+
 MAP-4 remains blocked on compiled cell format evidence (section 14).
 
 ---

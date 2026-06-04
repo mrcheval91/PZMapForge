@@ -8,6 +8,36 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-3C: map scaffold smoke script)
+- scripts/smoke-map-scaffold-minimal.ps1: local-only smoke helper for map-scaffold.
+  - Runs map-scaffold against examples/map-source/minimal-cell.json.
+  - Output to .local\map-scaffold\minimal-cell-smoke (gitignored).
+  - 16 assertions:
+    - source file present
+    - map-scaffold exits 0
+    - mod.info, media/maps/<map_id>/map.info, spawnpoints.lua,
+      README_PZMAPFORGE_BOUNDARY.txt each exist by path
+    - exactly 4 files total under output
+    - no compiled output extensions (.lotpack/.lotheader/.bin/.tmx/.pzw)
+    - boundary language in files:
+      Text-only scaffold, Not playable, No PZ assets, Not load-tested
+    - stdout safety lines:
+      text_only_scaffold_written: true
+      compiled_outputs_written: false
+      playable_export_generated: false
+      pz_assets_read_or_copied: false
+  - Standalone helper; not wired into validate.ps1.
+  - PS 492 / .NET 381 unchanged.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-3C section added.
+- docs/IMPLEMENTATION.md: MAP-3C ratified row added.
+
+No compiled outputs. No PZ assets read or copied. No playable export claim.
+media/maps writes: inside .local smoke output only. No proof packet sync.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-3B: text-only local mod scaffold writer)
 - src/PZMapForge.Cli/Program.cs: map-scaffold command.
   - Args: --source <path> --output <dir>.
