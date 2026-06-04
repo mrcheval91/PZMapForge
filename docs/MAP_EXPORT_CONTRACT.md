@@ -366,6 +366,34 @@ Required safeguards (all mandatory for MAP-5A):
 
 **No playable export claim.** MAP-5A is hypothesis-testing only.
 
+**MAP-5A — experimental local compiled empty cell writer (implemented):**
+MAP-5A adds the `map-export-experimental` CLI command. It writes one minimal
+compiled empty cell under `.local/` only, per MAP-4H authorization.
+
+Command:
+```
+dotnet run --project src/PZMapForge.Cli -- map-export-experimental \
+  --map-id <id> --output .local/map-export-experimental/<name>
+```
+
+Writes exactly 10 files (7 text, 3 binary):
+- `mod.info`, `media/maps/<id>/map.info`, `spawnpoints.lua`, `objects.lua`
+- `README_PZMAPFORGE_BOUNDARY_EXPERIMENTAL.txt` (mandatory boundary)
+- `<cx>_<cy>.lotheader` — 8 bytes: zero header + 0-entry count hypothesis
+- `world_<cx>_<cy>.lotpack` — 7208 bytes: hdrA=900, hdrB=7204, all-zero offset table
+- `chunkdata_<cx>_<cy>.bin` — 902 bytes: 0x0001 header + 900 zero bytes
+- `experimental-map-export-report.json`, `experimental-map-export-report.md`
+
+Report JSON flags: `playable_export_generated: false`, `load_tested: false`,
+`experimental_writer: true`, `pz_assets_copied: false`, `manual_load_test_required: true`.
+
+Safeguards enforced: refuses non-.local output, refuses PZ install paths,
+refuses repo media/maps, boundary README in every output set, all assumptions
+logged in report.
+
+**No load test has been performed. No playable export claim.**
+Manual load test required before any claim changes.
+
 ---
 
 ## 6. Source / editing format contract

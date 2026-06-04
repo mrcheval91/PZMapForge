@@ -8,6 +8,53 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-5A: experimental local compiled empty cell writer)
+- src/PZMapForge.Cli/Program.cs: map-export-experimental command.
+  - Args: --map-id <id> --output <.local dir> [--cell-x <int>] [--cell-y <int>].
+  - Authorized by MAP-4H: MAP-5A_ALLOWED_EXPERIMENTAL_LOCAL_ONLY.
+  - Refuses non-.local output, PZ install paths, repo media/maps.
+  - Writes exactly 10 files (7 text, 3 binary):
+    - mod.info, map.info, spawnpoints.lua, objects.lua (text)
+    - README_PZMAPFORGE_BOUNDARY_EXPERIMENTAL.txt (mandatory boundary)
+    - <cx>_<cy>.lotheader: 8 bytes (zero header + 0-entry count hypothesis)
+    - world_<cx>_<cy>.lotpack: 7208 bytes (hdrA=900, hdrB=7204, all-zero table)
+    - chunkdata_<cx>_<cy>.bin: 902 bytes (0x0001 + 900 zero bytes)
+    - experimental-map-export-report.json + .md
+  - Report flags: playable_export_generated=false, load_tested=false,
+    experimental_writer=true, pz_assets_copied=false, manual_load_test_required=true.
+  - Boundary README mandatory; all assumptions logged in report.
+- tests/PZMapForge.Cli.Tests/MapExportExperimentalProcessTests.cs: 16 new tests:
+  - exits 0 and writes expected files
+  - lotheader exactly 8 bytes
+  - lotpack exactly 7208 bytes
+  - chunkdata exactly 902 bytes
+  - lotpack first 8 bytes = 84030000241c0000
+  - chunkdata first 2 bytes = 0001
+  - boundary README contains EXPERIMENTAL OUTPUT phrase
+  - boundary README contains Not a playable Project Zomboid map phrase
+  - report JSON: playable_export_generated false
+  - report JSON: load_tested false
+  - report JSON: experimental_writer true
+  - exactly 10 files written
+  - missing --map-id exits nonzero
+  - output outside .local exits nonzero
+  - output in media/maps exits nonzero
+  - ProjectZomboid install path exits nonzero
+- scripts/validate.ps1: $dnCliTests 191→207, $dnTotal 381→397.
+- scripts/write-proof-packet.ps1: cli_tests and test_total updated.
+- scripts/test-proof-packet.ps1: assertions updated to 207/397.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-5A section added.
+- docs/IMPLEMENTATION.md: MAP-5A ratified row added.
+
+No load test performed. No playable export claim.
+No PZ assets read or copied. No repo media/maps writes.
+Boundary README in all generated output sets.
+All assumptions logged in report JSON.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-4H: compiled writer decision gate report)
 - docs/MAP_4H_COMPILED_WRITER_DECISION_GATE.md: formal decision gate.
   - Evidence summary by artifact type (lotheader, lotpack, chunkdata,

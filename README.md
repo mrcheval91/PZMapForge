@@ -142,6 +142,12 @@ Written files (text-only scaffold, not a playable Project Zomboid map):
 - `.local/map-scaffold/minimal-cell/media/maps/<map_id>/spawnpoints.lua`
 - `.local/map-scaffold/minimal-cell/media/maps/<map_id>/README_PZMAPFORGE_BOUNDARY.txt`
 
+Write an experimental local compiled empty cell (map-export-experimental, MAP-5A) — writes hypothesis-only binary files (.lotheader 8b, .lotpack 7208b, chunkdata_*.bin 902b) under .local only; **EXPERIMENTAL -- NOT VALIDATED -- not a playable map -- manual load test required**:
+
+```
+dotnet run --project src/PZMapForge.Cli -- map-export-experimental --map-id pzmapforge_test --output .local/map-export-experimental/test-cell
+```
+
 The .NET engine does not replace the PowerShell scripts. It is a foundation
 for future typed parsing and generation capabilities.
 
