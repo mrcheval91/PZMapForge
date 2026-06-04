@@ -8,6 +8,39 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (APP-9: app export artifact index panel)
+- src/PZMapForge.Cli/Program.cs:
+  - BuildArtifactIndexHtml: compact .artifacts-idx panel inserted between
+    the Run Summary cockpit and the workbench in generated index.html.
+  - Always shows: Clean analysis image, Parsed preview, Parsed cell JSON,
+    Regions JSON, Primitives JSON, Plan recommendations JSON.
+  - Conditionally shows (when present): Annotation image, SVG structure report,
+    SVG layer candidates, SVG layer selection template, SVG selection review,
+    SVG planning manifest JSON, SVG planning manifest Markdown.
+  - Absent artifacts are omitted. All links are relative. No absolute machine
+    paths exposed. Panel note: planning artifact only -- not a playable
+    Project Zomboid export.
+  - artifactIndexHtml parameter threaded through BuildAppHtml.
+  - CSS: .artifacts-idx, .artifacts-idx-hdr, .artifacts-idx-note.
+- tests/PZMapForge.Cli.Tests/AppExportProcessTests.cs:
+  - AppExportContentTests (APP-9 block): 4 new tests: ArtifactIndexContainsEvidenceArtifacts,
+    ArtifactIndexContainsCleanAnalysisImage, ArtifactIndexContainsParsedCellJson,
+    ArtifactIndexContainsPlanningArtifactOnly.
+  - AppExportAnnotationTests (APP-9 block): 1 new test: Annotation_ArtifactIndexContainsAnnotationImage.
+  - AppExportSvgAnnotationTests (APP-9 block): 2 new tests: ArtifactIndexContainsSvgStructureReport,
+    ArtifactIndexContainsSvgLayerCandidates.
+  - AppExportSelectionTests (APP-9 block): 3 new tests: ArtifactIndexContainsSvgSelectionReview,
+    ArtifactIndexContainsSvgPlanningManifestJson, ArtifactIndexContainsSvgPlanningManifestMarkdown.
+  - Total: 353 tests (190 Core + 163 CLI).
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No SVG geometry conversion. No coordinate math. No path d= extraction.
+No PZ assets. No media/maps writes. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (APP-8A: cockpit verification in Montreal SVG smoke)
 - scripts/smoke-montreal-svg-planning-manifest.ps1:
   - 15 new APP-8 cockpit checks after existing manifest verification.

@@ -308,6 +308,34 @@ Added in SVG-11:
   - Review run HTML (manifest path): `Run Summary`, `SVG review: present`,
     `Planning manifest: present`, all four safety claims.
 
+Added in APP-9:
+
+- **Evidence Artifacts index panel**: a compact full-width panel inserted between the
+  Run Summary cockpit and the workbench. Lists all generated evidence outputs with
+  clear labels and relative links for operator navigation.
+  - Always present: Clean analysis image, Parsed preview, Parsed cell JSON, Regions JSON,
+    Primitives JSON, Plan recommendations JSON.
+  - Present when `--annotation` is provided: Annotation image.
+  - Present when SVG annotation is parsed: SVG structure report, SVG layer candidates,
+    SVG layer selection template.
+  - Present when `--svg-selection` is provided: SVG selection review.
+  - Present when planning manifest was written: SVG planning manifest JSON,
+    SVG planning manifest Markdown.
+  - Absent artifacts are omitted (low-noise approach). All links are relative.
+  - No absolute machine paths exposed. No media/maps listed. No PZ assets linked.
+  - Panel header reads "Evidence Artifacts" with sub-note
+    "planning artifact only -- not a playable Project Zomboid export".
+  - Does not create new PZ export formats. Does not convert SVG geometry.
+    Does not read or copy PZ assets. Does not write media/maps.
+- Static HTML only. No JS. No server. CSS uses new `.artifacts-idx`,
+  `.artifacts-idx-hdr`, `.artifacts-idx-note` classes alongside existing `.arts`/`.art`.
+- 10 new tests: `Evidence Artifacts`, `Clean analysis image`, `Parsed cell JSON`,
+  `planning artifact only` (content fixture); `Annotation image` (annotation fixture);
+  `SVG structure report`, `SVG layer candidates` (SVG fixture);
+  `SVG selection review`, `SVG planning manifest JSON`,
+  `SVG planning manifest Markdown` (selection fixture).
+  Total: 353 tests (190 Core + 163 CLI).
+
 ---
 
 ## Pipeline stages

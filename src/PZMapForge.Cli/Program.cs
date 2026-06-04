@@ -1089,10 +1089,15 @@ static int AppExportCommand(string[] args)
         paletteClean, svgAnnotationPresent, svgParseStatus,
         svgCandidatesPresent, svgReviewPresent, svgManifestPresent);
 
+    var artifactIndexHtml = BuildArtifactIndexHtml(
+        relativeImgSrc, relativeAnnotSrc,
+        svgAnnotationPresent, svgCandidatesPresent, svgReviewPresent, svgManifestPresent);
+
     var html     = BuildAppHtml(
         relativeImgSrc, relativeParsedSrc, relativeAnnotSrc,
         annotPanelLabel, annotGuidanceHtml, svgStructureSectionHtml, svgCandidatesSectionHtml, svgSelectionSectionHtml, svgReviewSectionHtml, svgManifestSectionHtml,
         runSummarySectionHtml,
+        artifactIndexHtml,
         imagePath, grid.Width, grid.Height, parseResult.Resized,
         regions.TotalRegions, primitives.PrimitiveCount,
         planResult.RecommendationCount, planResult.Summary.WarningCount,
@@ -1308,6 +1313,7 @@ static string BuildAppHtml(
     string svgReviewSectionHtml,
     string svgManifestSectionHtml,
     string runSummarySectionHtml,
+    string artifactIndexHtml,
     string imagePath, int width, int height, bool resized,
     int regions, int primitives, int recommendations, int warnings,
     PlanningRuleOptions planOpts,
@@ -1424,6 +1430,9 @@ h2:first-child{margin-top:0}
 .ck-warn{background:#221a12;border:1px solid #4a3a22;color:#cc9944;padding:.1em .45em;border-radius:2px}
 .ck-absent{background:#1a1a1a;border:1px solid #2a2a2a;color:#555;padding:.1em .45em;border-radius:2px}
 .ck-safe{background:#0e180e;border:1px solid #1e3a1e;color:#66aa66;padding:.1em .45em;border-radius:2px}
+.artifacts-idx{background:#0e0e0e;border-bottom:1px solid #1c1c1c;padding:.45em 2em .65em}
+.artifacts-idx-hdr{font-size:.75em;color:#557755;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3em}
+.artifacts-idx-note{font-size:.7em;color:#444;margin-bottom:.4em}
 footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444}
 @media(max-width:860px){
 .workbench{grid-template-columns:1fr}
@@ -1445,6 +1454,7 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
 </div>
 
 {{runSummarySectionHtml}}
+{{artifactIndexHtml}}
 <div class="workbench">
 
   <div class="left-panel">
@@ -1526,6 +1536,46 @@ footer{padding:.65em 2em;border-top:1px solid #1a1a1a;font-size:.72em;color:#444
 </body>
 </html>
 """;
+}
+
+static string BuildArtifactIndexHtml(
+    string relativeImgSrc,
+    string relativeAnnotSrc,
+    bool svgAnnotationPresent,
+    bool svgCandidatesPresent,
+    bool svgReviewPresent,
+    bool svgManifestPresent)
+{
+    var sb = new StringBuilder();
+    sb.Append("<div class=\"artifacts-idx\">\n");
+    sb.Append("  <div class=\"artifacts-idx-hdr\">Evidence Artifacts</div>\n");
+    sb.Append("  <div class=\"artifacts-idx-note\">planning artifact only &mdash; not a playable Project Zomboid export</div>\n");
+    sb.Append("  <div class=\"arts\">\n");
+    sb.Append($"    <div class=\"art\"><a href=\"{relativeImgSrc}\">Clean analysis image</a><div class=\"desc\">Analysis input (evidence output)</div></div>\n");
+    sb.Append("    <div class=\"art\"><a href=\"images/parsed-preview.png\">Parsed preview</a><div class=\"desc\">Palette-snapped preview image</div></div>\n");
+    sb.Append("    <div class=\"art\"><a href=\"artifacts/parsed-cell.json\">Parsed cell JSON</a><div class=\"desc\">Cell grid evidence output</div></div>\n");
+    sb.Append("    <div class=\"art\"><a href=\"artifacts/regions.json\">Regions JSON</a><div class=\"desc\">Extracted regions</div></div>\n");
+    sb.Append("    <div class=\"art\"><a href=\"artifacts/primitives.json\">Primitives JSON</a><div class=\"desc\">Classified primitives</div></div>\n");
+    sb.Append("    <div class=\"art\"><a href=\"artifacts/plan-recommendations.json\">Plan recommendations JSON</a><div class=\"desc\">Planning recommendations</div></div>\n");
+    if (!string.IsNullOrEmpty(relativeAnnotSrc))
+        sb.Append($"    <div class=\"art\"><a href=\"{relativeAnnotSrc}\">Annotation image</a><div class=\"desc\">Reference annotation (not parsed)</div></div>\n");
+    if (svgAnnotationPresent)
+        sb.Append("    <div class=\"art\"><a href=\"artifacts/svg-reference-structure.json\">SVG structure report</a><div class=\"desc\">SVG element inventory</div></div>\n");
+    if (svgCandidatesPresent)
+    {
+        sb.Append("    <div class=\"art\"><a href=\"artifacts/svg-layer-candidates.json\">SVG layer candidates</a><div class=\"desc\">Metadata-pattern classification</div></div>\n");
+        sb.Append("    <div class=\"art\"><a href=\"artifacts/svg-layer-selection.template.json\">SVG layer selection template</a><div class=\"desc\">Operator-editable selection</div></div>\n");
+    }
+    if (svgReviewPresent)
+        sb.Append("    <div class=\"art\"><a href=\"artifacts/svg-layer-selection-review.json\">SVG selection review</a><div class=\"desc\">Selection review artifact</div></div>\n");
+    if (svgManifestPresent)
+    {
+        sb.Append("    <div class=\"art\"><a href=\"artifacts/svg-planning-manifest.json\">SVG planning manifest JSON</a><div class=\"desc\">Selected metadata manifest</div></div>\n");
+        sb.Append("    <div class=\"art\"><a href=\"artifacts/svg-planning-manifest.md\">SVG planning manifest Markdown</a><div class=\"desc\">Human-readable manifest</div></div>\n");
+    }
+    sb.Append("  </div>\n");
+    sb.Append("</div>\n");
+    return sb.ToString();
 }
 
 static string BuildRunSummaryHtml(

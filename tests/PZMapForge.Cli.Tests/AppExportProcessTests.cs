@@ -359,6 +359,24 @@ public sealed class AppExportContentTests : IClassFixture<AppExportContentFixtur
     public void AppExport_Content_ContainsCleanPaletteOnlyGuidance() =>
         Assert.Contains("clean palette-only analysis image", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 
+    // APP-9: artifact index panel
+
+    [Fact]
+    public void AppExport_Content_ArtifactIndexContainsEvidenceArtifacts() =>
+        Assert.Contains("Evidence Artifacts", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_ArtifactIndexContainsCleanAnalysisImage() =>
+        Assert.Contains("Clean analysis image", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_ArtifactIndexContainsParsedCellJson() =>
+        Assert.Contains("Parsed cell JSON", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Content_ArtifactIndexContainsPlanningArtifactOnly() =>
+        Assert.Contains("planning artifact only", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
     // APP-8: run summary cockpit
 
     [Fact]
@@ -481,6 +499,30 @@ public sealed class AppExportAnnotationTests : IDisposable
 
         var html = File.ReadAllText(Path.Combine(outputDir, "index.html"));
         Assert.Contains("Annotation Reference", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // -----------------------------------------------------------------------
+    // Test: APP-9 artifact index contains annotation image label
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void AppExport_Annotation_ArtifactIndexContainsAnnotationImage()
+    {
+        var analysisPath   = CreateAnalysisImage();
+        var annotationPath = CreateAnnotationImage();
+        var outputDir      = Path.Combine(_tempDir, ".local", "app-annot-idx");
+
+        var (code, stdout, stderr) = RunCli(
+            "app-export",
+            "--path",       analysisPath,
+            "--palette",    PalettePath,
+            "--output",     outputDir,
+            "--annotation", annotationPath);
+
+        Assert.True(code == 0, $"Exited {code}. Stdout: {stdout}. Stderr: {stderr}");
+
+        var html = File.ReadAllText(Path.Combine(outputDir, "index.html"));
+        Assert.Contains("Annotation image", html, StringComparison.OrdinalIgnoreCase);
     }
 
     // -----------------------------------------------------------------------
@@ -863,6 +905,16 @@ public sealed class AppExportSvgAnnotationTests : IClassFixture<AppExportSvgFixt
     public void AppExport_Svg_IndexHtmlContainsDoesNotConvertGeometry() =>
         Assert.Contains("does not convert SVG geometry", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 
+    // APP-9: artifact index panel
+
+    [Fact]
+    public void AppExport_Svg_ArtifactIndexContainsSvgStructureReport() =>
+        Assert.Contains("SVG structure report", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Svg_ArtifactIndexContainsSvgLayerCandidates() =>
+        Assert.Contains("SVG layer candidates", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
     // APP-8: run summary cockpit
 
     [Fact]
@@ -1166,6 +1218,20 @@ public sealed class AppExportSelectionTests : IClassFixture<AppExportSelectionFi
     [Fact]
     public void AppExport_Selection_IndexHtmlManifestContainsNoProjectZomboidExportGenerated() =>
         Assert.Contains("No Project Zomboid export generated", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    // APP-9: artifact index panel
+
+    [Fact]
+    public void AppExport_Selection_ArtifactIndexContainsSvgSelectionReview() =>
+        Assert.Contains("SVG selection review", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_ArtifactIndexContainsSvgPlanningManifestJson() =>
+        Assert.Contains("SVG planning manifest JSON", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
+
+    [Fact]
+    public void AppExport_Selection_ArtifactIndexContainsSvgPlanningManifestMarkdown() =>
+        Assert.Contains("SVG planning manifest Markdown", _fix.IndexHtml, StringComparison.OrdinalIgnoreCase);
 
     // APP-8: run summary cockpit
 
