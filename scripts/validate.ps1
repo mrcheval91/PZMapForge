@@ -158,6 +158,21 @@ if ($map4cContent -notmatch 'compiled_writer_implemented') { throw "MAP-4C scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-4D binary header script contract ---"
+$map4dScript = Join-Path $repoRoot 'scripts\inspect-compiled-binary-headers.ps1'
+if (-not (Test-Path -LiteralPath $map4dScript)) { throw "MAP-4D script missing: scripts\inspect-compiled-binary-headers.ps1" }
+Write-Output "OK: scripts\inspect-compiled-binary-headers.ps1"
+$map4dContent = Get-Content -LiteralPath $map4dScript -Raw
+if ($map4dContent -notmatch '\.local') { throw "MAP-4D script missing .local refusal language" }
+Write-Output "OK: script contains .local refusal language"
+if ($map4dContent -notmatch 'full_binary_files_read') { throw "MAP-4D script missing full_binary_files_read sentinel" }
+Write-Output "OK: script contains full_binary_files_read sentinel"
+if ($map4dContent -notmatch 'compiled_writer_implemented') { throw "MAP-4D script missing compiled_writer_implemented sentinel" }
+Write-Output "OK: script contains compiled_writer_implemented sentinel"
+if ($map4dContent -notmatch '256') { throw "MAP-4D script missing MaxBytes 256 guard" }
+Write-Output "OK: script contains MaxBytes 256 guard"
+
+Write-Output ""
 Write-Output "========================================"
 Write-Output "PZMapForge validation summary"
 Write-Output "========================================"

@@ -8,6 +8,52 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-4D: compiled binary header evidence probe)
+- scripts/inspect-compiled-binary-headers.ps1: bounded prefix reader.
+  - Args: -Path <dir> -Output <.local dir> -MaxBytes (default 64, max 256)
+    -MaxFilesPerExtension (default 5, max 20).
+  - Refuses output outside .local/.
+  - MaxBytes clamped to [1, 256] before any I/O.
+  - Scans for .lotheader, .lotpack, .bin files.
+  - Reads ONLY first MaxBytes bytes per sampled file via stream.
+  - Does NOT read full binary file contents.
+  - Does NOT copy files.
+  - Writes per-file: prefix_hex, prefix_ascii_preview, first_4/8_bytes_hex,
+    all_zero_prefix, prefix_group_key (first 16 bytes).
+  - Writes compiled-binary-header-evidence.json + .md.
+  - Safety flags: full_binary_files_read=false,
+    compiled_writer_implemented=false, binary_prefixes_read=true.
+- scripts/validate.ps1: MAP-4D inline contract section (5 checks):
+  - script exists, .local refusal, full_binary_files_read sentinel,
+    compiled_writer_implemented sentinel, MaxBytes 256 guard.
+  PS lane stays 492. No proof-packet sync.
+- docs/COMPILED_CELL_FORMAT_EVIDENCE.md:
+  - Header updated (MAP-4D status, binary prefixes read).
+  - Section 5: .lotheader OPEN→PARTIAL, .lotpack OPEN→PARTIAL.
+  - Section 13: still-blocked list updated.
+  - Section 15 added (MAP-4D binary header evidence):
+    - lotheader: bytes 0-3 always 0x00000000; bytes 4-7 = 32-bit LE variable
+      integer (appears to be tileset entry count, 31–903 across samples);
+      bytes 8+ = newline-separated ASCII tileset pack names.
+    - lotpack: first 8 bytes = 84030000241c0000 IDENTICAL across all 10
+      sampled files from both mods; bytes 8+ = apparent offset/size table.
+    - chunkdata bin: bytes 0-1 = 0001 consistent.
+    - Safety record.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-4D section added.
+- docs/IMPLEMENTATION.md: MAP-4D ratified row added.
+
+Gap advances (PARTIAL only — not CLOSED):
+- .lotheader binary format: OPEN → PARTIAL.
+- .lotpack binary format: OPEN → PARTIAL.
+
+No files copied. No full binary reads. No compiled writer.
+No .lotpack/.lotheader/.bin in repo. No playable export claim.
+PS 492 / .NET 381 unchanged. No proof-packet sync.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-4C: map text metadata evidence reader)
 - scripts/inspect-map-text-metadata.ps1: local-only text metadata reader.
   - Args: -Path <local mod/map root> -Output <.local dir>.

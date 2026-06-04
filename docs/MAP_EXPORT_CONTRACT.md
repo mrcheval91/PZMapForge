@@ -248,6 +248,31 @@ Gap status updates from running against both Workshop mods (PARTIAL only):
 Still OPEN: .lotheader binary format, .lotpack binary format, minimum viable
 cell count, single-cell load test, Build 41/42 differences.
 
+**MAP-4D — compiled binary header evidence probe:**
+MAP-4D adds `scripts/inspect-compiled-binary-headers.ps1`, which reads only
+bounded byte prefixes (default 64 bytes, max 256) from compiled map files
+(.lotheader, .lotpack, .bin). No files are copied. Output is hex strings only
+under `.local/`. No full binary content is read.
+
+Script: `scripts/inspect-compiled-binary-headers.ps1 -Path <dir> -Output <.local dir> -MaxBytes 64`
+
+Outputs: `compiled-binary-header-evidence.json`, `compiled-binary-header-evidence.md`
+
+Binary prefix observations (10 files per type, 2 mods, 64-byte prefixes):
+- `.lotheader`: bytes 0-3 = `00000000` (consistent); bytes 4-7 = 32-bit LE variable
+  integer (appears to be tileset entry count); bytes 8+ = newline-separated ASCII
+  tileset pack names. Hypothesis only — writing not permitted.
+- `.lotpack`: first 8 bytes = `84030000241c0000` IDENTICAL across all 10 sampled
+  files from both mods; bytes 8+ = apparent offset/size table. Full format not decoded.
+- `chunkdata .bin`: bytes 0-1 = `0001` (consistent); bytes 2+ variable.
+
+Gap advances (PARTIAL only — not CLOSED):
+- `.lotheader` binary format: OPEN → PARTIAL.
+- `.lotpack` binary format: OPEN → PARTIAL.
+
+Still OPEN: full .lotheader semantics, full .lotpack format, minimum viable
+cell count, single-cell load test, Build 41/42 differences.
+
 MAP-4 remains blocked. The decision gate in section 8 of
 `docs/COMPILED_CELL_FORMAT_EVIDENCE.md` is not satisfied.
 

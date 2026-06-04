@@ -1,14 +1,15 @@
 # Compiled Cell Format Evidence
 
 ```text
-Status:           MAP-4C text metadata evidence recorded
+Status:           MAP-4D binary header evidence recorded
 Claim boundary:   evidence_inventory_only_not_compiled_not_pz_load_tested
 Compiler status:  not implemented
 PZ assets:        not copied into repo
 media/maps:       forbidden in repo
 Observations:     2 (Laval-Montreal workshop, RED-Speedway workshop)
 Text metadata:    map.info, mod.info, spawnpoints.lua, objects.lua read (2 mods)
-Binary formats:   OPEN — byte-level content not parsed
+Binary prefixes:  first 64 bytes sampled (5 files per extension per mod)
+Binary formats:   PARTIAL — prefix patterns observed; full format not decoded
 ```
 
 ---
@@ -101,8 +102,8 @@ Coordinate naming convention is `<cx>_<cy>` where cx and cy are integers
 
 | Gap | Investigation method | Status |
 |---|---|---|
-| `.lotheader` binary format | Inspect byte-level content locally (hex editor or parser) | **OPEN** — file presence confirmed; content not parsed |
-| `.lotpack` binary format | Inspect byte-level content locally (hex editor or parser) | **OPEN** — file presence confirmed; content not parsed |
+| `.lotheader` binary format | Inspect byte-level content locally (hex editor or parser) | **PARTIAL** — prefix sampled (64 bytes, 10 files, 2 mods); bytes 0-3 = `00000000` (consistent); bytes 4-7 = 32-bit LE variable integer (likely entry count); bytes 8+ = newline-separated ASCII tileset names. Byte-level semantics not confirmed; full decoding required before writing |
+| `.lotpack` binary format | Inspect byte-level content locally (hex editor or parser) | **PARTIAL** — prefix sampled; first 8 bytes = `84030000241c0000` IDENTICAL across all 10 sampled files from both mods; bytes 8+ appear to be an offset/size table with increasing 4-byte or 8-byte LE values. Full format not decoded; writing not permitted |
 | Cell coordinate naming convention | Observe file names in a Workshop/WorldEd export | **PARTIAL** — `<cx>_<cy>` pattern confirmed in 2 observations; offset coords confirmed (25_15); zero-origin also observed |
 | Exact directory layout for cell files | Observe directory tree in a Workshop/WorldEd export | **PARTIAL** — flat layout under `media/maps/<map_id>/` confirmed in 2 observations |
 | Minimum viable cell count for load | Local load test with smallest possible cell | **OPEN** — smallest observed is 6 cells (2x3); single-cell not tested |
@@ -280,8 +281,10 @@ All hypotheses require byte-level verification before use in a writer.
 
 MAP-4 writer implementation remains blocked. The following remain unknown:
 
-- Byte-level binary format of `.lotheader` (field offsets, types, sizes).
-- Byte-level binary format of `.lotpack` (field offsets, types, sizes).
+- Byte-level semantics of `.lotheader` field at bytes 4-7 (count assumed but not confirmed).
+- Exact format of `.lotheader` tileset-name list (encoding, termination, any padding).
+- Full binary format of `.lotpack` beyond the consistent 8-byte header.
+- Full binary format of `chunkdata_*.bin` beyond the `0001` prefix.
 - Whether a single cell (1x1 grid) is sufficient for a map to load.
 - Exact spawn coordinate origin and scale (worldX/worldY cell-grid unit confirmed; absolute origin not confirmed).
 - `objects.lua` required fields (if any are mandatory).
@@ -379,3 +382,86 @@ file. The count is a rough heuristic; it counts all numeric tokens.
 | PZ assets copied | false |
 | media/maps touched in repo | false |
 | Playable export claimed | false |
+
+---
+
+## 15. Binary header evidence (MAP-4D)
+
+`scripts/inspect-compiled-binary-headers.ps1` was run against both Workshop mods
+with `-MaxBytes 64 -MaxFilesPerExtension 5`. No files were copied. All output
+is under `.local/` only. Only first-64-byte prefixes were read as hex strings.
+
+### .lotheader prefix evidence
+
+| File | Bytes | Bytes 0-3 | Bytes 4-7 (LE int) | Bytes 8-15 (ASCII) |
+|---|---:|---|---|---|
+| Laval `0_0.lotheader` | 2155 | `00000000` | `33000000` = 51 | `blends_gr...` |
+| Laval `0_1.lotheader` | 1970 | `00000000` | `2a000000` = 42 | `blends_gr...` |
+| Laval `0_2.lotheader` | 2617 | `00000000` | `4b000000` = 75 | `blends_gr...` |
+| Laval `0_3.lotheader` | 5020 | `00000000` | `b9000000` = 185 | `blends_gr...` |
+| Laval `0_4.lotheader` | 3370 | `00000000` | `69000000` = 105 | `blends_gr...` |
+| Speed `25_15.lotheader` | 1628 | `00000000` | `23000000` = 35 | `blends_na...` |
+| Speed `25_16.lotheader` | 10308 | `00000000` | `46010000` = 326 | `BMyers_1\n...` |
+| Speed `25_17.lotheader` | 1560 | `00000000` | `1f000000` = 31 | `blends_na...` |
+| Speed `26_15.lotheader` | 7076 | `00000000` | `d1000000` = 209 | `appliances...` |
+| Speed `26_16.lotheader` | 28435 | `00000000` | `87030000` = 903 | `DylansRan...` |
+
+**Observations:**
+- Bytes 0-3: `00 00 00 00` — CONSISTENT across all 10 sampled files from both mods.
+- Bytes 4-7: 32-bit LE variable integer — varies per cell. Appears to correlate with
+  the number of tileset name entries (more complex/content-rich cells have higher values).
+- Bytes 8+: newline-separated (`0x0A`) ASCII tileset pack names, e.g.:
+  `blends_grassoverlays_01_`, `blends_natural_01_16`, `BMyers_1`,
+  `BZM_Industry_extras_01_3`, `appliances_cooking_01_38`, `DylansRandomFurniture01_`.
+  These are Project Zomboid tileset pack identifiers.
+- **Hypothesis (not confirmed):** bytes 4-7 = count of tileset name entries;
+  bytes 8+ = newline-terminated string list.
+- Byte-level semantics require further investigation before writing.
+
+### .lotpack prefix evidence
+
+| File | Bytes | Bytes 0-7 (hex) |
+|---|---:|---|
+| Laval `world_0_0.lotpack` | 1,258,804 | `84030000241c0000` |
+| Laval `world_0_1.lotpack` | 1,228,324 | `84030000241c0000` |
+| Laval `world_0_2.lotpack` | 1,267,212 | `84030000241c0000` |
+| Speed `world_25_15.lotpack` | 1,104,076 | `84030000241c0000` |
+| Speed `world_25_16.lotpack` | 1,233,352 | `84030000241c0000` |
+
+**Observations:**
+- Bytes 0-7: `84 03 00 00 24 1c 00 00` — IDENTICAL across ALL 10 sampled files
+  from both mods. This is very strong evidence of a fixed-format header.
+- `84 03 00 00` as 32-bit LE = 0x0384 = 900. Role unknown (version? magic?).
+- `24 1c 00 00` as 32-bit LE = 0x1C24 = 7204. Role unknown (entry count? offset?).
+- Bytes 8+: sequence of increasing 4-byte or 8-byte LE values — likely an offset
+  or size table. Differences between values appear to be of similar magnitude,
+  suggesting fixed-size entries.
+- **Full format not decoded.** Writing is not permitted.
+
+### chunkdata .bin prefix evidence
+
+| File | Bytes | Bytes 0-7 (hex) |
+|---|---:|---|
+| Laval `chunkdata_0_0.bin` | 902 | `0001000000000000` |
+| Laval `chunkdata_0_3.bin` | 14,302 | `0001000000000000` |
+| Laval `chunkdata_0_4.bin` | 15,702 | `0001030303020808` |
+| Speed `chunkdata_25_15.bin` | 10,202 | `0001000000000000` |
+| Speed `chunkdata_25_16.bin` | 10,802 | `0001000000000200` |
+
+**Observations:**
+- Bytes 0-1: `00 01` — CONSISTENT across all 10 sampled files. Likely a format
+  version marker (LE 16-bit value = 1).
+- Bytes 2+: variable — mostly zeros for low-content cells; non-zero for cells
+  with more data. Full format not decoded.
+
+### Safety record
+
+| Property | Value |
+|---|---|
+| Binary files copied into repo | false |
+| Full binary files read | false |
+| Only prefix bytes read | true (max 64 bytes per file) |
+| PZ assets copied | false |
+| media/maps touched in repo | false |
+| Playable export claimed | false |
+| Compiled writer implemented | false |
