@@ -301,6 +301,13 @@ Added in SVG-11:
   All output under `.local/` (gitignored). No SVG geometry converted. No coordinates
   extracted. No PZ assets. No media/maps writes.
 
+- **APP-8A: cockpit checks added to smoke script**: the Montreal smoke script now also
+  verifies APP-8 cockpit strings in both generated HTMLs (25 checks total):
+  - Source run HTML (SVG annotation path): `Run Summary`, `SVG annotation: present`,
+    `SVG parse: parsed`, `SVG candidates: present`, all four safety claims.
+  - Review run HTML (manifest path): `Run Summary`, `SVG review: present`,
+    `Planning manifest: present`, all four safety claims.
+
 ---
 
 ## Pipeline stages

@@ -8,6 +8,25 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (APP-8A: cockpit verification in Montreal SVG smoke)
+- scripts/smoke-montreal-svg-planning-manifest.ps1:
+  - 15 new APP-8 cockpit checks after existing manifest verification.
+  - Source run HTML (SVG annotation path): Run Summary, SVG annotation: present,
+    SVG parse: parsed, SVG candidates: present, playable export generated: false,
+    PZ assets copied/read: false, media/maps touched: false, claim_boundary: intact.
+  - Review run HTML (manifest path): Run Summary, SVG review: present,
+    Planning manifest: present, playable export generated: false,
+    PZ assets copied/read: false, media/maps touched: false, claim_boundary: intact.
+  - Total checks in smoke script: 25. All PASS on real Montreal SVG run.
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No coordinate extraction. No geometry conversion. No path d= extraction.
+No PZ assets. No media/maps writes. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (APP-8: app export run summary cockpit)
 - src/PZMapForge.Cli/Program.cs:
   - svgParseStatus and svgManifestPresent variables initialized before the

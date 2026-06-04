@@ -205,6 +205,45 @@ if ($html -notmatch 'SVG Planning Manifest') {
 }
 Write-Output "OK: HTML contains 'SVG Planning Manifest'"
 
+# APP-8: cockpit strings in source run HTML (SVG annotation path)
+$sourceHtml = Get-Content -LiteralPath (Join-Path $sourceRunDir 'index.html') -Raw
+
+$sourceCockpitChecks = @(
+    'Run Summary',
+    'SVG annotation: present',
+    'SVG parse: parsed',
+    'SVG candidates: present',
+    'playable export generated: false',
+    'PZ assets copied/read: false',
+    'media/maps touched: false',
+    'claim_boundary: intact'
+)
+
+foreach ($needle in $sourceCockpitChecks) {
+    if ($sourceHtml -notlike "*$needle*") {
+        throw "source run index.html does not contain cockpit string: $needle"
+    }
+    Write-Output "OK (source): $needle"
+}
+
+# APP-8: cockpit strings in review run HTML (selection/manifest path)
+$reviewCockpitChecks = @(
+    'Run Summary',
+    'SVG review: present',
+    'Planning manifest: present',
+    'playable export generated: false',
+    'PZ assets copied/read: false',
+    'media/maps touched: false',
+    'claim_boundary: intact'
+)
+
+foreach ($needle in $reviewCockpitChecks) {
+    if ($html -notlike "*$needle*") {
+        throw "review run index.html does not contain cockpit string: $needle"
+    }
+    Write-Output "OK (review): $needle"
+}
+
 # ---------------------------------------------------------------------------
 # PASS
 # ---------------------------------------------------------------------------
