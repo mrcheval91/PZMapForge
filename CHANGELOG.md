@@ -8,6 +8,41 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-5B: experimental map load test record protocol)
+- docs/MAP_5B_MANUAL_LOAD_TEST_PROTOCOL.md: manual load test protocol.
+  - What is tested (lotheader/lotpack/chunkdata hypotheses).
+  - Step-by-step: run preparation script, copy mod folder, launch PZ,
+    observe, record result, clean up.
+  - Success and failure diagnostic tables.
+  - Non-claims: no playable export claim until PASS reviewed.
+- docs/examples/manual-load-test/MAP_5B_LOAD_TEST_RECORD_TEMPLATE.md:
+  fillable record template.
+  - metadata, safety confirmation, observation checklist
+  - result: LOAD_TEST_PASS / LOAD_TEST_FAIL / LOAD_TEST_INCONCLUSIVE
+  - non-claims section
+- scripts/prepare-map-export-experimental-load-test.ps1:
+  - Args: -Source <.local MAP-5A output> -Output <.local load-tests dir>.
+  - Refuses non-.local Output.
+  - Validates MAP-5A source (8 expected files + 3 report flags).
+  - Writes MAP_5B_LOAD_TEST_PACKET.md (copy instructions, hypothesis table,
+    non-claims, mods destination path).
+  - Writes MAP_5B_LOAD_TEST_RECORD.local-template.md (pre-filled with
+    map_id, cell, generated_at from source report).
+  - Does NOT copy files to PZ mods folder.
+  - Does NOT touch PZ install.
+  - Does NOT touch repo media/maps.
+  - Does NOT claim playable export.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-5B section added.
+- docs/IMPLEMENTATION.md: MAP-5B ratified row added.
+
+No binary writer changes. No .lotheader/.lotpack/.bin in diff.
+No PZ assets. No playable export claim. PS 492 / .NET 397 unchanged.
+No proof-packet sync.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-5A: experimental local compiled empty cell writer)
 - src/PZMapForge.Cli/Program.cs: map-export-experimental command.
   - Args: --map-id <id> --output <.local dir> [--cell-x <int>] [--cell-y <int>].

@@ -394,6 +394,19 @@ logged in report.
 **No load test has been performed. No playable export claim.**
 Manual load test required before any claim changes.
 
+**MAP-5B — experimental map load test record protocol:**
+MAP-5B adds the protocol and tooling for the manual MAP-5A load test.
+
+Artifacts:
+- `docs/MAP_5B_MANUAL_LOAD_TEST_PROTOCOL.md` — load test protocol and step-by-step guide.
+- `docs/examples/manual-load-test/MAP_5B_LOAD_TEST_RECORD_TEMPLATE.md` — master fillable record template.
+- `scripts/prepare-map-export-experimental-load-test.ps1` — validates MAP-5A output and writes a load-test packet (instructions + per-run record template) under `.local/` only. Does not copy files to PZ. Does not claim playable export.
+
+The packet script (`-Source <.local map-export-experimental dir> -Output <.local load-tests dir>`) verifies all 8 expected source files, validates report safety flags, and writes `MAP_5B_LOAD_TEST_PACKET.md` and `MAP_5B_LOAD_TEST_RECORD.local-template.md`.
+
+**No playable export claim.** Load test must be performed manually by the operator.
+Results are recorded in the local template and reviewed before any claim changes.
+
 ---
 
 ## 6. Source / editing format contract
