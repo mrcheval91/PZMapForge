@@ -1,7 +1,7 @@
 # Compiled Cell Format Evidence
 
 ```text
-Status:           MAP-4F lotpack offset table evidence recorded
+Status:           MAP-4G chunkdata binary pattern evidence recorded
 Claim boundary:   evidence_inventory_only_not_compiled_not_pz_load_tested
 Compiler status:  not implemented
 PZ assets:        not copied into repo
@@ -11,7 +11,8 @@ Text metadata:    map.info, mod.info, spawnpoints.lua, objects.lua read (2 mods)
 Binary prefixes:  first 64 bytes sampled (5 files per extension per mod)
 Lotheader strings: 16 .lotheader files fully parsed (10 Laval + 6 RED-Speedway)
 Lotpack offsets:  16 .lotpack prefixes analysed (10 Laval + 6 RED-Speedway)
-Binary formats:   PARTIAL — lotheader structure well-supported; lotpack header+table pattern confirmed
+Chunkdata patterns: 16 chunkdata_*.bin files analysed (10 Laval + 6 RED-Speedway)
+Binary formats:   PARTIAL — lotheader, lotpack, chunkdata structure patterns observed
 ```
 
 ---
@@ -106,6 +107,7 @@ Coordinate naming convention is `<cx>_<cy>` where cx and cy are integers
 |---|---|---|
 | `.lotheader` binary format | Inspect byte-level content locally (hex editor or parser) | **PARTIAL** — 16 files fully parsed (10 Laval + 6 RED-Speedway); bytes 0-3 = `00000000` (consistent, 16/16); bytes 4-7 = 32-bit LE entry count (14/16 exact match; 2 mismatches off by 2-3 in complex cells); bytes 8+ = newline-delimited ASCII tileset pack names (entries range 31–2450); full byte-level semantics not confirmed; writing not permitted |
 | `.lotpack` binary format | Inspect byte-level content locally (hex editor or parser) | **PARTIAL** — 16 files sampled (10 Laval + 6 RED-Speedway); bytes 0-3 = U32 LE = 900 (constant, 16/16) = candidate chunk count (30×30 per cell); bytes 4-7 = U32 LE = 7204 = 4 + 900×8 (formula exact, 16/16); bytes 8-7207 = 900-entry × 8-byte offset table: even U32 = 0, odd U32 = absolute chunk file offset; chunk offsets monotonically increasing; chunk sizes variable (city) or constant (uniform terrain). Data section format and gap section (bytes 7208–first-chunk-offset) unknown. Writing not permitted |
+| `chunkdata_*.bin` format | Inspect byte patterns from sampled files | **PARTIAL** — 16 files sampled (10 Laval + 6 RED-Speedway); first 2 bytes = `00 01` consistent (16/16); minimum file size = 902 bytes (confirmed in 2 simple cells) = 2-byte header + 900 bytes for 30×30 chunk grid (exact match); larger files have additional data beyond byte 901 (variable size, role unknown); specific byte values in chunk grid (0x02, 0x03, 0x08) and format of extended data not decoded. Writing not permitted |
 | Cell coordinate naming convention | Observe file names in a Workshop/WorldEd export | **PARTIAL** — `<cx>_<cy>` pattern confirmed in 2 observations; offset coords confirmed (25_15); zero-origin also observed |
 | Exact directory layout for cell files | Observe directory tree in a Workshop/WorldEd export | **PARTIAL** — flat layout under `media/maps/<map_id>/` confirmed in 2 observations |
 | Minimum viable cell count for load | Local load test with smallest possible cell | **OPEN** — smallest observed is 6 cells (2x3); single-cell not tested |
@@ -288,7 +290,9 @@ MAP-4 writer implementation remains blocked. The following remain unknown:
 - Content and format of the variable-length gap section (bytes 7208 to first-chunk-offset) in each `.lotpack` file.
 - Internal format of each chunk's data block within `.lotpack`.
 - How to write valid chunk data (tile references, compression, encoding).
-- Full binary format of `chunkdata_*.bin` beyond the `0001` prefix.
+- Specific byte-value semantics for the 900-byte chunk grid in `chunkdata_*.bin` (0x02, 0x03, 0x08 observed but meanings unknown).
+- Format of the variable-length extended section beyond byte 901 in non-empty `chunkdata_*.bin` files.
+- Whether a minimal 902-byte `chunkdata_*.bin` (all-zero grid) would be acceptable to PZ for an empty cell.
 - Whether a single cell (1x1 grid) is sufficient for a map to load.
 - Exact spawn coordinate origin and scale (worldX/worldY cell-grid unit confirmed; absolute origin not confirmed).
 - `objects.lua` required fields (if any are mandatory).
@@ -540,6 +544,83 @@ require further investigation before any writer is implemented.
 | .lotpack files read | false |
 | .bin files read | false |
 | Files copied into repo | false |
+| PZ assets copied | false |
+| media/maps touched in repo | false |
+| Playable export claimed | false |
+| Compiled writer implemented | false |
+
+---
+
+## 18. Chunkdata binary pattern evidence (MAP-4G)
+
+`scripts/inspect-chunkdata-binary-patterns.ps1` was run against both Workshop
+mods with `-MaxFiles 10 -MaxBytesPerFile 65536`. Only `chunkdata_*.bin` files
+were read (bounded prefixes). No `.lotheader` or `.lotpack` files were read.
+No files were copied. No binary files were written.
+
+### First-2-bytes consistency — 16/16 files, both mods
+
+| Field | Value | Consistent |
+|---|---|---|
+| Bytes 0-1 | `00 01` | 16/16 ✓ |
+| As U16 LE | 256 | 16/16 ✓ |
+| As two separate bytes | `0x00`, `0x01` | 16/16 ✓ |
+
+### File size structure — critical observation
+
+Minimum observed file size: **902 bytes** (two Laval-Montreal grass cells).
+
+```
+902 = 2 (header bytes) + 900 (30 × 30 chunk grid)
+```
+
+This is an **exact match** to the PZ cell architecture (300×300 tiles / 10×10 per chunk = 30×30 = 900 chunks per cell). This strongly supports:
+- Bytes 0-1: 2-byte header (`00 01`)
+- Bytes 2-901: 900-byte array, one byte per chunk (30×30 grid)
+- Bytes 902+: variable additional data for non-empty cells (role unknown)
+
+### Observed file size range
+
+| Mod | Min size | Max size | Notes |
+|---|---:|---:|---|
+| Laval-Montreal | 902 | 43,002 | Minimum = empty grass cell |
+| RED-Speedway | 10,202 | 21,802 | No empty cells (all contain track features) |
+
+### Chunk grid byte values observed
+
+For `chunkdata_0_4.bin` (complex Laval cell), bytes 2-7 = `03 03 03 02 08 08`.
+The values `0x02`, `0x03`, `0x08` appear to be per-chunk flags or type codes.
+Their specific meanings are not confirmed.
+
+For simple grass cells (902-byte files), the entire chunk grid (bytes 2-901)
+is `0x00`. Only byte 1 (`0x01`) is nonzero — the header byte.
+
+### First nonzero byte offsets — structural pattern
+
+| File | Size | Nonzero offsets (first 4) |
+|---|---:|---|
+| `chunkdata_0_0.bin` (empty grass) | 902 | offset 1 only |
+| `chunkdata_0_1.bin` (empty grass) | 902 | offset 1 only |
+| `chunkdata_0_2.bin` (sparse urban) | 9,102 | 1, 241, 320, 321 |
+| `chunkdata_0_4.bin` (dense urban) | 15,702 | 1, 2, 3, 4, 5, 6, 7, 8 |
+| `chunkdata_25_15.bin` (raceway) | 10,202 | 1, 175, 263, 264, 265 |
+
+### What remains unknown
+
+- Specific meaning of byte values in the 900-byte chunk grid (0x02, 0x03, 0x08, etc.).
+- Format and content of the extended section beyond byte 901.
+- Whether a 902-byte all-zero-grid file would be acceptable to PZ as a minimal cell.
+- Whether byte 0 (`0x00`) is meaningful or just padding.
+
+### Safety record
+
+| Property | Value |
+|---|---|
+| Only chunkdata_*.bin prefixes read | true |
+| .lotheader files read | false |
+| .lotpack files read | false |
+| Binary files copied | false |
+| Binary files written | false |
 | PZ assets copied | false |
 | media/maps touched in repo | false |
 | Playable export claimed | false |

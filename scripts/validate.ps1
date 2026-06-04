@@ -209,6 +209,25 @@ if ($map4fContent -notmatch 'compiled_writer_implemented') { throw "MAP-4F scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-4G chunkdata binary patterns script contract ---"
+$map4gScript = Join-Path $repoRoot 'scripts\inspect-chunkdata-binary-patterns.ps1'
+if (-not (Test-Path -LiteralPath $map4gScript)) { throw "MAP-4G script missing: scripts\inspect-chunkdata-binary-patterns.ps1" }
+Write-Output "OK: scripts\inspect-chunkdata-binary-patterns.ps1"
+$map4gContent = Get-Content -LiteralPath $map4gScript -Raw
+if ($map4gContent -notmatch '\.local') { throw "MAP-4G script missing .local refusal language" }
+Write-Output "OK: script contains .local refusal language"
+if ($map4gContent -notmatch 'only_chunkdata_bin_files_read') { throw "MAP-4G script missing only_chunkdata_bin_files_read sentinel" }
+Write-Output "OK: script contains only_chunkdata_bin_files_read sentinel"
+if ($map4gContent -notmatch 'lotheader_files_read') { throw "MAP-4G script missing lotheader_files_read sentinel" }
+Write-Output "OK: script contains lotheader_files_read sentinel"
+if ($map4gContent -notmatch 'lotpack_files_read') { throw "MAP-4G script missing lotpack_files_read sentinel" }
+Write-Output "OK: script contains lotpack_files_read sentinel"
+if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing bin_files_written sentinel" }
+Write-Output "OK: script contains bin_files_written sentinel"
+if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
+Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
 Write-Output "========================================"
 Write-Output "PZMapForge validation summary"
 Write-Output "========================================"

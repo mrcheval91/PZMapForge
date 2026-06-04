@@ -8,6 +8,50 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-4G: chunkdata binary pattern evidence probe)
+- scripts/inspect-chunkdata-binary-patterns.ps1: chunkdata_*.bin pattern reader.
+  - Args: -Path <dir> -Output <.local dir> -MaxFiles (default 10, max 50)
+    -MaxBytesPerFile (default 65536, max 1048576).
+  - Refuses output outside .local/.
+  - Reads ONLY chunkdata_*.bin files. NOT .lotheader. NOT .lotpack.
+  - Does NOT write any binary files.
+  - Records per-file: first 2/4/8 bytes hex, U16/U32 LE values, zero/nonzero
+    byte counts, distinct byte count, top-16 most common bytes, first-32
+    nonzero offsets, 16-byte prefix group.
+  - Writes chunkdata-binary-pattern-evidence.json + .md with aggregate,
+    interpretation notes, and open questions.
+  - only_chunkdata_bin_files_read=true, lotheader_files_read=false,
+    lotpack_files_read=false, bin_files_written=false.
+- scripts/validate.ps1: MAP-4G inline contract section (7 checks).
+  PS lane stays 492. No proof-packet sync.
+- docs/COMPILED_CELL_FORMAT_EVIDENCE.md:
+  - Header updated (MAP-4G, chunkdata patterns).
+  - Section 5: chunkdata_*.bin gap row added (OPEN → PARTIAL):
+    first2=0001 consistent 16/16; minimum size 902 = 2+900 (exact);
+    chunk grid bytes partially observed; extended section unknown.
+  - Section 13: extended section and grid semantics unknowns updated.
+  - Section 18 added: MAP-4G chunkdata binary pattern evidence.
+    - `00 01` first-2-bytes consistent across all 16 files.
+    - 902 bytes = 2 (header) + 900 (30×30 chunk grid) — EXACT match.
+    - Empty grass cells: all-zero chunk grid, 902 bytes total.
+    - Complex cells: nonzero per-chunk flags (0x02/0x03/0x08) + extended data.
+    - RED-Speedway: minimum 10202 bytes (no empty cells observed).
+- docs/MAP_EXPORT_CONTRACT.md: MAP-4G section added.
+- docs/IMPLEMENTATION.md: MAP-4G ratified row added.
+
+Gap advance (PARTIAL only — not CLOSED):
+- chunkdata_*.bin format: OPEN → PARTIAL.
+
+Chunk grid byte semantics, extended section format, and PZ load validity
+for minimal 902-byte file remain unknown. Writing not permitted.
+No files copied. No binary files written. Only chunkdata_*.bin read.
+No .lotheader/.lotpack read. No compiled writer. No playable export claim.
+PS 492 / .NET 381 unchanged. No proof-packet sync.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-4F: lotpack offset table evidence probe)
 - scripts/inspect-lotpack-offset-table.ps1: .lotpack bounded prefix analyser.
   - Args: -Path <dir> -Output <.local dir> -MaxFiles (default 10, max 50)

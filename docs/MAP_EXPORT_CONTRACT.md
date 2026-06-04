@@ -313,6 +313,30 @@ Still OPEN: gap section content, chunk data encoding, how to write valid chunk d
 MAP-4 remains blocked. The decision gate in section 8 of
 `docs/COMPILED_CELL_FORMAT_EVIDENCE.md` is not satisfied.
 
+**MAP-4G — chunkdata binary pattern evidence probe:**
+MAP-4G adds `scripts/inspect-chunkdata-binary-patterns.ps1`, which reads bounded
+`chunkdata_*.bin` prefixes (not `.lotheader` or `.lotpack`) and records byte-
+pattern evidence. No files are copied. No binary files are written.
+
+Script: `scripts/inspect-chunkdata-binary-patterns.ps1 -Path <dir> -Output <.local dir>`
+
+Evidence from 16 chunkdata_*.bin files across 2 mods:
+- First 2 bytes = `00 01` — CONSTANT, 16/16 files, both mods.
+- Minimum file size = 902 bytes = 2-byte header + 900-byte (30×30 chunk grid).
+  This is an exact match to the PZ cell architecture (300/10 × 300/10 = 900 chunks/cell).
+- Simple grass cells (902 bytes): chunk grid (bytes 2-901) all zero.
+- Complex cells: chunk grid has nonzero per-chunk flags (0x02, 0x03, 0x08 observed)
+  plus variable additional data beyond byte 901.
+
+Gap advance (PARTIAL only — not CLOSED):
+- `chunkdata_*.bin` format: OPEN → PARTIAL.
+
+Still OPEN: chunk grid byte semantics, extended section format, whether minimal
+902-byte file is valid for PZ load.
+
+MAP-4 remains blocked. The decision gate in section 8 of
+`docs/COMPILED_CELL_FORMAT_EVIDENCE.md` is not satisfied.
+
 ---
 
 ## 6. Source / editing format contract
