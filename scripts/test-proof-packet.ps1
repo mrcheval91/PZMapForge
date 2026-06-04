@@ -112,7 +112,7 @@ foreach ($field in $shaFields) {
 
 Write-Output ""
 Write-Output "--- Validation summary (PowerShell lane) ---"
-Assert-True ([int]$p.validation_summary.schema_file_sanity          -eq 196) "schema_file_sanity == 196"
+Assert-True ([int]$p.validation_summary.schema_file_sanity          -eq 214) "schema_file_sanity == 214"
 Assert-True ([int]$p.validation_summary.artifact_contract           -eq 40)  "artifact_contract == 40"
 Assert-True ([int]$p.validation_summary.palette_sha256_verification -eq 5)   "palette_sha256_verification == 5"
 Assert-True ([int]$p.validation_summary.tmx_integrity               -eq 21)  "tmx_integrity == 21"
@@ -120,7 +120,7 @@ Assert-True ([int]$p.validation_summary.hardening_harness           -eq 36)  "ha
 Assert-True ([int]$p.validation_summary.region_extraction           -eq 24)  "region_extraction == 24"
 Assert-True ([int]$p.validation_summary.primitive_classification      -eq 22)  "primitive_classification == 22"
 Assert-True ([int]$p.validation_summary.plan_recommendations_contract -eq 28)  "plan_recommendations_contract == 28"
-Assert-True ([int]$p.validation_summary.total_expected_assertions     -eq 474) "total_expected_assertions == 474"
+Assert-True ([int]$p.validation_summary.total_expected_assertions     -eq 492) "total_expected_assertions == 492"
 
 # ---------------------------------------------------------------------------
 # dotnet_validation_summary (separate lane)

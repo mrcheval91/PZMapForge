@@ -99,14 +99,30 @@ does not exist yet. MAP-0 does not implement any step past dry-run planning.
 
 ## 6. Source / editing format contract
 
-**PZMapForge source format:**
-PZMapForge-owned declarative data, eventually schema-backed. Current form is
-parsed-cell.json and its associated planning artifacts. Future form is not yet
-defined.
+**PZMapForge source format (v0.1 defined — MAP-1):**
+PZMapForge-owned declarative data, schema-backed as of MAP-1.
+Schema: `schemas/pzmapforge.map-source.v0.1.schema.json`
+Example: `examples/map-source/minimal-cell.json`
+
+The v0.1 source format is a JSON document describing a map in PZMapForge terms.
+It is not an export format. It is not a Project Zomboid compiled file. No output
+is written to `.local/` from the schema alone. No compiler step exists yet.
+
+Required top-level fields (v0.1):
+- `schema`: const `pzmapforge.map-source.v0.1`
+- `format_version`: const `0.1`
+- `claim_boundary`: const `map_source_only_not_exported_not_pz_load_tested`
+- `map_id`: lowercase slug string
+- `cell_size`: integer (300 for current planning convention)
+- `cells`: array of cell objects (minItems 1)
+
+Each cell (v0.1): `cell_id`, `x`, `y`, `terrain`, `spawn_points`, `zones`, `notes`.
+Terrain values (v0.1): `grass`, `asphalt`, `water`, `unknown`.
+Spawn points in v0.1 are source metadata only. No compiled spawn output exists.
 
 **Editable / project format:**
 Optional future compatibility layer (e.g. a human-editable YAML or JSON map
-description). Not canonical. Not implemented in MAP-0.
+description). Not canonical. Not implemented.
 
 The source format must be:
 - ASCII or UTF-8 text only.
@@ -294,7 +310,7 @@ file is committed and reviewed.
 
 | Slice | Title | Scope |
 |---|---|---|
-| MAP-1 | PZMapForge map source schema | Define and schema-validate the PZMapForge source format for map description data |
+| MAP-1 | PZMapForge map source schema | Schema defined: schemas/pzmapforge.map-source.v0.1.schema.json; example: examples/map-source/minimal-cell.json; source format only, not exported, not compiled |
 | MAP-2 | Dry-run map export plan command | Add a `map-plan` CLI command that reads source format and outputs a dry-run export plan artifact with no file writes |
 | MAP-3 | Text-only local mod scaffold writer | Add a command that writes a minimal text-only mod scaffold under `.local/` only; no binary files; no assets |
 | MAP-4 | Minimal compiled cell writer proof | Add a command that writes one minimal compiled cell under `.local/`; requires local evidence from section 14 first |

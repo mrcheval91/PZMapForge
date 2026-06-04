@@ -8,6 +8,37 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-1: map source schema)
+- schemas/pzmapforge.map-source.v0.1.schema.json: v0.1 map source schema.
+  - Required fields: schema, format_version, claim_boundary, map_id,
+    cell_size, cells.
+  - claim_boundary: map_source_only_not_exported_not_pz_load_tested.
+  - Cell fields: cell_id, x, y, terrain, spawn_points, zones, notes.
+  - Terrain enum (v0.1): grass, asphalt, water, unknown.
+  - Spawn point fields: id, x, y, label (source metadata only).
+  - Zone fields: id, kind, label.
+  - Source format only. Not an export format. Not compiled. Not playable.
+- examples/map-source/minimal-cell.json: valid minimal example conforming
+  to the v0.1 schema (one cell, one spawn point as source metadata, grass
+  terrain). Notes in example state it is source-only and not exported.
+- scripts/test-schema-files.ps1: Test-Schema call added for map-source
+  schema (18 assertions). Schema file sanity total: 196 -> 214.
+- scripts/validate.ps1: Schema file sanity count 196 -> 214; psTotal 474 -> 492.
+- scripts/write-proof-packet.ps1: schema_file_sanity 196 -> 214;
+  total_expected_assertions 474 -> 492; markdown table updated.
+- scripts/test-proof-packet.ps1: assertions updated to 214 / 492.
+- docs/MAP_EXPORT_CONTRACT.md: Section 6 updated with v0.1 source format
+  details; MAP-1 slice row updated.
+- docs/IMPLEMENTATION.md, README.md, CHANGELOG.md: updated.
+
+No map export command added. No .local writer added. No app-export behavior
+changed. No SVG geometry conversion. No coordinate math. No PZ assets.
+No media/maps writes. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-0: map export contract discovery)
 - docs/MAP_EXPORT_CONTRACT.md: contract discovery document defining all areas
   PZMapForge must satisfy before claiming playable Project Zomboid map export.

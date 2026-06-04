@@ -138,7 +138,7 @@ Write-Output "========================================"
 # ---------------------------------------------------------------------------
 
 $psChecks = [ordered]@{
-    'Schema file sanity'            = 196
+    'Schema file sanity'            = 214
     'Artifact contract'             = 40
     'Palette SHA-256 verification'  = 5
     'TMX integrity'                 = 21
@@ -148,7 +148,7 @@ $psChecks = [ordered]@{
     'Plan recommendations contract' = 28
     'Proof packet'                  = 102
 }
-$psTotal = 474   # = validation_summary.total_expected_assertions in proof-packet v0.16
+$psTotal = 492   # = validation_summary.total_expected_assertions in proof-packet v0.16
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 163   # PZMapForge.Cli.Tests

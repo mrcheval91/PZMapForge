@@ -249,6 +249,8 @@ dotnet run --project src/PZMapForge.Cli -- layer-validate --layers <manifest.jso
 - [Claim boundary](docs/CLAIM_BOUNDARY.md) — what is verified, what is not
 - [Roadmap](docs/ROADMAP.md) — phase plan
 - [Map export contract](docs/MAP_EXPORT_CONTRACT.md) — contract discovery for future playable map export; not implemented
+- [Map source schema](schemas/pzmapforge.map-source.v0.1.schema.json) — v0.1 source format schema; source contract only, not exported
+- [Map source example](examples/map-source/minimal-cell.json) — minimal valid map source example
 
 ---
 

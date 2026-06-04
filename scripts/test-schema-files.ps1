@@ -177,6 +177,18 @@ Test-Schema `
     )
 
 # ---------------------------------------------------------------------------
+# map-source schema
+# ---------------------------------------------------------------------------
+
+Test-Schema `
+    -FileName    'pzmapforge.map-source.v0.1.schema.json' `
+    -ExpectedId  'pzmapforge.map-source.v0.1' `
+    -CheckRequired @(
+        'schema', 'format_version', 'claim_boundary',
+        'map_id', 'cell_size', 'cells'
+    )
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 

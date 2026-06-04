@@ -1,0 +1,29 @@
+{
+  "schema": "pzmapforge.map-source.v0.1",
+  "format_version": "0.1",
+  "claim_boundary": "map_source_only_not_exported_not_pz_load_tested",
+  "map_id": "deadmtl_minimal_test",
+  "cell_size": 300,
+  "cells": [
+    {
+      "cell_id": "cell_0_0",
+      "x": 0,
+      "y": 0,
+      "terrain": "grass",
+      "spawn_points": [
+        {
+          "id": "spawn_0",
+          "x": 150,
+          "y": 150,
+          "label": "Default spawn"
+        }
+      ],
+      "zones": [],
+      "notes": [
+        "Source data only. Not exported. Not playable.",
+        "Spawn point is source metadata. No compiled output exists.",
+        "MAP-4 target: minimal local playable cell proof."
+      ]
+    }
+  ]
+}
