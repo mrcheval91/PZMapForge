@@ -244,6 +244,47 @@ foreach ($needle in $reviewCockpitChecks) {
     Write-Output "OK (review): $needle"
 }
 
+# APP-9: artifact index panel strings in source run HTML
+$sourceArtifactChecks = @(
+    'Evidence Artifacts',
+    'Clean analysis image',
+    'Parsed preview',
+    'Parsed cell JSON',
+    'Regions JSON',
+    'Primitives JSON',
+    'Plan recommendations JSON',
+    'Annotation image',
+    'SVG structure report',
+    'SVG layer candidates',
+    'SVG layer selection template',
+    'planning artifact only',
+    'not a playable Project Zomboid export'
+)
+
+foreach ($needle in $sourceArtifactChecks) {
+    if ($sourceHtml -notlike "*$needle*") {
+        throw "source run index.html does not contain APP-9 artifact string: $needle"
+    }
+    Write-Output "OK (source APP-9): $needle"
+}
+
+# APP-9: artifact index panel strings in review run HTML
+$reviewArtifactChecks = @(
+    'Evidence Artifacts',
+    'SVG selection review',
+    'SVG planning manifest JSON',
+    'SVG planning manifest Markdown',
+    'planning artifact only',
+    'not a playable Project Zomboid export'
+)
+
+foreach ($needle in $reviewArtifactChecks) {
+    if ($html -notlike "*$needle*") {
+        throw "review run index.html does not contain APP-9 artifact string: $needle"
+    }
+    Write-Output "OK (review APP-9): $needle"
+}
+
 # ---------------------------------------------------------------------------
 # PASS
 # ---------------------------------------------------------------------------

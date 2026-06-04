@@ -8,6 +8,27 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (APP-9A: verify artifact index in Montreal SVG smoke)
+- scripts/smoke-montreal-svg-planning-manifest.ps1:
+  - 19 new APP-9 artifact index checks (source run: 13 checks, review run: 6 checks).
+  - Source run checks: Evidence Artifacts, Clean analysis image, Parsed preview,
+    Parsed cell JSON, Regions JSON, Primitives JSON, Plan recommendations JSON,
+    Annotation image, SVG structure report, SVG layer candidates,
+    SVG layer selection template, planning artifact only,
+    not a playable Project Zomboid export.
+  - Review run checks: Evidence Artifacts, SVG selection review,
+    SVG planning manifest JSON, SVG planning manifest Markdown,
+    planning artifact only, not a playable Project Zomboid export.
+  - Total checks in smoke script: 44 (up from 25). All PASS on real Montreal SVG run.
+- docs/IMAGE_TO_MAP_APP.md, docs/IMPLEMENTATION.md, CHANGELOG.md: updated.
+
+No app-export behavior changed. No SVG geometry conversion. No coordinate math.
+No PZ assets. No media/maps writes. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Fixed (PROOF-1: sync proof packet .NET test evidence)
 - scripts/write-proof-packet.ps1:
   - test_total: 230 -> 353

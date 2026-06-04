@@ -301,8 +301,19 @@ Added in SVG-11:
   All output under `.local/` (gitignored). No SVG geometry converted. No coordinates
   extracted. No PZ assets. No media/maps writes.
 
-- **APP-8A: cockpit checks added to smoke script**: the Montreal smoke script now also
-  verifies APP-8 cockpit strings in both generated HTMLs (25 checks total):
+- **APP-9A: artifact index checks added to smoke script**: the Montreal smoke script now
+  also verifies APP-9 Evidence Artifacts panel strings in both generated HTMLs
+  (44 checks total, up from 25):
+  - Source run HTML (SVG annotation path): `Evidence Artifacts`, `Clean analysis image`,
+    `Parsed preview`, `Parsed cell JSON`, `Regions JSON`, `Primitives JSON`,
+    `Plan recommendations JSON`, `Annotation image`, `SVG structure report`,
+    `SVG layer candidates`, `SVG layer selection template`, `planning artifact only`,
+    `not a playable Project Zomboid export`. 13 new checks.
+  - Review run HTML (manifest path): `Evidence Artifacts`, `SVG selection review`,
+    `SVG planning manifest JSON`, `SVG planning manifest Markdown`,
+    `planning artifact only`, `not a playable Project Zomboid export`. 6 new checks.
+- **APP-8A: cockpit checks added to smoke script**: the Montreal smoke script also
+  verifies APP-8 cockpit strings in both generated HTMLs (original 25 checks):
   - Source run HTML (SVG annotation path): `Run Summary`, `SVG annotation: present`,
     `SVG parse: parsed`, `SVG candidates: present`, all four safety claims.
   - Review run HTML (manifest path): `Run Summary`, `SVG review: present`,
