@@ -8,6 +8,53 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-4C: map text metadata evidence reader)
+- scripts/inspect-map-text-metadata.ps1: local-only text metadata reader.
+  - Args: -Path <local mod/map root> -Output <.local dir>.
+  - Refuses output outside .local/.
+  - Reads ONLY: mod.info, map.info, spawnpoints.lua, objects.lua.
+  - Does NOT read: .lotheader, .lotpack, .bin, .png, any binary.
+  - Detects map folders under media/maps/.
+  - Parses key=value from .info files.
+  - Writes map-text-metadata-evidence.json:
+    - schema: pzmapforge.map-text-metadata-evidence.v0.1
+    - map_info_key_values, spawnpoints_summary, objects_summary
+    - binary_files_read: false, compiled_writer_implemented: false
+  - Writes map-text-metadata-evidence.md with non-claims section.
+  - [string] cast fix: explicit ForEach { [string]$_ } before Select-Object
+    to prevent PS 5.1 extended-string serialization in first_non_empty_lines.
+- scripts/validate.ps1: MAP-4C inline contract section added (4 checks):
+  - script exists
+  - contains .local refusal
+  - contains binary_files_read sentinel
+  - contains compiled_writer_implemented sentinel
+  PS lane stays 492. No proof-packet sync.
+- docs/COMPILED_CELL_FORMAT_EVIDENCE.md:
+  - Header updated (MAP-4C status, text metadata read).
+  - Section 5 gap updates:
+    - Spawn file format: PARTIAL (format pattern confirmed).
+    - Spawn coordinate system: PARTIAL (worldX/worldY/posX/posY/posZ observed).
+    - map.info required fields: PARTIAL (title/lots/description/fixed2x observed).
+  - Section 13 still-blocked updated.
+  - Section 14 added: MAP-4C text metadata observations (mod.info fields,
+    map.info fields, spawnpoints.lua format pattern, coordinate field names,
+    profession-key structure, per-mod summaries).
+- docs/MAP_EXPORT_CONTRACT.md: MAP-4C section added.
+- docs/IMPLEMENTATION.md: MAP-4C ratified row added.
+
+Gap advances (PARTIAL only, not CLOSED):
+- Spawn file format: worldX/worldY/posX/posY/posZ field names confirmed.
+- Spawn coordinate system: cell-grid coordinates confirmed.
+- map.info fields: title/lots/description/fixed2x observed.
+
+No binary files read. No compiled writer. No PZ assets.
+No .lotpack/.lotheader/.bin in repo. No playable export claim.
+PS 492 / .NET 381 unchanged. No proof-packet sync.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-4B: compiled cell evidence summaries)
 - docs/COMPILED_CELL_FORMAT_EVIDENCE.md: updated with two Workshop mod
   inventory observations and derived hypotheses.

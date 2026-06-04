@@ -1,12 +1,13 @@
 # Compiled Cell Format Evidence
 
 ```text
-Status:           MAP-4B evidence observations recorded
+Status:           MAP-4C text metadata evidence recorded
 Claim boundary:   evidence_inventory_only_not_compiled_not_pz_load_tested
 Compiler status:  not implemented
 PZ assets:        not copied into repo
 media/maps:       forbidden in repo
 Observations:     2 (Laval-Montreal workshop, RED-Speedway workshop)
+Text metadata:    map.info, mod.info, spawnpoints.lua, objects.lua read (2 mods)
 Binary formats:   OPEN — byte-level content not parsed
 ```
 
@@ -106,9 +107,9 @@ Coordinate naming convention is `<cx>_<cy>` where cx and cy are integers
 | Exact directory layout for cell files | Observe directory tree in a Workshop/WorldEd export | **PARTIAL** — flat layout under `media/maps/<map_id>/` confirmed in 2 observations |
 | Minimum viable cell count for load | Local load test with smallest possible cell | **OPEN** — smallest observed is 6 cells (2x3); single-cell not tested |
 | Whether single cell loads without world grid | Local load test | **OPEN** — not tested |
-| Spawn file format (`spawnpoints.lua`) | Inspect file content locally | **PARTIAL** — file present in both observations; Lua content not read |
-| Spawn coordinate system (cell/chunk) | Inspect spawn file content and PZ source references | **OPEN** — requires reading spawnpoints.lua content |
-| `map.info` required fields | Inspect file content locally | **PARTIAL** — file present in both observations; content not read |
+| Spawn file format (`spawnpoints.lua`) | Inspect file content locally | **PARTIAL** — format pattern observed: profession-keyed Lua table; fields: `worldX`, `worldY`, `posX`, `posY`, `posZ`; `function SpawnPoints()` / `return {}` structure confirmed |
+| Spawn coordinate system (cell/chunk) | Inspect spawn file content and PZ source references | **PARTIAL** — `worldX`/`worldY` appear to be cell-grid coordinates; `posX`/`posY`/`posZ` appear to be in-cell position; exact origin and scale not confirmed |
+| `map.info` required fields | Inspect file content locally | **PARTIAL** — fields observed: `title`, `lots`, `description`, `fixed2x`; which are required vs optional is not confirmed |
 | Build 41 vs Build 42 format differences | Local comparison; no assumption made | **OPEN** — not investigated |
 
 All gaps must be marked CLOSED with a filled evidence template before MAP-4
@@ -282,13 +283,99 @@ MAP-4 writer implementation remains blocked. The following remain unknown:
 - Byte-level binary format of `.lotheader` (field offsets, types, sizes).
 - Byte-level binary format of `.lotpack` (field offsets, types, sizes).
 - Whether a single cell (1x1 grid) is sufficient for a map to load.
-- Spawn coordinate system (cell/chunk/tile origin).
-- `spawnpoints.lua` content format and required fields.
-- `map.info` required fields and value format.
+- Exact spawn coordinate origin and scale (worldX/worldY cell-grid unit confirmed; absolute origin not confirmed).
 - `objects.lua` required fields (if any are mandatory).
 - Role and requirement of `worldmap.xml.bin`.
+- Whether `lots` in map.info is a directory prefix, a game-world region name, or both.
+- Whether `fixed2x = true` in map.info is required or optional.
 - Build 41 vs Build 42 format differences.
 
 No load test has been performed. No playable export claim is made.
 No writer implementation is permitted until the decision gate in section 8
 is fully satisfied.
+
+---
+
+## 14. Text metadata observations (MAP-4C)
+
+`scripts/inspect-map-text-metadata.ps1` was run against both Workshop mods.
+No binary files were read. No files were copied. All output is under `.local/`.
+
+### mod.info key fields observed
+
+| Field | Laval-Montreal | RED-Speedway |
+|---|---|---|
+| `name` | `Laval-Montreal` | `Redboid Speedway` |
+| `id` | `Laval-Montreal` | `RED-Speedway` |
+| `description` | present (long text) | present |
+| `poster` | `poster.png` | `poster.png` |
+| `icon` | (not observed) | `mini-poster.png` |
+| `authors` | (not observed) | `Bambino` |
+
+### media/maps/<map_id>/map.info key fields observed
+
+| Field | Laval-Montreal | RED-Speedway |
+|---|---|---|
+| `title` | `Laval-Montreal` | `Redboid Speedway` |
+| `lots` | `lavalmontreal` | `Muldraugh, KY` |
+| `description` | present | present |
+| `fixed2x` | `true` | `true` |
+
+Notes:
+- `lots` values differ: Laval-Montreal uses a custom identifier; RED-Speedway
+  references `Muldraugh, KY` (a base game location). The `lots` field role
+  requires further investigation — it may specify the world-map region where
+  the map is placed.
+- `fixed2x = true` is present in both. Role is not confirmed; may relate to
+  zoom level or tile scale.
+- `title` appears to be the display name; `lots` appears to be a location
+  identifier. Neither is confirmed as required vs optional.
+
+### spawnpoints.lua format observed (RED-Speedway example)
+
+```lua
+function SpawnPoints()
+return {
+  constructionworker = {
+    { worldX = 26, worldY = 16, posX = 200, posY = 196, posZ = 0 }
+  },
+  fireofficer = {
+    { worldX = 26, worldY = 16, posX = 200, posY = 196, posZ = 0 }
+  },
+  ...
+}
+```
+
+- The outermost table is keyed by **profession name** (e.g. `constructionworker`).
+- Each profession maps to an array of spawn point entries.
+- Each spawn point entry has: `worldX`, `worldY` (cell-grid coordinates) and
+  `posX`, `posY`, `posZ` (position within the cell).
+- The function is named `SpawnPoints` and returns the table.
+- Note: `contains_profession_name_tokens` detection in the script searches for
+  the literal string `profession` and returned false for RED-Speedway because
+  the format uses the profession **names** (constructionworker, fireofficer) as
+  keys, not the word `profession` itself.
+
+### spawnpoints.lua summary from text metadata reader
+
+| Field | Laval-Montreal | RED-Speedway |
+|---|---|---|
+| `file_present` | true | true |
+| `line_count` | 3049 | 22 |
+| `contains_return_statement` | true | true |
+| `contains_profession_name_tokens` | false | false |
+| `coordinate_number_count` | 14935 | 30 |
+
+Notes on `coordinate_number_count`: Laval-Montreal's 14935 reflects 3049 lines
+of spawn data for a 5x5 cell map; RED-Speedway's 30 reflects a compact 22-line
+file. The count is a rough heuristic; it counts all numeric tokens.
+
+### Safety record
+
+| Property | Value |
+|---|---|
+| Binary files read | false |
+| Files copied into repo | false |
+| PZ assets copied | false |
+| media/maps touched in repo | false |
+| Playable export claimed | false |

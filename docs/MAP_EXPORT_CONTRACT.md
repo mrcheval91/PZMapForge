@@ -227,6 +227,27 @@ Gap status updates (PARTIAL only — not CLOSED):
 Still OPEN: .lotheader binary format, .lotpack binary format, minimum viable
 cell count, single-cell load test, spawn coordinate system, Build 41/42 differences.
 
+**MAP-4C — map text metadata evidence reader:**
+MAP-4C adds `scripts/inspect-map-text-metadata.ps1`, which reads safe text
+files (mod.info, map.info, spawnpoints.lua, objects.lua) from an
+operator-provided local path and writes evidence JSON and Markdown under
+`.local/` only. No binary files are read. No files are copied.
+
+Script: `scripts/inspect-map-text-metadata.ps1 -Path <dir> -Output <.local dir>`
+
+Outputs: `map-text-metadata-evidence.json`, `map-text-metadata-evidence.md`
+
+Gap status updates from running against both Workshop mods (PARTIAL only):
+- Spawn file format: PARTIAL — format pattern confirmed: profession-keyed Lua
+  table with `worldX`/`worldY`/`posX`/`posY`/`posZ` fields.
+- Spawn coordinate system: PARTIAL — `worldX`/`worldY` appear to be cell-grid
+  coordinates; `posX`/`posY`/`posZ` appear to be in-cell position.
+- `map.info` fields: PARTIAL — title/lots/description/fixed2x observed; required
+  vs optional not confirmed.
+
+Still OPEN: .lotheader binary format, .lotpack binary format, minimum viable
+cell count, single-cell load test, Build 41/42 differences.
+
 MAP-4 remains blocked. The decision gate in section 8 of
 `docs/COMPILED_CELL_FORMAT_EVIDENCE.md` is not satisfied.
 

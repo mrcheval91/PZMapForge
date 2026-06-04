@@ -145,6 +145,19 @@ if ($map4aContent -notmatch 'copied_input_files') { throw "MAP-4A script missing
 Write-Output "OK: script contains copied_input_files sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-4C text metadata script contract ---"
+$map4cScript = Join-Path $repoRoot 'scripts\inspect-map-text-metadata.ps1'
+if (-not (Test-Path -LiteralPath $map4cScript)) { throw "MAP-4C script missing: scripts\inspect-map-text-metadata.ps1" }
+Write-Output "OK: scripts\inspect-map-text-metadata.ps1"
+$map4cContent = Get-Content -LiteralPath $map4cScript -Raw
+if ($map4cContent -notmatch '\.local') { throw "MAP-4C script missing .local refusal language" }
+Write-Output "OK: script contains .local refusal language"
+if ($map4cContent -notmatch 'binary_files_read') { throw "MAP-4C script missing binary_files_read sentinel" }
+Write-Output "OK: script contains binary_files_read sentinel"
+if ($map4cContent -notmatch 'compiled_writer_implemented') { throw "MAP-4C script missing compiled_writer_implemented sentinel" }
+Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
 Write-Output "========================================"
 Write-Output "PZMapForge validation summary"
 Write-Output "========================================"
