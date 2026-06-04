@@ -8,6 +8,48 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-4A: compiled cell format evidence inventory)
+- docs/COMPILED_CELL_FORMAT_EVIDENCE.md: evidence requirements and gap table.
+  - 10 evidence gaps defined (lotheader/lotpack binary formats, cell coordinate
+    naming, directory layout, minimum viable cell count, single-cell load test,
+    spawn file format, spawn coordinate system, map.info fields,
+    Build 41 vs Build 42 format differences).
+  - Decision gate in section 8 — lists all conditions that must be true
+    before MAP-4 implementation is permitted.
+  - How-to guide for collecting evidence with the inspector script.
+  - Forbidden actions during evidence collection documented.
+- docs/examples/compiled-cell-evidence/COMPILED_CELL_EVIDENCE_TEMPLATE.md:
+  fillable observation template for the operator.
+  - Covers: date/source/PZ version, directory tree, file inventory,
+    cell coordinate naming, map.info, spawnpoints.lua, .lotheader, .lotpack,
+    minimum viable cell, unknowns, risks, gap closure status.
+  - Operator fills and saves to .local/ (not committed).
+- scripts/inspect-compiled-cell-evidence.ps1: local-only evidence enumerator.
+  - Args: -Path <local dir> -Output <.local dir>.
+  - Refuses output outside .local/.
+  - Enumerates file names, relative paths, extensions, sizes, SHA-256 hashes.
+  - Writes compiled-cell-evidence.json and compiled-cell-evidence.md to .local/.
+  - Safety flags (all false): copied_input_files, pz_assets_copied,
+    media_maps_touched, playable_export_claimed, compiled_writer_implemented.
+  - Does not copy files. Does not parse content beyond hashing.
+- scripts/validate.ps1: MAP-4A inline contract section added (5 checks):
+  - docs/COMPILED_CELL_FORMAT_EVIDENCE.md exists.
+  - scripts/inspect-compiled-cell-evidence.ps1 exists.
+  - docs/examples/compiled-cell-evidence/COMPILED_CELL_EVIDENCE_TEMPLATE.md exists.
+  - Script contains .local refusal language.
+  - Script contains copied_input_files sentinel.
+  - Uses inline throw (not Assert-True). PS lane stays 492. No proof-packet sync.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-4A section added.
+- docs/IMPLEMENTATION.md: MAP-4A ratified row added.
+
+No compiled writer implemented. No .lotpack/.lotheader/.bin written.
+No PZ assets read or copied. No media/maps writes in repo.
+No playable export claim. PS 492 / .NET 381 unchanged.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-3C: map scaffold smoke script)
 - scripts/smoke-map-scaffold-minimal.ps1: local-only smoke helper for map-scaffold.
   - Runs map-scaffold against examples/map-source/minimal-cell.json.

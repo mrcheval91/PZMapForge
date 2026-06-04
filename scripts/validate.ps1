@@ -128,6 +128,23 @@ if ($LASTEXITCODE -ne 0) { throw "write-proof-packet.ps1 failed." }
 if ($LASTEXITCODE -ne 0) { throw "Proof packet validation failed." }
 
 Write-Output ""
+Write-Output "--- MAP-4A evidence contract artifacts ---"
+$map4aDoc      = Join-Path $repoRoot 'docs\COMPILED_CELL_FORMAT_EVIDENCE.md'
+$map4aScript   = Join-Path $repoRoot 'scripts\inspect-compiled-cell-evidence.ps1'
+$map4aTemplate = Join-Path $repoRoot 'docs\examples\compiled-cell-evidence\COMPILED_CELL_EVIDENCE_TEMPLATE.md'
+if (-not (Test-Path -LiteralPath $map4aDoc))      { throw "MAP-4A doc missing: docs\COMPILED_CELL_FORMAT_EVIDENCE.md" }
+Write-Output "OK: docs\COMPILED_CELL_FORMAT_EVIDENCE.md"
+if (-not (Test-Path -LiteralPath $map4aScript))   { throw "MAP-4A script missing: scripts\inspect-compiled-cell-evidence.ps1" }
+Write-Output "OK: scripts\inspect-compiled-cell-evidence.ps1"
+if (-not (Test-Path -LiteralPath $map4aTemplate)) { throw "MAP-4A template missing: docs\examples\compiled-cell-evidence\COMPILED_CELL_EVIDENCE_TEMPLATE.md" }
+Write-Output "OK: docs\examples\compiled-cell-evidence\COMPILED_CELL_EVIDENCE_TEMPLATE.md"
+$map4aContent = Get-Content -LiteralPath $map4aScript -Raw
+if ($map4aContent -notmatch '\.local') { throw "MAP-4A script missing .local refusal language" }
+Write-Output "OK: script contains .local refusal language"
+if ($map4aContent -notmatch 'copied_input_files') { throw "MAP-4A script missing copied_input_files sentinel" }
+Write-Output "OK: script contains copied_input_files sentinel"
+
+Write-Output ""
 Write-Output "========================================"
 Write-Output "PZMapForge validation summary"
 Write-Output "========================================"

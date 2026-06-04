@@ -183,7 +183,30 @@ Assertions (16):
 - boundary language in files: Text-only scaffold, Not playable, No PZ assets, Not load-tested
 - stdout: text_only_scaffold_written/compiled_outputs_written/playable_export_generated/pz_assets_read_or_copied
 
-MAP-4 remains blocked on compiled cell format evidence (section 14).
+**MAP-4A — compiled cell format evidence inventory (implemented):**
+MAP-4A adds the compiled cell format evidence inventory process. It does not
+implement any compiled writer. It provides the docs, template, and inspector
+script that the operator uses to close the evidence gaps listed in
+docs/COMPILED_CELL_FORMAT_EVIDENCE.md section 5 before MAP-4 begins.
+
+Artifacts:
+- `docs/COMPILED_CELL_FORMAT_EVIDENCE.md` — evidence gap specification; lists
+  all 10 gaps that must be CLOSED before MAP-4 implementation is permitted.
+- `docs/examples/compiled-cell-evidence/COMPILED_CELL_EVIDENCE_TEMPLATE.md` —
+  fillable observation template; operator saves filled copy to `.local/`.
+- `scripts/inspect-compiled-cell-evidence.ps1` — local-only enumerator;
+  accepts `-Path <local dir> -Output <.local dir>`; enumerates file names,
+  extensions, sizes, SHA-256 hashes; writes `compiled-cell-evidence.json` and
+  `compiled-cell-evidence.md` under `.local/`; refuses non-.local output;
+  does not copy files; safety flags: `copied_input_files: false`,
+  `pz_assets_copied: false`, `media_maps_touched: false`,
+  `playable_export_claimed: false`, `compiled_writer_implemented: false`.
+- `scripts/validate.ps1` — MAP-4A inline contract section added (5 checks:
+  doc/script/template exist, script contains .local refusal and
+  copied_input_files sentinel); no Assert-True used, PS lane stays 492.
+
+MAP-4 remains blocked until all gaps in docs/COMPILED_CELL_FORMAT_EVIDENCE.md
+section 5 are marked CLOSED with filled local evidence templates.
 
 ---
 
