@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Local-only compiled cell evidence inspector (MAP-4A).
@@ -97,7 +97,7 @@ foreach ($f in $allFiles) {
     $rel  = $f.FullName.Substring($inputFull.Length).TrimStart($sep)
     $sha  = Get-FileSha256 $f.FullName
     $fileRecords.Add([ordered]@{
-        relative_path = $rel -replace '\\', '/'
+        relative_path = ($rel -replace '\\', '/')
         extension     = $f.Extension.ToLowerInvariant()
         size_bytes    = $f.Length
         sha256        = $sha
@@ -126,7 +126,7 @@ $evidence = [ordered]@{
     schema                      = 'pzmapforge.compiled-cell-evidence.v0.1'
     claim_boundary              = 'evidence_inventory_only_not_compiled_not_pz_load_tested'
     generated_at_utc            = $generatedAt
-    input_path                  = $inputFull -replace '\\', '/'
+    input_path                  = ($inputFull -replace '\\', '/')
     file_count                  = $fileRecords.Count
     extension_counts            = $extCounts
     files                       = $fileRecords.ToArray()
@@ -219,3 +219,4 @@ Write-Output 'media_maps_touched:          false'
 Write-Output 'playable_export_claimed:     false'
 Write-Output 'compiled_writer_implemented: false'
 Write-Output 'Status:                      OK'
+
