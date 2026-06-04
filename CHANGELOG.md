@@ -8,6 +8,43 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-3A: text-only mod scaffold contract)
+- src/PZMapForge.Cli/Program.cs: map-plan JSON output extended with
+  scaffold contract fields:
+  - scaffold_contract_version: "0.1"
+  - text_only_scaffold_supported_now: false
+  - text_only_scaffold_written: false
+  - scaffold_execute_supported: false
+  - future_scaffold_files: array of 4 planned file objects, each with
+    written_now=false and reason="MAP-3A contract only":
+    - future mod.info
+    - future media/maps/<map_id>/map.info
+    - future media/maps/<map_id>/spawnpoints.lua
+    - future media/maps/<map_id>/README_PZMAPFORGE_BOUNDARY.txt
+- src/PZMapForge.Cli/Program.cs: map-plan Markdown extended with
+  "Future text-only scaffold contract" section listing planned files
+  and explicitly stating none are written.
+- tests/PZMapForge.Cli.Tests/MapPlanProcessTests.cs: 4 new CLI tests:
+  - JSON contains scaffold contract fields with all written_now=false.
+  - Markdown contains scaffold contract section with key phrases.
+  - Output directory contains only the 2 expected files.
+  - No media/maps subdirectory exists under output.
+- scripts/validate.ps1: $dnCliTests 172->176, $dnTotal 362->366.
+- scripts/write-proof-packet.ps1: cli_tests 172->176, test_total 362->366,
+  markdown table updated.
+- scripts/test-proof-packet.ps1: assertions updated to 176/366.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-3A subsection added; MAP-3A slice row
+  added; MAP-3B noted as not implemented, no approval given.
+- docs/IMPLEMENTATION.md, README.md, CHANGELOG.md: updated.
+
+No scaffold files written. No mod.info. No map.info. No spawnpoints.lua.
+No README_PZMAPFORGE_BOUNDARY.txt. No media/maps writes. No PZ assets
+read or copied. No execute flag. No compiled output. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-2: dry-run map export plan command)
 - src/PZMapForge.Cli/Program.cs: map-plan command.
   - Args: --source <path> --output <dir>.

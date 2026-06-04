@@ -124,7 +124,7 @@ Use custom planning thresholds (`--tiny-threshold`, `--large-threshold`):
 dotnet run --project src/PZMapForge.Cli -- plan-check --path .local/mapforge/parsed-cell.json --tiny-threshold 0 --large-threshold 100000
 ```
 
-Generate a dry-run map export plan from a map source file (map-plan) — reads a pzmapforge.map-source.v0.1 JSON and writes inert plan artifacts only; no compiled output, no playable export:
+Generate a dry-run map export plan from a map source file (map-plan) — reads a pzmapforge.map-source.v0.1 JSON and writes inert plan artifacts only; includes the future text-only scaffold contract as evidence (MAP-3A); no scaffold files written, no compiled output, no playable export:
 
 ```
 dotnet run --project src/PZMapForge.Cli -- map-plan --source examples/map-source/minimal-cell.json --output .local/map-plan/minimal-cell

@@ -217,4 +217,81 @@ public sealed class MapPlanProcessTests : IDisposable
         Assert.Equal(1, code);
         Assert.Contains("JSON", stderr, StringComparison.OrdinalIgnoreCase);
     }
+
+    // -----------------------------------------------------------------------
+    // Test 10: JSON contains MAP-3A scaffold contract fields
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapPlan_Json_ContainsScaffoldContractFields()
+    {
+        RunCli("map-plan", "--source", MinimalCellExample, "--output", OutputDir);
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(Path.Combine(OutputDir, "map-export-plan.json")));
+        var root = doc.RootElement;
+
+        Assert.Equal("0.1",  root.GetProperty("scaffold_contract_version").GetString());
+        Assert.False(root.GetProperty("text_only_scaffold_supported_now").GetBoolean());
+        Assert.False(root.GetProperty("text_only_scaffold_written").GetBoolean());
+        Assert.False(root.GetProperty("scaffold_execute_supported").GetBoolean());
+
+        var files = root.GetProperty("future_scaffold_files").EnumerateArray().ToList();
+        Assert.NotEmpty(files);
+
+        var paths = files.Select(f => f.GetProperty("path").GetString() ?? string.Empty).ToList();
+        Assert.Contains(paths, p => p.Contains("mod.info",    StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(paths, p => p.Contains("media/maps",  StringComparison.OrdinalIgnoreCase));
+
+        foreach (var f in files)
+            Assert.False(f.GetProperty("written_now").GetBoolean());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 11: Markdown contains scaffold contract section
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapPlan_Markdown_ContainsScaffoldContractSection()
+    {
+        RunCli("map-plan", "--source", MinimalCellExample, "--output", OutputDir);
+
+        var content = File.ReadAllText(Path.Combine(OutputDir, "map-export-plan.md"));
+
+        Assert.Contains("Future text-only scaffold contract",    content, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("MAP-3A defines the future text-only scaffold only", content, StringComparison.Ordinal);
+        Assert.Contains("future mod.info",                       content, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("future media/maps",                     content, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("No local mod scaffold written",         content, StringComparison.Ordinal);
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 12: Output directory contains only the 2 expected files
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapPlan_OutputDir_ContainsOnlyTwoFiles()
+    {
+        RunCli("map-plan", "--source", MinimalCellExample, "--output", OutputDir);
+
+        var files = Directory.GetFiles(OutputDir, "*", SearchOption.TopDirectoryOnly)
+                             .Select(Path.GetFileName)
+                             .OrderBy(n => n)
+                             .ToList();
+
+        Assert.Equal(new[] { "map-export-plan.json", "map-export-plan.md" },
+            files.OrderBy(f => f).ToArray());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 13: No media/maps subdirectory exists under output
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapPlan_OutputDir_NoMediaMapsSubdirectory()
+    {
+        RunCli("map-plan", "--source", MinimalCellExample, "--output", OutputDir);
+
+        var mediaMaps = Path.Combine(OutputDir, "media", "maps");
+        Assert.False(Directory.Exists(mediaMaps));
+    }
 }

@@ -491,6 +491,21 @@ static int MapPlanCommand(string[] args)
             "No playable Project Zomboid export generated.",
             "No media/maps writes.",
             "No PZ assets read or copied."
+        },
+        scaffold_contract_version        = "0.1",
+        text_only_scaffold_supported_now = false,
+        text_only_scaffold_written       = false,
+        scaffold_execute_supported       = false,
+        future_scaffold_files = new[]
+        {
+            new { path = "future mod.info",
+                  kind = "metadata",        written_now = false, reason = "MAP-3A contract only" },
+            new { path = $"future media/maps/{mapId}/map.info",
+                  kind = "map_metadata",    written_now = false, reason = "MAP-3A contract only" },
+            new { path = $"future media/maps/{mapId}/spawnpoints.lua",
+                  kind = "spawn_definition", written_now = false, reason = "MAP-3A contract only" },
+            new { path = $"future media/maps/{mapId}/README_PZMAPFORGE_BOUNDARY.txt",
+                  kind = "boundary_note",   written_now = false, reason = "MAP-3A contract only" },
         }
     };
 
@@ -537,6 +552,19 @@ Files written by this command:
 
 - map-export-plan.json
 - map-export-plan.md
+
+## Future text-only scaffold contract
+
+MAP-3A defines the future text-only scaffold only. It does not write the scaffold.
+
+A future MAP-3B writer may create:
+- future mod.info
+- future media/maps/{mapId}/map.info
+- future media/maps/{mapId}/spawnpoints.lua
+- future media/maps/{mapId}/README_PZMAPFORGE_BOUNDARY.txt
+
+Written now:
+- none of the scaffold files
 
 ## Non-claims
 

@@ -120,6 +120,27 @@ Not written:
 - No PZ assets read or copied.
 - No execute flag exists. No local mod scaffold is created.
 
+**MAP-3A — scaffold contract added to map-plan output:**
+MAP-3A extends the map-plan JSON and Markdown with a future text-only scaffold
+contract. The contract lists the files a future MAP-3B writer would create, but
+does not write them. MAP-3A is contract evidence only.
+
+The scaffold contract section in map-export-plan.json includes:
+- `scaffold_contract_version: "0.1"`
+- `text_only_scaffold_supported_now: false`
+- `text_only_scaffold_written: false`
+- `scaffold_execute_supported: false`
+- `future_scaffold_files` array — each item has `written_now: false`
+
+Future scaffold files (not written by MAP-3A or MAP-3B until explicitly approved):
+- future mod.info
+- future media/maps/<map_id>/map.info
+- future media/maps/<map_id>/spawnpoints.lua
+- future media/maps/<map_id>/README_PZMAPFORGE_BOUNDARY.txt
+
+MAP-3B would be the first actual text-only scaffold writer, if approved after
+MAP-3A evidence is reviewed. MAP-3B is not implemented. No approval has been given.
+
 ---
 
 ## 6. Source / editing format contract
@@ -337,6 +358,7 @@ file is committed and reviewed.
 |---|---|---|
 | MAP-1 | PZMapForge map source schema | Schema defined: schemas/pzmapforge.map-source.v0.1.schema.json; example: examples/map-source/minimal-cell.json; source format only, not exported, not compiled |
 | MAP-2 | Dry-run map export plan command | map-plan CLI command implemented; reads pzmapforge.map-source.v0.1 JSON; writes map-export-plan.json + map-export-plan.md to .local/; dry_run=true, execute_supported=false, playable_export_generated=false; no compiled outputs; no media/maps writes; no PZ assets |
+| MAP-3A | Text-only mod scaffold contract | map-plan JSON extended with scaffold contract fields (scaffold_contract_version, text_only_scaffold_supported_now=false, text_only_scaffold_written=false, scaffold_execute_supported=false, future_scaffold_files with all written_now=false); Markdown extended with Future text-only scaffold contract section; no scaffold files written; no media/maps writes; no PZ assets; contract-only evidence |
 | MAP-3 | Text-only local mod scaffold writer | Add a command that writes a minimal text-only mod scaffold under `.local/` only; no binary files; no assets |
 | MAP-4 | Minimal compiled cell writer proof | Add a command that writes one minimal compiled cell under `.local/`; requires local evidence from section 14 first |
 | MAP-5 | Manual Project Zomboid load-test evidence | Operator performs load test; evidence file recorded; no public claim before this milestone |
