@@ -334,8 +334,37 @@ Gap advance (PARTIAL only — not CLOSED):
 Still OPEN: chunk grid byte semantics, extended section format, whether minimal
 902-byte file is valid for PZ load.
 
-MAP-4 remains blocked. The decision gate in section 8 of
-`docs/COMPILED_CELL_FORMAT_EVIDENCE.md` is not satisfied.
+**MAP-4H — compiled writer decision gate report:**
+MAP-4H adds `docs/MAP_4H_COMPILED_WRITER_DECISION_GATE.md`, a formal decision
+gate report assessing whether structural evidence collected in MAP-4A through
+MAP-4G is sufficient to begin an experimental compiled cell writer slice.
+
+```text
+DECISION: MAP-5A_ALLOWED_EXPERIMENTAL_LOCAL_ONLY
+```
+
+The decision authorizes a strictly bounded experimental slice (MAP-5A) to write
+one minimal all-empty cell under `.local/` only. Rationale:
+
+- lotheader structure is well-supported (0-entry hypothesis for blank cell).
+- lotpack header+table structure is confirmed (zero-offset assumption for empty chunks).
+- chunkdata 902-byte all-zero pattern matches observed simple grass cells.
+- Remaining unknowns (lotpack gap section, single-cell load viability) can only
+  be resolved by attempting a write and performing a manual load test.
+- Local-only output makes the experiment safe.
+
+Primary risks accepted: lotpack zero-offset assumption may be wrong; single cell
+may not load without a world grid. Both risks produce diagnostic information.
+
+Required safeguards (all mandatory for MAP-5A):
+- CLI command name must include "experimental".
+- Output under `.local/` only; refuse PZ install paths and repo media/maps.
+- Boundary README in every generated file set.
+- All writer assumptions logged in output report.
+- No playable export claim until manual load test is performed and documented.
+- No PZ assets read or copied.
+
+**No playable export claim.** MAP-5A is hypothesis-testing only.
 
 ---
 

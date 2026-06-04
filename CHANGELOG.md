@@ -8,6 +8,40 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-4H: compiled writer decision gate report)
+- docs/MAP_4H_COMPILED_WRITER_DECISION_GATE.md: formal decision gate.
+  - Evidence summary by artifact type (lotheader, lotpack, chunkdata,
+    text metadata).
+  - 9 known safe facts (no assumption required).
+  - 10 remaining unknowns with severity (HIGH/MEDIUM/LOW).
+  - Risk table with 7 items and mitigations.
+  - Smallest experimental writer hypothesis:
+    - lotheader: 8-byte header + 0-entry string table (blank cell variant).
+    - lotpack: 7208-byte file; header + 900-entry zero-offset table;
+      assumes offset=0 means "no chunk data."
+    - chunkdata_0_0.bin: 902-byte file; 2-byte header + 900 zero bytes;
+      matches observed simple grass cell pattern.
+  - DECISION: MAP-5A_ALLOWED_EXPERIMENTAL_LOCAL_ONLY
+  - Required safeguards (all mandatory for MAP-5A):
+    - CLI command name must include "experimental."
+    - Output under .local/ only; refuse PZ install paths and repo media/maps.
+    - Boundary README in every generated file set.
+    - All writer assumptions logged in output report.
+    - No playable export claim until manual load test performed and documented.
+    - No PZ assets read or copied.
+  - MAP-5A scope boundary (one map, one cell at 0_0).
+  - Success/failure diagnostic table.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-4H section added with decision summary.
+- docs/IMPLEMENTATION.md: MAP-4H ratified row added.
+
+No compiled writer implemented. No binary files written.
+No .lotheader/.lotpack/.bin in repo. No playable export claim.
+PS 492 / .NET 381 unchanged. No proof-packet sync.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-4G: chunkdata binary pattern evidence probe)
 - scripts/inspect-chunkdata-binary-patterns.ps1: chunkdata_*.bin pattern reader.
   - Args: -Path <dir> -Output <.local dir> -MaxFiles (default 10, max 50)
