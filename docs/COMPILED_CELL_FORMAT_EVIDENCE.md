@@ -1,7 +1,7 @@
 # Compiled Cell Format Evidence
 
 ```text
-Status:           MAP-4E lotheader string table evidence recorded
+Status:           MAP-4F lotpack offset table evidence recorded
 Claim boundary:   evidence_inventory_only_not_compiled_not_pz_load_tested
 Compiler status:  not implemented
 PZ assets:        not copied into repo
@@ -10,7 +10,8 @@ Observations:     2 (Laval-Montreal workshop, RED-Speedway workshop)
 Text metadata:    map.info, mod.info, spawnpoints.lua, objects.lua read (2 mods)
 Binary prefixes:  first 64 bytes sampled (5 files per extension per mod)
 Lotheader strings: 16 .lotheader files fully parsed (10 Laval + 6 RED-Speedway)
-Binary formats:   PARTIAL — lotheader structure well-supported; .lotpack prefix consistent
+Lotpack offsets:  16 .lotpack prefixes analysed (10 Laval + 6 RED-Speedway)
+Binary formats:   PARTIAL — lotheader structure well-supported; lotpack header+table pattern confirmed
 ```
 
 ---
@@ -104,7 +105,7 @@ Coordinate naming convention is `<cx>_<cy>` where cx and cy are integers
 | Gap | Investigation method | Status |
 |---|---|---|
 | `.lotheader` binary format | Inspect byte-level content locally (hex editor or parser) | **PARTIAL** — 16 files fully parsed (10 Laval + 6 RED-Speedway); bytes 0-3 = `00000000` (consistent, 16/16); bytes 4-7 = 32-bit LE entry count (14/16 exact match; 2 mismatches off by 2-3 in complex cells); bytes 8+ = newline-delimited ASCII tileset pack names (entries range 31–2450); full byte-level semantics not confirmed; writing not permitted |
-| `.lotpack` binary format | Inspect byte-level content locally (hex editor or parser) | **PARTIAL** — prefix sampled; first 8 bytes = `84030000241c0000` IDENTICAL across all 10 sampled files from both mods; bytes 8+ appear to be an offset/size table with increasing 4-byte or 8-byte LE values. Full format not decoded; writing not permitted |
+| `.lotpack` binary format | Inspect byte-level content locally (hex editor or parser) | **PARTIAL** — 16 files sampled (10 Laval + 6 RED-Speedway); bytes 0-3 = U32 LE = 900 (constant, 16/16) = candidate chunk count (30×30 per cell); bytes 4-7 = U32 LE = 7204 = 4 + 900×8 (formula exact, 16/16); bytes 8-7207 = 900-entry × 8-byte offset table: even U32 = 0, odd U32 = absolute chunk file offset; chunk offsets monotonically increasing; chunk sizes variable (city) or constant (uniform terrain). Data section format and gap section (bytes 7208–first-chunk-offset) unknown. Writing not permitted |
 | Cell coordinate naming convention | Observe file names in a Workshop/WorldEd export | **PARTIAL** — `<cx>_<cy>` pattern confirmed in 2 observations; offset coords confirmed (25_15); zero-origin also observed |
 | Exact directory layout for cell files | Observe directory tree in a Workshop/WorldEd export | **PARTIAL** — flat layout under `media/maps/<map_id>/` confirmed in 2 observations |
 | Minimum viable cell count for load | Local load test with smallest possible cell | **OPEN** — smallest observed is 6 cells (2x3); single-cell not tested |
@@ -284,7 +285,9 @@ MAP-4 writer implementation remains blocked. The following remain unknown:
 
 - Whether the 2 count mismatches in `.lotheader` (off by 2-3 for complex cells) indicate a secondary data section or encoding difference.
 - Role of non-printable bytes observed after the tileset string table in some cells (up to 9694 bytes in a 95KB lotheader).
-- Full binary format of `.lotpack` beyond the consistent 8-byte header.
+- Content and format of the variable-length gap section (bytes 7208 to first-chunk-offset) in each `.lotpack` file.
+- Internal format of each chunk's data block within `.lotpack`.
+- How to write valid chunk data (tile references, compression, encoding).
 - Full binary format of `chunkdata_*.bin` beyond the `0001` prefix.
 - Whether a single cell (1x1 grid) is sufficient for a map to load.
 - Exact spawn coordinate origin and scale (worldX/worldY cell-grid unit confirmed; absolute origin not confirmed).
@@ -535,6 +538,74 @@ require further investigation before any writer is implemented.
 |---|---|
 | Only .lotheader files read | true |
 | .lotpack files read | false |
+| .bin files read | false |
+| Files copied into repo | false |
+| PZ assets copied | false |
+| media/maps touched in repo | false |
+| Playable export claimed | false |
+| Compiled writer implemented | false |
+
+---
+
+## 17. Lotpack offset table evidence (MAP-4F)
+
+`scripts/inspect-lotpack-offset-table.ps1` was run against both Workshop mods
+with `-MaxFiles 10 -MaxBytesPerFile 65536`. Only `.lotpack` bounded prefixes
+were read. No `.lotheader` or `.bin` files were read. No files were copied.
+
+### Header consistency — 16/16 files, both mods
+
+| Field | Value | Consistent |
+|---|---|---|
+| Bytes 0-7 (first 8) | `84030000241c0000` | 16/16 ✓ |
+| Bytes 0-3 as U32 LE (hdrA) | 900 | 16/16 ✓ |
+| Bytes 4-7 as U32 LE (hdrB) | 7204 | 16/16 ✓ |
+| Formula: hdrB = 4 + hdrA×8 | 4 + 900×8 = 7204 | ✓ exact |
+
+### Offset table structure — observed pattern
+
+Starting at byte 8, the bytes form a sequence of U32 LE values in alternating pairs:
+- **Even-indexed U32 values** (positions 0, 2, 4, ...): consistently `0x00000000`.
+- **Odd-indexed U32 values** (positions 1, 3, 5, ...): monotonically increasing integers
+  representing what appear to be **absolute file offsets** for chunk data.
+
+900 entries × 8 bytes per entry = 7200 bytes. Table occupies bytes 8 through 7207.
+
+### Observed chunk offsets and sizes
+
+| Mod | File | First chunk offset | Chunk size pattern |
+|---|---|---:|---|
+| Laval-Montreal | world_0_0.lotpack | 8640 | Variable: 1260–1596 bytes (complex city) |
+| RED-Speedway | world_25_15.lotpack | 8412 | Constant: 1208 bytes (uniform terrain) |
+
+- Gap between table end (byte 7208) and first chunk: 1432 bytes (Laval) / 1204 bytes (RED-Speedway). Role unknown.
+- Chunk size = difference between consecutive absolute offsets; varies with cell complexity.
+
+### Interpretation (candidate — not confirmed)
+
+- `hdrA = 900` appears to be the chunk count per cell. PZ cells are 300×300 tiles;
+  chunks are 10×10 tiles; 30×30 = 900 chunks per cell. **Exact match.**
+- `hdrB = 4 + hdrA × 8 = 7204` may encode the table byte size from a specific reference
+  or the offset to the data gap section.
+- The offset table has 900 entries mapping chunk index → absolute file offset.
+- Chunk data format remains entirely unknown — not sampled in this probe.
+
+### What remains unknown
+
+- Content of the variable gap section (bytes 7208 to first chunk offset per file).
+- Internal format of each chunk data block.
+- How to write valid chunk data (tile encoding, compression, etc.).
+- Whether chunk data references specific PZ tileset assets by index.
+
+Writing is not permitted. The chunk data format and gap section are unexplained.
+
+### Safety record
+
+| Property | Value |
+|---|---|
+| Only .lotpack prefixes read | true |
+| Full .lotpack files read | false |
+| .lotheader files read | false |
 | .bin files read | false |
 | Files copied into repo | false |
 | PZ assets copied | false |

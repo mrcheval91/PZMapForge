@@ -290,6 +290,26 @@ Evidence from 16 files across 2 mods:
 Writing is not permitted. The 2 mismatches and the role of embedded non-printable
 bytes in complex cells remain unexplained.
 
+**MAP-4F — lotpack offset table evidence probe:**
+MAP-4F adds `scripts/inspect-lotpack-offset-table.ps1`, which reads bounded
+`.lotpack` prefixes (not `.lotheader` or `.bin`) and analyses the apparent
+chunk offset table. No files are copied. Output is under `.local/` only.
+
+Script: `scripts/inspect-lotpack-offset-table.ps1 -Path <dir> -Output <.local dir>`
+
+Evidence from 16 files across 2 mods (10 Laval + 6 RED-Speedway):
+- hdrA (bytes 0-3) = 900 — CONSTANT, 16/16 files. Matches 30×30 = 900 chunks/cell.
+- hdrB (bytes 4-7) = 7204 — CONSTANT, 16/16 files. Formula exact: 4 + 900×8 = 7204.
+- Bytes 8–7207: 900-entry offset table; each 8-byte entry = {0x00000000, chunk_offset_U32}.
+- Chunk offsets monotonically increasing; variable per cell (city) or constant (uniform).
+- Gap section between table end (byte 7208) and first chunk data is 1204–1432 bytes
+  per observed file. Role unknown.
+
+Gap advances (PARTIAL only — not CLOSED):
+- `.lotpack` binary format: PARTIAL (header+table structure well-supported).
+
+Still OPEN: gap section content, chunk data encoding, how to write valid chunk data.
+
 MAP-4 remains blocked. The decision gate in section 8 of
 `docs/COMPILED_CELL_FORMAT_EVIDENCE.md` is not satisfied.
 

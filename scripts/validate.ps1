@@ -190,6 +190,25 @@ if ($map4eContent -notmatch 'compiled_writer_implemented') { throw "MAP-4E scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-4F lotpack offset table script contract ---"
+$map4fScript = Join-Path $repoRoot 'scripts\inspect-lotpack-offset-table.ps1'
+if (-not (Test-Path -LiteralPath $map4fScript)) { throw "MAP-4F script missing: scripts\inspect-lotpack-offset-table.ps1" }
+Write-Output "OK: scripts\inspect-lotpack-offset-table.ps1"
+$map4fContent = Get-Content -LiteralPath $map4fScript -Raw
+if ($map4fContent -notmatch '\.local') { throw "MAP-4F script missing .local refusal language" }
+Write-Output "OK: script contains .local refusal language"
+if ($map4fContent -notmatch 'only_lotpack_files_read') { throw "MAP-4F script missing only_lotpack_files_read sentinel" }
+Write-Output "OK: script contains only_lotpack_files_read sentinel"
+if ($map4fContent -notmatch 'lotheader_files_read') { throw "MAP-4F script missing lotheader_files_read sentinel" }
+Write-Output "OK: script contains lotheader_files_read sentinel"
+if ($map4fContent -notmatch 'bin_files_read') { throw "MAP-4F script missing bin_files_read sentinel" }
+Write-Output "OK: script contains bin_files_read sentinel"
+if ($map4fContent -notmatch 'full_lotpack_files_read') { throw "MAP-4F script missing full_lotpack_files_read sentinel" }
+Write-Output "OK: script contains full_lotpack_files_read sentinel"
+if ($map4fContent -notmatch 'compiled_writer_implemented') { throw "MAP-4F script missing compiled_writer_implemented sentinel" }
+Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
 Write-Output "========================================"
 Write-Output "PZMapForge validation summary"
 Write-Output "========================================"

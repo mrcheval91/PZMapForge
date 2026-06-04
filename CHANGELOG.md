@@ -8,6 +8,51 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-4F: lotpack offset table evidence probe)
+- scripts/inspect-lotpack-offset-table.ps1: .lotpack bounded prefix analyser.
+  - Args: -Path <dir> -Output <.local dir> -MaxFiles (default 10, max 50)
+    -MaxBytesPerFile (default 65536, max 1048576).
+  - Refuses output outside .local/.
+  - Reads ONLY .lotpack bounded prefixes. NOT .lotheader. NOT .bin.
+  - Does NOT read full .lotpack files.
+  - Interprets bytes 0-3 and 4-7 as U32 LE header fields.
+  - Parses bytes 8+ as candidate U32 and U64 LE table values.
+  - Detects alternating-zero U32 pattern and monotonically increasing offsets.
+  - Writes lotpack-offset-table-evidence.json + .md with aggregate.
+  - only_lotpack_files_read=true, lotheader_files_read=false,
+    bin_files_read=false, full_lotpack_files_read=false.
+- scripts/validate.ps1: MAP-4F inline contract section (7 checks):
+  - script exists, .local refusal, only_lotpack_files_read,
+    lotheader_files_read, bin_files_read, full_lotpack_files_read,
+    compiled_writer_implemented sentinels.
+  PS lane stays 492. No proof-packet sync.
+- docs/COMPILED_CELL_FORMAT_EVIDENCE.md:
+  - Header updated (MAP-4F, lotpack offsets).
+  - Section 5: .lotpack gap refined (900-entry offset table confirmed).
+  - Section 13: gap section and chunk data unknowns updated.
+  - Section 17 added: lotpack offset table evidence (MAP-4F).
+    - hdrA=900 constant (16/16 files, both mods) = 30×30 chunks/cell.
+    - hdrB=7204 constant (16/16) = formula exact: 4 + hdrA×8.
+    - Bytes 8-7207: 900-entry × 8-byte offset table.
+    - Each entry: {0x00000000, absolute_chunk_file_offset_U32}.
+    - Offsets monotonically increasing; variable (city) or constant (uniform).
+    - Gap section (bytes 7208 to first-chunk-offset): 1204-1432 bytes, unknown.
+    - Chunk data format entirely unknown.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-4F section added.
+- docs/IMPLEMENTATION.md: MAP-4F ratified row added.
+
+Gap advances (PARTIAL only — not CLOSED):
+- .lotpack binary format: header+table structure well-supported (PARTIAL).
+
+Chunk data encoding and gap section remain unknown. Writing not permitted.
+No files copied. Only .lotpack bounded prefixes read. No .lotheader/.bin.
+No full .lotpack files read. No compiled writer. No playable export claim.
+PS 492 / .NET 381 unchanged. No proof-packet sync.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-4E: lotheader string table evidence probe)
 - scripts/inspect-lotheader-string-table.ps1: .lotheader string table reader.
   - Args: -Path <dir> -Output <.local dir> -MaxFiles (default 10, max 50)
