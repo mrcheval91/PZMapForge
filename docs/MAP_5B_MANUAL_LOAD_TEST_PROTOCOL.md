@@ -3,9 +3,18 @@
 ```text
 Schema:           pzmapforge.load-test-protocol.v0.1
 Claim boundary:   experimental_local_only_not_playable_not_load_tested
-Status:           PROTOCOL DEFINED — no load test performed yet
+Status:           MAP-5B attempted — LOAD_TEST_INCONCLUSIVE (packaging/discovery blocker)
 Binary writer:    map-export-experimental (MAP-5A)
+See:              docs/MAP_5C_BUILD42_MOD_PACKAGING_DISCOVERY.md
 ```
+
+**MAP-5B result: LOAD_TEST_INCONCLUSIVE**
+
+A MAP-5B load test was attempted on Build 42. The binary map files were not
+reached. The blocker is Build 42 mod discovery, not the generated binary files.
+See `docs/MAP_5C_BUILD42_MOD_PACKAGING_DISCOVERY.md` for full details.
+
+Binary hypotheses from MAP-5A remain untested.
 
 ---
 

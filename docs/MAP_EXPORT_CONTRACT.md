@@ -407,6 +407,29 @@ The packet script (`-Source <.local map-export-experimental dir> -Output <.local
 **No playable export claim.** Load test must be performed manually by the operator.
 Results are recorded in the local template and reviewed before any claim changes.
 
+**MAP-5C — Build 42 mod packaging discovery record:**
+MAP-5C records the MAP-5B LOAD_TEST_INCONCLUSIVE result and adds tooling to
+diagnose Build 42 mod package structure.
+
+MAP-5B result: **LOAD_TEST_INCONCLUSIVE** — packaging/discovery blocker on Build 42.
+The generated binary map files (`.lotheader`, `.lotpack`, `chunkdata_*.bin`) were
+**not tested**. The blocker is mod discovery, not binary format.
+
+Key findings from inspection:
+- `PZMapForgeEmptyCellTest` Workshop package has correct Build 42 structure
+  (all 5 expected paths present, correct `mod.info` fields).
+- Mod still did not appear in Build 42 Mods screen.
+- Possible cause: Build 42 Workshop mods may require Steam subscription/download
+  rather than manual folder placement.
+- Binary hypotheses from MAP-5A remain untested.
+
+Artifacts:
+- `docs/MAP_5C_BUILD42_MOD_PACKAGING_DISCOVERY.md` — full inconclusive record,
+  packaging structure analysis, diagnostic findings.
+- `scripts/inspect-build42-mod-package.ps1` — compares a package against the
+  ModTemplate; reads workshop.txt/mod.info/map.info; outputs inspection JSON + MD
+  under `.local/` only; does not copy or modify files.
+
 ---
 
 ## 6. Source / editing format contract

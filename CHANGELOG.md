@@ -8,6 +8,39 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-5C: Build 42 mod packaging discovery record)
+- docs/MAP_5C_BUILD42_MOD_PACKAGING_DISCOVERY.md: packaging discovery record.
+  - MAP-5B result: LOAD_TEST_INCONCLUSIVE (Build 42 packaging/discovery blocker).
+  - Attempted paths table with observed behavior.
+  - Working reference: `avisibleprobe` flat mod appears in Build 42 Mods screen.
+  - ModTemplate structure documented (Contents/mods nested layout).
+  - Inspect diagnostic results: PZMapForgeEmptyCellTest has correct structure
+    (all 5 expected paths present, correct mod.info fields including category,
+    modversion, pzversion, versionMin); mod still did not appear in Mods screen.
+  - Blocker identified as Discovery mechanism, not package structure.
+  - Binary hypotheses (lotheader/lotpack/chunkdata) remain UNTESTED.
+  - Non-claims: MAP-5B is INCONCLUSIVE, not FAIL.
+- scripts/inspect-build42-mod-package.ps1: Build 42 package inspector.
+  - Args: -PackageRoot <path> -TemplateRoot <path> -Output <.local dir>.
+  - Refuses non-.local Output.
+  - Reads only: workshop.txt, mod.info, map.info (small text files, max 8KB).
+  - Does NOT read .lotheader/.lotpack/.bin.
+  - Enumerates file names and sizes (no binary reads).
+  - Compares 5 expected Build 42 paths against ModTemplate.
+  - Compares mod.info fields between package and template.
+  - Writes build42-mod-package-inspection.json + .md.
+  - copied_files=false, binary_files_read=false, pz_assets_copied=false.
+- docs/MAP_5B_MANUAL_LOAD_TEST_PROTOCOL.md: INCONCLUSIVE result note added.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-5C section added.
+- docs/IMPLEMENTATION.md: MAP-5C ratified row added.
+
+MAP-5B binary hypotheses remain UNTESTED. No playable export claim.
+No PZ install modified. No .local files committed. PS 492 / .NET 397 unchanged.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-5B: experimental map load test record protocol)
 - docs/MAP_5B_MANUAL_LOAD_TEST_PROTOCOL.md: manual load test protocol.
   - What is tested (lotheader/lotpack/chunkdata hypotheses).
