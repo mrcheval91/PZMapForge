@@ -1,0 +1,416 @@
+#Requires -Version 5.1
+<#
+.SYNOPSIS
+    Local-only Build 42 reference geometry inspector (MAP-6F).
+
+    Inspects a known-good Build 42 map mod or export that the operator has
+    manually placed under .local/. Reads only bounded byte prefixes and file
+    sizes. Reports observed lotpack header values, chunkdata body sizes, and
+    a geometry model status.
+
+    Reads .lotheader, world_*.lotpack, chunkdata_*.bin, map.info, mod.info,
+    spawnpoints.lua from the provided source path.
+    Does NOT copy any files into the repo.
+    Does NOT read PZ assets.
+    Does NOT perform a load test.
+    Does NOT claim playable export.
+    Does NOT implement any compiled writer.
+    Output must be under .local only.
+
+    The operator must manually place the reference map under .local/ before
+    running this script. This script does not automate that copy.
+
+Usage:
+    .\scripts\inspect-build42-reference-geometry.ps1 `
+        -Source  ".local\reference-build42-map\<mod_folder>" `
+        -Output  ".local\reference-build42-geometry-<date>" `
+        [-MaxFiles 20]
+
+Example:
+    .\scripts\inspect-build42-reference-geometry.ps1 `
+        -Source  ".local\reference-build42-map\SomeMap42" `
+        -Output  ".local\reference-build42-geometry-01"
+#>
+
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$Source,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Output,
+
+    [int]$MaxFiles = 20
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+# ---------------------------------------------------------------------------
+# Clamp MaxFiles
+# ---------------------------------------------------------------------------
+
+if ($MaxFiles -gt 100) { $MaxFiles = 100 }
+if ($MaxFiles -lt 1)   { $MaxFiles = 1 }
+
+Write-Output 'inspect-build42-reference-geometry.ps1'
+Write-Output "Source:   $Source"
+Write-Output "Output:   $Output"
+Write-Output "MaxFiles: $MaxFiles"
+Write-Output ''
+
+# ---------------------------------------------------------------------------
+# Guards: .local only
+# ---------------------------------------------------------------------------
+
+$sep         = [System.IO.Path]::DirectorySeparatorChar
+$localMarker = $sep + '.local' + $sep
+
+function Test-IsUnderLocal {
+    param([string]$FullPath)
+    $endsLocal = $FullPath.EndsWith($sep + '.local')
+    return ($FullPath.Contains($localMarker) -or $endsLocal)
+}
+
+$sourceFull = [System.IO.Path]::GetFullPath($Source)
+$outputFull = [System.IO.Path]::GetFullPath($Output)
+
+if (-not (Test-IsUnderLocal $sourceFull)) {
+    Write-Error "inspect-build42-reference-geometry: -Source must be under a .local/ directory: $sourceFull"
+    exit 1
+}
+
+if (-not (Test-IsUnderLocal $outputFull)) {
+    Write-Error "inspect-build42-reference-geometry: -Output must be under a .local/ directory: $outputFull"
+    exit 1
+}
+
+# ---------------------------------------------------------------------------
+# Guards: refuse Zomboid user data, Workshop, Server, PZ install paths
+# ---------------------------------------------------------------------------
+
+$forbiddenPatterns = @(
+    'Zomboid' + $sep + 'mods',
+    'Zomboid' + $sep + 'Workshop',
+    'Zomboid' + $sep + 'Server',
+    'steamapps' + $sep + 'common' + $sep + 'ProjectZomboid',
+    'steamapps' + $sep + 'common' + $sep + 'Project Zomboid',
+    'steamapps/common/ProjectZomboid',
+    'steamapps/common/Project Zomboid'
+)
+foreach ($pat in $forbiddenPatterns) {
+    if ($sourceFull -match [regex]::Escape($pat)) {
+        Write-Error "inspect-build42-reference-geometry: -Source path contains forbidden location ($pat): $sourceFull"
+        exit 1
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Guard: source must exist
+# ---------------------------------------------------------------------------
+
+if (-not (Test-Path -LiteralPath $sourceFull)) {
+    Write-Error "inspect-build42-reference-geometry: -Source path not found: $sourceFull"
+    exit 1
+}
+
+# ---------------------------------------------------------------------------
+# Helper: read bounded binary prefix (max 64 bytes)
+# ---------------------------------------------------------------------------
+
+function Read-BoundedPrefix {
+    param([string]$FilePath, [int]$MaxBytes = 64)
+    $stream = [System.IO.File]::OpenRead($FilePath)
+    try {
+        $buf  = [byte[]]::new($MaxBytes)
+        $read = $stream.Read($buf, 0, $MaxBytes)
+        $out  = [byte[]]::new($read)
+        if ($read -gt 0) { [System.Array]::Copy($buf, $out, $read) }
+        return $out
+    }
+    finally { $stream.Dispose() }
+}
+
+function Bytes-ToHex {
+    param([byte[]]$Bytes)
+    return ($Bytes | ForEach-Object { $_.ToString('x2') }) -join ''
+}
+
+# ---------------------------------------------------------------------------
+# Scan source tree
+# ---------------------------------------------------------------------------
+
+Write-Output '--- Scanning source tree ---'
+
+$allFiles = @(Get-ChildItem -LiteralPath $sourceFull -Recurse -File -ErrorAction SilentlyContinue |
+    Sort-Object FullName)
+
+$lotpackFiles    = @($allFiles | Where-Object { $_.Name -match '^world_\d+_\d+\.lotpack$'   } | Select-Object -First $MaxFiles)
+$chunkdataFiles  = @($allFiles | Where-Object { $_.Name -match '^chunkdata_\d+_\d+\.bin$'   } | Select-Object -First $MaxFiles)
+$lotheaderFiles  = @($allFiles | Where-Object { $_.Extension.ToLower() -eq '.lotheader'     } | Select-Object -First $MaxFiles)
+$mapInfoFiles    = @($allFiles | Where-Object { $_.Name -eq 'map.info'                       } | Select-Object -First $MaxFiles)
+$modInfoFiles    = @($allFiles | Where-Object { $_.Name -eq 'mod.info'                       } | Select-Object -First $MaxFiles)
+$spawnFiles      = @($allFiles | Where-Object { $_.Name -eq 'spawnpoints.lua'                } | Select-Object -First $MaxFiles)
+
+Write-Output "  .lotheader files:   $($lotheaderFiles.Count)"
+Write-Output "  .lotpack files:     $($lotpackFiles.Count)"
+Write-Output "  chunkdata .bin:     $($chunkdataFiles.Count)"
+Write-Output "  map.info:           $($mapInfoFiles.Count)"
+Write-Output "  mod.info:           $($modInfoFiles.Count)"
+Write-Output "  spawnpoints.lua:    $($spawnFiles.Count)"
+Write-Output ''
+
+# ---------------------------------------------------------------------------
+# Analyse .lotpack files
+# ---------------------------------------------------------------------------
+
+Write-Output '--- Analysing .lotpack files ---'
+
+$lotpackRecords = [System.Collections.Generic.List[object]]::new()
+$hdrA_900_count = 0
+$hdrB_7204_count = 0
+
+foreach ($f in $lotpackFiles) {
+    $rel    = $f.FullName.Substring($sourceFull.Length).TrimStart($sep)
+    $size   = $f.Length
+    $prefix = Read-BoundedPrefix $f.FullName 64
+    $first8 = if ($prefix.Length -ge 8) { Bytes-ToHex $prefix[0..7] } else { Bytes-ToHex $prefix }
+
+    $hdrA = if ($prefix.Length -ge 4) { [System.BitConverter]::ToUInt32($prefix, 0) } else { [uint32]0 }
+    $hdrB = if ($prefix.Length -ge 8) { [System.BitConverter]::ToUInt32($prefix, 4) } else { [uint32]0 }
+
+    # Derived inferences (not confirmed)
+    $inferredTableEntries = $hdrA
+    $inferredTableBytes   = [int]$hdrA * 8
+    $inferredTableEnd     = 8 + $inferredTableBytes
+
+    if ($hdrA -eq 900)  { $hdrA_900_count++ }
+    if ($hdrB -eq 7204) { $hdrB_7204_count++ }
+
+    $note = ''
+    if ($hdrA -eq 900 -and $hdrB -eq 7204) {
+        $note = 'matches_build41_30x30_model'
+    } elseif ($hdrA -eq 1024) {
+        $note = 'candidate_32x32_1024'
+    } elseif ($hdrA -eq 256) {
+        $note = 'candidate_16x16_256'
+    } else {
+        $note = "hdrA=$hdrA hdrB=$hdrB (unknown_model)"
+    }
+
+    Write-Output "  $rel  size=$size  hdrA=$hdrA hdrB=$hdrB  note=$note"
+
+    $lotpackRecords.Add([ordered]@{
+        file                     = $rel
+        size_bytes               = $size
+        first_8_bytes_hex        = $first8
+        hdrA_u32le               = [int]$hdrA
+        hdrB_u32le               = [int]$hdrB
+        inferred_table_entries   = [int]$inferredTableEntries
+        inferred_table_bytes     = [int]$inferredTableBytes
+        inferred_table_end_byte  = [int]$inferredTableEnd
+        note                     = $note
+    })
+}
+
+# ---------------------------------------------------------------------------
+# Analyse chunkdata_*.bin files
+# ---------------------------------------------------------------------------
+
+Write-Output ''
+Write-Output '--- Analysing chunkdata_*.bin files ---'
+
+$chunkdataRecords    = [System.Collections.Generic.List[object]]::new()
+$body_900_count      = 0
+$body_1024_count     = 0
+$body_256_count      = 0
+
+foreach ($f in $chunkdataFiles) {
+    $rel        = $f.FullName.Substring($sourceFull.Length).TrimStart($sep)
+    $size       = [int]$f.Length
+    $bodyBytes  = $size - 2   # subtract 2-byte header
+    $prefix     = Read-BoundedPrefix $f.FullName 16
+    $first16    = Bytes-ToHex $prefix
+
+    $headerByte0 = if ($prefix.Length -ge 1) { $prefix[0] } else { [byte]0 }
+    $headerByte1 = if ($prefix.Length -ge 2) { $prefix[1] } else { [byte]0 }
+
+    $gridCandidate = 'unknown'
+    if ($bodyBytes -eq 900)  { $gridCandidate = '30x30_900';  $body_900_count++ }
+    elseif ($bodyBytes -eq 1024) { $gridCandidate = '32x32_1024'; $body_1024_count++ }
+    elseif ($bodyBytes -eq 256)  { $gridCandidate = '16x16_256';  $body_256_count++ }
+    else                         { $gridCandidate = "unknown_body_$bodyBytes" }
+
+    Write-Output "  $rel  size=$size  body_bytes=$bodyBytes  grid_candidate=$gridCandidate"
+
+    $chunkdataRecords.Add([ordered]@{
+        file               = $rel
+        size_bytes         = $size
+        header_byte_0      = '0x{0:x2}' -f $headerByte0
+        header_byte_1      = '0x{0:x2}' -f $headerByte1
+        first_16_bytes_hex = $first16
+        body_bytes         = $bodyBytes
+        chunk_grid_candidate = $gridCandidate
+    })
+}
+
+# ---------------------------------------------------------------------------
+# Analyse .lotheader files
+# ---------------------------------------------------------------------------
+
+Write-Output ''
+Write-Output '--- Analysing .lotheader files ---'
+
+$lotheaderRecords = [System.Collections.Generic.List[object]]::new()
+
+foreach ($f in $lotheaderFiles) {
+    $rel    = $f.FullName.Substring($sourceFull.Length).TrimStart($sep)
+    $size   = $f.Length
+    $prefix = Read-BoundedPrefix $f.FullName 32
+    $hex    = Bytes-ToHex $prefix
+
+    $field0 = if ($prefix.Length -ge 4) { [System.BitConverter]::ToUInt32($prefix, 0) } else { [uint32]0 }
+    $field1 = if ($prefix.Length -ge 8) { [System.BitConverter]::ToUInt32($prefix, 4) } else { [uint32]0 }
+
+    Write-Output "  $rel  size=$size  field0=$field0 field1=$field1"
+
+    $lotheaderRecords.Add([ordered]@{
+        file                  = $rel
+        size_bytes            = $size
+        first_32_bytes_hex    = $hex
+        first_u32le           = [int]$field0
+        second_u32le          = [int]$field1
+    })
+}
+
+# ---------------------------------------------------------------------------
+# Read text file names only (no binary parsing)
+# ---------------------------------------------------------------------------
+
+$textFiles = [System.Collections.Generic.List[string]]::new()
+foreach ($f in ($mapInfoFiles + $modInfoFiles + $spawnFiles)) {
+    $rel = $f.FullName.Substring($sourceFull.Length).TrimStart($sep)
+    $textFiles.Add($rel)
+}
+
+# ---------------------------------------------------------------------------
+# Determine geometry status
+# ---------------------------------------------------------------------------
+
+$totalLotpack   = $lotpackRecords.Count
+$totalChunkdata = $chunkdataRecords.Count
+
+$geometryStatus = 'BUILD42_GEOMETRY_STILL_UNKNOWN'
+
+if ($totalLotpack -eq 0 -and $totalChunkdata -eq 0) {
+    $geometryStatus = 'BUILD42_GEOMETRY_STILL_UNKNOWN'
+} elseif ($hdrA_900_count -gt 0 -and $body_900_count -gt 0 -and $body_1024_count -eq 0 -and $body_256_count -eq 0) {
+    $geometryStatus = 'BUILD42_300_MODEL_SUPPORTED'
+} elseif ($body_1024_count -gt 0 -or $body_256_count -gt 0) {
+    $geometryStatus = 'BUILD42_256_MODEL_SUPPORTED'
+} elseif ($hdrA_900_count -gt 0 -or $body_900_count -gt 0) {
+    $geometryStatus = 'BUILD42_300_MODEL_PARTIALLY_SUPPORTED'
+}
+
+Write-Output ''
+Write-Output "--- Geometry status: $geometryStatus ---"
+
+# ---------------------------------------------------------------------------
+# Write output
+# ---------------------------------------------------------------------------
+
+New-Item -ItemType Directory -Force -Path $outputFull | Out-Null
+
+$generatedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+
+$reportJson = [ordered]@{
+    schema                      = 'pzmapforge.build42-reference-geometry-report.v0.1'
+    claim_boundary              = 'evidence_record_only_not_load_tested_not_playable'
+    generated_at_utc            = $generatedAt
+    source_path                 = $sourceFull.Replace('\','/')
+    geometry_status             = $geometryStatus
+    REFERENCE_GEOMETRY_OBSERVED = $true
+    PLAYABLE_EXPORT_CLAIM_ALLOWED = 'false'
+    lotpack_count               = $totalLotpack
+    lotpack_hdrA_900_count      = $hdrA_900_count
+    lotpack_hdrB_7204_count     = $hdrB_7204_count
+    chunkdata_count             = $totalChunkdata
+    chunkdata_body_900_count    = $body_900_count
+    chunkdata_body_1024_count   = $body_1024_count
+    chunkdata_body_256_count    = $body_256_count
+    lotheader_count             = $lotheaderRecords.Count
+    text_files_found            = @($textFiles)
+    lotpack_records             = @($lotpackRecords)
+    chunkdata_records           = @($chunkdataRecords)
+    lotheader_records           = @($lotheaderRecords)
+    safety = [ordered]@{
+        reference_files_copied          = $false
+        pz_assets_copied                = $false
+        media_maps_touched_in_repo      = $false
+        playable_export_claimed         = $false
+        compiled_writer_implemented     = $false
+        load_test_performed             = $false
+        only_lotpack_files_read_binary  = $false
+        only_prefix_bytes_read          = $true
+    }
+}
+
+$jsonPath = Join-Path $outputFull 'build42-reference-geometry-report.json'
+$reportJson | ConvertTo-Json -Depth 6 | Set-Content -Path $jsonPath -Encoding UTF8
+Write-Output "Report JSON: $jsonPath"
+
+$md = @"
+# Build 42 Reference Geometry Report
+
+Schema: pzmapforge.build42-reference-geometry-report.v0.1
+Generated: $generatedAt
+Source: $($sourceFull.Replace('\','/'))
+
+## Geometry status
+
+**$geometryStatus**
+
+## Observed counts
+
+| Type | Found | 900-model match |
+|---|---:|---:|
+| .lotpack files | $totalLotpack | hdrA=900: $hdrA_900_count, hdrB=7204: $hdrB_7204_count |
+| chunkdata .bin | $totalChunkdata | body=900: $body_900_count, body=1024: $body_1024_count, body=256: $body_256_count |
+| .lotheader | $($lotheaderRecords.Count) | — |
+| Text files | $($textFiles.Count) | — |
+
+## .lotpack records
+$(foreach ($r in $lotpackRecords) { "- $($r.file) size=$($r.size_bytes) hdrA=$($r.hdrA_u32le) hdrB=$($r.hdrB_u32le) note=$($r.note)" })
+
+## chunkdata records
+$(foreach ($r in $chunkdataRecords) { "- $($r.file) size=$($r.size_bytes) body=$($r.body_bytes) grid=$($r.chunk_grid_candidate)" })
+
+## Safety
+
+| Property | Value |
+|---|---|
+| Reference files copied | false |
+| PZ assets copied | false |
+| media/maps touched in repo | false |
+| Playable export claimed | false |
+| Compiled writer implemented | false |
+| Load test performed | false |
+| Only prefix bytes read | true |
+
+## Non-claims
+
+- Not a load test.
+- Not a playable export.
+- No PZ assets copied or read.
+- No files modified in source.
+- PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+"@
+
+$mdPath = Join-Path $outputFull 'build42-reference-geometry-report.md'
+Set-Content -Path $mdPath -Value $md -Encoding UTF8
+Write-Output "Report MD:   $mdPath"
+Write-Output ''
+Write-Output "Geometry status:  $geometryStatus"
+Write-Output "reference_files_copied: false"
+Write-Output "pz_assets_copied:       false"
+Write-Output "playable_export_claimed: false"
+Write-Output 'Done.'

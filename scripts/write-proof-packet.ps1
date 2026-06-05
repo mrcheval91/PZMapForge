@@ -173,16 +173,17 @@ $packet = [ordered]@{
     plan_report_sha256          = $planMdSha
     claim_boundary          = 'planning_artifact_only_not_pz_load_tested'
     validation_summary      = [ordered]@{
-        schema_file_sanity          = 214
-        artifact_contract           = 40
-        palette_sha256_verification = 5
-        tmx_integrity               = 21
-        hardening_harness           = 36
-        region_extraction           = 24
-        primitive_classification    = 22
-        plan_recommendations_contract = 28
-        proof_packet                = 102
-        total_expected_assertions   = 492
+        schema_file_sanity                = 214
+        artifact_contract                 = 40
+        palette_sha256_verification       = 5
+        tmx_integrity                     = 21
+        hardening_harness                 = 36
+        region_extraction                 = 24
+        primitive_classification          = 22
+        plan_recommendations_contract     = 28
+        proof_packet                      = 102
+        build42_geometry_inspector_tests  = 10
+        total_expected_assertions         = 502
     }
     dotnet_validation_summary = [ordered]@{
         test_total                          = 440
@@ -320,7 +321,8 @@ planning_artifact_only_not_pz_load_tested
 | Primitive classification | 22 |
 | Plan recommendations contract | 28 |
 | Proof packet | 102 |
-| Total | 492 |
+| Build42 geometry inspector tests | 10 |
+| Total | 502 |
 
 ## .NET validation summary (separate lane)
 

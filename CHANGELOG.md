@@ -8,6 +8,42 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6F: Build 42 reference geometry inspector packet)
+- docs/MAP_6F_BUILD42_REFERENCE_GEOMETRY_PACKET.md: operator guide; inspector purpose;
+  required operator action (manual copy to .local); what inspector does; geometry statuses;
+  safety record; REFERENCE_GEOMETRY_OBSERVED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-reference-geometry.ps1:
+  - Args: -Source <.local path>, -Output <.local path>, -MaxFiles (default 20).
+  - Guards: Source/Output under .local; refuses Zomboid/Workshop/Server/PZ-install.
+  - Scans *.lotheader, world_*.lotpack, chunkdata_*.bin, map.info, mod.info, spawnpoints.lua.
+  - For .lotpack: reads 64-byte prefix; parses hdrA/hdrB (U32 LE); derives table entries,
+    table bytes, table end; notes model match.
+  - For chunkdata: reads 16-byte prefix; body_bytes = size-2; infers chunk_grid_candidate
+    (30x30_900 / 32x32_1024 / 16x16_256 / unknown).
+  - For .lotheader: reads 32-byte prefix.
+  - Geometry status: BUILD42_300_MODEL_SUPPORTED / BUILD42_256_MODEL_SUPPORTED /
+    BUILD42_300_MODEL_PARTIALLY_SUPPORTED / BUILD42_GEOMETRY_STILL_UNKNOWN.
+  - Writes build42-reference-geometry-report.json + .md.
+  - Safety flags: reference_files_copied=false, pz_assets_copied=false,
+    playable_export_claimed=false, compiled_writer_implemented=false, load_test_performed=false.
+- scripts/test-build42-reference-geometry-inspector.ps1: 10 assertions with synthetic fixtures:
+  source-outside-local refused; output-outside-local refused; valid run exits 0;
+  JSON written; MD written; hdrA=900 parsed; chunkdata 902b body=900; chunkdata 1026b body=1024;
+  reference_files_copied=false; playable_export_claimed=false.
+- scripts/validate.ps1: MAP-6F sentinel section (9 checks + test run); psTotal 492→502;
+  Build42 geometry inspector tests = 10 added to psChecks.
+- scripts/write-proof-packet.ps1: build42_geometry_inspector_tests=10 added; total 492→502.
+- scripts/test-proof-packet.ps1: build42_geometry_inspector_tests assertion added; total 502.
+- docs/IMPLEMENTATION.md: MAP-6F ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6F section.
+
+No load test performed. No PZ assets. No playable export claim.
+PS 502 / .NET 440 unchanged.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-6E: Build 42 geometry model audit)
 - docs/MAP_6E_BUILD42_GEOMETRY_MODEL_AUDIT.md: full geometry audit.
   - 300x300 found in: PaletteLoader (RequiredCellWidth/Height=300, RequiredTileSize=32),

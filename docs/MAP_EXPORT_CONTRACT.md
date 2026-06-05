@@ -552,6 +552,24 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6F — Build 42 reference geometry inspector packet:**
+MAP-6F adds `scripts/inspect-build42-reference-geometry.ps1` to resolve the
+MAP-6E geometry uncertainty. The operator manually copies a known-good Build 42
+map mod under `.local/reference-build42-map/` and runs the inspector.
+
+The inspector reads bounded byte prefixes of `.lotheader`, `world_*.lotpack`,
+`chunkdata_*.bin` and maps observed values to geometry statuses:
+- `BUILD42_300_MODEL_SUPPORTED`: hdrA=900, body_bytes=900 across samples.
+- `BUILD42_256_MODEL_SUPPORTED`: body_bytes=1024 or 256 observed.
+- `BUILD42_GEOMETRY_STILL_UNKNOWN`: inconclusive.
+
+A test script (`scripts/test-build42-reference-geometry-inspector.ps1`) runs
+10 assertions against synthetic fixture data. psTotal: 492→502.
+
+Artifacts: `docs/MAP_6F_BUILD42_REFERENCE_GEOMETRY_PACKET.md`.
+
+No playable export claim. No load test. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6E — Build 42 geometry model audit:**
 MAP-6E audits all 300×300 geometry assumptions in the repo and records the
 operator observation that Build 42 may use a 256×256 cell model.

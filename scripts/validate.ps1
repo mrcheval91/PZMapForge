@@ -228,6 +228,37 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-6F Build 42 reference geometry inspector ---"
+$map6fDoc    = Join-Path $repoRoot 'docs\MAP_6F_BUILD42_REFERENCE_GEOMETRY_PACKET.md'
+$map6fScript = Join-Path $repoRoot 'scripts\inspect-build42-reference-geometry.ps1'
+$map6fTests  = Join-Path $repoRoot 'scripts\test-build42-reference-geometry-inspector.ps1'
+if (-not (Test-Path -LiteralPath $map6fDoc)) { throw "MAP-6F doc missing: docs\MAP_6F_BUILD42_REFERENCE_GEOMETRY_PACKET.md" }
+Write-Output "OK: docs\MAP_6F_BUILD42_REFERENCE_GEOMETRY_PACKET.md"
+if (-not (Test-Path -LiteralPath $map6fScript)) { throw "MAP-6F script missing: scripts\inspect-build42-reference-geometry.ps1" }
+Write-Output "OK: scripts\inspect-build42-reference-geometry.ps1"
+if (-not (Test-Path -LiteralPath $map6fTests)) { throw "MAP-6F test missing: scripts\test-build42-reference-geometry-inspector.ps1" }
+Write-Output "OK: scripts\test-build42-reference-geometry-inspector.ps1"
+$map6fDocContent = Get-Content -LiteralPath $map6fDoc -Raw
+if ($map6fDocContent -notmatch 'REFERENCE_GEOMETRY_OBSERVED') { throw "MAP-6F doc missing REFERENCE_GEOMETRY_OBSERVED sentinel" }
+Write-Output "OK: doc contains REFERENCE_GEOMETRY_OBSERVED"
+if ($map6fDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6F doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false sentinel" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+$map6fScriptContent = Get-Content -LiteralPath $map6fScript -Raw
+if ($map6fScriptContent -notmatch '\.local') { throw "MAP-6F script missing .local refusal language" }
+Write-Output "OK: script contains .local refusal language"
+if ($map6fScriptContent -notmatch 'reference_files_copied') { throw "MAP-6F script missing reference_files_copied sentinel" }
+Write-Output "OK: script contains reference_files_copied sentinel"
+if ($map6fScriptContent -notmatch 'pz_assets_copied') { throw "MAP-6F script missing pz_assets_copied sentinel" }
+Write-Output "OK: script contains pz_assets_copied sentinel"
+if ($map6fScriptContent -notmatch 'playable_export_claimed') { throw "MAP-6F script missing playable_export_claimed sentinel" }
+Write-Output "OK: script contains playable_export_claimed sentinel"
+
+Write-Output ""
+Write-Output "--- Build42 geometry inspector tests ---"
+& powershell -ExecutionPolicy Bypass -File $map6fTests
+if ($LASTEXITCODE -ne 0) { throw "Build42 geometry inspector tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-6E Build 42 geometry model audit ---"
 $map6eDoc = Join-Path $repoRoot 'docs\MAP_6E_BUILD42_GEOMETRY_MODEL_AUDIT.md'
 if (-not (Test-Path -LiteralPath $map6eDoc)) { throw "MAP-6E doc missing: docs\MAP_6E_BUILD42_GEOMETRY_MODEL_AUDIT.md" }
@@ -292,17 +323,18 @@ Write-Output "========================================"
 # ---------------------------------------------------------------------------
 
 $psChecks = [ordered]@{
-    'Schema file sanity'            = 214
-    'Artifact contract'             = 40
-    'Palette SHA-256 verification'  = 5
-    'TMX integrity'                 = 21
-    'Hardening harness'             = 36
-    'Region extraction'             = 24
-    'Primitive classification'      = 22
-    'Plan recommendations contract' = 28
-    'Proof packet'                  = 102
+    'Schema file sanity'                  = 214
+    'Artifact contract'                   = 40
+    'Palette SHA-256 verification'        = 5
+    'TMX integrity'                       = 21
+    'Hardening harness'                   = 36
+    'Region extraction'                   = 24
+    'Primitive classification'            = 22
+    'Plan recommendations contract'       = 28
+    'Proof packet'                        = 102
+    'Build42 geometry inspector tests'    = 10
 }
-$psTotal = 492   # = validation_summary.total_expected_assertions in proof-packet v0.16
+$psTotal = 502   # = validation_summary.total_expected_assertions in proof-packet v0.16
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 250   # PZMapForge.Cli.Tests (MAP-6E: +2 geometry model status tests)
