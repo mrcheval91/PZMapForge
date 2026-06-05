@@ -315,4 +315,68 @@ public sealed class MapExportExperimentalProcessTests : IDisposable
         Assert.NotEqual(0, code);
         Assert.Contains("PZ install", stderr, StringComparison.OrdinalIgnoreCase);
     }
+
+    // -----------------------------------------------------------------------
+    // Test 17: report JSON has binary_runtime_status = failing_placeholder_format
+    // MAP-6B: placeholder binary format confirmed failing at runtime.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_ReportJson_BinaryRuntimeStatusIsFailingPlaceholder()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir);
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        Assert.Equal("failing_placeholder_format",
+            doc.RootElement.GetProperty("binary_runtime_status").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 18: report JSON has lotheader_runtime_status = eof_exception_observed
+    // MAP-6B: 0_0.lotheader failed with java.io.EOFException at IsoLot.readInt.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_ReportJson_LotheaderRuntimeStatusIsEofException()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir);
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        Assert.Equal("eof_exception_observed",
+            doc.RootElement.GetProperty("lotheader_runtime_status").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 19: report JSON has lotpack_runtime_status = unproven_after_lotheader_failure
+    // MAP-6B: lotpack was not reached due to lotheader blocking the load.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_ReportJson_LotpackRuntimeStatusIsUnproven()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir);
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        Assert.Equal("unproven_after_lotheader_failure",
+            doc.RootElement.GetProperty("lotpack_runtime_status").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 20: report JSON has chunkdata_runtime_status = unproven_after_lotheader_failure
+    // MAP-6B: chunkdata was not reached due to lotheader blocking the load.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_ReportJson_ChunkdataRuntimeStatusIsUnproven()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir);
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        Assert.Equal("unproven_after_lotheader_failure",
+            doc.RootElement.GetProperty("chunkdata_runtime_status").GetString());
+    }
 }

@@ -8,6 +8,45 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6B: Build 42 binary format failure record)
+- docs/MAP_6B_BINARY_FORMAT_FAILURE_RECORD.md: runtime failure evidence record.
+  - Status labels: DISCOVERY_PASS_VERSIONED_LAYOUT, MAP_FILES_DISCOVERED_BY_PZ,
+    BINARY_FAILURE_CONFIRMED, OBJECTS_LUA_FAILURE_CONFIRMED,
+    PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+  - 0_0.lotheader failed: java.io.EOFException at IsoLot.readInt. Placeholder
+    format definitively invalid. Real format research required.
+  - CellLoader / IsoCell.PlaceLot: repeated failures downstream of lotheader.
+  - objects.lua failed: LuaManager.RunLuaInternal exception. Comment-only invalid.
+  - Binary hypothesis table supersedes MAP-6A section 5 PLAUSIBLE entries.
+- src/PZMapForge.Cli/Program.cs: runtime status fields added to
+  experimental-map-export-report.json (both MAP-5A flat and MAP-5D build42_workshop):
+  - binary_runtime_status: failing_placeholder_format
+  - lotheader_runtime_status: eof_exception_observed
+  - lotpack_runtime_status: unproven_after_lotheader_failure
+  - chunkdata_runtime_status: unproven_after_lotheader_failure
+  - objects_lua_runtime_status: invalid_or_not_accepted
+- tests/PZMapForge.Cli.Tests/MapExportExperimentalProcessTests.cs:
+  - Tests 17-20: verify binary_runtime_status, lotheader_runtime_status,
+    lotpack_runtime_status, chunkdata_runtime_status fields in report JSON.
+  - cli_tests 230→234.
+- docs/MAP_6A_BUILD42_VERSIONED_DISCOVERY_PROOF.md: section 5 binary hypothesis
+  table superseded by MAP-6B evidence. PLAUSIBLE entries replaced.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6A section updated; MAP-6B section added.
+- docs/IMPLEMENTATION.md: MAP-6B ratified row added.
+- scripts/validate.ps1: MAP-6B contract section added (4 checks); dnCliTests
+  230→234; dnTotal 420→424.
+- scripts/write-proof-packet.ps1: cli_tests 230→234, test_total 420→424.
+- scripts/test-proof-packet.ps1: assertions updated for new counts.
+
+Previous MAP-6A belief (binary hypotheses PLAUSIBLE) was superseded by MAP-6B
+runtime evidence. Placeholder binary format failed. Real format required.
+No load test performed. No PZ assets. No playable export claim.
+PS 492 unchanged. .NET 424 (cli_tests 234).
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-6A: Build 42 versioned discovery proof + spawn-region test packet)
 - docs/MAP_6A_BUILD42_VERSIONED_DISCOVERY_PROOF.md: evidence record.
   - Confirmed routes: versioned loose-mod (<mods>/<folder>/42/mod.info) works.

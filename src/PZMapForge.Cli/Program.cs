@@ -1031,6 +1031,11 @@ MAP-5D adds correct Build 42 Workshop package layout to address packaging blocke
                 "build42: package uses Contents/mods nested layout per ModTemplate",
             },
             manual_load_test_required  = true,
+            binary_runtime_status      = "failing_placeholder_format",
+            lotheader_runtime_status   = "eof_exception_observed",
+            lotpack_runtime_status     = "unproven_after_lotheader_failure",
+            chunkdata_runtime_status   = "unproven_after_lotheader_failure",
+            objects_lua_runtime_status = "invalid_or_not_accepted",
         };
 
         var b42JsonOpts = new JsonSerializerOptions { WriteIndented = true };
@@ -1218,6 +1223,11 @@ PZMapForge MAP-4H decision: MAP-5A_ALLOWED_EXPERIMENTAL_LOCAL_ONLY
             "chunkdata: assuming 902-byte all-zero chunk grid is accepted for empty cell",
         },
         manual_load_test_required  = true,
+        binary_runtime_status      = "failing_placeholder_format",
+        lotheader_runtime_status   = "eof_exception_observed",
+        lotpack_runtime_status     = "unproven_after_lotheader_failure",
+        chunkdata_runtime_status   = "unproven_after_lotheader_failure",
+        objects_lua_runtime_status = "invalid_or_not_accepted",
     };
 
     var jsonOpts      = new JsonSerializerOptions { WriteIndented = true };

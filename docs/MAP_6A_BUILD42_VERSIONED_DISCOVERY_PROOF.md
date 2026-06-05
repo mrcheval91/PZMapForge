@@ -6,9 +6,13 @@ Claim boundary:   evidence_record_only_not_load_tested_not_playable
 PZ build:         Build 42
 Session:          manual-b42-test-001
 MAP-5B status:    LOAD_TEST_INCONCLUSIVE
-Binary hypotheses: UNTESTED
-Spawn location:   NOT VISIBLE (cell registration gap — see section 4)
+Binary hypotheses: SUPERSEDED BY MAP-6B (see section 5)
+Spawn location:   CONFIRMED VISIBLE (maptest_a spawn-region variant)
 ```
+
+> **NOTE (MAP-6B):** Section 5 binary hypothesis status was superseded by MAP-6B
+> manual runtime evidence. The PLAUSIBLE entries below are no longer valid.
+> See `docs/MAP_6B_BINARY_FORMAT_FAILURE_RECORD.md` for current status.
 
 ---
 
@@ -105,17 +109,18 @@ Two candidate causes (not yet confirmed):
 
 ## 5. Binary hypothesis status after MAP-6A evidence
 
-| Hypothesis | Status | Basis |
-|---|---|---|
-| `.lotheader` 0-entry is accepted for blank cell | **PLAUSIBLE** — no error observed | Engine loaded the mod without crashing |
-| `.lotpack` zero-offset table is accepted | **PLAUSIBLE** — no error observed | Same basis |
-| `chunkdata_*.bin` 902-byte all-zero grid is accepted | **PLAUSIBLE** — no error observed | Same basis |
-| Single cell (0,0) is a valid spawn region | **UNCONFIRMED** | Spawn not visible in selection |
-| `spawnpoints.lua` worldX/worldY (0,0) is valid | **UNCONFIRMED** | Spawn not tested |
+> **SUPERSEDED by MAP-6B.** The entries below reflected MAP-6A observations
+> (mod registration only, no cell load). MAP-6B runtime evidence falsified the
+> PLAUSIBLE entries. See `docs/MAP_6B_BINARY_FORMAT_FAILURE_RECORD.md`.
 
-No claim is made that the binary files are correct. The absence of a crash is
-weak positive evidence only. A successful spawn into the cell is required before
-any stronger claim can be made.
+| Hypothesis | MAP-6A status | MAP-6B status | Basis |
+|---|---|---|---|
+| `.lotheader` 0-entry is accepted for blank cell | ~~PLAUSIBLE~~ | **FAILING_PLACEHOLDER_FORMAT** | EOFException at IsoLot.readInt |
+| `.lotpack` zero-offset table is accepted | ~~PLAUSIBLE~~ | **UNPROVEN_AFTER_LOTHEADER_FAILURE** | Not reached; lotheader blocked load |
+| `chunkdata_*.bin` 902-byte all-zero grid is accepted | ~~PLAUSIBLE~~ | **UNPROVEN_AFTER_LOTHEADER_FAILURE** | Not reached; lotheader blocked load |
+| `objects.lua` comment-only is accepted | not hypothesized | **INVALID_OR_NOT_ACCEPTED** | LuaManager exception confirmed |
+
+No playable export claim. Real binary format implementation required.
 
 ---
 
