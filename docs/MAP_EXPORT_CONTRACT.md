@@ -552,6 +552,38 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6O — Clean isolated Build 42 candidate retest protocol:**
+MAP-6O defines the procedure for a clean, isolated retest of the MAP-6L/MAP-6M
+candidate to resolve the MAP-6N INCONCLUSIVE status.
+
+Protocol steps:
+1. Pre-clean: delete old `pzmapforge_manual_b42_001_maptest_a` folders, disable
+   unrelated mods, delete stale console.txt, create fresh server preset.
+2. Install: operator manually copies `.local/` candidate to PZ mods (human-only).
+3. Verify: 7 required files present at destination before launch.
+4. Test: launch PZ, enable only candidate mod, record crash/pass at mod selection,
+   spawn region visibility, world load start.
+5. Log capture: copy fresh console.txt to `.local/` immediately after test.
+6. Triage: run `scripts/extract-map6n-current-candidate-log-evidence.ps1` on
+   captured log.
+
+Status labels:
+```text
+CLEAN_ISOLATED_RETEST_PROTOCOL_CREATED
+HUMAN_ONLY_COPY_REQUIRED
+LOAD_TEST_NOT_PERFORMED
+WRITER_NOT_CHANGED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+Artifacts:
+- `docs/MAP_6O_CLEAN_ISOLATED_CANDIDATE_RETEST_PROTOCOL.md` — full protocol.
+- `scripts/prepare-map6o-clean-retest-checklist.ps1` — generates operator
+  checklist, record template, and triage commands under `.local/` only; refuses
+  paths outside `.local/`; verifies 7 candidate source files; does NOT copy to PZ.
+
+No load test performed. No writer change. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6N — Preliminary Build 42 candidate load test record (INCONCLUSIVE):**
 MAP-6N records the first manual load test attempt for the MAP-6L/MAP-6M candidate
 (`pzmapforge_build42_candidate_001`). The result is LOAD_TEST_INCONCLUSIVE.

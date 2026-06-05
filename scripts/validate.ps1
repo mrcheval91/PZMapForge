@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (600)
+    Final output reports the complete PowerShell validation lane total (612)
     and the .NET lane total (465) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.17 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.18 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,35 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-6O clean isolated candidate retest protocol ---"
+$map6oDoc    = Join-Path $repoRoot 'docs\MAP_6O_CLEAN_ISOLATED_CANDIDATE_RETEST_PROTOCOL.md'
+$map6oScript = Join-Path $repoRoot 'scripts\prepare-map6o-clean-retest-checklist.ps1'
+$map6oTests  = Join-Path $repoRoot 'scripts\test-map6o-clean-retest-checklist.ps1'
+if (-not (Test-Path -LiteralPath $map6oDoc))    { throw "MAP-6O doc missing: docs\MAP_6O_CLEAN_ISOLATED_CANDIDATE_RETEST_PROTOCOL.md" }
+Write-Output "OK: docs\MAP_6O_CLEAN_ISOLATED_CANDIDATE_RETEST_PROTOCOL.md"
+if (-not (Test-Path -LiteralPath $map6oScript)) { throw "MAP-6O script missing: scripts\prepare-map6o-clean-retest-checklist.ps1" }
+Write-Output "OK: scripts\prepare-map6o-clean-retest-checklist.ps1"
+if (-not (Test-Path -LiteralPath $map6oTests))  { throw "MAP-6O tests missing: scripts\test-map6o-clean-retest-checklist.ps1" }
+Write-Output "OK: scripts\test-map6o-clean-retest-checklist.ps1"
+$map6oDocContent = Get-Content -LiteralPath $map6oDoc -Raw
+if ($map6oDocContent -notmatch 'CLEAN_ISOLATED_RETEST_PROTOCOL_CREATED') { throw "MAP-6O doc missing CLEAN_ISOLATED_RETEST_PROTOCOL_CREATED sentinel" }
+Write-Output "OK: doc contains CLEAN_ISOLATED_RETEST_PROTOCOL_CREATED"
+if ($map6oDocContent -notmatch 'HUMAN_ONLY_COPY_REQUIRED') { throw "MAP-6O doc missing HUMAN_ONLY_COPY_REQUIRED sentinel" }
+Write-Output "OK: doc contains HUMAN_ONLY_COPY_REQUIRED"
+if ($map6oDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6O doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false sentinel" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+$map6oScriptContent = Get-Content -LiteralPath $map6oScript -Raw
+if ($map6oScriptContent -notmatch '\.local') { throw "MAP-6O script missing .local refusal language" }
+Write-Output "OK: script contains .local refusal language"
+if ($map6oScriptContent -notmatch 'HUMAN_ONLY_COPY_REQUIRED') { throw "MAP-6O script missing HUMAN_ONLY_COPY_REQUIRED sentinel" }
+Write-Output "OK: script contains HUMAN_ONLY_COPY_REQUIRED sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-6O retest checklist tests ---"
+& powershell -ExecutionPolicy Bypass -File $map6oTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-6O retest checklist tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-6N preliminary candidate load test record ---"
@@ -450,7 +479,7 @@ Write-Output "PZMapForge validation summary"
 Write-Output "========================================"
 
 # ---------------------------------------------------------------------------
-# Ledger constants - sourced from proof-packet v0.16 / docs/VALIDATION_LEDGER.md.
+# Ledger constants - sourced from proof-packet v0.18 / docs/VALIDATION_LEDGER.md.
 # Update here when counts change; update the proof packet schema and ledger too.
 # ---------------------------------------------------------------------------
 
@@ -470,15 +499,16 @@ $psChecks = [ordered]@{
     'Build42 LOTP payload window tests'  = 20
     'Build42 candidate packet tests'     = 20
     'MAP-6N log triage tests'            = 12
+    'MAP-6O retest checklist tests'      = 12
 }
-$psTotal = 600   # = validation_summary.total_expected_assertions in proof-packet v0.17
+$psTotal = 612   # = validation_summary.total_expected_assertions in proof-packet v0.18
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 275   # PZMapForge.Cli.Tests (MAP-6L: +25 Build42 candidate writer tests)
-$dnTotal     = 465   # = dotnet_validation_summary.test_total in proof-packet v0.17
+$dnTotal     = 465   # = dotnet_validation_summary.test_total in proof-packet v0.18
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.16):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.18):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -486,7 +516,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.16 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.18 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

@@ -8,6 +8,43 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6O: Clean isolated Build 42 candidate retest protocol)
+- docs/MAP_6O_CLEAN_ISOLATED_CANDIDATE_RETEST_PROTOCOL.md: human-only retest protocol.
+  - Pre-clean: delete stale maptest_a folders, disable other mods, fresh console.txt.
+  - Install: operator manual copy (not automated) from .local to PZ mods.
+  - Verify: 7 required files checklist before launch.
+  - Test sequence: mod selection, spawn region, world load.
+  - Post-test: fresh log capture to .local, triage tool reference.
+  - CLEAN_ISOLATED_RETEST_PROTOCOL_CREATED; HUMAN_ONLY_COPY_REQUIRED;
+    LOAD_TEST_NOT_PERFORMED; WRITER_NOT_CHANGED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/prepare-map6o-clean-retest-checklist.ps1:
+  - Guards: -CandidateSource and -Output under .local; forbidden Zomboid paths refused.
+  - Verifies 7 required candidate source files (mod.info, map.info, spawnpoints.lua,
+    objects.lua, lotheader, lotpack, chunkdata).
+  - Writes MAP_6O_CLEAN_RETEST_CHECKLIST.md, RECORD.local-template.md,
+    TRIAGE_COMMANDS.md under Output.
+  - No files copied to PZ. LOAD_TEST_NOT_PERFORMED.
+- scripts/test-map6o-clean-retest-checklist.ps1: 12 assertions.
+  - Test 1: CandidateSource outside .local refused.
+  - Test 2: Output outside .local refused.
+  - Tests 3-10: valid source exits 0; 3 output files exist; checklist has
+    HUMAN_ONLY_COPY_REQUIRED, LOAD_TEST_NOT_PERFORMED, PLAYABLE_EXPORT_CLAIM_ALLOWED=false,
+    candidate ID.
+  - Test 11: no automatic Copy-Item to Zomboid mods.
+  - Test 12: record template contains LOAD_TEST_INCONCLUSIVE.
+  - psTotal 600->612.
+- scripts/validate.ps1: label drift fixed (v0.16->v0.17 in final summary labels);
+  MAP-6O section added; psTotal 600->612.
+- scripts/write-proof-packet.ps1: v0.18; map6o_retest_checklist_tests=12; total 612.
+- scripts/test-proof-packet.ps1: assertions updated (12/612).
+- docs/IMPLEMENTATION.md: MAP-6O ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6O section.
+
+No load test. No writer change. No PZ assets into repo. No playable export claim.
+PS 612 / .NET 465.
+
+---
+
 ### Added (MAP-6N: Preliminary Build 42 candidate load test record)
 - docs/MAP_6N_PRELIMINARY_CANDIDATE_LOAD_TEST_RECORD.md: inconclusive load test record.
   - Candidate: pzmapforge_build42_candidate_001 (MAP-6L/MAP-6M source).
