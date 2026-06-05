@@ -8,6 +8,43 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6L: Build 42 candidate writer MVP)
+- docs/MAP_6L_BUILD42_CANDIDATE_WRITER_MVP.md: candidate writer doc.
+  - Exact bytes: LOTH(38b, LOTH magic+1 entry), LOTP(1056780b, LOTP+1024 zero chunks), chunkdata(1026b).
+  - Entry source: blends_grassoverlays_01_0 from committed MAP-4E evidence only.
+  - Smoke: first_offset=8204/monotonic/unique_sizes=1/all_zero confirmed.
+  - Remaining unknowns: lotp_zero_payload/loth_minimum_entries/missing_trailer/build42_load_test.
+  - BUILD42_CANDIDATE_WRITER_IMPLEMENTED; LOAD_TEST_NOT_PERFORMED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- src/PZMapForge.Cli/Program.cs:
+  - --build42-candidate-writer flag added to map-export-experimental.
+  - --build42-candidate-profile flag (default empty_grass_v0).
+  - Build42CandidateWriterCommand: versioned 42/ layout; all-zero chunkdata(1026b);
+    LOTH lotheader(38b, LOTH+ver+1 entry); LOTP lotpack(1056780b, LOTP+1024 zero chunks).
+  - Report JSON: build42_candidate_writer/writer_implemented/load_tested=false/
+    playable_export_generated=false/playable_export_claimed=false + full layout fields.
+- tests/PZMapForge.Cli.Tests/MapExportBuild42CandidateWriterProcessTests.cs: 25 tests.
+  - Tests 1-5: exit 0, 42/ dir, lotheader/lotpack/chunkdata exist.
+  - Tests 6-8: LOTH magic(4C4F5448), version=1, entry_count matches entries.
+  - Tests 9-11: LOTP magic(4C4F5450), version=1, chunk_count=1024.
+  - Tests 12-15: offsets (first=8204, second=9228, last=1055756), file size=1056780.
+  - Tests 16-18: chunkdata size=1026, header=0001, body all zero.
+  - Tests 19-23: report fields (writer_implemented/load_tested/playable/claimed/status).
+  - Test 24: output outside .local refused.
+  - Test 25: lotp_file_size_expected=1056780 in report.
+  - cli_tests 250→275; dnTotal 440→465.
+- scripts/validate.ps1: dnCliTests 250→275; dnTotal 440→465.
+- scripts/write-proof-packet.ps1: cli_tests 250→275; test_total 440→465.
+- scripts/test-proof-packet.ps1: assertions updated (275/465).
+- docs/IMPLEMENTATION.md: MAP-6L ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6L section.
+
+No load test performed. No PZ assets into repo. No playable export claim.
+PS 568 unchanged. .NET 465 (cli_tests 275).
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-6K: Build 42 LOTP payload and LOTH entry research)
 - docs/MAP_6K_LOTP_PAYLOAD_AND_LOTH_ENTRY_RESEARCH.md: research findings.
   - LOTP: first_offset=8204 confirmed; most_common_payload_size=1024; unique_sizes variable

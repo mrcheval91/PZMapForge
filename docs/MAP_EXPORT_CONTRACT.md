@@ -552,6 +552,23 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6L — Build 42 candidate writer MVP:**
+MAP-6L implements the first deterministic Build 42 binary writer behind
+`--build42-candidate-writer --build42-candidate-profile empty_grass_v0`.
+
+Generated output (under `.local/` only, versioned `42/` layout):
+- `0_0.lotheader`: 38 bytes — LOTH magic + version=1 + 1 grass entry (MAP-4E committed evidence).
+- `world_0_0.lotpack`: 1,056,780 bytes — LOTP magic + version=1 + 1024 zero-payload chunks.
+- `chunkdata_0_0.bin`: 1,026 bytes — `00 01` header + 1024 zero bytes.
+
+Smoke inspection confirmed: first_offset=8204, monotonic=True, unique_sizes=1, all_zero_body=True.
+
+Status: `BUILD42_CANDIDATE_WRITER_IMPLEMENTED`. `LOAD_TEST_NOT_PERFORMED`.
+`writer_scope = candidate_only_not_load_tested`. Remaining unknowns: lotp_zero_payload_load_acceptance,
+loth_minimum_entries_acceptance, missing_trailer_acceptance.
+
+No load test. No PZ assets into repo. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6K — Build 42 LOTP payload and LOTH entry research:**
 MAP-6K adds `scripts/inspect-build42-lotp-payload-windows.ps1` to read LOTP
 chunk payload windows and LOTH entry lists from the Drummondville reference.

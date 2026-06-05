@@ -419,8 +419,8 @@ $psChecks = [ordered]@{
 $psTotal = 568   # = validation_summary.total_expected_assertions in proof-packet v0.16
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
-$dnCliTests  = 250   # PZMapForge.Cli.Tests (MAP-6E: +2 geometry model status tests)
-$dnTotal     = 440   # = dotnet_validation_summary.test_total in proof-packet v0.16
+$dnCliTests  = 275   # PZMapForge.Cli.Tests (MAP-6L: +25 Build42 candidate writer tests)
+$dnTotal     = 465   # = dotnet_validation_summary.test_total in proof-packet v0.16
 
 Write-Output ""
 Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.16):"
