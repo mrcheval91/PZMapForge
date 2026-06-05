@@ -8,6 +8,45 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6I: Build 42 format design matrix)
+- docs/MAP_6I_BUILD42_FORMAT_DESIGN_MATRIX.md: design matrix doc.
+  - MAP-6H result summary; stability observations; candidate writer layouts.
+  - LOTP: bytes 0-11 stable (LOTP magic + version=1 + chunk_count=1024).
+  - LOTP offset table: 12 + 1024×8 = 8204 bytes before chunk data.
+  - LOTH: bytes 0-7 stable (LOTH magic + version=1); word[2]=entry_count variable.
+  - LOTH string table: same structure as MAP-4E Build 41 evidence.
+  - Chunkdata: 1026 bytes, 2-byte header + 1024-byte body (32x32 zero hypothesis).
+  - Recommended next: MAP-6J writer contract.
+  - BUILD42_FORMAT_DESIGN_MATRIX_CREATED; WRITER_NOT_IMPLEMENTED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/derive-build42-format-design-matrix.ps1:
+  - Reads MAP-6H JSON (schema guard: v0.2 required).
+  - Guards: InspectionReport and Output under .local only.
+  - LOTP/LOTH word stability: List[object] per position (stable/variable/missing).
+  - Word classification: stable_magic (pos 0), stable_version (pos 1), stable/variable_unknown.
+  - LOTH word[2] labelled variable_entry_count when variable.
+  - Chunkdata body size analysis: body_900/body_1024/other counts; dominant_model.
+  - Outputs build42-format-design-matrix.json (depth 8) + .md.
+  - WRITER_NOT_IMPLEMENTED=true; PLAYABLE_EXPORT_CLAIM_ALLOWED=false in JSON.
+- scripts/test-build42-format-design-matrix.ps1: 13 assertions.
+  - Tests 1-2: path guards. Test 3: valid exit 0. Tests 4-5: files written.
+  - Tests 6-7: LOTP word[0]=stable_magic, word[1]=stable_version.
+  - Tests 8-9: LOTH word[0]=stable_magic, word[1]=stable_version.
+  - Test 10: LOTH word[2] variable. Test 11: chunkdata dominant=32x32_1024.
+  - Tests 12-13: WRITER_NOT_IMPLEMENTED, PLAYABLE_EXPORT_CLAIM_ALLOWED.
+  - psTotal 515→528.
+- scripts/validate.ps1: MAP-6I sentinel (6 checks + test run); psTotal 515→528.
+- scripts/write-proof-packet.ps1: build42_format_design_matrix_tests=13; total 528.
+- scripts/test-proof-packet.ps1: assertions updated (13/528).
+- docs/IMPLEMENTATION.md: MAP-6I ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6I section.
+
+No writer implemented. No load test. No PZ assets into repo. No playable export claim.
+PS 528 / .NET 440 unchanged.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-6H: Build 42 LOTP LOTH deep reference inspection)
 - docs/MAP_6H_BUILD42_LOTP_LOTH_DEEP_INSPECTION.md: deep inspection evidence.
   - LOTP lotpack: magic bytes, version field, deep prefix fields documented.

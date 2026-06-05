@@ -228,6 +228,30 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-6I Build 42 format design matrix ---"
+$map6iDoc    = Join-Path $repoRoot 'docs\MAP_6I_BUILD42_FORMAT_DESIGN_MATRIX.md'
+$map6iScript = Join-Path $repoRoot 'scripts\derive-build42-format-design-matrix.ps1'
+$map6iTests  = Join-Path $repoRoot 'scripts\test-build42-format-design-matrix.ps1'
+if (-not (Test-Path -LiteralPath $map6iDoc))    { throw "MAP-6I doc missing: docs\MAP_6I_BUILD42_FORMAT_DESIGN_MATRIX.md" }
+Write-Output "OK: docs\MAP_6I_BUILD42_FORMAT_DESIGN_MATRIX.md"
+if (-not (Test-Path -LiteralPath $map6iScript)) { throw "MAP-6I script missing: scripts\derive-build42-format-design-matrix.ps1" }
+Write-Output "OK: scripts\derive-build42-format-design-matrix.ps1"
+if (-not (Test-Path -LiteralPath $map6iTests))  { throw "MAP-6I tests missing: scripts\test-build42-format-design-matrix.ps1" }
+Write-Output "OK: scripts\test-build42-format-design-matrix.ps1"
+$map6iDocContent = Get-Content -LiteralPath $map6iDoc -Raw
+if ($map6iDocContent -notmatch 'BUILD42_FORMAT_DESIGN_MATRIX_CREATED') { throw "MAP-6I doc missing BUILD42_FORMAT_DESIGN_MATRIX_CREATED" }
+Write-Output "OK: doc contains BUILD42_FORMAT_DESIGN_MATRIX_CREATED"
+if ($map6iDocContent -notmatch 'WRITER_NOT_IMPLEMENTED') { throw "MAP-6I doc missing WRITER_NOT_IMPLEMENTED" }
+Write-Output "OK: doc contains WRITER_NOT_IMPLEMENTED"
+if ($map6iDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6I doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+
+Write-Output ""
+Write-Output "--- MAP-6I format design matrix tests ---"
+& powershell -ExecutionPolicy Bypass -File $map6iTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-6I format design matrix tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-6H Build 42 LOTP LTZH deep inspection ---"
 $map6hDoc = Join-Path $repoRoot 'docs\MAP_6H_BUILD42_LOTP_LOTH_DEEP_INSPECTION.md'
 if (-not (Test-Path -LiteralPath $map6hDoc)) { throw "MAP-6H doc missing: docs\MAP_6H_BUILD42_LOTP_LOTH_DEEP_INSPECTION.md" }
@@ -359,8 +383,9 @@ $psChecks = [ordered]@{
     'Plan recommendations contract'       = 28
     'Proof packet'                        = 102
     'Build42 geometry inspector tests'    = 23
+    'Build42 format design matrix tests' = 13
 }
-$psTotal = 515   # = validation_summary.total_expected_assertions in proof-packet v0.16
+$psTotal = 528   # = validation_summary.total_expected_assertions in proof-packet v0.16
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 250   # PZMapForge.Cli.Tests (MAP-6E: +2 geometry model status tests)

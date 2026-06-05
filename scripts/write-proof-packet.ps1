@@ -183,7 +183,8 @@ $packet = [ordered]@{
         plan_recommendations_contract     = 28
         proof_packet                      = 102
         build42_geometry_inspector_tests  = 23
-        total_expected_assertions         = 515
+        build42_format_design_matrix_tests = 13
+        total_expected_assertions         = 528
     }
     dotnet_validation_summary = [ordered]@{
         test_total                          = 440
@@ -322,7 +323,8 @@ planning_artifact_only_not_pz_load_tested
 | Plan recommendations contract | 28 |
 | Proof packet | 102 |
 | Build42 geometry inspector tests | 23 |
-| Total | 515 |
+| Build42 format design matrix tests | 13 |
+| Total | 528 |
 
 ## .NET validation summary (separate lane)
 

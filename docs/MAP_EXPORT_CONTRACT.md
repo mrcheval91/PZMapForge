@@ -552,6 +552,22 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6I — Build 42 format design matrix:**
+MAP-6I adds `scripts/derive-build42-format-design-matrix.ps1` which reads a MAP-6H
+reference geometry report and produces a word-level stability matrix for LOTP
+lotpacks, LOTH lotheaders, and chunkdata records.
+
+Key findings from Drummondville reference:
+- LOTP words 0-1: stable (magic + version=1). Word 2: chunk count=1024. Word 3: first chunk offset=8204 (=12+1024×8). This confirms the offset table structure.
+- LOTH words 0-1: stable (magic + version=1). Word 2: variable (entry count, depends on cell). Words 3+: tileset pack name bytes (ASCII, same structure as MAP-4E).
+- Chunkdata dominant model: 32×32 (body=1024).
+
+Candidate writer design documented. Key unknowns remaining: LOTP chunk data format; LOTH minimum entry set. `BUILD42_FORMAT_DESIGN_MATRIX_CREATED`. `WRITER_NOT_IMPLEMENTED`.
+
+Artifacts: `docs/MAP_6I_BUILD42_FORMAT_DESIGN_MATRIX.md`.
+
+No writer implemented. No load test. No PZ assets into repo. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6F — Build 42 reference geometry inspector packet:**
 MAP-6F adds `scripts/inspect-build42-reference-geometry.ps1` to resolve the
 MAP-6E geometry uncertainty. The operator manually copies a known-good Build 42
