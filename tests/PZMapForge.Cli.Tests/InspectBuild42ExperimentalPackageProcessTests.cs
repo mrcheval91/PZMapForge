@@ -217,7 +217,8 @@ public sealed class InspectBuild42ExperimentalPackageProcessTests : IDisposable
     [Fact]
     public void Inspect_NonExistentPackage_ExitsNonZero()
     {
-        var missing = Path.Combine(_tempDir, "does_not_exist");
+        // Use a .local/ path that simply doesn't exist on disk
+        var missing = Path.Combine(_tempDir, ".local", "does-not-exist-pkg");
         var (code, _, stderr) = RunCli(
             "inspect-build42-experimental-package",
             "--package", missing,
@@ -245,5 +246,25 @@ public sealed class InspectBuild42ExperimentalPackageProcessTests : IDisposable
 
         Assert.NotEqual(0, code);
         Assert.Contains("FAIL", stdout, StringComparison.Ordinal);
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 11: --package outside .local exits nonzero (MAP-5F guard)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Inspect_PackageOutsideLocal_ExitsNonZero()
+    {
+        // A valid directory that is NOT under .local/
+        var outsideLocal = Path.Combine(_tempDir, "not-local", "some-package");
+        Directory.CreateDirectory(outsideLocal);
+
+        var (code, _, stderr) = RunCli(
+            "inspect-build42-experimental-package",
+            "--package", outsideLocal,
+            "--output", InspectOut);
+
+        Assert.NotEqual(0, code);
+        Assert.Contains(".local", stderr, StringComparison.OrdinalIgnoreCase);
     }
 }

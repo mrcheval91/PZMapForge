@@ -8,6 +8,41 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-5F: inspector path hardening + Build 42 load-test packet)
+- src/PZMapForge.Cli/Program.cs: --package .local/ guard added to
+  inspect-build42-experimental-package. The command now refuses --package
+  paths that are not under .local/, matching the existing --output guard.
+  Existing test for non-existent package updated to use .local/ path.
+- tests/PZMapForge.Cli.Tests/InspectBuild42ExperimentalPackageProcessTests.cs:
+  Test 11 added: --package outside .local exits nonzero.
+- scripts/prepare-build42-load-test-packet.ps1:
+  - Args: -Source <.local MAP-5D package dir> -Output <.local output dir>.
+  - Both -Source and -Output must be under .local/.
+  - Reads embedded experimental-map-export-report.json (auto-discovers map_id).
+  - Validates package_layout=build42_workshop, experimental_writer=true.
+  - Verifies 12 expected package files are present.
+  - Writes BUILD42_LOAD_TEST_PACKET.md:
+    - inspect command to verify 21/21 checks PASS
+    - step-by-step manual copy instructions (Workshop folder + loose mods fallback)
+    - what to observe during the test
+  - Writes BUILD42_LOAD_TEST_RECORD.local-template.md:
+    - pre-filled with map_id, cell, package_layout from source report
+    - observation checklist, result field (PASS/FAIL/INCONCLUSIVE), non-claims
+  - Does NOT copy files to PZ folders.
+  - Does NOT touch PZ install.
+  - Does NOT claim playable export.
+- scripts/validate.ps1: cli_tests 229→230, total 419→420.
+- scripts/write-proof-packet.ps1 + test-proof-packet.ps1: counts updated.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-5F section added.
+- docs/IMPLEMENTATION.md: MAP-5F ratified row added.
+
+MAP-5B remains LOAD_TEST_INCONCLUSIVE. Binary hypotheses remain UNTESTED.
+No files copied to PZ folders. No PZ assets. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-5E: Build 42 experimental package self-inspection)
 - src/PZMapForge.Cli/Program.cs: inspect-build42-experimental-package command.
   - Args: --package <dir> --output <.local dir>.

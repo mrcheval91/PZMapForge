@@ -456,6 +456,15 @@ Writes `build42-experimental-package-inspection.json` and `.md` under `--output`
 No files are copied. No PZ assets read. Output is under `.local/` only.
 MAP-5B remains LOAD_TEST_INCONCLUSIVE. Binary hypotheses remain UNTESTED.
 
+**MAP-5F — Inspector path hardening + Build 42 manual load-test packet:**
+MAP-5F adds a `.local/` guard to `--package` in `inspect-build42-experimental-package`
+(previously only `--output` was guarded). Also adds
+`scripts/prepare-build42-load-test-packet.ps1` which validates a MAP-5D package,
+verifies all required files are present, and writes `BUILD42_LOAD_TEST_PACKET.md`
+(step-by-step copy/test instructions) and `BUILD42_LOAD_TEST_RECORD.local-template.md`
+(fillable result template) under `.local/` only. Does NOT copy files to PZ folders.
+MAP-5B remains LOAD_TEST_INCONCLUSIVE. Binary hypotheses remain UNTESTED.
+
 ---
 
 ## 6. Source / editing format contract
