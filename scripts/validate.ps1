@@ -228,6 +228,30 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-6K LOTP payload / LOTH entry research ---"
+$map6kDoc    = Join-Path $repoRoot 'docs\MAP_6K_LOTP_PAYLOAD_AND_LOTH_ENTRY_RESEARCH.md'
+$map6kScript = Join-Path $repoRoot 'scripts\inspect-build42-lotp-payload-windows.ps1'
+$map6kTests  = Join-Path $repoRoot 'scripts\test-build42-lotp-payload-windows.ps1'
+if (-not (Test-Path -LiteralPath $map6kDoc))    { throw "MAP-6K doc missing" }
+Write-Output "OK: docs\MAP_6K_LOTP_PAYLOAD_AND_LOTH_ENTRY_RESEARCH.md"
+if (-not (Test-Path -LiteralPath $map6kScript)) { throw "MAP-6K script missing" }
+Write-Output "OK: scripts\inspect-build42-lotp-payload-windows.ps1"
+if (-not (Test-Path -LiteralPath $map6kTests))  { throw "MAP-6K tests missing" }
+Write-Output "OK: scripts\test-build42-lotp-payload-windows.ps1"
+$map6kDocContent = Get-Content -LiteralPath $map6kDoc -Raw
+if ($map6kDocContent -notmatch 'BUILD42_LOTP_PAYLOAD_WINDOWS_INSPECTED') { throw "MAP-6K doc missing BUILD42_LOTP_PAYLOAD_WINDOWS_INSPECTED" }
+Write-Output "OK: doc contains BUILD42_LOTP_PAYLOAD_WINDOWS_INSPECTED"
+if ($map6kDocContent -notmatch 'WRITER_NOT_IMPLEMENTED') { throw "MAP-6K doc missing WRITER_NOT_IMPLEMENTED" }
+Write-Output "OK: doc contains WRITER_NOT_IMPLEMENTED"
+if ($map6kDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6K doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+
+Write-Output ""
+Write-Output "--- MAP-6K payload window tests ---"
+& powershell -ExecutionPolicy Bypass -File $map6kTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-6K payload window tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-6J Build 42 writer contract ---"
 & powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\test-build42-writer-contract.ps1')
 if ($LASTEXITCODE -ne 0) { throw "MAP-6J writer contract tests failed." }
@@ -390,8 +414,9 @@ $psChecks = [ordered]@{
     'Build42 geometry inspector tests'    = 23
     'Build42 format design matrix tests' = 13
     'Build42 writer contract tests'      = 20
+    'Build42 LOTP payload window tests'  = 20
 }
-$psTotal = 548   # = validation_summary.total_expected_assertions in proof-packet v0.16
+$psTotal = 568   # = validation_summary.total_expected_assertions in proof-packet v0.16
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 250   # PZMapForge.Cli.Tests (MAP-6E: +2 geometry model status tests)

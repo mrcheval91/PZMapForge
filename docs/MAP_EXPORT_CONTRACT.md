@@ -552,6 +552,22 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6K — Build 42 LOTP payload and LOTH entry research:**
+MAP-6K adds `scripts/inspect-build42-lotp-payload-windows.ps1` to read LOTP
+chunk payload windows and LOTH entry lists from the Drummondville reference.
+
+Key Drummondville findings:
+- LOTP: first_offset=8204 ✓; most_common_payload_size=1024; unique_sizes 24-63 per cell;
+  all offsets monotonic; tail_bytes ~1024-1056.
+- LOTH: parsed_count=declared_count+1 consistently (trailing content pattern);
+  smallest observed entry count=36; entry format newline-delimited ASCII confirmed.
+- Chunkdata: all_zero_body=True for 3/3 sampled cells.
+
+Status: `BUILD42_LOTP_PAYLOAD_WINDOWS_INSPECTED`, `BUILD42_LOTH_ENTRIES_EXTRACTED`,
+`BUILD42_CHUNKDATA_BODY_INSPECTED`. `WRITER_NOT_IMPLEMENTED`. Next: MAP-6L writer MVP.
+
+No writer. No load test. No PZ assets into repo. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6J — Build 42 writer contract:**
 MAP-6J codifies the Build 42 binary format contracts into exact byte-level
 definitions and adds a writer-plan schema and example.

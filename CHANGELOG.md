@@ -8,6 +8,44 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6K: Build 42 LOTP payload and LOTH entry research)
+- docs/MAP_6K_LOTP_PAYLOAD_AND_LOTH_ENTRY_RESEARCH.md: research findings.
+  - LOTP: first_offset=8204 confirmed; most_common_payload_size=1024; unique_sizes variable
+    (24-63 per cell, content-dependent); monotonic offsets; tail_bytes 1024-1056.
+  - LOTH: parsed_count=declared+1 consistently (off-by-one trailing content pattern);
+    smallest entry count=36 (grass overlay subset); entry format confirmed (MAP-4E compatible).
+  - Chunkdata: all_zero_body=True for all 3 sampled cells.
+  - Recommendation: proceed to MAP-6L MVP writer.
+  - WRITER_RESEARCH_ONLY; WRITER_NOT_IMPLEMENTED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-lotp-payload-windows.ps1:
+  - Guards: Source/Output under .local; forbidden paths refused.
+  - LOTP: reads full 8192-byte offset table; computes payload sizes, monotonic check,
+    most_common_size, unique_sizes, tail_bytes; reads MaxChunksPerCell chunk windows
+    at WindowBytes bytes each; SHA256 per window; windows_identical check.
+  - LOTH: reads full file; parses newline-delimited string table; records declared/parsed counts.
+  - Chunkdata: body zero-check up to 1024 bytes.
+  - Outputs build42-lotp-payload-window-report.json+.md.
+  - WRITER_NOT_IMPLEMENTED=true; LOAD_TEST_NOT_PERFORMED=true; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/test-build42-lotp-payload-windows.ps1: 20 assertions with synthetic fixtures.
+  - Synthetic LOTP: 1024 chunks, 64-byte sequential payloads (73740 bytes total).
+  - Synthetic LOTH: LOTH magic + 2 entries (blends_grassoverlays_01_0, blends_natural_01_0).
+  - Synthetic chunkdata: 1026 bytes, all-zero body.
+  - Tests: path guards, LOTP magic/chunk_count/first_offset/monotonic/windows, LOTH magic/counts/entry,
+    chunkdata size/all_zero, safety flags x3, no playable claim.
+  - psTotal 548→568.
+- scripts/validate.ps1: MAP-6K sentinel (6 checks + test run); psTotal 548→568.
+- scripts/write-proof-packet.ps1: build42_lotp_payload_window_tests=20; total 568.
+- scripts/test-proof-packet.ps1: assertions updated (20/568).
+- docs/IMPLEMENTATION.md: MAP-6K ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6K section.
+
+No writer implemented. No load test. No PZ assets into repo. No playable export claim.
+PS 568 / .NET 440 unchanged.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-6J: Build 42 writer contract)
 - docs/MAP_6J_BUILD42_WRITER_CONTRACT.md: exact byte-level writer contracts.
   - LOTP: magic(4C4F5450) + version(1) + chunk_count(1024) + offset table (12+1024x8=8204).

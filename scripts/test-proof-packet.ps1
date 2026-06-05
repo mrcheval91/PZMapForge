@@ -123,7 +123,8 @@ Assert-True ([int]$p.validation_summary.plan_recommendations_contract     -eq 28
 Assert-True ([int]$p.validation_summary.build42_geometry_inspector_tests       -eq 23)  "build42_geometry_inspector_tests == 23"
 Assert-True ([int]$p.validation_summary.build42_format_design_matrix_tests    -eq 13)  "build42_format_design_matrix_tests == 13"
 Assert-True ([int]$p.validation_summary.build42_writer_contract_tests         -eq 20)  "build42_writer_contract_tests == 20"
-Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 548) "total_expected_assertions == 548"
+Assert-True ([int]$p.validation_summary.build42_lotp_payload_window_tests     -eq 20)  "build42_lotp_payload_window_tests == 20"
+Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 568) "total_expected_assertions == 568"
 
 # ---------------------------------------------------------------------------
 # dotnet_validation_summary (separate lane)
