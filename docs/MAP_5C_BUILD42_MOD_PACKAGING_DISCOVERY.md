@@ -4,8 +4,9 @@
 Schema:           pzmapforge.packaging-discovery.v0.1
 Claim boundary:   packaging_diagnostic_only_not_load_tested
 MAP-5B result:    LOAD_TEST_INCONCLUSIVE
-Binary test:      NOT REACHED — blocker is packaging/discovery, not binary format
+Binary test:      NOT REACHED in MAP-5B — see MAP-6A for versioned-route discovery
 PZ build:         Build 42
+MAP-6A update:    Versioned loose-mod layout confirmed: <mods>/<folder>/42/mod.info
 ```
 
 ---

@@ -465,6 +465,22 @@ verifies all required files are present, and writes `BUILD42_LOAD_TEST_PACKET.md
 (fillable result template) under `.local/` only. Does NOT copy files to PZ folders.
 MAP-5B remains LOAD_TEST_INCONCLUSIVE. Binary hypotheses remain UNTESTED.
 
+**MAP-6A — Build 42 versioned discovery proof + spawn-region test packet:**
+MAP-6A records manual evidence that the Build 42 versioned loose-mod layout
+(`<mods>/<folder>/42/mod.info`) successfully loads a PZMapForge-generated mod.
+The game reached the spawn-selection screen; no crash on binary files; custom
+spawn location was not visible (cell registration gap).
+
+Artifacts:
+- `docs/MAP_6A_BUILD42_VERSIONED_DISCOVERY_PROOF.md` — full evidence record,
+  confirmed routes, spawn-selection observation, binary hypothesis status,
+  gap analysis, required proof for playable export claim.
+- `scripts/prepare-spawn-region-test-packet.ps1` — generates versioned layout
+  copy + three spawn-coord variants (cell 0,0 / 1,1 / 25,15) + instruction packet
+  + record template, all under `.local/` only. Does NOT copy to PZ folders.
+
+Still OPEN: custom spawn location not visible. No playable export claim.
+
 ---
 
 ## 6. Source / editing format contract

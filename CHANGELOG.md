@@ -8,6 +8,39 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6A: Build 42 versioned discovery proof + spawn-region test packet)
+- docs/MAP_6A_BUILD42_VERSIONED_DISCOVERY_PROOF.md: evidence record.
+  - Confirmed routes: versioned loose-mod (<mods>/<folder>/42/mod.info) works.
+  - Non-working routes: flat, Workshop, unversioned loose-mod.
+  - PZ log proof: "loading <mod_id>" confirmed.
+  - Spawn-selection reached; only vanilla locations visible.
+  - Custom spawn NOT visible (cell registration gap, not binary failure).
+  - Binary hypotheses plausible (no crash) but UNTESTED (no spawn confirmed).
+  - Required proof list before any playable export claim.
+- scripts/prepare-spawn-region-test-packet.ps1:
+  - Args: -Source <.local MAP-5D package> -Output <.local dir>.
+  - Both -Source and -Output guarded as .local/ only.
+  - Generates versioned-mod/<map_id>/42/ layout (confirmed Build 42 path).
+  - Generates 3 spawn-coord variant patches:
+    - Variant A: cell (0,0) + explicit lots= field
+    - Variant B: cell (1,1) matching ModTemplate
+    - Variant C: cell (25,15) matching RED-Speedway coordinate range
+  - Writes SPAWN_REGION_TEST_PACKET.md (background, versioned copy dest,
+    variant instructions, regeneration commands for binary variants).
+  - Writes SPAWN_REGION_TEST_RECORD.local-template.md.
+  - Does NOT copy to PZ mods folder.
+- docs/MAP_5C_BUILD42_MOD_PACKAGING_DISCOVERY.md: header note updated.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6A section added.
+- docs/IMPLEMENTATION.md: MAP-6A ratified row added.
+
+MAP-5B remains LOAD_TEST_INCONCLUSIVE. Binary hypotheses remain UNTESTED.
+Custom spawn location not yet visible. No playable export claim.
+No files copied to PZ folders. PS 492 / .NET 420 unchanged.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-5F: inspector path hardening + Build 42 load-test packet)
 - src/PZMapForge.Cli/Program.cs: --package .local/ guard added to
   inspect-build42-experimental-package. The command now refuses --package
