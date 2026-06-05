@@ -8,6 +8,37 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-5E: Build 42 experimental package self-inspection)
+- src/PZMapForge.Cli/Program.cs: inspect-build42-experimental-package command.
+  - Args: --package <dir> --output <.local dir>.
+  - Reads embedded experimental-map-export-report.json to discover map_id,
+    cell_x, cell_y automatically.
+  - 21 checks: workshop.txt, preview.png, Contents/mods/ directory,
+    report JSON flags (package_layout=build42_workshop, playable_export_generated=false,
+    load_tested=false, experimental_writer=true),
+    mod.info/category=map/poster.png, map.info/spawnpoints.lua/objects.lua/
+    thumb.png/README_PZMAPFORGE_BOUNDARY_EXPERIMENTAL.txt,
+    lotheader 8 bytes, lotpack 7208 bytes + header 84030000241c0000,
+    chunkdata 902 bytes + header 0001, total file count = 14.
+  - Exits 0 if all 21 checks pass; exits 1 if any fail.
+  - Writes build42-experimental-package-inspection.json + .md.
+  - Safety flags: playable_export_claimed=false, load_tested=false,
+    no_files_copied=true, no_pz_assets_read=true.
+- tests/PZMapForge.Cli.Tests/InspectBuild42ExperimentalPackageProcessTests.cs:
+  10 new tests (valid PASS, all-checks-pass, safety flags, stdout content,
+  missing args, bad output, missing package, incomplete package FAIL).
+- scripts/validate.ps1: cli_tests 219→229, total 409→419.
+- scripts/write-proof-packet.ps1 + test-proof-packet.ps1: counts updated.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-5E section added.
+- docs/IMPLEMENTATION.md: MAP-5E ratified row added.
+
+MAP-5B remains LOAD_TEST_INCONCLUSIVE. Binary hypotheses remain UNTESTED.
+No files copied. No PZ assets. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-5D: Build 42 experimental package writer)
 - src/PZMapForge.Cli/Program.cs: --build42-package flag for map-export-experimental.
   - When set: generates Contents/mods/<id>/ nested layout under

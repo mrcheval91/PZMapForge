@@ -444,6 +444,18 @@ Report includes `package_layout: "build42_workshop"`.
 Placeholder PNGs are generated via System.Drawing (no PZ assets read or copied).
 MAP-5B remains LOAD_TEST_INCONCLUSIVE. Binary hypotheses remain UNTESTED.
 
+**MAP-5E — Build 42 experimental package self-inspection command:**
+MAP-5E adds `inspect-build42-experimental-package --package <dir> --output <.local dir>`.
+
+The command self-inspects a MAP-5D generated package: reads the embedded
+`experimental-map-export-report.json` to discover `map_id`/`cell_x`/`cell_y`,
+then runs 21 checks (structure, mod.info fields, binary sizes and headers,
+report flags, file count). Exits 0 if all checks pass, 1 if any fail.
+
+Writes `build42-experimental-package-inspection.json` and `.md` under `--output`.
+No files are copied. No PZ assets read. Output is under `.local/` only.
+MAP-5B remains LOAD_TEST_INCONCLUSIVE. Binary hypotheses remain UNTESTED.
+
 ---
 
 ## 6. Source / editing format contract

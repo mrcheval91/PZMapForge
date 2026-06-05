@@ -37,6 +37,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  map-plan          --source <path> --output <dir>");
     Console.Error.WriteLine("  map-scaffold      --source <path> --output <dir>");
     Console.Error.WriteLine("  map-export-experimental  --map-id <id> --output <dir> [--cell-x <int>] [--cell-y <int>] [--build42-package]");
+    Console.Error.WriteLine("  inspect-build42-experimental-package  --package <dir> --output <dir>");
     return 1;
 }
 
@@ -57,7 +58,8 @@ return args[0] switch
     "app-export"        => AppExportCommand(args[1..]),
     "map-plan"          => MapPlanCommand(args[1..]),
     "map-scaffold"           => MapScaffoldCommand(args[1..]),
-    "map-export-experimental" => MapExportExperimentalCommand(args[1..]),
+    "map-export-experimental"                => MapExportExperimentalCommand(args[1..]),
+    "inspect-build42-experimental-package"  => InspectBuild42ExperimentalPackageCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -1305,6 +1307,261 @@ Experimental only.
     Console.WriteLine($"manual_load_test_required:       true");
     Console.WriteLine("Status:                          OK (EXPERIMENTAL -- NOT VALIDATED)");
     return 0;
+}
+
+static int InspectBuild42ExperimentalPackageCommand(string[] args)
+{
+    // Self-inspection command for MAP-5D Build 42 experimental packages (MAP-5E).
+    // Verifies a generated package is internally complete and writes a report.
+    // Does NOT copy the package. Does NOT write to PZ folders. NOT a load test.
+    var packageDir = string.Empty;
+    var outputDir  = string.Empty;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if      (args[i] is "--package" or "-p" && i + 1 < args.Length) packageDir = args[++i];
+        else if (args[i] is "--output"  or "-o" && i + 1 < args.Length) outputDir  = args[++i];
+    }
+
+    if (string.IsNullOrWhiteSpace(packageDir))
+    {
+        Console.Error.WriteLine("inspect-build42-experimental-package requires --package <dir>");
+        return 1;
+    }
+    if (string.IsNullOrWhiteSpace(outputDir))
+    {
+        Console.Error.WriteLine("inspect-build42-experimental-package requires --output <dir>");
+        return 1;
+    }
+
+    var outputFull  = Path.GetFullPath(outputDir);
+    var localMarker = Path.DirectorySeparatorChar + ".local" + Path.DirectorySeparatorChar;
+    if (!outputFull.Contains(localMarker, StringComparison.OrdinalIgnoreCase) &&
+        !outputFull.EndsWith(Path.DirectorySeparatorChar + ".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"inspect-build42-experimental-package: refusing to write outside a .local/ directory: {outputFull}");
+        return 1;
+    }
+
+    var packageFull = Path.GetFullPath(packageDir);
+    if (!Directory.Exists(packageFull))
+    {
+        Console.Error.WriteLine(
+            $"inspect-build42-experimental-package: package directory not found: {packageFull}");
+        return 1;
+    }
+
+    var generatedAt     = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+    var checkResults    = new System.Collections.Generic.List<object>();
+    var passCount       = 0;
+    var failCount       = 0;
+
+    void Check(string name, bool condition, string detail)
+    {
+        var result = condition ? "PASS" : "FAIL";
+        checkResults.Add(new { name, result, detail });
+        if (condition) passCount++; else failCount++;
+        Console.WriteLine($"  {result,-4}  {name}");
+        if (!condition) Console.Error.WriteLine($"         FAIL: {detail}");
+    }
+
+    // ------------------------------------------------------------------
+    // Discover report JSON by scanning Contents/mods/<id>/
+    // ------------------------------------------------------------------
+    var contentsModsDir = Path.Combine(packageFull, "Contents", "mods");
+    JsonDocument? reportDoc   = null;
+    string        mapId       = string.Empty;
+    int           cellX       = 0;
+    int           cellY       = 0;
+    string        modRoot     = string.Empty;
+    string        mapDataDir  = string.Empty;
+
+    Check("package_root_exists", Directory.Exists(packageFull),
+          $"package root directory: {packageFull}");
+    Check("workshop_txt_exists", File.Exists(Path.Combine(packageFull, "workshop.txt")),
+          "workshop.txt at package root");
+    Check("preview_png_exists", File.Exists(Path.Combine(packageFull, "preview.png")),
+          "preview.png at package root");
+    Check("contents_mods_directory", Directory.Exists(contentsModsDir),
+          "Contents/mods/ directory");
+
+    if (Directory.Exists(contentsModsDir))
+    {
+        var modDirs = Directory.GetDirectories(contentsModsDir);
+        foreach (var modDir in modDirs)
+        {
+            var candidate = Path.Combine(modDir, "experimental-map-export-report.json");
+            if (!File.Exists(candidate)) continue;
+            try
+            {
+                reportDoc = JsonDocument.Parse(File.ReadAllText(candidate, Encoding.UTF8));
+                modRoot   = modDir;
+                mapId     = reportDoc.RootElement.TryGetProperty("map_id",  out var mId)  ? mId.GetString()  ?? string.Empty : string.Empty;
+                cellX     = reportDoc.RootElement.TryGetProperty("cell_x",  out var cx)   ? cx.GetInt32()    : 0;
+                cellY     = reportDoc.RootElement.TryGetProperty("cell_y",  out var cy)   ? cy.GetInt32()    : 0;
+                mapDataDir = Path.Combine(modRoot, "media", "maps", mapId);
+                break;
+            }
+            catch { /* skip unparseable */ }
+        }
+    }
+
+    var cellCoord = $"{cellX}_{cellY}";
+    Check("report_json_found", reportDoc is not null,
+          "experimental-map-export-report.json found under Contents/mods/<id>/");
+
+    if (reportDoc is not null)
+    {
+        var root = reportDoc.RootElement;
+
+        Check("report_package_layout_build42",
+              root.TryGetProperty("package_layout", out var pl) && pl.GetString() == "build42_workshop",
+              "package_layout == build42_workshop");
+        Check("report_playable_export_generated_false",
+              root.TryGetProperty("playable_export_generated", out var peg) && !peg.GetBoolean(),
+              "playable_export_generated == false");
+        Check("report_load_tested_false",
+              root.TryGetProperty("load_tested", out var lt) && !lt.GetBoolean(),
+              "load_tested == false");
+        Check("report_experimental_writer_true",
+              root.TryGetProperty("experimental_writer", out var ew) && ew.GetBoolean(),
+              "experimental_writer == true");
+
+        // mod-level files
+        Check("mod_info_exists", File.Exists(Path.Combine(modRoot, "mod.info")),
+              $"Contents/mods/{mapId}/mod.info");
+        var modInfoText = File.Exists(Path.Combine(modRoot, "mod.info"))
+            ? File.ReadAllText(Path.Combine(modRoot, "mod.info"), Encoding.UTF8)
+            : string.Empty;
+        Check("mod_info_has_category_map",
+              modInfoText.Contains("category=map", StringComparison.Ordinal),
+              "mod.info contains category=map");
+        Check("poster_png_exists", File.Exists(Path.Combine(modRoot, "poster.png")),
+              $"Contents/mods/{mapId}/poster.png");
+
+        // map data files
+        Check("map_info_exists", File.Exists(Path.Combine(mapDataDir, "map.info")),
+              $"media/maps/{mapId}/map.info");
+        Check("spawnpoints_lua_exists", File.Exists(Path.Combine(mapDataDir, "spawnpoints.lua")),
+              $"media/maps/{mapId}/spawnpoints.lua");
+        Check("objects_lua_exists", File.Exists(Path.Combine(mapDataDir, "objects.lua")),
+              $"media/maps/{mapId}/objects.lua");
+        Check("thumb_png_exists", File.Exists(Path.Combine(mapDataDir, "thumb.png")),
+              $"media/maps/{mapId}/thumb.png");
+        Check("readme_experimental_exists",
+              File.Exists(Path.Combine(mapDataDir, "README_PZMAPFORGE_BOUNDARY_EXPERIMENTAL.txt")),
+              $"media/maps/{mapId}/README_PZMAPFORGE_BOUNDARY_EXPERIMENTAL.txt");
+
+        // binary files
+        var lotheaderPath = Path.Combine(mapDataDir, $"{cellCoord}.lotheader");
+        var lotpackPath   = Path.Combine(mapDataDir, $"world_{cellCoord}.lotpack");
+        var chunkdataPath = Path.Combine(mapDataDir, $"chunkdata_{cellCoord}.bin");
+
+        var lotheaderInfo  = File.Exists(lotheaderPath) ? new FileInfo(lotheaderPath) : null;
+        var lotpackInfo    = File.Exists(lotpackPath)   ? new FileInfo(lotpackPath)   : null;
+        var chunkdataInfo  = File.Exists(chunkdataPath) ? new FileInfo(chunkdataPath) : null;
+
+        Check("lotheader_8_bytes",
+              lotheaderInfo?.Length == 8,
+              $"{cellCoord}.lotheader: size={lotheaderInfo?.Length ?? -1} (expected 8)");
+
+        var lotpackOk = lotpackInfo?.Length == 7208;
+        if (lotpackOk && lotpackInfo is not null)
+        {
+            var lpBytes = File.ReadAllBytes(lotpackPath);
+            lotpackOk = lpBytes.Length >= 8 &&
+                        lpBytes[0] == 0x84 && lpBytes[1] == 0x03 &&
+                        lpBytes[4] == 0x24 && lpBytes[5] == 0x1C;
+        }
+        Check("lotpack_7208_bytes_and_header", lotpackOk,
+              $"world_{cellCoord}.lotpack: size={lotpackInfo?.Length ?? -1} (expected 7208), header 84030000241c0000");
+
+        var chunkdataOk = chunkdataInfo?.Length == 902;
+        if (chunkdataOk && chunkdataInfo is not null)
+        {
+            var cdBytes = File.ReadAllBytes(chunkdataPath);
+            chunkdataOk = cdBytes.Length >= 2 && cdBytes[0] == 0x00 && cdBytes[1] == 0x01;
+        }
+        Check("chunkdata_902_bytes_and_header", chunkdataOk,
+              $"chunkdata_{cellCoord}.bin: size={chunkdataInfo?.Length ?? -1} (expected 902), header 0001");
+
+        // total file count
+        var actualFileCount = Directory.Exists(packageFull)
+            ? Directory.GetFiles(packageFull, "*", SearchOption.AllDirectories).Length
+            : 0;
+        Check("total_file_count_14", actualFileCount == 14,
+              $"total files under package root: {actualFileCount} (expected 14)");
+    }
+
+    var overallResult = failCount == 0 ? "PASS" : "FAIL";
+
+    // ------------------------------------------------------------------
+    // Write output report
+    // ------------------------------------------------------------------
+    Directory.CreateDirectory(outputFull);
+
+    var inspectionReport = new
+    {
+        schema                   = "pzmapforge.build42-experimental-package-inspection.v0.1",
+        claim_boundary           = "packaging_inspection_only_not_load_tested",
+        generated_at_utc         = generatedAt,
+        package_root             = packageFull.Replace('\\', '/'),
+        map_id                   = mapId,
+        overall_result           = overallResult,
+        check_count              = passCount + failCount,
+        passed_count             = passCount,
+        failed_count             = failCount,
+        checks                   = checkResults.ToArray(),
+        playable_export_claimed  = false,
+        load_tested              = false,
+        no_files_copied          = true,
+        no_pz_assets_read        = true,
+    };
+
+    var jsonOpts      = new JsonSerializerOptions { WriteIndented = true };
+    var reportJsonPath = Path.Combine(outputFull, "build42-experimental-package-inspection.json");
+    File.WriteAllText(reportJsonPath, JsonSerializer.Serialize(inspectionReport, jsonOpts), Encoding.UTF8);
+
+    var checkRows = string.Join("\n", checkResults.Select(c =>
+    {
+        var d = (dynamic)c;
+        return $"| {(string)d.result,-4} | `{(string)d.name}` | {(string)d.detail} |";
+    }));
+
+    var md = $"""
+# Build 42 Experimental Package Inspection
+
+Schema:        pzmapforge.build42-experimental-package-inspection.v0.1
+Claim:         packaging_inspection_only_not_load_tested
+Generated:     {generatedAt}
+Package:       {packageFull.Replace('\\', '/')}
+Overall:       {overallResult}
+Checks:        {passCount + failCount} total, {passCount} passed, {failCount} failed
+
+## Results
+
+| Result | Check | Detail |
+|---|---|---|
+{checkRows}
+
+## Non-claims
+
+- Packaging inspection only. Not a load test.
+- No files copied. No PZ assets read.
+- No playable export claimed.
+- MAP-5B remains LOAD_TEST_INCONCLUSIVE.
+- Binary hypotheses remain UNTESTED.
+""";
+    File.WriteAllText(Path.Combine(outputFull, "build42-experimental-package-inspection.md"), md, Encoding.UTF8);
+
+    Console.WriteLine($"Package:        {packageFull}");
+    Console.WriteLine($"Checks:         {passCount + failCount}  passed={passCount}  failed={failCount}");
+    Console.WriteLine($"Overall result: {overallResult}");
+    Console.WriteLine($"Report:         {reportJsonPath}");
+    Console.WriteLine($"playable_export_claimed:  false");
+    Console.WriteLine($"load_tested:              false");
+    return failCount > 0 ? 1 : 0;
 }
 
 static void WritePlaceholderPng(string path, string line1, string line2)
