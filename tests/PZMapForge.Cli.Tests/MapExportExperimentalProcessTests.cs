@@ -603,4 +603,36 @@ public sealed class MapExportExperimentalProcessTests : IDisposable
         Assert.Equal(0x00, bytes[6]); // count LE byte 2
         Assert.Equal(0x00, bytes[7]); // count LE byte 3
     }
+
+    // -----------------------------------------------------------------------
+    // Test 34: report has geometry_model_status = mismatch_suspected_not_verified
+    // MAP-6E: geometry uncertainty is explicit in every generated report.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_ReportJson_GeometryModelStatusIsMismatchSuspected()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir);
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        Assert.Equal("mismatch_suspected_not_verified",
+            doc.RootElement.GetProperty("geometry_model_status").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 35: report has target_build42_cell_size = operator_reported_256_unverified
+    // MAP-6E: operator observation recorded; not confirmed.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_ReportJson_TargetBuild42CellSizeIsOperatorReported()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir);
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        Assert.Equal("operator_reported_256_unverified",
+            doc.RootElement.GetProperty("target_build42_cell_size").GetString());
+    }
 }

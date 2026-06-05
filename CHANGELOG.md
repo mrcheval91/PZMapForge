@@ -8,6 +8,40 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6E: Build 42 geometry model audit)
+- docs/MAP_6E_BUILD42_GEOMETRY_MODEL_AUDIT.md: full geometry audit.
+  - 300x300 found in: PaletteLoader (RequiredCellWidth/Height=300, RequiredTileSize=32),
+    ImageMapForgeParser (RequiredWidth/Height=300), SemanticGrid (comment),
+    layer-manifest schema (const: 300), minimal-cell.json (cell_size:300),
+    examples/README.md, test code, binary writer values (hdrA=900, chunkdata=902).
+  - 256 found in: placeholder PNG bitmap (256x64, not geometry), MaxBytes limit (not geometry),
+    chunkdata header as U16 LE = 256 (role unconfirmed, no geometry meaning assigned).
+  - Operator observation: Build 42 may use 256x256 (unverified).
+  - Binary writer hardcoded values (hdrA=900, 7208, 902) derive from 30x30 chunk
+    model (300/10=30), which may be Build 41 convention only.
+  - Status labels: GEOMETRY_MODEL_UNVERIFIED, LEGACY_300_ASSUMPTION_AUDITED,
+    BUILD42_256_MODEL_OPERATOR_REPORTED, LOAD_TEST_BLOCKED_PENDING_GEOMETRY_DECISION,
+    PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- src/PZMapForge.Cli/Program.cs:
+  - geometry_model_status = mismatch_suspected_not_verified added to both report paths.
+  - geometry_model_basis = 30x30_chunk_grid_from_300x300_cell_build41_workshop_evidence.
+  - target_build42_cell_size = operator_reported_256_unverified.
+- tests/PZMapForge.Cli.Tests/MapExportExperimentalProcessTests.cs:
+  - Tests 34-35: geometry_model_status, target_build42_cell_size.
+  - cli_tests 248→250.
+- scripts/validate.ps1: MAP-6E sentinel section (5 checks); dnCliTests 248→250; dnTotal 438→440.
+- scripts/write-proof-packet.ps1: counts updated.
+- scripts/test-proof-packet.ps1: assertions updated.
+- docs/IMPLEMENTATION.md: MAP-6E ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6E section.
+
+No load test performed. No PZ assets. No playable export claim.
+PS 492 unchanged. .NET 440 (cli_tests 250).
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-6D: Non-empty lotheader candidate from committed evidence)
 - docs/MAP_6D_NONEMPTY_LOTHEADER_CANDIDATE.md: candidate record.
   - Candidate: newline_tileset_table_minimal.

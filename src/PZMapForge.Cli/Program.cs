@@ -1049,6 +1049,9 @@ MAP-5D adds correct Build 42 Workshop package layout to address packaging blocke
             lotheader_sha256           = lotheaderB42Sha256,
             lotheader_first_bytes      = lotheaderB42FirstBytes,
             lotheader_byte_count       = lotheaderB42.Length,
+            geometry_model_status      = "mismatch_suspected_not_verified",
+            geometry_model_basis       = "30x30_chunk_grid_from_300x300_cell_build41_workshop_evidence",
+            target_build42_cell_size   = "operator_reported_256_unverified",
         };
 
         var b42JsonOpts = new JsonSerializerOptions { WriteIndented = true };
@@ -1250,6 +1253,9 @@ PZMapForge MAP-4H decision: MAP-5A_ALLOWED_EXPERIMENTAL_LOCAL_ONLY
         lotheader_sha256           = lotheaderSha256,
         lotheader_first_bytes      = lotheaderFirstBytes,
         lotheader_byte_count       = lotheaderBytes.Length,
+        geometry_model_status      = "mismatch_suspected_not_verified",
+        geometry_model_basis       = "30x30_chunk_grid_from_300x300_cell_build41_workshop_evidence",
+        target_build42_cell_size   = "operator_reported_256_unverified",
     };
 
     var jsonOpts      = new JsonSerializerOptions { WriteIndented = true };

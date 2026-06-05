@@ -228,6 +228,21 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-6E Build 42 geometry model audit ---"
+$map6eDoc = Join-Path $repoRoot 'docs\MAP_6E_BUILD42_GEOMETRY_MODEL_AUDIT.md'
+if (-not (Test-Path -LiteralPath $map6eDoc)) { throw "MAP-6E doc missing: docs\MAP_6E_BUILD42_GEOMETRY_MODEL_AUDIT.md" }
+Write-Output "OK: docs\MAP_6E_BUILD42_GEOMETRY_MODEL_AUDIT.md"
+$map6eContent = Get-Content -LiteralPath $map6eDoc -Raw
+if ($map6eContent -notmatch 'GEOMETRY_MODEL_UNVERIFIED') { throw "MAP-6E doc missing GEOMETRY_MODEL_UNVERIFIED sentinel" }
+Write-Output "OK: doc contains GEOMETRY_MODEL_UNVERIFIED"
+if ($map6eContent -notmatch 'BUILD42_256_MODEL_OPERATOR_REPORTED') { throw "MAP-6E doc missing BUILD42_256_MODEL_OPERATOR_REPORTED sentinel" }
+Write-Output "OK: doc contains BUILD42_256_MODEL_OPERATOR_REPORTED"
+if ($map6eContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6E doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false sentinel" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+if ($map6eContent -notmatch 'LOAD_TEST_BLOCKED_PENDING_GEOMETRY_DECISION') { throw "MAP-6E doc missing LOAD_TEST_BLOCKED_PENDING_GEOMETRY_DECISION sentinel" }
+Write-Output "OK: doc contains LOAD_TEST_BLOCKED_PENDING_GEOMETRY_DECISION"
+
+Write-Output ""
 Write-Output "--- MAP-6D non-empty lotheader candidate ---"
 $map6dDoc = Join-Path $repoRoot 'docs\MAP_6D_NONEMPTY_LOTHEADER_CANDIDATE.md'
 if (-not (Test-Path -LiteralPath $map6dDoc)) { throw "MAP-6D doc missing: docs\MAP_6D_NONEMPTY_LOTHEADER_CANDIDATE.md" }
@@ -290,8 +305,8 @@ $psChecks = [ordered]@{
 $psTotal = 492   # = validation_summary.total_expected_assertions in proof-packet v0.16
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
-$dnCliTests  = 248   # PZMapForge.Cli.Tests (MAP-6D: +8 non-empty lotheader candidate tests)
-$dnTotal     = 438   # = dotnet_validation_summary.test_total in proof-packet v0.16
+$dnCliTests  = 250   # PZMapForge.Cli.Tests (MAP-6E: +2 geometry model status tests)
+$dnTotal     = 440   # = dotnet_validation_summary.test_total in proof-packet v0.16
 
 Write-Output ""
 Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.16):"

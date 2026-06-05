@@ -552,6 +552,30 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6E — Build 42 geometry model audit:**
+MAP-6E audits all 300×300 geometry assumptions in the repo and records the
+operator observation that Build 42 may use a 256×256 cell model.
+
+Key findings:
+- `PaletteLoader`, `ImageMapForgeParser`: hardcoded 300×300 in C# constants.
+- `pzmapforge.layer-manifest.v0.1.schema.json`: `width`/`height` const 300.
+- Binary writer: hdrA=900, chunkdata=902 derived from 30×30 chunk grid
+  (300/10=30), which may be Build 41 convention only.
+- The Workshop mods observed in MAP-4B through MAP-4G are not explicitly
+  identified as Build 41 or Build 42 in committed evidence.
+- No committed evidence assigns geometric meaning to 256 in the codebase.
+
+Status labels: GEOMETRY_MODEL_UNVERIFIED, LEGACY_300_ASSUMPTION_AUDITED,
+BUILD42_256_MODEL_OPERATOR_REPORTED, LOAD_TEST_BLOCKED_PENDING_GEOMETRY_DECISION.
+
+Experimental report new fields: `geometry_model_status`,
+`geometry_model_basis`, `target_build42_cell_size`.
+
+Artifacts:
+- `docs/MAP_6E_BUILD42_GEOMETRY_MODEL_AUDIT.md` — full audit.
+
+No playable export claim. No load test. No PZ assets.
+
 ---
 
 ## 6. Source / editing format contract
