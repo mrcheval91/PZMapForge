@@ -552,6 +552,40 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6N — Preliminary Build 42 candidate load test record (INCONCLUSIVE):**
+MAP-6N records the first manual load test attempt for the MAP-6L/MAP-6M candidate
+(`pzmapforge_build42_candidate_001`). The result is LOAD_TEST_INCONCLUSIVE.
+
+Operator observation:
+- Mod was manually copied to the PZ mods folder.
+- PZ crashed or returned to menu when enabling/choosing the candidate mod.
+- Extracted log evidence: `loading pzmapforge_build42_candidate_001` line found.
+- No current-candidate LOTP/LOTH/IsoLot/CellLoader stack trace found in extracted lines.
+- No spawn screen reached. No world loading confirmed.
+
+Stale evidence exclusion: IsoLot/EOFException traces in the raw log belong to
+`pzmapforge_manual_b42_001_maptest_a` (MAP-6B path). These are excluded and must
+not be attributed to the current candidate.
+
+Status labels:
+```text
+BUILD42_CANDIDATE_MOD_LOAD_LOGGED
+MANUAL_TEST_ABORTED_OR_CRASHED_AT_MOD_SELECTION
+CURRENT_CANDIDATE_ERROR_LOG_NOT_FOUND
+STALE_MAPTEST_A_LOGS_EXCLUDED
+LOAD_TEST_INCONCLUSIVE
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+Artifacts:
+- `docs/MAP_6N_PRELIMINARY_CANDIDATE_LOAD_TEST_RECORD.md` — full inconclusive record.
+- `scripts/extract-map6n-current-candidate-log-evidence.ps1` — .local-only log triage;
+  separates current candidate evidence from stale maptest_a evidence; outputs
+  `map6n-log-triage-report.json` and `.md` with `candidate_specific_exception_found` flag
+  and `result_recommendation`; refuses paths outside `.local/`.
+
+No writer change. No playable export claim. No PZ assets. LOAD_TEST_INCONCLUSIVE.
+
 **MAP-6M — Build 42 candidate load test packet:**
 MAP-6M adds `scripts/prepare-build42-candidate-load-test-packet.ps1` which
 validates a MAP-6L candidate and produces an operator-ready load-test packet.

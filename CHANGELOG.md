@@ -8,6 +8,40 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6N: Preliminary Build 42 candidate load test record)
+- docs/MAP_6N_PRELIMINARY_CANDIDATE_LOAD_TEST_RECORD.md: inconclusive load test record.
+  - Candidate: pzmapforge_build42_candidate_001 (MAP-6L/MAP-6M source).
+  - BUILD42_CANDIDATE_MOD_LOAD_LOGGED: loading line confirmed in console.txt.
+  - MANUAL_TEST_ABORTED_OR_CRASHED_AT_MOD_SELECTION: PZ crashed or returned to menu.
+  - CURRENT_CANDIDATE_ERROR_LOG_NOT_FOUND: no current-candidate LOTP/LOTH/IsoLot stack trace.
+  - STALE_MAPTEST_A_LOGS_EXCLUDED: maptest_a EOFException traces (MAP-6B path) excluded.
+  - LOAD_TEST_INCONCLUSIVE; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/extract-map6n-current-candidate-log-evidence.ps1: .local-only log triage.
+  - Guards: -InputLogFolder and -Output both under .local; all other paths refused.
+  - Searches current candidate patterns: pzmapforge_build42_candidate_001 + technical terms.
+  - Separately counts stale pzmapforge_manual_b42_001_maptest_a matches (excluded).
+  - Outputs map6n-log-triage-report.json + .md with:
+    current_candidate_matches, stale_maptest_a_matches,
+    candidate_specific_exception_found, result_recommendation.
+  - result_recommendation=LOAD_TEST_INCONCLUSIVE unless current candidate stack trace found.
+  - No load test. No PZ assets. No writer change.
+- scripts/test-extract-map6n-log-evidence.ps1: 12 assertions.
+  - Test 1: current candidate loading + no exception => LOAD_TEST_INCONCLUSIVE (4 assertions).
+  - Test 2: stale maptest_a exception does not flip result (3 assertions).
+  - Test 3: current candidate IsoLot exception => candidate_specific_exception_found=true (3 assertions).
+  - Test 4: paths outside .local refused (2 assertions).
+  - psTotal 588->600.
+- scripts/validate.ps1: MAP-6N sentinel (doc + script + test existence + sentinels + test run); psTotal 588->600.
+- scripts/write-proof-packet.ps1: map6n_log_triage_tests=12; total 600.
+- scripts/test-proof-packet.ps1: assertions updated (12/600).
+- docs/IMPLEMENTATION.md: MAP-6N ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6N section.
+
+No load test performed. No writer change. No PZ assets into repo. No playable export claim.
+PS 600 / .NET 465.
+
+---
+
 ### Added (MAP-6M: Build 42 candidate load test packet)
 - docs/MAP_6M_BUILD42_CANDIDATE_LOAD_TEST_PACKET.md: packet doc.
   - 31 preflight checks; smoke: all PASS; 5 output files described.

@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (381)
-    and the .NET lane total (152) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.16 / docs/VALIDATION_LEDGER.md.
+    Final output reports the complete PowerShell validation lane total (600)
+    and the .NET lane total (465) as separate evidence lanes.
+    Counts are sourced from proof-packet v0.17 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -228,6 +228,35 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-6N preliminary candidate load test record ---"
+$map6nDoc    = Join-Path $repoRoot 'docs\MAP_6N_PRELIMINARY_CANDIDATE_LOAD_TEST_RECORD.md'
+$map6nScript = Join-Path $repoRoot 'scripts\extract-map6n-current-candidate-log-evidence.ps1'
+$map6nTests  = Join-Path $repoRoot 'scripts\test-extract-map6n-log-evidence.ps1'
+if (-not (Test-Path -LiteralPath $map6nDoc))    { throw "MAP-6N doc missing: docs\MAP_6N_PRELIMINARY_CANDIDATE_LOAD_TEST_RECORD.md" }
+Write-Output "OK: docs\MAP_6N_PRELIMINARY_CANDIDATE_LOAD_TEST_RECORD.md"
+if (-not (Test-Path -LiteralPath $map6nScript)) { throw "MAP-6N script missing: scripts\extract-map6n-current-candidate-log-evidence.ps1" }
+Write-Output "OK: scripts\extract-map6n-current-candidate-log-evidence.ps1"
+if (-not (Test-Path -LiteralPath $map6nTests))  { throw "MAP-6N tests missing: scripts\test-extract-map6n-log-evidence.ps1" }
+Write-Output "OK: scripts\test-extract-map6n-log-evidence.ps1"
+$map6nDocContent = Get-Content -LiteralPath $map6nDoc -Raw
+if ($map6nDocContent -notmatch 'LOAD_TEST_INCONCLUSIVE') { throw "MAP-6N doc missing LOAD_TEST_INCONCLUSIVE sentinel" }
+Write-Output "OK: doc contains LOAD_TEST_INCONCLUSIVE"
+if ($map6nDocContent -notmatch 'STALE_MAPTEST_A_LOGS_EXCLUDED') { throw "MAP-6N doc missing STALE_MAPTEST_A_LOGS_EXCLUDED sentinel" }
+Write-Output "OK: doc contains STALE_MAPTEST_A_LOGS_EXCLUDED"
+if ($map6nDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6N doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false sentinel" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+$map6nScriptContent = Get-Content -LiteralPath $map6nScript -Raw
+if ($map6nScriptContent -notmatch '\.local') { throw "MAP-6N script missing .local refusal language" }
+Write-Output "OK: script contains .local refusal language"
+if ($map6nScriptContent -notmatch 'stale_maptest_a_matches') { throw "MAP-6N script missing stale_maptest_a_matches sentinel" }
+Write-Output "OK: script contains stale_maptest_a_matches sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-6N log triage tests ---"
+& powershell -ExecutionPolicy Bypass -File $map6nTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-6N log triage tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-6M Build 42 candidate load test packet ---"
 $map6mDoc    = Join-Path $repoRoot 'docs\MAP_6M_BUILD42_CANDIDATE_LOAD_TEST_PACKET.md'
 $map6mScript = Join-Path $repoRoot 'scripts\prepare-build42-candidate-load-test-packet.ps1'
@@ -440,12 +469,13 @@ $psChecks = [ordered]@{
     'Build42 writer contract tests'      = 20
     'Build42 LOTP payload window tests'  = 20
     'Build42 candidate packet tests'     = 20
+    'MAP-6N log triage tests'            = 12
 }
-$psTotal = 588   # = validation_summary.total_expected_assertions in proof-packet v0.16
+$psTotal = 600   # = validation_summary.total_expected_assertions in proof-packet v0.17
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 275   # PZMapForge.Cli.Tests (MAP-6L: +25 Build42 candidate writer tests)
-$dnTotal     = 465   # = dotnet_validation_summary.test_total in proof-packet v0.16
+$dnTotal     = 465   # = dotnet_validation_summary.test_total in proof-packet v0.17
 
 Write-Output ""
 Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.16):"
