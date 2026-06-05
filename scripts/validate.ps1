@@ -228,6 +228,30 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-6M Build 42 candidate load test packet ---"
+$map6mDoc    = Join-Path $repoRoot 'docs\MAP_6M_BUILD42_CANDIDATE_LOAD_TEST_PACKET.md'
+$map6mScript = Join-Path $repoRoot 'scripts\prepare-build42-candidate-load-test-packet.ps1'
+$map6mTests  = Join-Path $repoRoot 'scripts\test-build42-candidate-load-test-packet.ps1'
+if (-not (Test-Path -LiteralPath $map6mDoc))    { throw "MAP-6M doc missing" }
+Write-Output "OK: docs\MAP_6M_BUILD42_CANDIDATE_LOAD_TEST_PACKET.md"
+if (-not (Test-Path -LiteralPath $map6mScript)) { throw "MAP-6M script missing" }
+Write-Output "OK: scripts\prepare-build42-candidate-load-test-packet.ps1"
+if (-not (Test-Path -LiteralPath $map6mTests))  { throw "MAP-6M tests missing" }
+Write-Output "OK: scripts\test-build42-candidate-load-test-packet.ps1"
+$map6mDocContent = Get-Content -LiteralPath $map6mDoc -Raw
+if ($map6mDocContent -notmatch 'BUILD42_CANDIDATE_LOAD_TEST_PACKET_CREATED') { throw "MAP-6M doc missing BUILD42_CANDIDATE_LOAD_TEST_PACKET_CREATED" }
+Write-Output "OK: doc contains BUILD42_CANDIDATE_LOAD_TEST_PACKET_CREATED"
+if ($map6mDocContent -notmatch 'LOAD_TEST_NOT_PERFORMED') { throw "MAP-6M doc missing LOAD_TEST_NOT_PERFORMED" }
+Write-Output "OK: doc contains LOAD_TEST_NOT_PERFORMED"
+if ($map6mDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6M doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+
+Write-Output ""
+Write-Output "--- MAP-6M packet tests ---"
+& powershell -ExecutionPolicy Bypass -File $map6mTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-6M packet tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-6K LOTP payload / LOTH entry research ---"
 $map6kDoc    = Join-Path $repoRoot 'docs\MAP_6K_LOTP_PAYLOAD_AND_LOTH_ENTRY_RESEARCH.md'
 $map6kScript = Join-Path $repoRoot 'scripts\inspect-build42-lotp-payload-windows.ps1'
@@ -415,8 +439,9 @@ $psChecks = [ordered]@{
     'Build42 format design matrix tests' = 13
     'Build42 writer contract tests'      = 20
     'Build42 LOTP payload window tests'  = 20
+    'Build42 candidate packet tests'     = 20
 }
-$psTotal = 568   # = validation_summary.total_expected_assertions in proof-packet v0.16
+$psTotal = 588   # = validation_summary.total_expected_assertions in proof-packet v0.16
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 275   # PZMapForge.Cli.Tests (MAP-6L: +25 Build42 candidate writer tests)

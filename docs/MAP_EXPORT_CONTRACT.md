@@ -552,6 +552,20 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6M — Build 42 candidate load test packet:**
+MAP-6M adds `scripts/prepare-build42-candidate-load-test-packet.ps1` which
+validates a MAP-6L candidate and produces an operator-ready load-test packet.
+
+Preflight checks (31 total): report schema/safety flags, 8 required files,
+LOTH magic/version/entry_count, LOTP magic/version/chunk_count/offsets/size,
+chunkdata size/header/body. All 31 PASS for the `empty_grass_v0` candidate.
+
+Output files: preflight JSON, operator packet MD, fillable record template,
+spawnregions.lua template, install reference.
+
+Does NOT copy files to PZ. Does NOT run PZ. LOAD_TEST_NOT_PERFORMED.
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6L — Build 42 candidate writer MVP:**
 MAP-6L implements the first deterministic Build 42 binary writer behind
 `--build42-candidate-writer --build42-candidate-profile empty_grass_v0`.

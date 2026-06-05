@@ -186,7 +186,8 @@ $packet = [ordered]@{
         build42_format_design_matrix_tests = 13
         build42_writer_contract_tests      = 20
         build42_lotp_payload_window_tests  = 20
-        total_expected_assertions         = 568
+        build42_candidate_packet_tests     = 20
+        total_expected_assertions         = 588
     }
     dotnet_validation_summary = [ordered]@{
         test_total                          = 465
@@ -328,7 +329,8 @@ planning_artifact_only_not_pz_load_tested
 | Build42 format design matrix tests | 13 |
 | Build42 writer contract tests | 20 |
 | Build42 LOTP payload window tests | 20 |
-| Total | 568 |
+| Build42 candidate packet tests | 20 |
+| Total | 588 |
 
 ## .NET validation summary (separate lane)
 

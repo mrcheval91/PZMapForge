@@ -8,6 +8,39 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6M: Build 42 candidate load test packet)
+- docs/MAP_6M_BUILD42_CANDIDATE_LOAD_TEST_PACKET.md: packet doc.
+  - 31 preflight checks; smoke: all PASS; 5 output files described.
+  - BUILD42_CANDIDATE_LOAD_TEST_PACKET_CREATED; CANDIDATE_PREFLIGHT_VERIFIED;
+    MANUAL_LOAD_TEST_REQUIRED; LOAD_TEST_NOT_PERFORMED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/prepare-build42-candidate-load-test-packet.ps1:
+  - Guards: Source/Output under .local; forbidden paths refused.
+  - Reads MAP-6L report JSON (schema + 11 safety flag checks).
+  - Requires 8 files in 42/ versioned layout.
+  - LOTH binary: magic=LOTH, version=1, entry_count>=1.
+  - LOTP binary: magic=LOTP, version=1, chunk_count=1024, offsets 8204/9228, size=1056780.
+  - Chunkdata: size=1026, header=0001, body all-zero.
+  - Outputs: BUILD42_CANDIDATE_PREFLIGHT.json, PACKET.md, RECORD.local-template.md,
+    pzmapforge_candidate_spawnregions.lua, INSTALL_COPY_COMMANDS_README.txt.
+  - No files copied to PZ. No load test.
+- scripts/test-build42-candidate-load-test-packet.ps1: 20 assertions.
+  - Path guards, 5 output files, 3 preflight JSON safety flags, 3 binary checks,
+    copy dest present but not executed, PZMapForge Candidate Cell, 3 result choices,
+    no playable claim, PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+  - psTotal 568→588.
+- scripts/validate.ps1: MAP-6M sentinel (6 checks + test run); psTotal 568→588.
+- scripts/write-proof-packet.ps1: build42_candidate_packet_tests=20; total 588.
+- scripts/test-proof-packet.ps1: assertions updated (20/588).
+- docs/IMPLEMENTATION.md: MAP-6M ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6M section.
+
+No files copied to PZ. No load test. No PZ assets into repo. No playable export claim.
+PS 588 / .NET 465 unchanged.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-6L: Build 42 candidate writer MVP)
 - docs/MAP_6L_BUILD42_CANDIDATE_WRITER_MVP.md: candidate writer doc.
   - Exact bytes: LOTH(38b, LOTH magic+1 entry), LOTP(1056780b, LOTP+1024 zero chunks), chunkdata(1026b).
