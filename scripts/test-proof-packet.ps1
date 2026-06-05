@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Validates .local/mapforge/proof-packet.json against the v0.18 proof-packet contract.
+    Validates .local/mapforge/proof-packet.json against the v0.19 proof-packet contract.
 
     Runs write-proof-packet.ps1 first if proof-packet.json does not exist.
     Exits 0 if all checks pass, exits 1 if any fail.
@@ -83,8 +83,8 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.18') `
-    "schema == 'pzmapforge.proof-packet.v0.18' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.19') `
+    "schema == 'pzmapforge.proof-packet.v0.19' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
@@ -126,8 +126,9 @@ Assert-True ([int]$p.validation_summary.build42_writer_contract_tests         -e
 Assert-True ([int]$p.validation_summary.build42_lotp_payload_window_tests     -eq 20)  "build42_lotp_payload_window_tests == 20"
 Assert-True ([int]$p.validation_summary.build42_candidate_packet_tests        -eq 20)  "build42_candidate_packet_tests == 20"
 Assert-True ([int]$p.validation_summary.map6n_log_triage_tests                -eq 12)  "map6n_log_triage_tests == 12"
-Assert-True ([int]$p.validation_summary.map6o_retest_checklist_tests          -eq 12)  "map6o_retest_checklist_tests == 12"
-Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 612) "total_expected_assertions == 612"
+Assert-True ([int]$p.validation_summary.map6o_retest_checklist_tests          -eq 15)  "map6o_retest_checklist_tests == 15"
+Assert-True ([int]$p.validation_summary.map6p_spawn_activation_tests          -eq 12)  "map6p_spawn_activation_tests == 12"
+Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 627) "total_expected_assertions == 627"
 
 # ---------------------------------------------------------------------------
 # dotnet_validation_summary (separate lane)

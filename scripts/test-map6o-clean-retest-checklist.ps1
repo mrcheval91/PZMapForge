@@ -5,7 +5,7 @@
 
     Creates a synthetic MAP-6L-like candidate fixture under temp .local dirs
     and validates checklist output. Does not copy files to PZ folders.
-    Expected assertion count: 12
+    Expected assertion count: 15
 #>
 
 Set-StrictMode -Version Latest
@@ -119,6 +119,28 @@ Assert-True (-not $hasAutoCopy) 'Test11: no automatic Copy-Item to Zomboid mods 
 Write-Output ''
 Write-Output '--- Test 12: record template contains LOAD_TEST_INCONCLUSIVE ---'
 Assert-True ($recContent -match 'LOAD_TEST_INCONCLUSIVE') 'Test12: record template contains LOAD_TEST_INCONCLUSIVE'
+
+# ---------------------------------------------------------------------------
+# Test 13: No non-ASCII bytes in checklist or record output
+# (Mojibake from UTF-8 em-dash would produce bytes > 127 in output)
+# ---------------------------------------------------------------------------
+
+Write-Output ''
+Write-Output '--- Test 13: output files are ASCII-clean ---'
+$clHasNonAscii  = (@([System.IO.File]::ReadAllBytes($checklistMd)  | Where-Object { $_ -gt 127 })).Count -gt 0
+$recHasNonAscii = (@([System.IO.File]::ReadAllBytes($recordMd)     | Where-Object { $_ -gt 127 })).Count -gt 0
+Assert-True (-not $clHasNonAscii)  'Test13: checklist output has no non-ASCII bytes (no mojibake)'
+Assert-True (-not $recHasNonAscii) 'Test13: record template has no non-ASCII bytes (no mojibake)'
+
+# ---------------------------------------------------------------------------
+# Test 14: Checklist contains a properly-formed fenced text block (` ``` `text)
+# Single-quoted regex: backtick is NOT an escape char in PS single-quoted strings.
+# ---------------------------------------------------------------------------
+
+Write-Output ''
+Write-Output '--- Test 14: checklist has proper fenced text block ---'
+$hasFenceText = $clContent -match '(?m)^```text'
+Assert-True $hasFenceText 'Test14: checklist contains properly-formed fenced text block'
 
 # ---------------------------------------------------------------------------
 # Summary

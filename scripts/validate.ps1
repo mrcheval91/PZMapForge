@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (612)
+    Final output reports the complete PowerShell validation lane total (627)
     and the .NET lane total (465) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.18 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.19 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,36 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-6P clean retest and spawn activation diagnostic ---"
+$map6pDoc    = Join-Path $repoRoot 'docs\MAP_6P_CLEAN_RETEST_SPAWN_ACTIVATION_RECORD.md'
+$map6pProto  = Join-Path $repoRoot 'docs\MAP_6P_SPAWN_ACTIVATION_DIAGNOSTIC_PROTOCOL.md'
+$map6pScript = Join-Path $repoRoot 'scripts\prepare-map6p-spawn-activation-diagnostic.ps1'
+$map6pTests  = Join-Path $repoRoot 'scripts\test-map6p-spawn-activation-diagnostic.ps1'
+if (-not (Test-Path -LiteralPath $map6pDoc))    { throw "MAP-6P record doc missing" }
+Write-Output "OK: docs\MAP_6P_CLEAN_RETEST_SPAWN_ACTIVATION_RECORD.md"
+if (-not (Test-Path -LiteralPath $map6pProto))  { throw "MAP-6P protocol doc missing" }
+Write-Output "OK: docs\MAP_6P_SPAWN_ACTIVATION_DIAGNOSTIC_PROTOCOL.md"
+if (-not (Test-Path -LiteralPath $map6pScript)) { throw "MAP-6P script missing" }
+Write-Output "OK: scripts\prepare-map6p-spawn-activation-diagnostic.ps1"
+if (-not (Test-Path -LiteralPath $map6pTests))  { throw "MAP-6P tests missing" }
+Write-Output "OK: scripts\test-map6p-spawn-activation-diagnostic.ps1"
+$map6pDocContent = Get-Content -LiteralPath $map6pDoc -Raw
+if ($map6pDocContent -notmatch 'BUILD42_CANDIDATE_MOD_LOAD_CONFIRMED') { throw "MAP-6P doc missing BUILD42_CANDIDATE_MOD_LOAD_CONFIRMED" }
+Write-Output "OK: doc contains BUILD42_CANDIDATE_MOD_LOAD_CONFIRMED"
+if ($map6pDocContent -notmatch 'CANDIDATE_SPAWN_REGION_NOT_VISIBLE') { throw "MAP-6P doc missing CANDIDATE_SPAWN_REGION_NOT_VISIBLE" }
+Write-Output "OK: doc contains CANDIDATE_SPAWN_REGION_NOT_VISIBLE"
+if ($map6pDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6P doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+$map6pScriptContent = Get-Content -LiteralPath $map6pScript -Raw
+if ($map6pScriptContent -notmatch '\.local') { throw "MAP-6P script missing .local refusal" }
+Write-Output "OK: script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-6P spawn activation diagnostic tests ---"
+& powershell -ExecutionPolicy Bypass -File $map6pTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-6P spawn activation diagnostic tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-6O clean isolated candidate retest protocol ---"
@@ -479,7 +509,7 @@ Write-Output "PZMapForge validation summary"
 Write-Output "========================================"
 
 # ---------------------------------------------------------------------------
-# Ledger constants - sourced from proof-packet v0.18 / docs/VALIDATION_LEDGER.md.
+# Ledger constants - sourced from proof-packet v0.19 / docs/VALIDATION_LEDGER.md.
 # Update here when counts change; update the proof packet schema and ledger too.
 # ---------------------------------------------------------------------------
 
@@ -499,16 +529,17 @@ $psChecks = [ordered]@{
     'Build42 LOTP payload window tests'  = 20
     'Build42 candidate packet tests'     = 20
     'MAP-6N log triage tests'            = 12
-    'MAP-6O retest checklist tests'      = 12
+    'MAP-6O retest checklist tests'      = 15
+    'MAP-6P spawn activation tests'      = 12
 }
-$psTotal = 612   # = validation_summary.total_expected_assertions in proof-packet v0.18
+$psTotal = 627   # = validation_summary.total_expected_assertions in proof-packet v0.19
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 275   # PZMapForge.Cli.Tests (MAP-6L: +25 Build42 candidate writer tests)
-$dnTotal     = 465   # = dotnet_validation_summary.test_total in proof-packet v0.18
+$dnTotal     = 465   # = dotnet_validation_summary.test_total in proof-packet v0.19
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.18):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.19):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -516,7 +547,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.18 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.19 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.18) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.19) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
     planning recommendation artifacts, plan-recommendations contract (incl. thresholds_used),
     and a separate dotnet_validation_summary section tracking .NET xUnit test counts.
@@ -147,7 +147,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.18'
+    schema                  = 'pzmapforge.proof-packet.v0.19'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -188,8 +188,9 @@ $packet = [ordered]@{
         build42_lotp_payload_window_tests  = 20
         build42_candidate_packet_tests     = 20
         map6n_log_triage_tests            = 12
-        map6o_retest_checklist_tests      = 12
-        total_expected_assertions         = 612
+        map6o_retest_checklist_tests      = 15
+        map6p_spawn_activation_tests      = 12
+        total_expected_assertions         = 627
     }
     dotnet_validation_summary = [ordered]@{
         test_total                          = 465
@@ -269,7 +270,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.18
+Schema: pzmapforge.proof-packet.v0.19
 
 ## Claim boundary
 
@@ -333,8 +334,9 @@ planning_artifact_only_not_pz_load_tested
 | Build42 LOTP payload window tests | 20 |
 | Build42 candidate packet tests | 20 |
 | MAP-6N log triage tests | 12 |
-| MAP-6O retest checklist tests | 12 |
-| Total | 612 |
+| MAP-6O retest checklist tests | 15 |
+| MAP-6P spawn activation tests | 12 |
+| Total | 627 |
 
 ## .NET validation summary (separate lane)
 

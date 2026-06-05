@@ -110,6 +110,11 @@ New-Item -ItemType Directory -Force -Path $Output | Out-Null
 
 $destBase = "C:\Users\Palmacede\Zomboid\mods\$ModFolderName\42"
 
+# Fence variable: avoids backtick escape problems in double-quoted here-strings.
+# In a PS double-quoted string, backtick is the escape character, so three literal
+# backticks cannot be written directly. $fence holds the three-backtick fence string.
+$fence = '```'
+
 # ---------------------------------------------------------------------------
 # MAP_6O_CLEAN_RETEST_CHECKLIST.md
 # ---------------------------------------------------------------------------
@@ -119,7 +124,7 @@ $checklistPath = Join-Path $Output 'MAP_6O_CLEAN_RETEST_CHECKLIST.md'
 $checklist = @"
 # MAP-6O Clean Isolated Retest Checklist
 
-```text
+${fence}text
 Candidate:  $CandidateId
 ModFolder:  $ModFolderName
 ServerName: $ServerName
@@ -127,29 +132,29 @@ Generated:  $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ')
 HUMAN_ONLY_COPY_REQUIRED
 LOAD_TEST_NOT_PERFORMED
 PLAYABLE_EXPORT_CLAIM_ALLOWED=false
-```
+${fence}
 
 ---
 
 ## Pre-Clean (HUMAN ONLY - do not automate)
 
 - [ ] **Delete old test mod folders** (run manually in PowerShell or Explorer):
-  ```
+  ${fence}
   HUMAN-ONLY: Remove-Item -Recurse -Force 'C:\Users\Palmacede\Zomboid\mods\pzmapforge_manual_b42_001_maptest_a' -ErrorAction SilentlyContinue
   HUMAN-ONLY: Remove-Item -Recurse -Force 'C:\Users\Palmacede\Zomboid\mods\pzmapforge_manual_b42_001_maptest_b' -ErrorAction SilentlyContinue
   HUMAN-ONLY: Remove-Item -Recurse -Force 'C:\Users\Palmacede\Zomboid\mods\pzmapforge_manual_b42_001_maptest_c' -ErrorAction SilentlyContinue
-  ```
-  Verify no `pzmapforge_manual_*` folders remain in `C:\Users\Palmacede\Zomboid\mods\`.
+  ${fence}
+  Verify no pzmapforge_manual_* folders remain in C:\Users\Palmacede\Zomboid\mods\.
 
 - [ ] **Disable unrelated mods** in PZ Mod Manager before the test.
-  Only `$CandidateId` should be active.
+  Only $CandidateId should be active.
 
 - [ ] **Delete stale console.txt** before launching PZ:
-  ```
+  ${fence}
   HUMAN-ONLY: Remove-Item -Force 'C:\Users\Palmacede\Zomboid\console.txt' -ErrorAction SilentlyContinue
-  ```
+  ${fence}
 
-- [ ] **Create isolated server preset** named `$ServerName` with default settings.
+- [ ] **Create isolated server preset** named $ServerName with default settings.
   Do not reuse a world created with previous pzmapforge test mods.
 
 ---
@@ -163,9 +168,9 @@ DESTINATION (copy manually):
   $destBase\
 
 **Exact copy command (HUMAN-ONLY - run this yourself):**
-```
+${fence}
 HUMAN-ONLY: Copy-Item -Recurse -Force '$($CandidateSource)\42' '$($destBase | Split-Path -Parent)'
-```
+${fence}
 
 After copy, verify these files exist:
   $destBase\mod.info
@@ -176,16 +181,16 @@ After copy, verify these files exist:
   $destBase\media\maps\$CandidateId\world_0_0.lotpack
   $destBase\media\maps\$CandidateId\chunkdata_0_0.bin
 
-Also place `spawnregions.lua` from the MAP-6M packet at:
+Also place spawnregions.lua from the MAP-6M packet at:
   $destBase\media\maps\$CandidateId\spawnregions.lua
 
 Preflight verify (PowerShell, human-run):
-```powershell
+${fence}powershell
 Test-Path '$destBase\mod.info'
 Test-Path '$destBase\media\maps\$CandidateId\0_0.lotheader'
 Test-Path '$destBase\media\maps\$CandidateId\world_0_0.lotpack'
 Test-Path '$destBase\media\maps\$CandidateId\chunkdata_0_0.bin'
-```
+${fence}
 All must return True.
 
 ---
@@ -193,12 +198,12 @@ All must return True.
 ## Test Sequence (HUMAN ONLY)
 
 1. Launch Project Zomboid Build 42 fresh.
-2. Go to Mods. Confirm `$CandidateId` appears.
+2. Go to Mods. Confirm $CandidateId appears.
 3. Enable it. Disable all other mods.
 4. Does PZ crash or return to menu at mod selection?
    - YES -> record MOD_SELECTION_CRASH; stop; copy console.txt immediately.
    - NO  -> record MOD_SELECTION_PASS; continue.
-5. Navigate to Host (solo) and select `$ServerName`.
+5. Navigate to Host (solo) and select $ServerName.
 6. Start. Does a spawn selection screen appear with the candidate region?
    - YES -> record SPAWN_REGION_VISIBLE; continue.
    - NO  -> record SPAWN_REGION_NOT_VISIBLE; continue anyway.
@@ -215,9 +220,9 @@ Do not modify PZ files during the test. Do not rerun the PZMapForge writer.
 ## Post-Test Log Capture (HUMAN ONLY)
 
 Immediately after the test:
-```
+${fence}
 HUMAN-ONLY: Copy-Item 'C:\Users\Palmacede\Zomboid\console.txt' '.local\map6o-logs\console-map6o-<TIMESTAMP>.txt'
-```
+${fence}
 Copy the full file before launching PZ again (subsequent launches overwrite it).
 
 ---
@@ -225,11 +230,11 @@ Copy the full file before launching PZ again (subsequent launches overwrite it).
 ## Log Triage (PZMapForge tool - safe to run)
 
 After copying the fresh log to .local/:
-```powershell
+${fence}powershell
 powershell -ExecutionPolicy Bypass -File scripts\extract-map6n-current-candidate-log-evidence.ps1 ``
     -InputLogFolder .local\map6o-logs ``
     -Output .local\map6o-triage
-```
+${fence}
 Outputs: map6n-log-triage-report.json with result_recommendation.
 
 ---
@@ -242,7 +247,7 @@ Outputs: map6n-log-triage-report.json with result_recommendation.
 - pzmapforge_build42_candidate_001: candidate under test.
 "@
 
-Set-Content -Path $checklistPath -Value $checklist -Encoding UTF8
+Set-Content -Path $checklistPath -Value $checklist -Encoding ASCII
 Write-Output "Checklist: $checklistPath"
 
 # ---------------------------------------------------------------------------
@@ -254,14 +259,14 @@ $recordPath = Join-Path $Output 'MAP_6O_CLEAN_RETEST_RECORD.local-template.md'
 $record = @"
 # MAP-6O Clean Retest Record
 
-```text
+${fence}text
 Candidate:  $CandidateId
 ModFolder:  $ModFolderName
 ServerName: $ServerName
 Date:       [FILL IN]
 PZ version: [FILL IN e.g. Build 42.0.4]
 Operator:   [FILL IN]
-```
+${fence}
 
 ## Pre-Clean Confirmation
 
@@ -287,7 +292,7 @@ Operator:   [FILL IN]
 - mod_selection_pass:               [ yes / no ]
 - spawn_region_visible:             [ yes / no ]
 - world_load_started:               [ yes / no ]
-- first_error_message:              [FILL IN or "none"]
+- first_error_message:              [FILL IN or none]
 
 ## Triage Tool Result
 
@@ -305,11 +310,11 @@ Notes:
 
 ---
 
-LOAD_TEST_INCONCLUSIVE — status until this template is completed with evidence.
+LOAD_TEST_INCONCLUSIVE -- status until this template is completed with evidence.
 PLAYABLE_EXPORT_CLAIM_ALLOWED=false
 "@
 
-Set-Content -Path $recordPath -Value $record -Encoding UTF8
+Set-Content -Path $recordPath -Value $record -Encoding ASCII
 Write-Output "Record template: $recordPath"
 
 # ---------------------------------------------------------------------------
@@ -325,27 +330,27 @@ All commands below are safe to run (read .local/ only; no PZ writes).
 
 ## 1. Run log triage after copying fresh console.txt to .local\map6o-logs\
 
-```powershell
+${fence}powershell
 powershell -ExecutionPolicy Bypass -File scripts\extract-map6n-current-candidate-log-evidence.ps1 ``
     -InputLogFolder .local\map6o-logs ``
     -Output .local\map6o-triage
-```
+${fence}
 
 Output: .local\map6o-triage\map6n-log-triage-report.json
 
 ## 2. Inspect triage JSON result
 
-```powershell
+${fence}powershell
 Get-Content .local\map6o-triage\map6n-log-triage-report.json | ConvertFrom-Json
-```
+${fence}
 
 ## 3. Validate candidate source preflight
 
-```powershell
+${fence}powershell
 powershell -ExecutionPolicy Bypass -File scripts\prepare-build42-candidate-load-test-packet.ps1 ``
     -Source '$CandidateSource' ``
     -Output .local\map6o-preflight
-```
+${fence}
 
 ## 4. Key triage fields to check
 
@@ -362,7 +367,7 @@ PLAYABLE_EXPORT_CLAIM_ALLOWED=false
 LOAD_TEST_NOT_PERFORMED
 "@
 
-Set-Content -Path $triageCmdsPath -Value $triageCmds -Encoding UTF8
+Set-Content -Path $triageCmdsPath -Value $triageCmds -Encoding ASCII
 Write-Output "Triage commands: $triageCmdsPath"
 
 Write-Output ""

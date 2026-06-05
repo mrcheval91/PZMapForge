@@ -552,6 +552,49 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6P — Clean retest result and spawn activation gap:**
+MAP-6P records the MAP-6O clean retest outcome and defines the spawn activation
+diagnostic protocol.
+
+MAP-6O clean retest result:
+- `BUILD42_CANDIDATE_MOD_LOAD_CONFIRMED`: PZ loaded `pzmapforge_build42_candidate_001`
+  without a candidate-specific crash. `current_candidate_matches=2` in fresh triage.
+- `VANILLA_WORLD_ENTRY_WITH_CANDIDATE_ENABLED`: vanilla world entered successfully
+  with the candidate mod active.
+- `CANDIDATE_SPAWN_REGION_NOT_VISIBLE`: spawn selection screen showed only vanilla
+  cities. Candidate map/spawn region was not activated.
+- `CANDIDATE_MAP_CELL_NOT_PROVEN_LOADED`: binary files (LOTH/LOTP/chunkdata) were
+  not exercised. Their acceptance remains unproven.
+- `LOAD_TEST_INCONCLUSIVE`: mod loads without crashing but candidate map not activated.
+
+Root cause candidates for spawn not visible (in priority order):
+1. `Map=` line in server preset does not include candidate map ID.
+2. `spawnregions.lua` missing from mod or incorrect format.
+3. Server `_spawnregions.lua` does not reference the candidate.
+
+Also in MAP-6P: MAP-6O checklist generator encoding bugs fixed:
+- Triple-backtick fences now use a `$fence` variable (was: `` `t ``+ext mojibake).
+- Em-dash `—` replaced with ASCII `--` in record template.
+- Output files changed to ASCII encoding (no BOM, no non-ASCII bytes).
+
+Status labels:
+```text
+BUILD42_CANDIDATE_MOD_LOAD_CONFIRMED
+VANILLA_WORLD_ENTRY_WITH_CANDIDATE_ENABLED
+CANDIDATE_SPAWN_REGION_NOT_VISIBLE
+CANDIDATE_MAP_CELL_NOT_PROVEN_LOADED
+LOAD_TEST_INCONCLUSIVE
+WRITER_NOT_CHANGED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+Artifacts:
+- `docs/MAP_6P_CLEAN_RETEST_SPAWN_ACTIVATION_RECORD.md` — full retest record.
+- `docs/MAP_6P_SPAWN_ACTIVATION_DIAGNOSTIC_PROTOCOL.md` — human-only diagnostic.
+- `scripts/prepare-map6p-spawn-activation-diagnostic.ps1` — generates diagnostic
+  commands and record template under `.local/`; refuses paths outside `.local/`;
+  does NOT read PZ folders automatically.
+
 **MAP-6O — Clean isolated Build 42 candidate retest protocol:**
 MAP-6O defines the procedure for a clean, isolated retest of the MAP-6L/MAP-6M
 candidate to resolve the MAP-6N INCONCLUSIVE status.

@@ -8,6 +8,40 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6P: Clean retest result and spawn activation gap)
+- docs/MAP_6P_CLEAN_RETEST_SPAWN_ACTIVATION_RECORD.md: MAP-6O clean retest recorded.
+  - BUILD42_CANDIDATE_MOD_LOAD_CONFIRMED: current_candidate_matches=2, no exception.
+  - VANILLA_WORLD_ENTRY_WITH_CANDIDATE_ENABLED: vanilla world entered with candidate mod.
+  - CANDIDATE_SPAWN_REGION_NOT_VISIBLE: only vanilla cities on spawn screen.
+  - CANDIDATE_MAP_CELL_NOT_PROVEN_LOADED: binary files not exercised.
+  - LOAD_TEST_INCONCLUSIVE; WRITER_NOT_CHANGED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- docs/MAP_6P_SPAWN_ACTIVATION_DIAGNOSTIC_PROTOCOL.md: human-only diagnostic steps.
+  - Verify mod layout, mod.info id, spawnregions.lua, server ini Map= line,
+    server _spawnregions.lua reference. All read-only manual commands.
+- scripts/prepare-map6p-spawn-activation-diagnostic.ps1:
+  - Guards: -Output under .local; forbidden paths refused.
+  - Emits MAP_6P_SPAWN_ACTIVATION_DIAGNOSTIC_COMMANDS.md and RECORD template.
+  - Does NOT read PZ folders. ASCII-encoded output. No PZ writes.
+- scripts/test-map6p-spawn-activation-diagnostic.ps1: 12 assertions.
+  - psTotal 612 + 12 = partial; see MAP-6O fix below for full total.
+- MAP-6O checklist encoding bugs fixed:
+  - scripts/prepare-map6o-clean-retest-checklist.ps1: triple-backtick fences
+    now use $fence variable (fixes ```text -> backtick+tab+ext bug). Em-dash
+    replaced with ASCII --. Output files use ASCII encoding (no BOM/non-ASCII).
+  - scripts/test-map6o-clean-retest-checklist.ps1: 12 -> 15 assertions:
+    Test13 (ASCII-clean byte check x2), Test14 (proper fenced text block).
+  - psTotal 612 + 3 (MAP-6O) + 12 (MAP-6P) = 627.
+- scripts/validate.ps1: MAP-6P section + psTotal 612->627.
+- scripts/write-proof-packet.ps1: v0.19; map6p=12, map6o=15; total 627.
+- scripts/test-proof-packet.ps1: assertions updated (12/15/627).
+- docs/IMPLEMENTATION.md: MAP-6P ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6P section.
+
+No load test. No writer change. No PZ assets into repo. No playable export claim.
+PS 627 / .NET 465.
+
+---
+
 ### Added (MAP-6O: Clean isolated Build 42 candidate retest protocol)
 - docs/MAP_6O_CLEAN_ISOLATED_CANDIDATE_RETEST_PROTOCOL.md: human-only retest protocol.
   - Pre-clean: delete stale maptest_a folders, disable other mods, fresh console.txt.
