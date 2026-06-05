@@ -478,4 +478,129 @@ public sealed class MapExportExperimentalProcessTests : IDisposable
         var content = File.ReadAllText(path);
         Assert.Contains("return {}", content, StringComparison.Ordinal);
     }
+
+    // -----------------------------------------------------------------------
+    // Test 27: --lotheader-candidate newline_tileset_table_minimal exits 0
+    // MAP-6D: non-empty candidate from MAP-4E committed evidence.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_MinimalCandidate_ExitsZero()
+    {
+        var (code, stdout, stderr) = RunCli(
+            "map-export-experimental", "--map-id", TestMapId, "--output", OutputDir,
+            "--lotheader-candidate", "newline_tileset_table_minimal");
+
+        Assert.True(code == 0, $"Exited {code}. Stdout: {stdout}. Stderr: {stderr}");
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 28: newline_tileset_table_minimal sets lotheader_candidate in report
+    // MAP-6D: candidate name recorded.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_MinimalCandidate_ReportHasLotheaderCandidate()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir,
+               "--lotheader-candidate", "newline_tileset_table_minimal");
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        Assert.Equal("newline_tileset_table_minimal",
+            doc.RootElement.GetProperty("lotheader_candidate").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 29: newline_tileset_table_minimal sets lotheader_candidate_status
+    // MAP-6D: generated_not_load_tested — not yet load-tested.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_MinimalCandidate_CandidateStatusIsGeneratedNotLoadTested()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir,
+               "--lotheader-candidate", "newline_tileset_table_minimal");
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        Assert.Equal("generated_not_load_tested",
+            doc.RootElement.GetProperty("lotheader_candidate_status").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 30: newline_tileset_table_minimal sets lotheader_entry_count = 1
+    // MAP-6D: one grass tileset entry from MAP-4E evidence.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_MinimalCandidate_EntryCountIsOne()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir,
+               "--lotheader-candidate", "newline_tileset_table_minimal");
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        Assert.Equal(1, doc.RootElement.GetProperty("lotheader_entry_count").GetInt32());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 31: newline_tileset_table_minimal report includes grass entry name
+    // MAP-6D: blends_grassoverlays_01_0 is the MAP-4E documented entry.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_MinimalCandidate_EntriesIncludeGrassEntry()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir,
+               "--lotheader-candidate", "newline_tileset_table_minimal");
+
+        var json    = File.ReadAllText(Path.Combine(OutputDir, "experimental-map-export-report.json"));
+        var doc     = JsonDocument.Parse(json);
+        var entries = doc.RootElement.GetProperty("lotheader_entries");
+        var found   = false;
+        foreach (var e in entries.EnumerateArray())
+            if (e.GetString() == "blends_grassoverlays_01_0") { found = true; break; }
+        Assert.True(found, "lotheader_entries should contain 'blends_grassoverlays_01_0'");
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 32: newline_tileset_table_minimal produces lotheader exactly 34 bytes
+    // MAP-6D: 8-byte header + "blends_grassoverlays_01_0\n" (26 bytes) = 34 bytes.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_MinimalCandidate_LotheaderIsExactly34Bytes()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir,
+               "--lotheader-candidate", "newline_tileset_table_minimal");
+
+        var path = Path.Combine(OutputDir, "media", "maps", TestMapId, "0_0.lotheader");
+        Assert.True(File.Exists(path));
+        Assert.Equal(34L, new FileInfo(path).Length);
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 33: newline_tileset_table_minimal lotheader starts 00 00 00 00 01 00 00 00
+    // MAP-6D: version(U32=0) + count(U32LE=1) confirmed in binary output.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_MinimalCandidate_LotheaderFirst8BytesMatchFormat()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir,
+               "--lotheader-candidate", "newline_tileset_table_minimal");
+
+        var bytes = File.ReadAllBytes(
+            Path.Combine(OutputDir, "media", "maps", TestMapId, "0_0.lotheader"));
+
+        Assert.Equal(0x00, bytes[0]); // version byte 0
+        Assert.Equal(0x00, bytes[1]); // version byte 1
+        Assert.Equal(0x00, bytes[2]); // version byte 2
+        Assert.Equal(0x00, bytes[3]); // version byte 3
+        Assert.Equal(0x01, bytes[4]); // count = 1, LE byte 0
+        Assert.Equal(0x00, bytes[5]); // count LE byte 1
+        Assert.Equal(0x00, bytes[6]); // count LE byte 2
+        Assert.Equal(0x00, bytes[7]); // count LE byte 3
+    }
 }

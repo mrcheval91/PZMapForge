@@ -134,7 +134,23 @@ will also fail if loaded as-is. The independent value of v1 is:
 3. The report marks it `generated_not_load_tested` rather than `known_failing` so
    it is not conflated with the unstructured v0 placeholder.
 
-### candidate_v2_length_prefixed_or_int_table (NOT IMPLEMENTED)
+### candidate_v2_newline_tileset_table_minimal (IMPLEMENTED — MAP-6D)
+
+| Property | Value |
+|---|---|
+| Bytes | 34 bytes — version(4B=0) + count(4B=1) + `blends_grassoverlays_01_0\n` |
+| Format model | MAP-4E format with 1 grass tileset entry from committed evidence |
+| Evidence basis | MAP-4E (section 16): "blends_grassoverlays_01_0" documented explicitly |
+| Runtime status | generated_not_load_tested |
+| Byte count | 34 |
+| Notes | See `docs/MAP_6D_NONEMPTY_LOTHEADER_CANDIDATE.md` for byte layout |
+
+```text
+LOTHEADER_CANDIDATE_V2=newline_tileset_table_minimal
+LOTHEADER_CANDIDATE_V2_STATUS=generated_not_load_tested
+```
+
+### candidate_v4_length_prefixed_or_int_table (NOT IMPLEMENTED)
 
 | Property | Value |
 |---|---|
@@ -177,20 +193,23 @@ verified by a load test.
 Added to `map-export-experimental` CLI command (MAP-5A flat and MAP-5D build42).
 
 ```
---lotheader-candidate current_failed         (default, backward compatible)
---lotheader-candidate newline_tileset_table  (MAP-4E format model, 0 entries)
+--lotheader-candidate current_failed                  (default, backward compatible)
+--lotheader-candidate newline_tileset_table            (MAP-4E format model, 0 entries)
+--lotheader-candidate newline_tileset_table_minimal    (MAP-6D: 1 grass entry, 34 bytes)
 ```
 
 Report fields added:
-| Field | current_failed | newline_tileset_table |
-|---|---|---|
-| `lotheader_candidate` | `"current_failed"` | `"newline_tileset_table"` |
-| `lotheader_candidate_status` | `"known_failing"` | `"generated_not_load_tested"` |
-| `lotheader_sha256` | 64-char hex | 64-char hex (same bytes → same hash) |
-| `lotheader_first_bytes` | `"0000000000000000"` | `"0000000000000000"` |
-| `lotheader_byte_count` | 8 | 8 |
-| `binary_runtime_status` | `"failing_placeholder_format"` | `"candidate_generated_not_load_tested"` |
-| `objects_lua_runtime_status` | `"syntax_candidate_not_load_tested"` | `"syntax_candidate_not_load_tested"` |
+| Field | current_failed | newline_tileset_table | newline_tileset_table_minimal |
+|---|---|---|---|
+| `lotheader_candidate` | `"current_failed"` | `"newline_tileset_table"` | `"newline_tileset_table_minimal"` |
+| `lotheader_candidate_status` | `"known_failing"` | `"generated_not_load_tested"` | `"generated_not_load_tested"` |
+| `lotheader_entry_count` | `0` | `0` | `1` |
+| `lotheader_entries` | `[]` | `[]` | `["blends_grassoverlays_01_0"]` |
+| `lotheader_sha256` | 64-char hex | 64-char hex | 64-char hex (different) |
+| `lotheader_first_bytes` | `"0000000000000000"` | `"0000000000000000"` | `"0000000001000000..."` |
+| `lotheader_byte_count` | `8` | `8` | `34` |
+| `binary_runtime_status` | `"failing_placeholder_format"` | `"candidate_generated_not_load_tested"` | `"candidate_generated_not_load_tested"` |
+| `objects_lua_runtime_status` | `"syntax_candidate_not_load_tested"` | `"syntax_candidate_not_load_tested"` | `"syntax_candidate_not_load_tested"` |
 
 ---
 

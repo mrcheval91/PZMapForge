@@ -228,6 +228,19 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-6D non-empty lotheader candidate ---"
+$map6dDoc = Join-Path $repoRoot 'docs\MAP_6D_NONEMPTY_LOTHEADER_CANDIDATE.md'
+if (-not (Test-Path -LiteralPath $map6dDoc)) { throw "MAP-6D doc missing: docs\MAP_6D_NONEMPTY_LOTHEADER_CANDIDATE.md" }
+Write-Output "OK: docs\MAP_6D_NONEMPTY_LOTHEADER_CANDIDATE.md"
+$map6dContent = Get-Content -LiteralPath $map6dDoc -Raw
+if ($map6dContent -notmatch 'LOTHEADER_CANDIDATE_V2=newline_tileset_table_minimal') { throw "MAP-6D doc missing LOTHEADER_CANDIDATE_V2=newline_tileset_table_minimal sentinel" }
+Write-Output "OK: doc contains LOTHEADER_CANDIDATE_V2=newline_tileset_table_minimal"
+if ($map6dContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6D doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false sentinel" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+if ($map6dContent -notmatch 'generated_not_load_tested') { throw "MAP-6D doc missing generated_not_load_tested sentinel" }
+Write-Output "OK: doc contains generated_not_load_tested"
+
+Write-Output ""
 Write-Output "--- MAP-6C lotheader format research packet ---"
 $map6cDoc = Join-Path $repoRoot 'docs\MAP_6C_LOTHEADER_FORMAT_RESEARCH_PACKET.md'
 if (-not (Test-Path -LiteralPath $map6cDoc)) { throw "MAP-6C doc missing: docs\MAP_6C_LOTHEADER_FORMAT_RESEARCH_PACKET.md" }
@@ -277,8 +290,8 @@ $psChecks = [ordered]@{
 $psTotal = 492   # = validation_summary.total_expected_assertions in proof-packet v0.16
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
-$dnCliTests  = 240   # PZMapForge.Cli.Tests (MAP-6C: +6 lotheader candidate + objects.lua tests)
-$dnTotal     = 430   # = dotnet_validation_summary.test_total in proof-packet v0.16
+$dnCliTests  = 248   # PZMapForge.Cli.Tests (MAP-6D: +8 non-empty lotheader candidate tests)
+$dnTotal     = 438   # = dotnet_validation_summary.test_total in proof-packet v0.16
 
 Write-Output ""
 Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.16):"

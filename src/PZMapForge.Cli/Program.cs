@@ -968,10 +968,11 @@ MAP-5D adds correct Build 42 Workshop package layout to address packaging blocke
             Path.Combine(mapDataDir, "README_PZMAPFORGE_BOUNDARY_EXPERIMENTAL.txt"),
             readmeB42Content, Encoding.UTF8);
 
-        // Binary: .lotheader — MAP-6C candidate writer gate
-        var (lotheaderB42, lotheaderB42CandidateStatus) = BuildLotheaderForCandidate(lotheaderCandidate);
+        // Binary: .lotheader — MAP-6C/MAP-6D candidate writer gate
+        var (lotheaderB42, lotheaderB42CandidateStatus, lotheaderB42EntryCount, lotheaderB42Entries) =
+            BuildLotheaderForCandidate(lotheaderCandidate);
         var lotheaderB42Sha256     = string.Join("", SHA256.HashData(lotheaderB42).Select(b => b.ToString("x2")));
-        var lotheaderB42FirstBytes = string.Join("", lotheaderB42.Take(8).Select(b => b.ToString("x2")));
+        var lotheaderB42FirstBytes = string.Join("", lotheaderB42.Take(32).Select(b => b.ToString("x2")));
         File.WriteAllBytes(Path.Combine(mapDataDir, $"{cellCoordB42}.lotheader"), lotheaderB42);
 
         // Binary: .lotpack
@@ -1033,7 +1034,8 @@ MAP-5D adds correct Build 42 Workshop package layout to address packaging blocke
                 "build42: package uses Contents/mods nested layout per ModTemplate",
             },
             manual_load_test_required  = true,
-            binary_runtime_status      = lotheaderCandidate == "newline_tileset_table"
+            binary_runtime_status      = lotheaderCandidate is "newline_tileset_table"
+                                                              or "newline_tileset_table_minimal"
                                          ? "candidate_generated_not_load_tested"
                                          : "failing_placeholder_format",
             lotheader_runtime_status   = "eof_exception_observed",
@@ -1042,6 +1044,8 @@ MAP-5D adds correct Build 42 Workshop package layout to address packaging blocke
             objects_lua_runtime_status = "syntax_candidate_not_load_tested",
             lotheader_candidate        = lotheaderCandidate,
             lotheader_candidate_status = lotheaderB42CandidateStatus,
+            lotheader_entry_count      = lotheaderB42EntryCount,
+            lotheader_entries          = lotheaderB42Entries,
             lotheader_sha256           = lotheaderB42Sha256,
             lotheader_first_bytes      = lotheaderB42FirstBytes,
             lotheader_byte_count       = lotheaderB42.Length,
@@ -1171,10 +1175,11 @@ PZMapForge MAP-4H decision: MAP-5A_ALLOWED_EXPERIMENTAL_LOCAL_ONLY
         Path.Combine(mapDir, "README_PZMAPFORGE_BOUNDARY_EXPERIMENTAL.txt"),
         readmeContent, Encoding.UTF8);
 
-    // Binary: .lotheader — MAP-6C candidate writer gate
-    var (lotheaderBytes, lotheaderCandidateStatus) = BuildLotheaderForCandidate(lotheaderCandidate);
-    var lotheaderSha256    = string.Join("", SHA256.HashData(lotheaderBytes).Select(b => b.ToString("x2")));
-    var lotheaderFirstBytes = string.Join("", lotheaderBytes.Take(8).Select(b => b.ToString("x2")));
+    // Binary: .lotheader — MAP-6C/MAP-6D candidate writer gate
+    var (lotheaderBytes, lotheaderCandidateStatus, lotheaderEntryCount, lotheaderEntries) =
+        BuildLotheaderForCandidate(lotheaderCandidate);
+    var lotheaderSha256     = string.Join("", SHA256.HashData(lotheaderBytes).Select(b => b.ToString("x2")));
+    var lotheaderFirstBytes = string.Join("", lotheaderBytes.Take(32).Select(b => b.ToString("x2")));
     File.WriteAllBytes(Path.Combine(mapDir, $"{cellCoord}.lotheader"), lotheaderBytes);
 
     // Binary: .lotpack (7208 bytes — hdrA=900, hdrB=7204, all-zero offset table)
@@ -1230,7 +1235,8 @@ PZMapForge MAP-4H decision: MAP-5A_ALLOWED_EXPERIMENTAL_LOCAL_ONLY
             "chunkdata: assuming 902-byte all-zero chunk grid is accepted for empty cell",
         },
         manual_load_test_required  = true,
-        binary_runtime_status      = lotheaderCandidate == "newline_tileset_table"
+        binary_runtime_status      = lotheaderCandidate is "newline_tileset_table"
+                                                          or "newline_tileset_table_minimal"
                                      ? "candidate_generated_not_load_tested"
                                      : "failing_placeholder_format",
         lotheader_runtime_status   = "eof_exception_observed",
@@ -1239,6 +1245,8 @@ PZMapForge MAP-4H decision: MAP-5A_ALLOWED_EXPERIMENTAL_LOCAL_ONLY
         objects_lua_runtime_status = "syntax_candidate_not_load_tested",
         lotheader_candidate        = lotheaderCandidate,
         lotheader_candidate_status = lotheaderCandidateStatus,
+        lotheader_entry_count      = lotheaderEntryCount,
+        lotheader_entries          = lotheaderEntries,
         lotheader_sha256           = lotheaderSha256,
         lotheader_first_bytes      = lotheaderFirstBytes,
         lotheader_byte_count       = lotheaderBytes.Length,
@@ -1598,20 +1606,36 @@ Checks:        {passCount + failCount} total, {passCount} passed, {failCount} fa
     return failCount > 0 ? 1 : 0;
 }
 
-static (byte[] Bytes, string CandidateStatus) BuildLotheaderForCandidate(string candidate)
+static (byte[] Bytes, string CandidateStatus, int EntryCount, string[] Entries)
+    BuildLotheaderForCandidate(string candidate)
 {
-    // MAP-6C candidate writer gate (MAP-4E format model).
+    // MAP-6C/MAP-6D candidate writer gate (MAP-4E format model).
     // Format: bytes 0-3 = version/reserved (U32=0, consistent in 16/16 observed files),
-    //         bytes 4-7 = entry count (U32 LE, 0 for empty cell),
-    //         bytes 8+  = newline-terminated ASCII tileset pack names (empty for count=0).
-    // For 0 entries both candidates produce the same 8-byte structure.
-    // candidate_v0 (current_failed) is known failing (MAP-6B: EOFException at IsoLot.readInt).
-    // candidate_v1 (newline_tileset_table) applies the MAP-4E format model explicitly.
-    var bytes = new byte[8]; // version(U32=0) + count(U32LE=0) + empty entry table
+    //         bytes 4-7 = entry count (U32 LE),
+    //         bytes 8+  = newline-terminated ASCII tileset pack names.
+    // candidate_v0 (current_failed): known failing (MAP-6B: EOFException at IsoLot.readInt).
+    // candidate_v1 (newline_tileset_table): MAP-4E format, 0 entries, same bytes as v0.
+    // candidate_v2 (newline_tileset_table_minimal): MAP-4E format, 1 grass entry from MAP-4E evidence.
+    const string grassEntry = "blends_grassoverlays_01_0"; // documented in MAP-4E evidence
+
+    if (candidate == "newline_tileset_table_minimal")
+    {
+        // bytes 0-3: 00 00 00 00 (version = 0)
+        // bytes 4-7: 01 00 00 00 (count = 1, U32 LE)
+        // bytes 8+:  "blends_grassoverlays_01_0\n" (25 ASCII bytes + 0x0A newline = 26 bytes)
+        // Total: 34 bytes
+        var entryBytes = Encoding.ASCII.GetBytes(grassEntry + "\n");
+        var bytes = new byte[8 + entryBytes.Length];
+        bytes[4] = 1; // count = 1 (little-endian, byte index 0 of U32)
+        entryBytes.CopyTo(bytes, 8);
+        return (bytes, "generated_not_load_tested", 1, new[] { grassEntry });
+    }
+
+    var zeroBytes = new byte[8]; // version(U32=0) + count(U32LE=0) + empty entry table
     return candidate switch
     {
-        "newline_tileset_table" => (bytes, "generated_not_load_tested"),
-        _                       => (bytes, "known_failing"),
+        "newline_tileset_table" => (zeroBytes, "generated_not_load_tested", 0, Array.Empty<string>()),
+        _                       => (zeroBytes, "known_failing",             0, Array.Empty<string>()),
     };
 }
 

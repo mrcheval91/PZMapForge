@@ -252,4 +252,24 @@ public sealed class MapExportExperimentalBuild42ProcessTests : IDisposable
         Assert.False(root.GetProperty("load_tested").GetBoolean());
         Assert.True(root.GetProperty("experimental_writer").GetBoolean());
     }
+
+    // -----------------------------------------------------------------------
+    // Test 13: --build42-package with newline_tileset_table_minimal
+    //          produces a 34-byte lotheader in the nested map directory.
+    // MAP-6D: build42 path supports the non-empty candidate.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Build42Package_MinimalLotheaderCandidate_LotheaderIs34Bytes()
+    {
+        var (code, stdout, stderr) = RunCli(
+            "map-export-experimental", "--map-id", TestMapId,
+            "--output", OutputBase, "--build42-package",
+            "--lotheader-candidate", "newline_tileset_table_minimal");
+
+        Assert.True(code == 0, $"Exited {code}. Stdout: {stdout}. Stderr: {stderr}");
+        var path = Path.Combine(MapDataDir, "0_0.lotheader");
+        Assert.True(File.Exists(path));
+        Assert.Equal(34L, new FileInfo(path).Length);
+    }
 }

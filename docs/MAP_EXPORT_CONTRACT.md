@@ -535,6 +535,23 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6D — Non-empty lotheader candidate from committed evidence:**
+MAP-6D adds `--lotheader-candidate newline_tileset_table_minimal`, the first
+lotheader candidate that produces genuinely different (non-empty) bytes.
+
+Entry source: `blends_grassoverlays_01_0` — documented in `docs/COMPILED_CELL_FORMAT_EVIDENCE.md`
+section 16 (MAP-4E). No PZ assets read or copied.
+
+Byte layout: `00 00 00 00 01 00 00 00` + ASCII entry + `\n` = 34 bytes total.
+
+New report fields: `lotheader_entry_count`, `lotheader_entries` (both paths).
+`lotheader_first_bytes` widened to 32 bytes for all candidates.
+
+Artifacts:
+- `docs/MAP_6D_NONEMPTY_LOTHEADER_CANDIDATE.md` — candidate record.
+
+No playable export claim. No load test. No PZ assets.
+
 ---
 
 ## 6. Source / editing format contract

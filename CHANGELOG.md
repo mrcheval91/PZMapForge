@@ -8,6 +8,40 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6D: Non-empty lotheader candidate from committed evidence)
+- docs/MAP_6D_NONEMPTY_LOTHEADER_CANDIDATE.md: candidate record.
+  - Candidate: newline_tileset_table_minimal.
+  - Entry source: blends_grassoverlays_01_0 from committed MAP-4E evidence only.
+  - Byte layout: version(U32=0) + count(U32LE=1) + "blends_grassoverlays_01_0\n" = 34 bytes.
+  - LOTHEADER_CANDIDATE_V2=newline_tileset_table_minimal
+  - PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+  - generated_not_load_tested
+- src/PZMapForge.Cli/Program.cs:
+  - BuildLotheaderForCandidate extended: newline_tileset_table_minimal case added.
+  - Returns (Bytes, CandidateStatus, EntryCount, Entries) — signature extended.
+  - lotheader_first_bytes widened from Take(8) to Take(32) in both paths.
+  - Report JSON: lotheader_entry_count, lotheader_entries added (both flat + build42).
+  - binary_runtime_status predicate covers newline_tileset_table_minimal.
+- tests/PZMapForge.Cli.Tests/MapExportExperimentalProcessTests.cs:
+  - Tests 27-33: exit 0, lotheader_candidate, candidate_status, entry_count=1,
+    entries includes grass entry, lotheader is 34 bytes, first 8 bytes verified.
+- tests/PZMapForge.Cli.Tests/MapExportExperimentalBuild42ProcessTests.cs:
+  - Test 13: build42 path with minimal candidate produces 34-byte lotheader.
+  - cli_tests 240→248.
+- docs/MAP_6C_LOTHEADER_FORMAT_RESEARCH_PACKET.md: v2 candidate added.
+- scripts/validate.ps1: MAP-6D sentinel section (4 checks); dnCliTests 240→248; dnTotal 430→438.
+- scripts/write-proof-packet.ps1: cli_tests 240→248, test_total 430→438.
+- scripts/test-proof-packet.ps1: assertions updated.
+- docs/IMPLEMENTATION.md: MAP-6D ratified row added.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6D section added.
+
+No load test performed. No PZ assets. No playable export claim.
+PS 492 unchanged. .NET 438 (cli_tests 248).
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-6C: Lotheader format research packet and candidate writer gate)
 - docs/MAP_6C_LOTHEADER_FORMAT_RESEARCH_PACKET.md:
   - MAP-4E evidence summary for lotheader structure.
