@@ -88,6 +88,31 @@ $lotpBytes[4] = 0x01; $lotpBytes[5] = 0x00; $lotpBytes[6] = 0x00; $lotpBytes[7] 
 [System.IO.File]::WriteAllBytes((Join-Path $testSourceLotp 'world_0_0.lotpack'), $lotpBytes)
 
 # ---------------------------------------------------------------------------
+# Create deep LOTH source (LOTH lotheader + LOTP lotpack + 1026-byte chunkdata)
+# This exercises all three Build 42 format detections together.
+# ---------------------------------------------------------------------------
+
+$testSourceLtzh = Join-Path $testBase '.local\source-ltzh\testmap-ltzh'
+New-Item -ItemType Directory -Force -Path $testSourceLtzh | Out-Null
+
+# Synthetic LOTH lotheader: first 4 bytes = 4C 54 5A 48 ("LOTH"), bytes 4-7 = 01 00 00 00 (version=1)
+$ltzhBytes = [byte[]]::new(64)
+$ltzhBytes[0] = 0x4C; $ltzhBytes[1] = 0x4F; $ltzhBytes[2] = 0x54; $ltzhBytes[3] = 0x48  # LOTH magic (4C 4F 54 48 = "LOTH")
+$ltzhBytes[4] = 0x01; $ltzhBytes[5] = 0x00; $ltzhBytes[6] = 0x00; $ltzhBytes[7] = 0x00  # version = 1
+[System.IO.File]::WriteAllBytes((Join-Path $testSourceLtzh '0_0.lotheader'), $ltzhBytes)
+
+# Also add a LOTP lotpack so we can test BUILD42_256_MODEL_STRONGLY_SUPPORTED
+$lotpBytesForLtzh = [byte[]]::new(64)
+$lotpBytesForLtzh[0] = 0x4C; $lotpBytesForLtzh[1] = 0x4F; $lotpBytesForLtzh[2] = 0x54; $lotpBytesForLtzh[3] = 0x50
+$lotpBytesForLtzh[4] = 0x01
+[System.IO.File]::WriteAllBytes((Join-Path $testSourceLtzh 'world_0_0.lotpack'), $lotpBytesForLtzh)
+
+# Also add 1026-byte chunkdata (body=1024, grid=32x32)
+$chunkdata1026ForLtzh = [byte[]]::new(1026)
+$chunkdata1026ForLtzh[0] = 0x00; $chunkdata1026ForLtzh[1] = 0x01
+[System.IO.File]::WriteAllBytes((Join-Path $testSourceLtzh 'chunkdata_0_0.bin'), $chunkdata1026ForLtzh)
+
+# ---------------------------------------------------------------------------
 # Helper: run inspector without stopping on nonzero exit
 # ---------------------------------------------------------------------------
 
@@ -216,6 +241,55 @@ Assert-True ([int]$lotpReport.lotpack_lotp_count -ge 1) 'lotpack_lotp_count >= 1
 # Test 15: geometry_status = BUILD42_LOTP_FORMAT_OBSERVED
 Write-Output '--- Test 15: geometry_status = BUILD42_LOTP_FORMAT_OBSERVED ---'
 Assert-True ($lotpReport.geometry_status -eq 'BUILD42_LOTP_FORMAT_OBSERVED') 'geometry_status == BUILD42_LOTP_FORMAT_OBSERVED'
+
+# ---------------------------------------------------------------------------
+# LOTP deep field tests (from the LOTP run output)
+# ---------------------------------------------------------------------------
+
+# Test 16: first_16_bytes_hex exists in LOTP lotpack record
+Write-Output '--- Test 16: LOTP lotpack record has first_16_bytes_hex ---'
+$lotpRecDeep = $lotpReport.lotpack_records | Where-Object { $_.lotpack_format -eq 'LOTP' } | Select-Object -First 1
+Assert-True ($null -ne $lotpRecDeep -and -not [string]::IsNullOrEmpty($lotpRecDeep.first_16_bytes_hex)) 'LOTP record has first_16_bytes_hex'
+
+# Test 17: first_32_bytes_hex exists in LOTP lotpack record
+Write-Output '--- Test 17: LOTP lotpack record has first_32_bytes_hex ---'
+Assert-True ($null -ne $lotpRecDeep -and -not [string]::IsNullOrEmpty($lotpRecDeep.first_32_bytes_hex)) 'LOTP record has first_32_bytes_hex'
+
+# ---------------------------------------------------------------------------
+# LOTH tests: run inspector against LOTH + LOTP + chunkdata1024 source
+# ---------------------------------------------------------------------------
+
+$ltzhOutput = Join-Path $testBase '.local\output\run-ltzh'
+$ec16 = Invoke-Inspector @('-Source', $testSourceLtzh, '-Output', $ltzhOutput, '-MaxFiles', '10')
+
+# Test 18: LOTH source exits 0
+Write-Output '--- Test 18: LOTH/LOTP/chunkdata1024 source exits 0 ---'
+Assert-True ($ec16 -eq 0) 'LOTH source run exits 0'
+
+$ltzhJsonFile = Join-Path $ltzhOutput 'build42-reference-geometry-report.json'
+$ltzhReport   = Get-Content $ltzhJsonFile -Raw | ConvertFrom-Json
+
+# Test 19: lotheader_format = LOTH in record
+Write-Output '--- Test 19: lotheader_format = LOTH ---'
+$ltzhRec = $ltzhReport.lotheader_records | Where-Object { $_.lotheader_format -eq 'LOTH' } | Select-Object -First 1
+Assert-True ($null -ne $ltzhRec) 'lotheader_format == LOTH record found'
+
+# Test 20: lotheader_magic = LOTH
+Write-Output '--- Test 20: lotheader_magic = LOTH ---'
+Assert-True ($null -ne $ltzhRec -and $ltzhRec.lotheader_magic -eq 'LOTH') 'lotheader_magic == LOTH'
+
+# Test 21: lotheader_ltz_count >= 1
+Write-Output '--- Test 21: lotheader_loth_count >= 1 ---'
+Assert-True ([int]$ltzhReport.lotheader_loth_count -ge 1) 'lotheader_loth_count >= 1'
+
+# Test 22: BUILD42_LOTH_LOTHEADER_FORMAT_OBSERVED in geometry_statuses
+Write-Output '--- Test 22: BUILD42_LOTH_LOTHEADER_FORMAT_OBSERVED in geometry_statuses ---'
+$ltzhStatuses = @($ltzhReport.geometry_statuses)
+Assert-True ($ltzhStatuses -contains 'BUILD42_LOTH_LOTHEADER_FORMAT_OBSERVED') 'geometry_statuses contains BUILD42_LOTH_LOTHEADER_FORMAT_OBSERVED'
+
+# Test 23: BUILD42_32X32_CHUNK_GRID_OBSERVED in geometry_statuses
+Write-Output '--- Test 23: BUILD42_32X32_CHUNK_GRID_OBSERVED in geometry_statuses ---'
+Assert-True ($ltzhStatuses -contains 'BUILD42_32X32_CHUNK_GRID_OBSERVED') 'geometry_statuses contains BUILD42_32X32_CHUNK_GRID_OBSERVED'
 
 # ---------------------------------------------------------------------------
 # Cleanup

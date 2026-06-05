@@ -1,12 +1,12 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Local-only Build 42 reference geometry inspector (MAP-6F).
+    Local-only Build 42 reference geometry inspector (MAP-6F/MAP-6H).
 
     Inspects a known-good Build 42 map mod or export that the operator has
     manually placed under .local/. Reads only bounded byte prefixes and file
-    sizes. Reports observed lotpack header values, chunkdata body sizes, and
-    a geometry model status.
+    sizes. Detects LOTP lotpack magic (Build 42), LOTH lotheader magic (Build 42),
+    and chunkdata body sizes. Reports a geometry status array.
 
     Reads .lotheader, world_*.lotpack, chunkdata_*.bin, map.info, mod.info,
     spawnpoints.lua from the provided source path.
@@ -114,11 +114,13 @@ if (-not (Test-Path -LiteralPath $sourceFull)) {
 }
 
 # ---------------------------------------------------------------------------
-# Helper: read bounded binary prefix (max 64 bytes)
+# Helper: read bounded binary prefix (clamped to 1–256 bytes)
 # ---------------------------------------------------------------------------
 
 function Read-BoundedPrefix {
     param([string]$FilePath, [int]$MaxBytes = 64)
+    if ($MaxBytes -gt 256) { $MaxBytes = 256 }
+    if ($MaxBytes -lt 1)   { $MaxBytes = 1 }
     $stream = [System.IO.File]::OpenRead($FilePath)
     try {
         $buf  = [byte[]]::new($MaxBytes)
@@ -133,6 +135,26 @@ function Read-BoundedPrefix {
 function Bytes-ToHex {
     param([byte[]]$Bytes)
     return ($Bytes | ForEach-Object { $_.ToString('x2') }) -join ''
+}
+
+# Read a bounded slice of a byte array as a hex string
+function Slice-ToHex {
+    param([byte[]]$Bytes, [int]$Len)
+    $take = [Math]::Min($Len, $Bytes.Length)
+    if ($take -le 0) { return '' }
+    return ($Bytes[0..($take-1)] | ForEach-Object { $_.ToString('x2') }) -join ''
+}
+
+# Extract U32 LE words from a byte array, up to $MaxWords
+function Get-U32Words {
+    param([byte[]]$Bytes, [int]$MaxWords = 16)
+    $words = [System.Collections.Generic.List[long]]::new()
+    $pos   = 0
+    while ($pos + 3 -lt $Bytes.Length -and $words.Count -lt $MaxWords) {
+        $words.Add([long][System.BitConverter]::ToUInt32($Bytes, $pos))
+        $pos += 4
+    }
+    return @($words)
 }
 
 # ---------------------------------------------------------------------------
@@ -170,39 +192,42 @@ $hdrA_900_count     = 0
 $hdrB_7204_count    = 0
 $lotpack_lotp_count = 0
 
-# LOTP magic bytes: 4C 4F 54 50 = "LOTP" in ASCII (Build 42 lotpack format)
-[byte[]]$lotpMagic = @(0x4C, 0x4F, 0x54, 0x50)
-
 foreach ($f in $lotpackFiles) {
     $rel    = $f.FullName.Substring($sourceFull.Length).TrimStart($sep)
     $size   = $f.Length
     $prefix = Read-BoundedPrefix $f.FullName 64
-    $first8 = if ($prefix.Length -ge 8) { Bytes-ToHex $prefix[0..7] } else { Bytes-ToHex $prefix }
 
-    # Detect LOTP magic header (Build 42 format)
+    # Detect LOTP magic header (Build 42 format: 4C 4F 54 50 = "LOTP")
     $isLotp = ($prefix.Length -ge 4 -and
                $prefix[0] -eq 0x4C -and $prefix[1] -eq 0x4F -and
                $prefix[2] -eq 0x54 -and $prefix[3] -eq 0x50)
 
     if ($isLotp) {
-        # Build 42 LOTP format: do NOT interpret as hdrA/hdrB chunk-table header.
-        # Read bytes 4-7 as version/extra field only.
         $lotpVersion = if ($prefix.Length -ge 8) { [System.BitConverter]::ToUInt32($prefix, 4) } else { [uint32]0 }
         $lotpack_lotp_count++
         $note = 'build42_lotp_format_detected'
-        Write-Output "  $rel  size=$size  format=LOTP  version_field=$lotpVersion  note=$note"
+
+        $first16hex = Slice-ToHex $prefix 16
+        $first32hex = Slice-ToHex $prefix 32
+        $first64hex = Bytes-ToHex $prefix
+        $u32words   = Get-U32Words $prefix 16
+
+        Write-Output "  $rel  size=$size  format=LOTP  version_field=$lotpVersion"
         $lotpackRecords.Add([ordered]@{
-            file              = $rel
-            size_bytes        = $size
-            first_8_bytes_hex = $first8
-            lotpack_format    = 'LOTP'
-            lotpack_magic     = 'LOTP'
-            version_field     = [int]$lotpVersion
-            note              = $note
+            file                    = $rel
+            size_bytes              = $size
+            lotpack_format          = 'LOTP'
+            lotpack_magic           = 'LOTP'
+            lotpack_version_field_u32le = [int]$lotpVersion
+            first_16_bytes_hex      = $first16hex
+            first_32_bytes_hex      = $first32hex
+            first_64_bytes_hex      = $first64hex
+            u32le_words_first_64    = $u32words
+            note                    = $note
         })
     } else {
-        # Legacy format: interpret bytes 0-3 as hdrA (chunk count) and 4-7 as hdrB.
-        # Use Int64 for derived values to prevent overflow on unexpected large hdrA values.
+        # Legacy format: interpret bytes 0-3 as hdrA and 4-7 as hdrB.
+        # Use Int64 for derived values to prevent overflow.
         $hdrA = if ($prefix.Length -ge 4) { [System.BitConverter]::ToUInt32($prefix, 0) } else { [uint32]0 }
         $hdrB = if ($prefix.Length -ge 8) { [System.BitConverter]::ToUInt32($prefix, 4) } else { [uint32]0 }
 
@@ -212,23 +237,18 @@ foreach ($f in $lotpackFiles) {
         if ($hdrA -eq 900)  { $hdrA_900_count++ }
         if ($hdrB -eq 7204) { $hdrB_7204_count++ }
 
-        $note = ''
-        if ($hdrA -eq 900 -and $hdrB -eq 7204) {
-            $note = 'matches_legacy_30x30_model'
-        } elseif ($hdrA -eq 1024) {
-            $note = 'candidate_32x32_1024'
-        } elseif ($hdrA -eq 256) {
-            $note = 'candidate_16x16_256'
-        } else {
-            $note = "hdrA=$hdrA hdrB=$hdrB (unknown_model)"
-        }
+        $note = if ($hdrA -eq 900 -and $hdrB -eq 7204) { 'matches_legacy_30x30_model' }
+                elseif ($hdrA -eq 1024)                  { 'candidate_32x32_1024' }
+                elseif ($hdrA -eq 256)                   { 'candidate_16x16_256' }
+                else                                     { "hdrA=$hdrA hdrB=$hdrB (unknown_model)" }
 
-        Write-Output "  $rel  size=$size  format=legacy  hdrA=$hdrA hdrB=$hdrB  note=$note"
+        $first32hex = Slice-ToHex $prefix 32
+        Write-Output "  $rel  size=$size  format=legacy  hdrA=$hdrA hdrB=$hdrB"
         $lotpackRecords.Add([ordered]@{
             file                     = $rel
             size_bytes               = $size
-            first_8_bytes_hex        = $first8
             lotpack_format           = 'legacy'
+            first_32_bytes_hex       = $first32hex
             hdrA_u32le               = [int]$hdrA
             hdrB_u32le               = [int]$hdrB
             inferred_table_entries   = [int64]$hdrA
@@ -255,58 +275,95 @@ foreach ($f in $chunkdataFiles) {
     $rel        = $f.FullName.Substring($sourceFull.Length).TrimStart($sep)
     $size       = [int]$f.Length
     $bodyBytes  = $size - 2   # subtract 2-byte header
-    $prefix     = Read-BoundedPrefix $f.FullName 16
-    $first16    = Bytes-ToHex $prefix
+    $prefix     = Read-BoundedPrefix $f.FullName 32
 
     $headerByte0 = if ($prefix.Length -ge 1) { $prefix[0] } else { [byte]0 }
     $headerByte1 = if ($prefix.Length -ge 2) { $prefix[1] } else { [byte]0 }
 
-    $gridCandidate = 'unknown'
-    if ($bodyBytes -eq 900)  { $gridCandidate = '30x30_900';  $body_900_count++ }
-    elseif ($bodyBytes -eq 1024) { $gridCandidate = '32x32_1024'; $body_1024_count++ }
-    elseif ($bodyBytes -eq 256)  { $gridCandidate = '16x16_256';  $body_256_count++ }
-    else                         { $gridCandidate = "unknown_body_$bodyBytes" }
+    $first32hex = Bytes-ToHex $prefix
+    $u32words   = Get-U32Words $prefix 8
+
+    $gridCandidate = if ($bodyBytes -eq 900)  { $body_900_count++;  '30x30_900'  }
+                     elseif ($bodyBytes -eq 1024) { $body_1024_count++; '32x32_1024' }
+                     elseif ($bodyBytes -eq 256)  { $body_256_count++;  '16x16_256'  }
+                     else                         { "unknown_body_$bodyBytes" }
 
     Write-Output "  $rel  size=$size  body_bytes=$bodyBytes  grid_candidate=$gridCandidate"
 
     $chunkdataRecords.Add([ordered]@{
-        file               = $rel
-        size_bytes         = $size
-        header_byte_0      = '0x{0:x2}' -f $headerByte0
-        header_byte_1      = '0x{0:x2}' -f $headerByte1
-        first_16_bytes_hex = $first16
-        body_bytes         = $bodyBytes
-        chunk_grid_candidate = $gridCandidate
+        file                  = $rel
+        size_bytes            = $size
+        header_byte_0         = '0x{0:x2}' -f $headerByte0
+        header_byte_1         = '0x{0:x2}' -f $headerByte1
+        first_32_bytes_hex    = $first32hex
+        u32le_words_first_32  = $u32words
+        body_bytes            = $bodyBytes
+        chunk_grid_candidate  = $gridCandidate
     })
 }
 
 # ---------------------------------------------------------------------------
-# Analyse .lotheader files
+# Analyse .lotheader files — detect LOTH magic (Build 42 format)
 # ---------------------------------------------------------------------------
 
 Write-Output ''
 Write-Output '--- Analysing .lotheader files ---'
 
-$lotheaderRecords = [System.Collections.Generic.List[object]]::new()
+$lotheaderRecords    = [System.Collections.Generic.List[object]]::new()
+$lotheader_loth_count = 0
 
 foreach ($f in $lotheaderFiles) {
     $rel    = $f.FullName.Substring($sourceFull.Length).TrimStart($sep)
     $size   = $f.Length
-    $prefix = Read-BoundedPrefix $f.FullName 32
-    $hex    = Bytes-ToHex $prefix
+    $prefix = Read-BoundedPrefix $f.FullName 64
 
-    $field0 = if ($prefix.Length -ge 4) { [System.BitConverter]::ToUInt32($prefix, 0) } else { [uint32]0 }
-    $field1 = if ($prefix.Length -ge 8) { [System.BitConverter]::ToUInt32($prefix, 4) } else { [uint32]0 }
+    # Detect LOTH magic header (Build 42: 4C 4F 54 48 = "LOTH")
+    # field0 as LE U32 = 0x48544F4C = 1213484876
+    $isLoth = ($prefix.Length -ge 4 -and
+               $prefix[0] -eq 0x4C -and $prefix[1] -eq 0x4F -and
+               $prefix[2] -eq 0x54 -and $prefix[3] -eq 0x48)
 
-    Write-Output "  $rel  size=$size  field0=$field0 field1=$field1"
+    if ($isLoth) {
+        $lothVersion = if ($prefix.Length -ge 8) { [System.BitConverter]::ToUInt32($prefix, 4) } else { [uint32]0 }
+        $lotheader_loth_count++
+        $note = 'build42_loth_format_detected'
 
-    $lotheaderRecords.Add([ordered]@{
-        file                  = $rel
-        size_bytes            = $size
-        first_32_bytes_hex    = $hex
-        first_u32le           = [int]$field0
-        second_u32le          = [int]$field1
-    })
+        $first16hex = Slice-ToHex $prefix 16
+        $first32hex = Slice-ToHex $prefix 32
+        $first64hex = Bytes-ToHex $prefix
+        $u32words   = Get-U32Words $prefix 16
+
+        Write-Output "  $rel  size=$size  format=LOTH  version_field=$lothVersion"
+        $lotheaderRecords.Add([ordered]@{
+            file                          = $rel
+            size_bytes                    = $size
+            lotheader_format              = 'LOTH'
+            lotheader_magic               = 'LOTH'
+            lotheader_version_field_u32le = [int]$lothVersion
+            first_16_bytes_hex            = $first16hex
+            first_32_bytes_hex            = $first32hex
+            first_64_bytes_hex            = $first64hex
+            u32le_words_first_64          = $u32words
+            note                          = $note
+        })
+    } else {
+        # Legacy format (Build 41 style)
+        $field0 = if ($prefix.Length -ge 4) { [System.BitConverter]::ToUInt32($prefix, 0) } else { [uint32]0 }
+        $field1 = if ($prefix.Length -ge 8) { [System.BitConverter]::ToUInt32($prefix, 4) } else { [uint32]0 }
+        $first32hex = Slice-ToHex $prefix 32
+        $first64hex = Bytes-ToHex $prefix
+
+        Write-Output "  $rel  size=$size  format=legacy  field0=$field0 field1=$field1"
+        $lotheaderRecords.Add([ordered]@{
+            file               = $rel
+            size_bytes         = $size
+            lotheader_format   = 'legacy'
+            first_32_bytes_hex = $first32hex
+            first_64_bytes_hex = $first64hex
+            first_u32le        = [int]$field0
+            second_u32le       = [int]$field1
+        })
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -320,20 +377,40 @@ foreach ($f in ($mapInfoFiles + $modInfoFiles + $spawnFiles)) {
 }
 
 # ---------------------------------------------------------------------------
-# Determine geometry status
+# Determine geometry statuses (array) and primary geometry_status string
 # ---------------------------------------------------------------------------
 
-$totalLotpack          = $lotpackRecords.Count
-$totalChunkdata        = $chunkdataRecords.Count
+$totalLotpack             = $lotpackRecords.Count
+$totalChunkdata           = $chunkdataRecords.Count
 $lotpack_legacy_900_count = $hdrA_900_count
 
-$geometryStatus = 'BUILD42_GEOMETRY_STILL_UNKNOWN'
+$geometryStatuses = [System.Collections.Generic.List[string]]::new()
 
-if ($totalLotpack -eq 0 -and $totalChunkdata -eq 0) {
-    $geometryStatus = 'BUILD42_GEOMETRY_STILL_UNKNOWN'
+if ($lotpack_lotp_count -gt 0) {
+    [void]$geometryStatuses.Add('BUILD42_LOTP_FORMAT_OBSERVED')
+}
+if ($lotheader_loth_count -gt 0) {
+    [void]$geometryStatuses.Add('BUILD42_LOTH_LOTHEADER_FORMAT_OBSERVED')
+}
+if ($body_1024_count -gt 0) {
+    [void]$geometryStatuses.Add('BUILD42_32X32_CHUNK_GRID_OBSERVED')
+}
+if ($body_900_count -gt 0) {
+    [void]$geometryStatuses.Add('BUILD41_30X30_CHUNK_GRID_OBSERVED')
+}
+if ($lotpack_lotp_count -gt 0 -and $lotheader_loth_count -gt 0 -and $body_1024_count -gt 0) {
+    [void]$geometryStatuses.Add('BUILD42_256_MODEL_STRONGLY_SUPPORTED')
+}
+[void]$geometryStatuses.Add('GEOMETRY_MODEL_STILL_NOT_LOAD_TESTED')
+[void]$geometryStatuses.Add('PLAYABLE_EXPORT_CLAIM_ALLOWED=false')
+
+# Primary geometry status (highest-priority single string)
+$geometryStatus = 'BUILD42_GEOMETRY_STILL_UNKNOWN'
+if ($geometryStatuses -contains 'BUILD42_256_MODEL_STRONGLY_SUPPORTED') {
+    $geometryStatus = 'BUILD42_256_MODEL_STRONGLY_SUPPORTED'
+} elseif ($lotpack_lotp_count -gt 0 -and $lotheader_loth_count -gt 0) {
+    $geometryStatus = 'BUILD42_LOTP_LOTH_FORMAT_OBSERVED'
 } elseif ($lotpack_lotp_count -gt 0) {
-    # LOTP format confirms Build 42 has a new lotpack format.
-    # Chunk geometry is not determined from LOTP alone; chunkdata body sizes still apply.
     $geometryStatus = 'BUILD42_LOTP_FORMAT_OBSERVED'
 } elseif ($hdrA_900_count -gt 0 -and $body_900_count -gt 0 -and $body_1024_count -eq 0 -and $body_256_count -eq 0) {
     $geometryStatus = 'BUILD42_300_MODEL_SUPPORTED'
@@ -345,8 +422,10 @@ if ($totalLotpack -eq 0 -and $totalChunkdata -eq 0) {
 
 Write-Output ''
 Write-Output "--- Geometry status: $geometryStatus ---"
+Write-Output "  geometry_statuses: $($geometryStatuses -join ', ')"
 Write-Output "  lotpack_lotp_count:        $lotpack_lotp_count"
 Write-Output "  lotpack_legacy_900_count:  $lotpack_legacy_900_count"
+Write-Output "  lotheader_loth_count:       $lotheader_loth_count"
 
 # ---------------------------------------------------------------------------
 # Write output
@@ -357,11 +436,12 @@ New-Item -ItemType Directory -Force -Path $outputFull | Out-Null
 $generatedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
 
 $reportJson = [ordered]@{
-    schema                      = 'pzmapforge.build42-reference-geometry-report.v0.1'
+    schema                      = 'pzmapforge.build42-reference-geometry-report.v0.2'
     claim_boundary              = 'evidence_record_only_not_load_tested_not_playable'
     generated_at_utc            = $generatedAt
     source_path                 = $sourceFull.Replace('\','/')
     geometry_status             = $geometryStatus
+    geometry_statuses           = @($geometryStatuses)
     REFERENCE_GEOMETRY_OBSERVED = $true
     PLAYABLE_EXPORT_CLAIM_ALLOWED = 'false'
     lotpack_count               = $totalLotpack
@@ -374,6 +454,7 @@ $reportJson = [ordered]@{
     chunkdata_body_1024_count   = $body_1024_count
     chunkdata_body_256_count    = $body_256_count
     lotheader_count             = $lotheaderRecords.Count
+    lotheader_loth_count         = $lotheader_loth_count
     text_files_found            = @($textFiles)
     lotpack_records             = @($lotpackRecords)
     chunkdata_records           = @($chunkdataRecords)
@@ -385,19 +466,18 @@ $reportJson = [ordered]@{
         playable_export_claimed         = $false
         compiled_writer_implemented     = $false
         load_test_performed             = $false
-        only_lotpack_files_read_binary  = $false
         only_prefix_bytes_read          = $true
     }
 }
 
 $jsonPath = Join-Path $outputFull 'build42-reference-geometry-report.json'
-$reportJson | ConvertTo-Json -Depth 6 | Set-Content -Path $jsonPath -Encoding UTF8
+$reportJson | ConvertTo-Json -Depth 8 | Set-Content -Path $jsonPath -Encoding UTF8
 Write-Output "Report JSON: $jsonPath"
 
 $md = @"
 # Build 42 Reference Geometry Report
 
-Schema: pzmapforge.build42-reference-geometry-report.v0.1
+Schema: pzmapforge.build42-reference-geometry-report.v0.2
 Generated: $generatedAt
 Source: $($sourceFull.Replace('\','/'))
 
@@ -405,23 +485,31 @@ Source: $($sourceFull.Replace('\','/'))
 
 **$geometryStatus**
 
+Statuses: $($geometryStatuses -join ' | ')
+
 ## Observed counts
 
-| Type | Found | 900-model match |
-|---|---:|---:|
-| .lotpack files | $totalLotpack | hdrA=900: $hdrA_900_count, hdrB=7204: $hdrB_7204_count |
+| Type | Found | Detail |
+|---|---:|---|
+| .lotpack files | $totalLotpack | LOTP: $lotpack_lotp_count, legacy-900: $lotpack_legacy_900_count |
 | chunkdata .bin | $totalChunkdata | body=900: $body_900_count, body=1024: $body_1024_count, body=256: $body_256_count |
-| .lotheader | $($lotheaderRecords.Count) | — |
+| .lotheader | $($lotheaderRecords.Count) | LOTH: $lotheader_loth_count |
 | Text files | $($textFiles.Count) | — |
 
 ## .lotpack records
 $(foreach ($r in $lotpackRecords) {
-    if ($r['lotpack_format'] -eq 'LOTP') { "- $($r['file']) size=$($r['size_bytes']) format=LOTP note=$($r['note'])" }
-    else { "- $($r['file']) size=$($r['size_bytes']) format=legacy hdrA=$($r['hdrA_u32le']) hdrB=$($r['hdrB_u32le']) note=$($r['note'])" }
+    if ($r['lotpack_format'] -eq 'LOTP') { "- $($r['file']) size=$($r['size_bytes']) format=LOTP version=$($r['lotpack_version_field_u32le'])" }
+    else { "- $($r['file']) size=$($r['size_bytes']) format=legacy hdrA=$($r['hdrA_u32le']) hdrB=$($r['hdrB_u32le'])" }
 })
 
 ## chunkdata records
-$(foreach ($r in $chunkdataRecords) { "- $($r.file) size=$($r.size_bytes) body=$($r.body_bytes) grid=$($r.chunk_grid_candidate)" })
+$(foreach ($r in $chunkdataRecords) { "- $($r['file']) size=$($r['size_bytes']) body=$($r['body_bytes']) grid=$($r['chunk_grid_candidate'])" })
+
+## .lotheader records
+$(foreach ($r in $lotheaderRecords) {
+    if ($r['lotheader_format'] -eq 'LOTH') { "- $($r['file']) size=$($r['size_bytes']) format=LOTH version=$($r['lotheader_version_field_u32le'])" }
+    else { "- $($r['file']) size=$($r['size_bytes']) format=legacy field0=$($r['first_u32le'])" }
+})
 
 ## Safety
 
@@ -439,7 +527,7 @@ $(foreach ($r in $chunkdataRecords) { "- $($r.file) size=$($r.size_bytes) body=$
 
 - Not a load test.
 - Not a playable export.
-- No PZ assets copied or read.
+- No PZ assets copied or read into repo.
 - No files modified in source.
 - PLAYABLE_EXPORT_CLAIM_ALLOWED=false
 "@

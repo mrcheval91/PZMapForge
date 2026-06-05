@@ -114,9 +114,11 @@ The full geometry claim for Build 42 remains GEOMETRY_MODEL_STILL_UNVERIFIED unt
 - The tiles-per-chunk value (8 tiles for 256-model) is confirmed.
 - A successful load test is achieved.
 
-Also noted: lotheader files have field0 = 1213484876 = 0x485A544C.
-Bytes in file order (LE): `4C 54 5A 48` = ASCII "LTZH". This may be a Build 42
-lotheader magic header (analogous to LOTP for lotpacks). Not yet confirmed.
+Also noted: lotheader files have field0 = 1213484876 = 0x48544F4C.
+Bytes in file order (LE): `4C 4F 54 48` = ASCII "LOTH". This is the Build 42
+lotheader magic header (analogous to LOTP for lotpacks). Confirmed in MAP-6H.
+Note: an earlier draft of MAP-6G incorrectly wrote the hex as 0x485A544C ("LOTH")
+due to a transcription error. The correct hex is 0x48544F4C = "LOTH".
 
 ---
 

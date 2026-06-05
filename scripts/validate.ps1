@@ -228,6 +228,19 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-6H Build 42 LOTP LTZH deep inspection ---"
+$map6hDoc = Join-Path $repoRoot 'docs\MAP_6H_BUILD42_LOTP_LOTH_DEEP_INSPECTION.md'
+if (-not (Test-Path -LiteralPath $map6hDoc)) { throw "MAP-6H doc missing: docs\MAP_6H_BUILD42_LOTP_LOTH_DEEP_INSPECTION.md" }
+Write-Output "OK: docs\MAP_6H_BUILD42_LOTP_LOTH_DEEP_INSPECTION.md"
+$map6hContent = Get-Content -LiteralPath $map6hDoc -Raw
+if ($map6hContent -notmatch 'BUILD42_LOTH_LOTHEADER_FORMAT_OBSERVED') { throw "MAP-6H doc missing BUILD42_LOTH_LOTHEADER_FORMAT_OBSERVED sentinel" }
+Write-Output "OK: doc contains BUILD42_LOTH_LOTHEADER_FORMAT_OBSERVED"
+if ($map6hContent -notmatch 'BUILD42_256_MODEL_STRONGLY_SUPPORTED') { throw "MAP-6H doc missing BUILD42_256_MODEL_STRONGLY_SUPPORTED sentinel" }
+Write-Output "OK: doc contains BUILD42_256_MODEL_STRONGLY_SUPPORTED"
+if ($map6hContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6H doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false sentinel" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+
+Write-Output ""
 Write-Output "--- MAP-6G Build 42 LOTP lotpack evidence ---"
 $map6gDoc = Join-Path $repoRoot 'docs\MAP_6G_BUILD42_LOTP_LOTPACK_EVIDENCE.md'
 if (-not (Test-Path -LiteralPath $map6gDoc)) { throw "MAP-6G doc missing: docs\MAP_6G_BUILD42_LOTP_LOTPACK_EVIDENCE.md" }
@@ -345,9 +358,9 @@ $psChecks = [ordered]@{
     'Primitive classification'            = 22
     'Plan recommendations contract'       = 28
     'Proof packet'                        = 102
-    'Build42 geometry inspector tests'    = 15
+    'Build42 geometry inspector tests'    = 23
 }
-$psTotal = 507   # = validation_summary.total_expected_assertions in proof-packet v0.16
+$psTotal = 515   # = validation_summary.total_expected_assertions in proof-packet v0.16
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 250   # PZMapForge.Cli.Tests (MAP-6E: +2 geometry model status tests)

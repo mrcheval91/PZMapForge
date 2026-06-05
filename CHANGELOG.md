@@ -8,6 +8,46 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6H: Build 42 LOTP LOTH deep reference inspection)
+- docs/MAP_6H_BUILD42_LOTP_LOTH_DEEP_INSPECTION.md: deep inspection evidence.
+  - LOTP lotpack: magic bytes, version field, deep prefix fields documented.
+  - LOTH lotheader: magic 4C 54 5A 48 = "LOTH"; bytes 4-7 = version=1 (Drummondville).
+  - Chunkdata body=1024 supports 32x32 chunk grid and 256x256 cell model.
+  - BUILD42_256_MODEL_STRONGLY_SUPPORTED when LOTP+LOTH+1024 all present.
+  - Why MAP-6G insufficient for writer; what remains unknown.
+  - PLAYABLE_EXPORT_CLAIM_ALLOWED=false; GEOMETRY_MODEL_STILL_NOT_LOAD_TESTED.
+- scripts/inspect-build42-reference-geometry.ps1 extended (MAP-6H):
+  - LOTH magic detection: if bytes 0-3 = 4C 54 5A 48 → lotheader_format=LOTH.
+  - LOTH branch records: lotheader_magic/version_field/first_16/32/64_bytes_hex/u32le_words_first_64.
+  - Legacy lotheader: adds lotheader_format=legacy, first_64_bytes_hex.
+  - LOTP branch: adds first_16/32/64_bytes_hex, u32le_words_first_64.
+  - Chunkdata: extends to 32-byte prefix; adds first_32_bytes_hex, u32le_words_first_32.
+  - New counters: lotheader_ltz_count.
+  - geometry_statuses array: BUILD42_LOTP/LOTH/32X32/256_STRONGLY_SUPPORTED/BUILD41/NOT_LOAD_TESTED.
+  - Primary geometry_status: BUILD42_256_MODEL_STRONGLY_SUPPORTED when all three present.
+  - Schema bumped to v0.2; ConvertTo-Json -Depth 8.
+  - Slice-ToHex and Get-U32Words helpers added.
+- scripts/test-build42-reference-geometry-inspector.ps1: Tests 16-23 added:
+  - T16-17: LOTP deep fields (first_16/32_bytes_hex) in LOTP record.
+  - T18: LOTH/LOTP/chunkdata1024 source exits 0.
+  - T19-20: lotheader_format=LOTH, lotheader_magic=LOTH.
+  - T21: lotheader_ltz_count >= 1.
+  - T22: BUILD42_LOTH_LOTHEADER_FORMAT_OBSERVED in geometry_statuses.
+  - T23: BUILD42_32X32_CHUNK_GRID_OBSERVED in geometry_statuses.
+  - psTotal 507→515; build42_geometry_inspector_tests 15→23.
+- scripts/validate.ps1: MAP-6H sentinel (4 checks); psTotal 507→515.
+- scripts/write-proof-packet.ps1: counts updated (23/515).
+- scripts/test-proof-packet.ps1: assertions updated (23/515).
+- docs/IMPLEMENTATION.md: MAP-6H ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6H section.
+
+No writer implemented. No load test. No PZ assets into repo. No playable export claim.
+PS 515 / .NET 440 unchanged.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-6G: Build 42 LOTP lotpack evidence and inspector hardening)
 - docs/MAP_6G_BUILD42_LOTP_LOTPACK_EVIDENCE.md: Drummondville reference evidence.
   - world_0_0.lotpack size=1057348; first 4 bytes = 4C 4F 54 50 = LOTP magic.

@@ -590,6 +590,25 @@ Artifacts: `docs/MAP_6G_BUILD42_LOTP_LOTPACK_EVIDENCE.md`.
 
 No playable export claim. No load test. No PZ assets into repo.
 
+**MAP-6H — Build 42 LOTP LOTH deep reference inspection:**
+MAP-6H extends the inspector to capture bounded word-level prefixes and
+detects the Build 42 `LOTH` lotheader magic. Combined with LOTP and chunkdata
+body=1024, the evidence now strongly supports the 256×256 model.
+
+Key findings:
+- Build 42 lotheaders begin with `4C 54 5A 48` = `LOTH` magic (20/20 Drummondville).
+- All three indicators present together → `BUILD42_256_MODEL_STRONGLY_SUPPORTED`.
+- Inspector now records `geometry_statuses` array; `first_16/32/64_bytes_hex`;
+  `u32le_words_first_64`; `lotheader_ltz_count`.
+- Schema bumped to `v0.2`.
+
+Status labels: BUILD42_LOTH_LOTHEADER_FORMAT_OBSERVED, BUILD42_32X32_CHUNK_GRID_OBSERVED,
+BUILD42_256_MODEL_STRONGLY_SUPPORTED, GEOMETRY_MODEL_STILL_NOT_LOAD_TESTED.
+
+Artifacts: `docs/MAP_6H_BUILD42_LOTP_LOTH_DEEP_INSPECTION.md`.
+
+No writer implemented. No load test. No PZ assets into repo. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6E — Build 42 geometry model audit:**
 MAP-6E audits all 300×300 geometry assumptions in the repo and records the
 operator observation that Build 42 may use a 256×256 cell model.

@@ -120,8 +120,8 @@ Assert-True ([int]$p.validation_summary.hardening_harness                -eq 36)
 Assert-True ([int]$p.validation_summary.region_extraction                -eq 24)  "region_extraction == 24"
 Assert-True ([int]$p.validation_summary.primitive_classification          -eq 22)  "primitive_classification == 22"
 Assert-True ([int]$p.validation_summary.plan_recommendations_contract     -eq 28)  "plan_recommendations_contract == 28"
-Assert-True ([int]$p.validation_summary.build42_geometry_inspector_tests  -eq 15)  "build42_geometry_inspector_tests == 15"
-Assert-True ([int]$p.validation_summary.total_expected_assertions         -eq 507) "total_expected_assertions == 507"
+Assert-True ([int]$p.validation_summary.build42_geometry_inspector_tests  -eq 23)  "build42_geometry_inspector_tests == 23"
+Assert-True ([int]$p.validation_summary.total_expected_assertions         -eq 515) "total_expected_assertions == 515"
 
 # ---------------------------------------------------------------------------
 # dotnet_validation_summary (separate lane)
