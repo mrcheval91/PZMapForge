@@ -8,6 +8,44 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-5D: Build 42 experimental package writer)
+- src/PZMapForge.Cli/Program.cs: --build42-package flag for map-export-experimental.
+  - When set: generates Contents/mods/<id>/ nested layout under
+    <output>/<id>_build42_workshop/ matching Build 42 ModTemplate structure.
+  - workshop.txt with visibility=private.
+  - preview.png and poster.png as 256x64 placeholder PNGs via WritePlaceholderPng
+    (System.Drawing, no PZ assets read or copied).
+  - Contents/mods/<id>/mod.info with Build 42 fields:
+    category=map, modversion=1.0, pzversion=42.0, versionMin=42.0, poster=poster.png.
+  - map.info: title+description only (no lots field, matching ModTemplate).
+  - spawnpoints.lua, objects.lua, README, thumb.png (64x64 placeholder PNG).
+  - Binary files (lotheader/lotpack/chunkdata) unchanged from MAP-5A.
+  - Report JSON: package_layout=build42_workshop, playable_export_generated=false,
+    load_tested=false, experimental_writer=true.
+  - 14 files total in package.
+  - WritePlaceholderPng static helper added.
+  - When --build42-package not set: original flat layout (MAP-5A) unchanged.
+- tests/PZMapForge.Cli.Tests/MapExportExperimentalBuild42ProcessTests.cs: 12 tests:
+  - exits 0 and creates package root
+  - workshop.txt at root, preview.png at root
+  - nested mod.info, mod.info has category=map
+  - lotheader 8b, lotpack 7208b, chunkdata 902b at nested paths
+  - lotpack first 8 bytes match known header
+  - chunkdata first 2 bytes match 0001
+  - exactly 14 files under package root
+  - report JSON: package_layout=build42_workshop, safety flags
+- scripts/validate.ps1: cli_tests 207→219, total 397→409.
+- scripts/write-proof-packet.ps1 + test-proof-packet.ps1: counts updated.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-5D section added.
+- docs/IMPLEMENTATION.md: MAP-5D ratified row added.
+
+MAP-5B remains LOAD_TEST_INCONCLUSIVE. Binary hypotheses remain UNTESTED.
+No PZ assets read or copied. No .local files committed. No playable export claim.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-5C: Build 42 mod packaging discovery record)
 - docs/MAP_5C_BUILD42_MOD_PACKAGING_DISCOVERY.md: packaging discovery record.
   - MAP-5B result: LOAD_TEST_INCONCLUSIVE (Build 42 packaging/discovery blocker).

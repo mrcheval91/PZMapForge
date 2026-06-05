@@ -430,6 +430,20 @@ Artifacts:
   ModTemplate; reads workshop.txt/mod.info/map.info; outputs inspection JSON + MD
   under `.local/` only; does not copy or modify files.
 
+**MAP-5D — Build 42 experimental package writer:**
+MAP-5D adds `--build42-package` to `map-export-experimental`. When set, the
+command generates a correct Build 42 Workshop-style nested package under
+`.local/<output>/<map_id>_build42_workshop/` instead of the MAP-5A flat layout.
+
+Package layout matches the PZ ModTemplate (`Contents/mods/<id>/` nested structure):
+`workshop.txt`, `preview.png`, `Contents/mods/<id>/mod.info` (with `category=map`,
+`modversion=1.0`, `pzversion=42.0`, `versionMin=42.0`), `poster.png`, `thumb.png`,
+and all compiled binary files at `Contents/mods/<id>/media/maps/<id>/`.
+
+Report includes `package_layout: "build42_workshop"`.
+Placeholder PNGs are generated via System.Drawing (no PZ assets read or copied).
+MAP-5B remains LOAD_TEST_INCONCLUSIVE. Binary hypotheses remain UNTESTED.
+
 ---
 
 ## 6. Source / editing format contract
