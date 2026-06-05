@@ -8,6 +8,45 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6J: Build 42 writer contract)
+- docs/MAP_6J_BUILD42_WRITER_CONTRACT.md: exact byte-level writer contracts.
+  - LOTP: magic(4C4F5450) + version(1) + chunk_count(1024) + offset table (12+1024x8=8204).
+  - LOTH: magic(4C4F5448) + version(1) + entry_count(variable) + newline-delimited names.
+  - Chunkdata: 1026 bytes = 00 01 header + 1024-byte body.
+  - File set: 7 required files under 42/ versioned layout.
+  - Explicit unknowns: chunk_payload_format, loth_minimum_entries, lotp_empty_chunk_offsets, chunk_payload_size.
+  - Status: BUILD42_WRITER_CONTRACT_CREATED; WRITER_NOT_IMPLEMENTED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- schemas/pzmapforge.build42-writer-plan.v0.1.schema.json: full schema.
+  - Required fields: schema, claim_boundary, created_at, map_id, cell, target_layout, geometry_model,
+    lotp_contract, loth_contract, chunkdata_contract, file_set_contract, unknowns, safety.
+  - Safety fields all const false (writer_implemented/load_test_performed/playable_export_claimed/pz_assets_copied).
+  - lotp_contract.magic_ascii const LOTP; loth_contract.magic_ascii const LOTH.
+- examples/build42-writer-plan/minimal-empty-cell-writer-plan.json: schema instance.
+  - map_id=pzmapforge_build42_candidate_empty_cell, cell=(0,0).
+  - geometry_model: chunk_count=1024, cell_size_tiles=256, strongly_supported_not_load_tested.
+  - lotp/loth/chunkdata contracts fully filled; all unknowns listed.
+  - contract_review_required=true; candidate_plan_ready_for_writer=false.
+- scripts/test-build42-writer-contract.ps1: 20 assertions.
+  - Tests 1-4: doc exists + three sentinels.
+  - Tests 5-6: schema and example exist.
+  - Test 7: example parses.
+  - Tests 8-16: field values (schema, safety x3, geometry x2, magic x2, size).
+  - Tests 17-19: unknowns (chunk_payload_format, loth_minimum_entries, contract_review_required).
+  - Test 20: no playable_export_claimed:true in example.
+  - psTotal 528→548.
+- scripts/validate.ps1: MAP-6J test run added; psTotal 528→548.
+- scripts/write-proof-packet.ps1: build42_writer_contract_tests=20; total 548.
+- scripts/test-proof-packet.ps1: assertions updated (20/548).
+- docs/IMPLEMENTATION.md: MAP-6J ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6J section.
+
+No writer implemented. No load test. No PZ assets into repo. No playable export claim.
+PS 548 / .NET 440 unchanged.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-6I: Build 42 format design matrix)
 - docs/MAP_6I_BUILD42_FORMAT_DESIGN_MATRIX.md: design matrix doc.
   - MAP-6H result summary; stability observations; candidate writer layouts.

@@ -1,0 +1,93 @@
+{
+  "schema": "pzmapforge.build42-writer-plan.v0.1",
+  "claim_boundary": "writer_plan_only_not_implemented_not_load_tested",
+  "created_at": "2026-06-05T00:00:00Z",
+  "map_id": "pzmapforge_build42_candidate_empty_cell",
+  "cell": { "x": 0, "y": 0 },
+  "target_layout": "build42_loose_versioned",
+  "geometry_model": {
+    "chunk_grid": "32x32",
+    "chunk_count": 1024,
+    "cell_size_tiles": 256,
+    "tiles_per_chunk": 8,
+    "status": "strongly_supported_not_load_tested"
+  },
+  "lotp_contract": {
+    "magic_bytes": "4c4f5450",
+    "magic_ascii": "LOTP",
+    "bytes_4_7": "01000000",
+    "version_u32le": 1,
+    "bytes_8_11": "00040000",
+    "chunk_count_u32le": 1024,
+    "offset_table_start_byte": 12,
+    "offset_table_bytes": 8192,
+    "first_payload_offset": 8204,
+    "offset_entry_format": "u64_le_candidate",
+    "chunk_payload_status": "unknown",
+    "candidate_strategy": "all_zero_hypothesis_only_not_proven",
+    "notes": "Offset table: 12 + 1024x8 = 8204. Chunk payload format not known. All-zero is candidate hypothesis only."
+  },
+  "loth_contract": {
+    "magic_bytes": "4c4f5448",
+    "magic_ascii": "LOTH",
+    "bytes_4_7": "01000000",
+    "version_u32le": 1,
+    "bytes_8_11": "entry_count_u32le_variable",
+    "string_table_format": "newline_delimited_ascii",
+    "minimum_entries_status": "unknown",
+    "candidate_first_entry": "blends_grassoverlays_01_0",
+    "notes": "Entry format: <name>\\n per entry (MAP-4E confirmed). Minimum required set unknown."
+  },
+  "chunkdata_contract": {
+    "size_bytes": 1026,
+    "header_bytes": "0001",
+    "header_role": "2_byte_header_consistent_build41_build42",
+    "body_bytes": 1024,
+    "body_format": "32x32_chunk_grid_1_byte_per_chunk",
+    "body_candidate": "all_zero_hypothesis_only_not_proven",
+    "notes": "1026 bytes = 2 header + 1024 body. All-zero body is hypothesis only."
+  },
+  "file_set_contract": {
+    "layout": "build42_loose_versioned",
+    "files": [
+      { "name": "{x}_{y}.lotheader",      "role": "lotheader",     "format": "LOTH_candidate" },
+      { "name": "world_{x}_{y}.lotpack",  "role": "lotpack",       "format": "LOTP_candidate" },
+      { "name": "chunkdata_{x}_{y}.bin",  "role": "chunkdata",     "format": "chunkdata_candidate" },
+      { "name": "map.info",               "role": "map_metadata",  "format": "text_keyvalue" },
+      { "name": "spawnpoints.lua",        "role": "spawn_points",  "format": "lua" },
+      { "name": "objects.lua",            "role": "objects",       "format": "lua_return_empty" },
+      { "name": "mod.info",               "role": "mod_metadata",  "format": "text_keyvalue" }
+    ],
+    "versioned_path": "42/"
+  },
+  "unknowns": [
+    {
+      "id": "chunk_payload_format",
+      "description": "LOTP chunk data encoding, compression, and content format after the offset table. Required before writer can produce valid LOTP files."
+    },
+    {
+      "id": "loth_minimum_entries",
+      "description": "Minimum required tileset entry set for a LOTH lotheader to be accepted by Build 42. Required before writer can produce valid LOTH files."
+    },
+    {
+      "id": "lotp_empty_chunk_offsets",
+      "description": "How to correctly encode the offset table for all-empty chunks (zero-size? repeated? sequential?). Dependent on chunk_payload_format."
+    },
+    {
+      "id": "chunk_payload_size",
+      "description": "Actual size of each chunk data block in the LOTP file. Reference shows ~1024 bytes per chunk but this may differ for empty/minimal cells."
+    },
+    {
+      "id": "build42_load_test",
+      "description": "No load test has been performed with any candidate format. All byte layouts are hypothesis only."
+    }
+  ],
+  "contract_review_required": true,
+  "candidate_plan_ready_for_writer": false,
+  "safety": {
+    "writer_implemented": false,
+    "load_test_performed": false,
+    "playable_export_claimed": false,
+    "pz_assets_copied": false
+  }
+}

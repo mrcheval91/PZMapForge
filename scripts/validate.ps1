@@ -228,6 +228,11 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-6J Build 42 writer contract ---"
+& powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts\test-build42-writer-contract.ps1')
+if ($LASTEXITCODE -ne 0) { throw "MAP-6J writer contract tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-6I Build 42 format design matrix ---"
 $map6iDoc    = Join-Path $repoRoot 'docs\MAP_6I_BUILD42_FORMAT_DESIGN_MATRIX.md'
 $map6iScript = Join-Path $repoRoot 'scripts\derive-build42-format-design-matrix.ps1'
@@ -384,8 +389,9 @@ $psChecks = [ordered]@{
     'Proof packet'                        = 102
     'Build42 geometry inspector tests'    = 23
     'Build42 format design matrix tests' = 13
+    'Build42 writer contract tests'      = 20
 }
-$psTotal = 528   # = validation_summary.total_expected_assertions in proof-packet v0.16
+$psTotal = 548   # = validation_summary.total_expected_assertions in proof-packet v0.16
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 250   # PZMapForge.Cli.Tests (MAP-6E: +2 geometry model status tests)

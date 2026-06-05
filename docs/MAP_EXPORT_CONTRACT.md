@@ -552,6 +552,27 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6J — Build 42 writer contract:**
+MAP-6J codifies the Build 42 binary format contracts into exact byte-level
+definitions and adds a writer-plan schema and example.
+
+Key contracts:
+- LOTP lotpack: magic `4C 4F 54 50`, version=1, chunk_count=1024, offset table
+  starts at byte 12 (12 + 1024×8 = 8204 first payload offset). **Chunk payload
+  format unknown** — major remaining gap.
+- LOTH lotheader: magic `4C 4F 54 48`, version=1, entry_count U32 LE, then
+  newline-delimited tileset names. **Minimum entry set unknown.**
+- Chunkdata: 1026 bytes = 2 header + 1024 body (all-zero hypothesis).
+- File set: 7 required files under `42/` versioned layout.
+
+Schema: `schemas/pzmapforge.build42-writer-plan.v0.1.schema.json`
+Example: `examples/build42-writer-plan/minimal-empty-cell-writer-plan.json`
+
+Status: `BUILD42_WRITER_CONTRACT_CREATED`. `WRITER_NOT_IMPLEMENTED`.
+`contract_review_required = true`. `candidate_plan_ready_for_writer = false`.
+
+No writer implemented. No load test. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6I — Build 42 format design matrix:**
 MAP-6I adds `scripts/derive-build42-format-design-matrix.ps1` which reads a MAP-6H
 reference geometry report and produces a word-level stability matrix for LOTP

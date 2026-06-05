@@ -1,0 +1,179 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pzmapforge.build42-writer-plan.v0.1",
+  "title": "PZMapForge Build 42 Writer Plan v0.1",
+  "description": "Candidate writer plan for a Build 42 PZMapForge map cell. Writer plan only — not implemented, not load-tested, not a playable export.",
+  "type": "object",
+  "required": [
+    "schema",
+    "claim_boundary",
+    "created_at",
+    "map_id",
+    "cell",
+    "target_layout",
+    "geometry_model",
+    "lotp_contract",
+    "loth_contract",
+    "chunkdata_contract",
+    "file_set_contract",
+    "unknowns",
+    "safety"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "pzmapforge.build42-writer-plan.v0.1"
+    },
+    "claim_boundary": {
+      "type": "string",
+      "const": "writer_plan_only_not_implemented_not_load_tested"
+    },
+    "created_at": {
+      "type": "string",
+      "description": "ISO 8601 UTC creation timestamp"
+    },
+    "map_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9_-]+$"
+    },
+    "cell": {
+      "type": "object",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "integer", "minimum": 0 },
+        "y": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "target_layout": {
+      "type": "string",
+      "enum": ["build42_loose_versioned"]
+    },
+    "geometry_model": {
+      "type": "object",
+      "required": ["chunk_grid", "chunk_count", "cell_size_tiles", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "chunk_grid":       { "type": "string" },
+        "chunk_count":      { "type": "integer" },
+        "cell_size_tiles":  { "type": "integer" },
+        "tiles_per_chunk":  { "type": "integer" },
+        "status":           { "type": "string" }
+      }
+    },
+    "lotp_contract": {
+      "type": "object",
+      "required": [
+        "magic_bytes", "magic_ascii", "version_u32le",
+        "chunk_count_u32le", "offset_table_start_byte",
+        "offset_table_bytes", "first_payload_offset",
+        "chunk_payload_status", "candidate_strategy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "magic_bytes":              { "type": "string" },
+        "magic_ascii":              { "type": "string", "const": "LOTP" },
+        "bytes_4_7":                { "type": "string" },
+        "version_u32le":            { "type": "integer" },
+        "bytes_8_11":               { "type": "string" },
+        "chunk_count_u32le":        { "type": "integer" },
+        "offset_table_start_byte":  { "type": "integer" },
+        "offset_table_bytes":       { "type": "integer" },
+        "first_payload_offset":     { "type": "integer" },
+        "offset_entry_format":      { "type": "string" },
+        "chunk_payload_status":     { "type": "string" },
+        "candidate_strategy":       { "type": "string" },
+        "notes":                    { "type": "string" }
+      }
+    },
+    "loth_contract": {
+      "type": "object",
+      "required": [
+        "magic_bytes", "magic_ascii", "version_u32le",
+        "string_table_format", "minimum_entries_status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "magic_bytes":             { "type": "string" },
+        "magic_ascii":             { "type": "string", "const": "LOTH" },
+        "bytes_4_7":               { "type": "string" },
+        "version_u32le":           { "type": "integer" },
+        "bytes_8_11":              { "type": "string" },
+        "string_table_format":     { "type": "string" },
+        "minimum_entries_status":  { "type": "string" },
+        "candidate_first_entry":   { "type": "string" },
+        "notes":                   { "type": "string" }
+      }
+    },
+    "chunkdata_contract": {
+      "type": "object",
+      "required": [
+        "size_bytes", "header_bytes", "body_bytes",
+        "body_format", "body_candidate"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "size_bytes":      { "type": "integer" },
+        "header_bytes":    { "type": "string" },
+        "header_role":     { "type": "string" },
+        "body_bytes":      { "type": "integer" },
+        "body_format":     { "type": "string" },
+        "body_candidate":  { "type": "string" },
+        "notes":           { "type": "string" }
+      }
+    },
+    "file_set_contract": {
+      "type": "object",
+      "required": ["layout", "files", "versioned_path"],
+      "additionalProperties": false,
+      "properties": {
+        "layout":          { "type": "string" },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "role", "format"],
+            "additionalProperties": false,
+            "properties": {
+              "name":   { "type": "string" },
+              "role":   { "type": "string" },
+              "format": { "type": "string" }
+            }
+          }
+        },
+        "versioned_path":  { "type": "string" }
+      }
+    },
+    "unknowns": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "id":          { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "contract_review_required": { "type": "boolean" },
+    "candidate_plan_ready_for_writer": { "type": "boolean" },
+    "safety": {
+      "type": "object",
+      "required": [
+        "writer_implemented", "load_test_performed",
+        "playable_export_claimed", "pz_assets_copied"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "writer_implemented":      { "type": "boolean", "const": false },
+        "load_test_performed":     { "type": "boolean", "const": false },
+        "playable_export_claimed": { "type": "boolean", "const": false },
+        "pz_assets_copied":        { "type": "boolean", "const": false }
+      }
+    }
+  }
+}
