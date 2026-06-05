@@ -8,6 +8,43 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6C: Lotheader format research packet and candidate writer gate)
+- docs/MAP_6C_LOTHEADER_FORMAT_RESEARCH_PACKET.md:
+  - MAP-4E evidence summary for lotheader structure.
+  - IsoLot.readInt EOF failure analysis (why 8-byte placeholder fails).
+  - Candidate matrix: v0=current_failed (known_failing), v1=newline_tileset_table
+    (generated_not_load_tested), v2=not_implemented.
+  - objects.lua syntax fix documented (return {} not load-tested).
+  - LOTHEADER_CANDIDATE_V0=current_failed, LOTHEADER_CANDIDATE_V1=newline_tileset_table
+  - PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+- src/PZMapForge.Cli/Program.cs:
+  - --lotheader-candidate flag added to map-export-experimental (default=current_failed).
+  - BuildLotheaderForCandidate helper method (MAP-4E format model).
+  - Report JSON new fields: lotheader_candidate, lotheader_candidate_status,
+    lotheader_sha256, lotheader_first_bytes, lotheader_byte_count.
+  - binary_runtime_status now candidate-aware: candidate_generated_not_load_tested
+    for newline_tileset_table, failing_placeholder_format for current_failed.
+  - objects.lua fixed from comment-only to return {} (syntactically valid Lua).
+  - objects_lua_runtime_status changed to syntax_candidate_not_load_tested.
+  - Applied to both MAP-5A flat layout and MAP-5D build42_workshop paths.
+- tests/PZMapForge.Cli.Tests/MapExportExperimentalProcessTests.cs:
+  - Tests 21-26: lotheader_candidate (default), lotheader_candidate_status (default),
+    lotheader_sha256 (64-char hex), newline_tileset_table binary_runtime_status,
+    newline_tileset_table candidate_status, objects.lua contains return {}.
+  - cli_tests 234→240.
+- scripts/validate.ps1: MAP-6C sentinel section (4 checks); dnCliTests 234→240; dnTotal 424→430.
+- scripts/write-proof-packet.ps1: cli_tests 234→240, test_total 424→430.
+- scripts/test-proof-packet.ps1: assertions updated.
+- docs/IMPLEMENTATION.md: MAP-6C ratified row added.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6C section added.
+
+No load test performed. No PZ assets. No playable export claim.
+PS 492 unchanged. .NET 430 (cli_tests 240).
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-6B: Build 42 binary format failure record)
 - docs/MAP_6B_BINARY_FORMAT_FAILURE_RECORD.md: runtime failure evidence record.
   - Status labels: DISCOVERY_PASS_VERSIONED_LAYOUT, MAP_FILES_DISCOVERED_BY_PZ,

@@ -512,6 +512,29 @@ Artifacts:
 No playable export claim. BINARY_FAILURE_CONFIRMED. Real binary format
 implementation is the next required step before any further load test.
 
+**MAP-6C — Lotheader format research packet and candidate writer gate:**
+MAP-6C adds a research packet documenting the lotheader format based on MAP-4E
+evidence, adds a `--lotheader-candidate` flag to `map-export-experimental`, and
+fixes `objects.lua` from comment-only to a syntactically valid empty Lua file.
+
+Candidate matrix:
+- `current_failed` (default): 8-byte all-zero placeholder, known failing (MAP-6B).
+- `newline_tileset_table`: MAP-4E format model (version+count+entries), 0 entries
+  for empty cell. Bytes are identical to `current_failed` for the 0-entry case.
+  Status: `generated_not_load_tested`.
+- `v2_length_prefixed_or_int_table`: NOT IMPLEMENTED — insufficient evidence.
+
+Report JSON fields added:
+- `lotheader_candidate`, `lotheader_candidate_status`
+- `lotheader_sha256`, `lotheader_first_bytes`, `lotheader_byte_count`
+- `binary_runtime_status` = `"candidate_generated_not_load_tested"` for newline_tileset_table
+- `objects_lua_runtime_status` = `"syntax_candidate_not_load_tested"` (was invalid_or_not_accepted)
+
+Artifacts:
+- `docs/MAP_6C_LOTHEADER_FORMAT_RESEARCH_PACKET.md` — research packet.
+
+No playable export claim. No load test. No PZ assets.
+
 ---
 
 ## 6. Source / editing format contract

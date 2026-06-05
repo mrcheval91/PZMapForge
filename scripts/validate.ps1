@@ -228,6 +228,19 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-6C lotheader format research packet ---"
+$map6cDoc = Join-Path $repoRoot 'docs\MAP_6C_LOTHEADER_FORMAT_RESEARCH_PACKET.md'
+if (-not (Test-Path -LiteralPath $map6cDoc)) { throw "MAP-6C doc missing: docs\MAP_6C_LOTHEADER_FORMAT_RESEARCH_PACKET.md" }
+Write-Output "OK: docs\MAP_6C_LOTHEADER_FORMAT_RESEARCH_PACKET.md"
+$map6cContent = Get-Content -LiteralPath $map6cDoc -Raw
+if ($map6cContent -notmatch 'LOTHEADER_CANDIDATE_V0=current_failed') { throw "MAP-6C doc missing LOTHEADER_CANDIDATE_V0=current_failed sentinel" }
+Write-Output "OK: doc contains LOTHEADER_CANDIDATE_V0=current_failed"
+if ($map6cContent -notmatch 'LOTHEADER_CANDIDATE_V1=newline_tileset_table') { throw "MAP-6C doc missing LOTHEADER_CANDIDATE_V1=newline_tileset_table sentinel" }
+Write-Output "OK: doc contains LOTHEADER_CANDIDATE_V1=newline_tileset_table"
+if ($map6cContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6C doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false sentinel" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+
+Write-Output ""
 Write-Output "--- MAP-6B binary format failure record ---"
 $map6bDoc = Join-Path $repoRoot 'docs\MAP_6B_BINARY_FORMAT_FAILURE_RECORD.md'
 if (-not (Test-Path -LiteralPath $map6bDoc)) { throw "MAP-6B doc missing: docs\MAP_6B_BINARY_FORMAT_FAILURE_RECORD.md" }
@@ -264,8 +277,8 @@ $psChecks = [ordered]@{
 $psTotal = 492   # = validation_summary.total_expected_assertions in proof-packet v0.16
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
-$dnCliTests  = 234   # PZMapForge.Cli.Tests (MAP-6B: +4 binary runtime status tests)
-$dnTotal     = 424   # = dotnet_validation_summary.test_total in proof-packet v0.16
+$dnCliTests  = 240   # PZMapForge.Cli.Tests (MAP-6C: +6 lotheader candidate + objects.lua tests)
+$dnTotal     = 430   # = dotnet_validation_summary.test_total in proof-packet v0.16
 
 Write-Output ""
 Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.16):"

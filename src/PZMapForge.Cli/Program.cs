@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Xml;
@@ -790,17 +791,19 @@ static int MapExportExperimentalCommand(string[] args)
     // Authorized by MAP-4H: MAP-5A_ALLOWED_EXPERIMENTAL_LOCAL_ONLY.
     // Writes hypothesis-only binary files under .local only.
     // Not a playable export. Not load-tested. Experimental only.
-    var mapId          = string.Empty;
-    var outputDir      = string.Empty;
-    var cellX          = 0;
-    var cellY          = 0;
-    var build42Package = false;
+    var mapId               = string.Empty;
+    var outputDir           = string.Empty;
+    var cellX               = 0;
+    var cellY               = 0;
+    var build42Package      = false;
+    var lotheaderCandidate  = "current_failed";
 
     for (var i = 0; i < args.Length; i++)
     {
-        if      (args[i] is "--map-id" && i + 1 < args.Length)              mapId          = args[++i];
-        else if (args[i] is "--output" or "-o" && i + 1 < args.Length)      outputDir      = args[++i];
-        else if (args[i] is "--build42-package")                             build42Package = true;
+        if      (args[i] is "--map-id" && i + 1 < args.Length)              mapId              = args[++i];
+        else if (args[i] is "--output" or "-o" && i + 1 < args.Length)      outputDir          = args[++i];
+        else if (args[i] is "--build42-package")                             build42Package     = true;
+        else if (args[i] is "--lotheader-candidate" && i + 1 < args.Length) lotheaderCandidate = args[++i];
         else if (args[i] is "--cell-x" && i + 1 < args.Length)
         {
             if (int.TryParse(args[++i], out var cx)) cellX = cx;
@@ -926,11 +929,8 @@ end
 """;
         File.WriteAllText(Path.Combine(mapDataDir, "spawnpoints.lua"), spawnB42Content, Encoding.UTF8);
 
-        // objects.lua
-        File.WriteAllText(Path.Combine(mapDataDir, "objects.lua"), """
--- PZMapForge MAP-5D experimental output -- NOT VALIDATED.
--- Placeholder objects.lua. No objects defined.
-""", Encoding.UTF8);
+        // objects.lua — syntactically valid empty Lua (MAP-6C fix; return {} is not load-tested).
+        File.WriteAllText(Path.Combine(mapDataDir, "objects.lua"), "return {}\n", Encoding.UTF8);
 
         // thumb.png — tiny placeholder for map directory
         WritePlaceholderPng(Path.Combine(mapDataDir, "thumb.png"), mapId, string.Empty);
@@ -968,8 +968,10 @@ MAP-5D adds correct Build 42 Workshop package layout to address packaging blocke
             Path.Combine(mapDataDir, "README_PZMAPFORGE_BOUNDARY_EXPERIMENTAL.txt"),
             readmeB42Content, Encoding.UTF8);
 
-        // Binary: .lotheader
-        var lotheaderB42 = new byte[8];
+        // Binary: .lotheader — MAP-6C candidate writer gate
+        var (lotheaderB42, lotheaderB42CandidateStatus) = BuildLotheaderForCandidate(lotheaderCandidate);
+        var lotheaderB42Sha256     = string.Join("", SHA256.HashData(lotheaderB42).Select(b => b.ToString("x2")));
+        var lotheaderB42FirstBytes = string.Join("", lotheaderB42.Take(8).Select(b => b.ToString("x2")));
         File.WriteAllBytes(Path.Combine(mapDataDir, $"{cellCoordB42}.lotheader"), lotheaderB42);
 
         // Binary: .lotpack
@@ -1031,11 +1033,18 @@ MAP-5D adds correct Build 42 Workshop package layout to address packaging blocke
                 "build42: package uses Contents/mods nested layout per ModTemplate",
             },
             manual_load_test_required  = true,
-            binary_runtime_status      = "failing_placeholder_format",
+            binary_runtime_status      = lotheaderCandidate == "newline_tileset_table"
+                                         ? "candidate_generated_not_load_tested"
+                                         : "failing_placeholder_format",
             lotheader_runtime_status   = "eof_exception_observed",
             lotpack_runtime_status     = "unproven_after_lotheader_failure",
             chunkdata_runtime_status   = "unproven_after_lotheader_failure",
-            objects_lua_runtime_status = "invalid_or_not_accepted",
+            objects_lua_runtime_status = "syntax_candidate_not_load_tested",
+            lotheader_candidate        = lotheaderCandidate,
+            lotheader_candidate_status = lotheaderB42CandidateStatus,
+            lotheader_sha256           = lotheaderB42Sha256,
+            lotheader_first_bytes      = lotheaderB42FirstBytes,
+            lotheader_byte_count       = lotheaderB42.Length,
         };
 
         var b42JsonOpts = new JsonSerializerOptions { WriteIndented = true };
@@ -1128,12 +1137,8 @@ end
 """;
     File.WriteAllText(Path.Combine(mapDir, "spawnpoints.lua"), spawnContent, Encoding.UTF8);
 
-    // media/maps/<map_id>/objects.lua
-    var objectsContent = """
--- PZMapForge MAP-5A experimental output -- NOT VALIDATED -- not a playable Project Zomboid map.
--- Placeholder objects.lua. No objects defined. Not load-tested.
-""";
-    File.WriteAllText(Path.Combine(mapDir, "objects.lua"), objectsContent, Encoding.UTF8);
+    // media/maps/<map_id>/objects.lua — syntactically valid empty Lua (MAP-6C fix; return {} is not load-tested).
+    File.WriteAllText(Path.Combine(mapDir, "objects.lua"), "return {}\n", Encoding.UTF8);
 
     // media/maps/<map_id>/README_PZMAPFORGE_BOUNDARY_EXPERIMENTAL.txt
     var readmeContent = $"""
@@ -1166,8 +1171,10 @@ PZMapForge MAP-4H decision: MAP-5A_ALLOWED_EXPERIMENTAL_LOCAL_ONLY
         Path.Combine(mapDir, "README_PZMAPFORGE_BOUNDARY_EXPERIMENTAL.txt"),
         readmeContent, Encoding.UTF8);
 
-    // Binary: .lotheader (8 bytes — zero header + 0-entry count)
-    var lotheaderBytes = new byte[8];
+    // Binary: .lotheader — MAP-6C candidate writer gate
+    var (lotheaderBytes, lotheaderCandidateStatus) = BuildLotheaderForCandidate(lotheaderCandidate);
+    var lotheaderSha256    = string.Join("", SHA256.HashData(lotheaderBytes).Select(b => b.ToString("x2")));
+    var lotheaderFirstBytes = string.Join("", lotheaderBytes.Take(8).Select(b => b.ToString("x2")));
     File.WriteAllBytes(Path.Combine(mapDir, $"{cellCoord}.lotheader"), lotheaderBytes);
 
     // Binary: .lotpack (7208 bytes — hdrA=900, hdrB=7204, all-zero offset table)
@@ -1223,11 +1230,18 @@ PZMapForge MAP-4H decision: MAP-5A_ALLOWED_EXPERIMENTAL_LOCAL_ONLY
             "chunkdata: assuming 902-byte all-zero chunk grid is accepted for empty cell",
         },
         manual_load_test_required  = true,
-        binary_runtime_status      = "failing_placeholder_format",
+        binary_runtime_status      = lotheaderCandidate == "newline_tileset_table"
+                                     ? "candidate_generated_not_load_tested"
+                                     : "failing_placeholder_format",
         lotheader_runtime_status   = "eof_exception_observed",
         lotpack_runtime_status     = "unproven_after_lotheader_failure",
         chunkdata_runtime_status   = "unproven_after_lotheader_failure",
-        objects_lua_runtime_status = "invalid_or_not_accepted",
+        objects_lua_runtime_status = "syntax_candidate_not_load_tested",
+        lotheader_candidate        = lotheaderCandidate,
+        lotheader_candidate_status = lotheaderCandidateStatus,
+        lotheader_sha256           = lotheaderSha256,
+        lotheader_first_bytes      = lotheaderFirstBytes,
+        lotheader_byte_count       = lotheaderBytes.Length,
     };
 
     var jsonOpts      = new JsonSerializerOptions { WriteIndented = true };
@@ -1582,6 +1596,23 @@ Checks:        {passCount + failCount} total, {passCount} passed, {failCount} fa
     Console.WriteLine($"playable_export_claimed:  false");
     Console.WriteLine($"load_tested:              false");
     return failCount > 0 ? 1 : 0;
+}
+
+static (byte[] Bytes, string CandidateStatus) BuildLotheaderForCandidate(string candidate)
+{
+    // MAP-6C candidate writer gate (MAP-4E format model).
+    // Format: bytes 0-3 = version/reserved (U32=0, consistent in 16/16 observed files),
+    //         bytes 4-7 = entry count (U32 LE, 0 for empty cell),
+    //         bytes 8+  = newline-terminated ASCII tileset pack names (empty for count=0).
+    // For 0 entries both candidates produce the same 8-byte structure.
+    // candidate_v0 (current_failed) is known failing (MAP-6B: EOFException at IsoLot.readInt).
+    // candidate_v1 (newline_tileset_table) applies the MAP-4E format model explicitly.
+    var bytes = new byte[8]; // version(U32=0) + count(U32LE=0) + empty entry table
+    return candidate switch
+    {
+        "newline_tileset_table" => (bytes, "generated_not_load_tested"),
+        _                       => (bytes, "known_failing"),
+    };
 }
 
 static void WritePlaceholderPng(string path, string line1, string line2)

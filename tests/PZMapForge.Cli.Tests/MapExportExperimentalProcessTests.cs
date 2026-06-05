@@ -379,4 +379,103 @@ public sealed class MapExportExperimentalProcessTests : IDisposable
         Assert.Equal("unproven_after_lotheader_failure",
             doc.RootElement.GetProperty("chunkdata_runtime_status").GetString());
     }
+
+    // -----------------------------------------------------------------------
+    // Test 21: default lotheader_candidate is current_failed
+    // MAP-6C: backward-compatible default.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_ReportJson_DefaultLotheaderCandidateIsCurrentFailed()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir);
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        Assert.Equal("current_failed",
+            doc.RootElement.GetProperty("lotheader_candidate").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 22: default lotheader_candidate_status is known_failing
+    // MAP-6C: current_failed candidate is known to fail (MAP-6B confirmed).
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_ReportJson_DefaultCandidateStatusIsKnownFailing()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir);
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        Assert.Equal("known_failing",
+            doc.RootElement.GetProperty("lotheader_candidate_status").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 23: lotheader_sha256 is a 64-char lowercase hex string
+    // MAP-6C: SHA256 of lotheader bytes recorded in report.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_ReportJson_LotheaderSha256Is64CharHex()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir);
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        var sha = doc.RootElement.GetProperty("lotheader_sha256").GetString() ?? "";
+        Assert.Matches("^[0-9a-f]{64}$", sha);
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 24: --lotheader-candidate newline_tileset_table sets
+    //          binary_runtime_status = candidate_generated_not_load_tested
+    // MAP-6C: MAP-4E format model candidate; not yet independently load-tested.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_NewlineTableCandidate_BinaryRuntimeStatusIsCandidateGenerated()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir,
+               "--lotheader-candidate", "newline_tileset_table");
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        Assert.Equal("candidate_generated_not_load_tested",
+            doc.RootElement.GetProperty("binary_runtime_status").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 25: --lotheader-candidate newline_tileset_table sets
+    //          lotheader_candidate_status = generated_not_load_tested
+    // MAP-6C: candidate is generated but not independently load-tested.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_NewlineTableCandidate_CandidateStatusIsGeneratedNotLoadTested()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir,
+               "--lotheader-candidate", "newline_tileset_table");
+
+        var doc  = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(OutputDir, "experimental-map-export-report.json")));
+        Assert.Equal("generated_not_load_tested",
+            doc.RootElement.GetProperty("lotheader_candidate_status").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 26: objects.lua contains syntactically valid Lua (MAP-6C fix)
+    // MAP-6C: comment-only objects.lua was rejected (MAP-6B). Now returns {}.
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MapExportExperimental_ObjectsLua_ContainsReturnEmptyTable()
+    {
+        RunCli("map-export-experimental", "--map-id", TestMapId, "--output", OutputDir);
+
+        var path    = Path.Combine(OutputDir, "media", "maps", TestMapId, "objects.lua");
+        var content = File.ReadAllText(path);
+        Assert.Contains("return {}", content, StringComparison.Ordinal);
+    }
 }
