@@ -182,8 +182,8 @@ $packet = [ordered]@{
         primitive_classification          = 22
         plan_recommendations_contract     = 28
         proof_packet                      = 102
-        build42_geometry_inspector_tests  = 10
-        total_expected_assertions         = 502
+        build42_geometry_inspector_tests  = 15
+        total_expected_assertions         = 507
     }
     dotnet_validation_summary = [ordered]@{
         test_total                          = 440
@@ -321,8 +321,8 @@ planning_artifact_only_not_pz_load_tested
 | Primitive classification | 22 |
 | Plan recommendations contract | 28 |
 | Proof packet | 102 |
-| Build42 geometry inspector tests | 10 |
-| Total | 502 |
+| Build42 geometry inspector tests | 15 |
+| Total | 507 |
 
 ## .NET validation summary (separate lane)
 

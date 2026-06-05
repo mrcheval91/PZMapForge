@@ -75,6 +75,19 @@ Set-Content -Path (Join-Path $testSource 'map.info')       -Value 'title=TestMap
 Set-Content -Path (Join-Path $testSource 'mod.info')       -Value 'id=testmap'    -Encoding UTF8
 
 # ---------------------------------------------------------------------------
+# Create LOTP source directory (Build 42 reference format)
+# ---------------------------------------------------------------------------
+
+$testSourceLotp = Join-Path $testBase '.local\source-lotp\testmap-lotp'
+New-Item -ItemType Directory -Force -Path $testSourceLotp | Out-Null
+
+# Synthetic LOTP lotpack: first 4 bytes = 4C 4F 54 50 ("LOTP"), bytes 4-7 = 01 00 00 00 (version=1)
+$lotpBytes = [byte[]]::new(64)
+$lotpBytes[0] = 0x4C; $lotpBytes[1] = 0x4F; $lotpBytes[2] = 0x54; $lotpBytes[3] = 0x50  # LOTP magic
+$lotpBytes[4] = 0x01; $lotpBytes[5] = 0x00; $lotpBytes[6] = 0x00; $lotpBytes[7] = 0x00  # version = 1
+[System.IO.File]::WriteAllBytes((Join-Path $testSourceLotp 'world_0_0.lotpack'), $lotpBytes)
+
+# ---------------------------------------------------------------------------
 # Helper: run inspector without stopping on nonzero exit
 # ---------------------------------------------------------------------------
 
@@ -172,6 +185,37 @@ Assert-True ($report.safety.reference_files_copied -eq $false) 'safety.reference
 
 Write-Output '--- Test 10: playable_export_claimed = false ---'
 Assert-True ($report.safety.playable_export_claimed -eq $false) 'safety.playable_export_claimed == false'
+
+# ---------------------------------------------------------------------------
+# LOTP tests: run inspector against LOTP source
+# ---------------------------------------------------------------------------
+
+$lotpOutput = Join-Path $testBase '.local\output\run-lotp'
+$ec11 = Invoke-Inspector @('-Source', $testSourceLotp, '-Output', $lotpOutput, '-MaxFiles', '10')
+
+# Test 11: LOTP source exits 0 (no crash despite LOTP magic)
+Write-Output '--- Test 11: LOTP lotpack source exits 0 ---'
+Assert-True ($ec11 -eq 0) 'LOTP source run exits 0'
+
+$lotpJsonFile = Join-Path $lotpOutput 'build42-reference-geometry-report.json'
+$lotpReport   = Get-Content $lotpJsonFile -Raw | ConvertFrom-Json
+
+# Test 12: lotpack_format = LOTP in record
+Write-Output '--- Test 12: lotpack_format = LOTP ---'
+$lotpRec = $lotpReport.lotpack_records | Where-Object { $_.file -match 'world_0_0' } | Select-Object -First 1
+Assert-True ($null -ne $lotpRec -and $lotpRec.lotpack_format -eq 'LOTP') 'lotpack_format == LOTP'
+
+# Test 13: lotpack_magic = LOTP in record
+Write-Output '--- Test 13: lotpack_magic = LOTP ---'
+Assert-True ($null -ne $lotpRec -and $lotpRec.lotpack_magic -eq 'LOTP') 'lotpack_magic == LOTP'
+
+# Test 14: lotpack_lotp_count >= 1 in report
+Write-Output '--- Test 14: lotpack_lotp_count >= 1 ---'
+Assert-True ([int]$lotpReport.lotpack_lotp_count -ge 1) 'lotpack_lotp_count >= 1'
+
+# Test 15: geometry_status = BUILD42_LOTP_FORMAT_OBSERVED
+Write-Output '--- Test 15: geometry_status = BUILD42_LOTP_FORMAT_OBSERVED ---'
+Assert-True ($lotpReport.geometry_status -eq 'BUILD42_LOTP_FORMAT_OBSERVED') 'geometry_status == BUILD42_LOTP_FORMAT_OBSERVED'
 
 # ---------------------------------------------------------------------------
 # Cleanup

@@ -8,6 +8,38 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6G: Build 42 LOTP lotpack evidence and inspector hardening)
+- docs/MAP_6G_BUILD42_LOTP_LOTPACK_EVIDENCE.md: Drummondville reference evidence.
+  - world_0_0.lotpack size=1057348; first 4 bytes = 4C 4F 54 50 = LOTP magic.
+  - Build 42 confirmed to use new LOTP lotpack format (not old hdrA=900/hdrB=7204).
+  - Current experimental writer incompatible with Build 42 LOTP format.
+  - BUILD42_LOTP_FORMAT_OBSERVED, LEGACY_900_LOTPACK_HEADER_NOT_APPLICABLE_TO_REFERENCE,
+    GEOMETRY_MODEL_STILL_UNVERIFIED, PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-reference-geometry.ps1 hardened (MAP-6G):
+  - LOTP magic detection: if bytes 0-3 = 4C 4F 54 50, set lotpack_format=LOTP.
+  - LOTP branch records: lotpack_magic=LOTP, version_field (bytes 4-7), note.
+  - No table size computation for LOTP records (prevents Int32 overflow).
+  - Legacy branch: [int64] for inferred_table_bytes/inferred_table_end_byte.
+  - MD template uses $r['key'] indexer (hashtable-safe, not PSObject.Properties).
+  - New counters: lotpack_lotp_count, lotpack_legacy_900_count.
+  - Geometry status: BUILD42_LOTP_FORMAT_OBSERVED when LOTP records found.
+- scripts/test-build42-reference-geometry-inspector.ps1: Tests 11-15 added:
+  - LOTP source exits 0; lotpack_format=LOTP; lotpack_magic=LOTP;
+    lotpack_lotp_count>=1; geometry_status=BUILD42_LOTP_FORMAT_OBSERVED.
+  - psTotal 502→507; build42_geometry_inspector_tests 10→15.
+- scripts/validate.ps1: MAP-6G sentinel section (4 checks); psTotal 502→507.
+- scripts/write-proof-packet.ps1: counts updated (15/507).
+- scripts/test-proof-packet.ps1: assertions updated (15/507).
+- docs/IMPLEMENTATION.md: MAP-6G ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6G section.
+
+No load test performed. No PZ assets copied into repo. No playable export claim.
+PS 507 / .NET 440 unchanged.
+
+---
+
+## [Unreleased]
+
 ### Added (MAP-6F: Build 42 reference geometry inspector packet)
 - docs/MAP_6F_BUILD42_REFERENCE_GEOMETRY_PACKET.md: operator guide; inspector purpose;
   required operator action (manual copy to .local); what inspector does; geometry statuses;

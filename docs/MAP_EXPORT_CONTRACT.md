@@ -570,6 +570,26 @@ Artifacts: `docs/MAP_6F_BUILD42_REFERENCE_GEOMETRY_PACKET.md`.
 
 No playable export claim. No load test. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
 
+**MAP-6G — Build 42 LOTP lotpack evidence and inspector hardening:**
+MAP-6G records the Drummondville Build 42 reference run evidence and hardens
+the MAP-6F inspector to detect the Build 42 `LOTP` lotpack magic header.
+
+Key findings:
+- Build 42 `world_*.lotpack` files begin with `4C 4F 54 50` = `LOTP` magic.
+- The legacy MAP-4F `hdrA=900 / hdrB=7204` offset-table format does NOT apply
+  to Build 42 reference lotpacks.
+- The current PZMapForge experimental writer produces files incompatible with
+  Build 42's LOTP format.
+- Status: `BUILD42_LOTP_FORMAT_OBSERVED`.
+
+Inspector updates: LOTP magic detection, `lotpack_format` field, `lotpack_lotp_count`
+summary, `[int64]` for legacy table computations (overflow fix). Test script
+extended to 15 assertions. psTotal: 502→507.
+
+Artifacts: `docs/MAP_6G_BUILD42_LOTP_LOTPACK_EVIDENCE.md`.
+
+No playable export claim. No load test. No PZ assets into repo.
+
 **MAP-6E — Build 42 geometry model audit:**
 MAP-6E audits all 300×300 geometry assumptions in the repo and records the
 operator observation that Build 42 may use a 256×256 cell model.

@@ -228,6 +228,19 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-6G Build 42 LOTP lotpack evidence ---"
+$map6gDoc = Join-Path $repoRoot 'docs\MAP_6G_BUILD42_LOTP_LOTPACK_EVIDENCE.md'
+if (-not (Test-Path -LiteralPath $map6gDoc)) { throw "MAP-6G doc missing: docs\MAP_6G_BUILD42_LOTP_LOTPACK_EVIDENCE.md" }
+Write-Output "OK: docs\MAP_6G_BUILD42_LOTP_LOTPACK_EVIDENCE.md"
+$map6gContent = Get-Content -LiteralPath $map6gDoc -Raw
+if ($map6gContent -notmatch 'BUILD42_LOTP_FORMAT_OBSERVED') { throw "MAP-6G doc missing BUILD42_LOTP_FORMAT_OBSERVED sentinel" }
+Write-Output "OK: doc contains BUILD42_LOTP_FORMAT_OBSERVED"
+if ($map6gContent -notmatch 'LEGACY_900_LOTPACK_HEADER_NOT_APPLICABLE_TO_REFERENCE') { throw "MAP-6G doc missing LEGACY_900 sentinel" }
+Write-Output "OK: doc contains LEGACY_900_LOTPACK_HEADER_NOT_APPLICABLE_TO_REFERENCE"
+if ($map6gContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6G doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false sentinel" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+
+Write-Output ""
 Write-Output "--- MAP-6F Build 42 reference geometry inspector ---"
 $map6fDoc    = Join-Path $repoRoot 'docs\MAP_6F_BUILD42_REFERENCE_GEOMETRY_PACKET.md'
 $map6fScript = Join-Path $repoRoot 'scripts\inspect-build42-reference-geometry.ps1'
@@ -332,9 +345,9 @@ $psChecks = [ordered]@{
     'Primitive classification'            = 22
     'Plan recommendations contract'       = 28
     'Proof packet'                        = 102
-    'Build42 geometry inspector tests'    = 10
+    'Build42 geometry inspector tests'    = 15
 }
-$psTotal = 502   # = validation_summary.total_expected_assertions in proof-packet v0.16
+$psTotal = 507   # = validation_summary.total_expected_assertions in proof-packet v0.16
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 250   # PZMapForge.Cli.Tests (MAP-6E: +2 geometry model status tests)

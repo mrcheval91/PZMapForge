@@ -165,9 +165,13 @@ Write-Output ''
 
 Write-Output '--- Analysing .lotpack files ---'
 
-$lotpackRecords = [System.Collections.Generic.List[object]]::new()
-$hdrA_900_count = 0
-$hdrB_7204_count = 0
+$lotpackRecords     = [System.Collections.Generic.List[object]]::new()
+$hdrA_900_count     = 0
+$hdrB_7204_count    = 0
+$lotpack_lotp_count = 0
+
+# LOTP magic bytes: 4C 4F 54 50 = "LOTP" in ASCII (Build 42 lotpack format)
+[byte[]]$lotpMagic = @(0x4C, 0x4F, 0x54, 0x50)
 
 foreach ($f in $lotpackFiles) {
     $rel    = $f.FullName.Substring($sourceFull.Length).TrimStart($sep)
@@ -175,41 +179,64 @@ foreach ($f in $lotpackFiles) {
     $prefix = Read-BoundedPrefix $f.FullName 64
     $first8 = if ($prefix.Length -ge 8) { Bytes-ToHex $prefix[0..7] } else { Bytes-ToHex $prefix }
 
-    $hdrA = if ($prefix.Length -ge 4) { [System.BitConverter]::ToUInt32($prefix, 0) } else { [uint32]0 }
-    $hdrB = if ($prefix.Length -ge 8) { [System.BitConverter]::ToUInt32($prefix, 4) } else { [uint32]0 }
+    # Detect LOTP magic header (Build 42 format)
+    $isLotp = ($prefix.Length -ge 4 -and
+               $prefix[0] -eq 0x4C -and $prefix[1] -eq 0x4F -and
+               $prefix[2] -eq 0x54 -and $prefix[3] -eq 0x50)
 
-    # Derived inferences (not confirmed)
-    $inferredTableEntries = $hdrA
-    $inferredTableBytes   = [int]$hdrA * 8
-    $inferredTableEnd     = 8 + $inferredTableBytes
-
-    if ($hdrA -eq 900)  { $hdrA_900_count++ }
-    if ($hdrB -eq 7204) { $hdrB_7204_count++ }
-
-    $note = ''
-    if ($hdrA -eq 900 -and $hdrB -eq 7204) {
-        $note = 'matches_build41_30x30_model'
-    } elseif ($hdrA -eq 1024) {
-        $note = 'candidate_32x32_1024'
-    } elseif ($hdrA -eq 256) {
-        $note = 'candidate_16x16_256'
+    if ($isLotp) {
+        # Build 42 LOTP format: do NOT interpret as hdrA/hdrB chunk-table header.
+        # Read bytes 4-7 as version/extra field only.
+        $lotpVersion = if ($prefix.Length -ge 8) { [System.BitConverter]::ToUInt32($prefix, 4) } else { [uint32]0 }
+        $lotpack_lotp_count++
+        $note = 'build42_lotp_format_detected'
+        Write-Output "  $rel  size=$size  format=LOTP  version_field=$lotpVersion  note=$note"
+        $lotpackRecords.Add([ordered]@{
+            file              = $rel
+            size_bytes        = $size
+            first_8_bytes_hex = $first8
+            lotpack_format    = 'LOTP'
+            lotpack_magic     = 'LOTP'
+            version_field     = [int]$lotpVersion
+            note              = $note
+        })
     } else {
-        $note = "hdrA=$hdrA hdrB=$hdrB (unknown_model)"
+        # Legacy format: interpret bytes 0-3 as hdrA (chunk count) and 4-7 as hdrB.
+        # Use Int64 for derived values to prevent overflow on unexpected large hdrA values.
+        $hdrA = if ($prefix.Length -ge 4) { [System.BitConverter]::ToUInt32($prefix, 0) } else { [uint32]0 }
+        $hdrB = if ($prefix.Length -ge 8) { [System.BitConverter]::ToUInt32($prefix, 4) } else { [uint32]0 }
+
+        [int64]$inferredTableBytes = [int64]$hdrA * 8
+        [int64]$inferredTableEnd   = 8 + $inferredTableBytes
+
+        if ($hdrA -eq 900)  { $hdrA_900_count++ }
+        if ($hdrB -eq 7204) { $hdrB_7204_count++ }
+
+        $note = ''
+        if ($hdrA -eq 900 -and $hdrB -eq 7204) {
+            $note = 'matches_legacy_30x30_model'
+        } elseif ($hdrA -eq 1024) {
+            $note = 'candidate_32x32_1024'
+        } elseif ($hdrA -eq 256) {
+            $note = 'candidate_16x16_256'
+        } else {
+            $note = "hdrA=$hdrA hdrB=$hdrB (unknown_model)"
+        }
+
+        Write-Output "  $rel  size=$size  format=legacy  hdrA=$hdrA hdrB=$hdrB  note=$note"
+        $lotpackRecords.Add([ordered]@{
+            file                     = $rel
+            size_bytes               = $size
+            first_8_bytes_hex        = $first8
+            lotpack_format           = 'legacy'
+            hdrA_u32le               = [int]$hdrA
+            hdrB_u32le               = [int]$hdrB
+            inferred_table_entries   = [int64]$hdrA
+            inferred_table_bytes     = $inferredTableBytes
+            inferred_table_end_byte  = $inferredTableEnd
+            note                     = $note
+        })
     }
-
-    Write-Output "  $rel  size=$size  hdrA=$hdrA hdrB=$hdrB  note=$note"
-
-    $lotpackRecords.Add([ordered]@{
-        file                     = $rel
-        size_bytes               = $size
-        first_8_bytes_hex        = $first8
-        hdrA_u32le               = [int]$hdrA
-        hdrB_u32le               = [int]$hdrB
-        inferred_table_entries   = [int]$inferredTableEntries
-        inferred_table_bytes     = [int]$inferredTableBytes
-        inferred_table_end_byte  = [int]$inferredTableEnd
-        note                     = $note
-    })
 }
 
 # ---------------------------------------------------------------------------
@@ -296,13 +323,18 @@ foreach ($f in ($mapInfoFiles + $modInfoFiles + $spawnFiles)) {
 # Determine geometry status
 # ---------------------------------------------------------------------------
 
-$totalLotpack   = $lotpackRecords.Count
-$totalChunkdata = $chunkdataRecords.Count
+$totalLotpack          = $lotpackRecords.Count
+$totalChunkdata        = $chunkdataRecords.Count
+$lotpack_legacy_900_count = $hdrA_900_count
 
 $geometryStatus = 'BUILD42_GEOMETRY_STILL_UNKNOWN'
 
 if ($totalLotpack -eq 0 -and $totalChunkdata -eq 0) {
     $geometryStatus = 'BUILD42_GEOMETRY_STILL_UNKNOWN'
+} elseif ($lotpack_lotp_count -gt 0) {
+    # LOTP format confirms Build 42 has a new lotpack format.
+    # Chunk geometry is not determined from LOTP alone; chunkdata body sizes still apply.
+    $geometryStatus = 'BUILD42_LOTP_FORMAT_OBSERVED'
 } elseif ($hdrA_900_count -gt 0 -and $body_900_count -gt 0 -and $body_1024_count -eq 0 -and $body_256_count -eq 0) {
     $geometryStatus = 'BUILD42_300_MODEL_SUPPORTED'
 } elseif ($body_1024_count -gt 0 -or $body_256_count -gt 0) {
@@ -313,6 +345,8 @@ if ($totalLotpack -eq 0 -and $totalChunkdata -eq 0) {
 
 Write-Output ''
 Write-Output "--- Geometry status: $geometryStatus ---"
+Write-Output "  lotpack_lotp_count:        $lotpack_lotp_count"
+Write-Output "  lotpack_legacy_900_count:  $lotpack_legacy_900_count"
 
 # ---------------------------------------------------------------------------
 # Write output
@@ -331,6 +365,8 @@ $reportJson = [ordered]@{
     REFERENCE_GEOMETRY_OBSERVED = $true
     PLAYABLE_EXPORT_CLAIM_ALLOWED = 'false'
     lotpack_count               = $totalLotpack
+    lotpack_lotp_count          = $lotpack_lotp_count
+    lotpack_legacy_900_count    = $lotpack_legacy_900_count
     lotpack_hdrA_900_count      = $hdrA_900_count
     lotpack_hdrB_7204_count     = $hdrB_7204_count
     chunkdata_count             = $totalChunkdata
@@ -379,7 +415,10 @@ Source: $($sourceFull.Replace('\','/'))
 | Text files | $($textFiles.Count) | — |
 
 ## .lotpack records
-$(foreach ($r in $lotpackRecords) { "- $($r.file) size=$($r.size_bytes) hdrA=$($r.hdrA_u32le) hdrB=$($r.hdrB_u32le) note=$($r.note)" })
+$(foreach ($r in $lotpackRecords) {
+    if ($r['lotpack_format'] -eq 'LOTP') { "- $($r['file']) size=$($r['size_bytes']) format=LOTP note=$($r['note'])" }
+    else { "- $($r['file']) size=$($r['size_bytes']) format=legacy hdrA=$($r['hdrA_u32le']) hdrB=$($r['hdrB_u32le']) note=$($r['note'])" }
+})
 
 ## chunkdata records
 $(foreach ($r in $chunkdataRecords) { "- $($r.file) size=$($r.size_bytes) body=$($r.body_bytes) grid=$($r.chunk_grid_candidate)" })
