@@ -552,6 +552,25 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7H — Variant B/C registration failures and discovery path investigation:**
+Variants B (`Map=candidate`) and C (`Map=Muldraugh;candidate`) both confirm empty
+IsoMetaGrid map folder scan. Map= ordering variants A/B/C exhausted.
+Root cause: mod discovery path, not Map= format. Custom mod map folder not
+visible to IsoMetaGrid. Versioned 42/ layout may not be scanned by IsoMetaGrid.
+
+Status labels:
+```text
+MAP7F_VARIANT_B_MAP_FOLDER_SCAN_EMPTY
+MAP7F_VARIANT_C_MAP_FOLDER_SCAN_EMPTY
+MAP_LINE_VARIANTS_EXHAUSTED
+DISCOVERY_PATH_INVESTIGATION_ACTIVE
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No PZ assets.
+Next: Experiment D (root media/maps/ duplicate), E (root mod.info), F (map.info comparison).
+
 **MAP-7G — Variant A registration failure and real DebugLog parser fix:**
 Variant A tested: `Map=pzmapforge_build42_candidate_v4_001;Muldraugh, KY`.
 Result: MAP7F_VARIANT_A_MAP_FOLDER_SCAN_EMPTY. IsoMetaGrid map folder list still empty.

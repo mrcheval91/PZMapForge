@@ -8,6 +8,52 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7H: Record Variant BC map discovery failure)
+- docs/MAP_7H_VARIANT_BC_AND_DISCOVERY_PATH.md: Variant B/C result record.
+  - Variant B: Map=candidate. MAP7F_VARIANT_B_MAP_FOLDER_SCAN_EMPTY.
+  - Variant C: Map=Muldraugh,KY;candidate. MAP7F_VARIANT_C_MAP_FOLDER_SCAN_EMPTY.
+  - A/B/C comparison table: all produce empty map-folder scan.
+  - MAP_LINE_VARIANTS_EXHAUSTED: Map= ordering is not the root cause.
+  - Discovery path investigation opened: 42/ version layer may not be scanned.
+  - Experiments D/E/F defined as human-only next steps.
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-map-discovery-path.ps1:
+  - Inspects CandidateRoot for versioned (42/) and root media/maps layouts.
+  - Parses map.info and mod.info key=value fields.
+  - Checks no-BOM for all game-read text files.
+  - Reports: has_versioned_42_media_maps, has_root_media_maps,
+    root_media_maps_missing, has_root_mod_info,
+    possible_build42_version_layer_not_scanned_by_isometagrid,
+    map_folder_discovery_risk.
+  - .local/ output guard; refuses PZ user/install paths.
+  - Writes map-discovery-path-report.json + .md.
+- scripts/prepare-build42-map7h-discovery-path-packet.ps1:
+  - .local/ output guard.
+  - Generates empty_grass_v4 candidate via CLI.
+  - Runs inspect-build42-map-discovery-path.ps1 on generated candidate.
+  - Writes MAP_7H_DISCOVERY_PATH_PACKET.md.
+  - Writes MAP_7H_DISCOVERY_PATH_HYPOTHESES.md (hypotheses H1/H2/H3, experiments D/E/F).
+  - Writes MAP_7H_VARIANT_RESULTS_SUMMARY.md (A/B/C comparison).
+  - Writes MAP_7H_NEXT_MANUAL_EXPERIMENTS.local-template.md (fillable).
+  - Writes map7h-discovery-preflight.json (variants_abc_exhausted=true, public_playable=false).
+  - Writes map7h-discovery-preflight.md.
+  - Includes map-discovery-path-report.json + .md from inspector.
+- scripts/test-build42-map7h-discovery-path.ps1: 12 assertions.
+  - Tests 1-6: inspector path guard, versioned layout detection, missing root
+    media/maps, root media/maps present, no-BOM correct, BOM detected.
+  - Tests 7-12: packet path guard, exits 0, all 8 files present,
+    preflight variants_abc_exhausted+public_playable=false,
+    LOAD_TEST_NOT_PERFORMED sentinel, root media/maps hypothesis present.
+  - psTotal 870->882.
+- scripts/validate.ps1: MAP-7H section; psTotal 870->882; v0.37.
+- scripts/write-proof-packet.ps1: v0.37; map7h=12; total 882.
+- scripts/test-proof-packet.ps1: assertions updated (12/882, schema v0.37).
+- docs/IMPLEMENTATION.md: MAP-7H ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7H section.
+
+No load test. No binary writer change. No PZ assets. No playable claim.
+PS 882 / .NET 556 (unchanged).
+
 ### Added (MAP-7G: Record Variant A map registration failure)
 - docs/MAP_7G_VARIANT_A_REGISTRATION_FAILURE.md: Variant A result record.
   - Variant A: Map=pzmapforge_build42_candidate_v4_001;Muldraugh, KY.
