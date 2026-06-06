@@ -77,27 +77,55 @@ $gameLoadingCompleted          = $logContent -match 'game loading took'
 $enteredIngameState            = $logContent -match 'STATE: exit zombie\.gameStates\.GameLoadingState'
 $exitedIngameState             = $logContent -match 'STATE: exit zombie\.gameStates\.IngameState'
 
-# Map folder scan
-$mapFoldersListEmpty = $false
-$mapFoldersListCount = 0
-$mapFoldersScanFound = $logContent -match 'Looking in these map folders:'
-if ($mapFoldersScanFound) {
-    $mfMatch = [regex]::Match($logContent, 'Looking in these map folders:\r?\n(.*?)<End of map-folders list>',
-        [System.Text.RegularExpressions.RegexOptions]::Singleline)
-    if ($mfMatch.Success) {
-        $folderSection = $mfMatch.Groups[1].Value.Trim()
-        if ($folderSection.Length -eq 0) {
-            $mapFoldersListEmpty = $true
-            $mapFoldersListCount = 0
-        } else {
-            $folderLines = @($folderSection -split '\r?\n' | Where-Object { $_.Trim() -ne '' })
-            $mapFoldersListCount = $folderLines.Count
-            $mapFoldersListEmpty = $false
-        }
-    } elseif ($logContent -match "Looking in these map folders:\r?\n<End of map-folders list>") {
-        $mapFoldersListEmpty = $true
-        $mapFoldersListCount = 0
+# Map folder scan — handles bare and timestamped DebugLog formats.
+# Timestamped format: [date] LOG : General     , \d+> Message text.
+# Bare format:        Message text
+# Both may have a trailing period on the map-folder messages.
+
+function Strip-DebugLogPrefix {
+    param([string]$Line)
+    $s = $Line -replace '^\[.*?\]\s+LOG\s*:\s+\S+\s*,\s*\d+>\s*', ''
+    return $s.TrimEnd('.')
+}
+
+$mapFoldersScanFound         = $false
+$mapFoldersListEmpty         = $false
+$mapFoldersListCount         = 0
+$mapFolderLines              = [string[]]@()
+$mapFolderParserStrategy     = 'not_found'
+$timestampedDebuglogDetected = $false
+
+$logLines  = $logContent -split '\r?\n'
+$startIdx  = -1
+$endIdx    = -1
+
+for ($i = 0; $i -lt $logLines.Count; $i++) {
+    $raw      = $logLines[$i]
+    $semantic = Strip-DebugLogPrefix $raw
+    if ($semantic -match 'Looking in these map folders') {
+        $startIdx = $i
+        if ($raw -match '^\[.*?\]\s+LOG') { $timestampedDebuglogDetected = $true }
     }
+    if ($startIdx -ge 0 -and $semantic -match '^<End of map-folders list>') {
+        $endIdx = $i
+        break
+    }
+}
+
+if ($startIdx -ge 0 -and $endIdx -ge 0) {
+    $mapFoldersScanFound     = $true
+    $mapFolderParserStrategy = if ($timestampedDebuglogDetected) { 'timestamped_debuglog' } else { 'bare_console' }
+    $innerList = [System.Collections.Generic.List[string]]::new()
+    for ($i = $startIdx + 1; $i -lt $endIdx; $i++) {
+        $s = (Strip-DebugLogPrefix $logLines[$i]).Trim()
+        if ($s.Length -gt 0) { $innerList.Add($s) }
+    }
+    $mapFolderLines      = [string[]]$innerList.ToArray()
+    $mapFoldersListCount = $mapFolderLines.Count
+    $mapFoldersListEmpty = ($mapFolderLines.Count -eq 0)
+} elseif ($startIdx -ge 0) {
+    $mapFoldersScanFound     = $true
+    $mapFolderParserStrategy = if ($timestampedDebuglogDetected) { 'timestamped_debuglog_no_end' } else { 'bare_console_no_end' }
 }
 
 # Spawn building warning
@@ -144,7 +172,7 @@ $statusLabels = [string[]]@(
 # ---------------------------------------------------------------------------
 
 $report = [ordered]@{
-    schema                             = 'pzmapforge.build42-map7d-load-result.v0.1'
+    schema                             = 'pzmapforge.build42-map7d-load-result.v0.2'
     log_path                           = $LogPath
     classification                     = $classification
     candidate_loaded                   = $candidateLoaded
@@ -161,6 +189,9 @@ $report = [ordered]@{
     map_folders_scan_found             = $mapFoldersScanFound
     map_folders_list_empty             = $mapFoldersListEmpty
     map_folders_list_count             = $mapFoldersListCount
+    map_folder_lines                   = $mapFolderLines
+    map_folder_parser_strategy         = $mapFolderParserStrategy
+    timestamped_debuglog_detected      = $timestampedDebuglogDetected
     spawn_building_warning_found       = $spawnBuildingWarning
     no_room_or_building_at_spawn_found = $noRoomOrBuildingAtSpawn
     mannequin_warning_found            = $mannequinWarning

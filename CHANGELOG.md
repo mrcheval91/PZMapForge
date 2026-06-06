@@ -8,6 +8,50 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7F: Diagnose Build 42 map folder registration)
+- docs/MAP_7F_MAP_FOLDER_REGISTRATION_DIAGNOSTIC.md: registration diagnostic record.
+  - MAP-7E confirmed MAP_FOLDER_SCAN_EMPTY_CONFIRMED: IsoMetaGrid found no map folders.
+  - Cleared blockers listed: LexState/BOM/spawn-null/player-data-timeout all cleared.
+  - Remaining blocker: IsoMetaGrid map folder discovery finds no folders.
+  - Analyzer bug documented and fixed (timestamped DebugLog false-negative).
+  - Three Map= variants (A/B/C) defined for next manual retest.
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-map7d-load-result.ps1: fixed timestamped DebugLog parser.
+  - Replaced regex-based map-folder extraction with line-by-line parser.
+  - Strips log prefix ([date] LOG : category , timestamp> ) before comparing messages.
+  - Strips trailing periods (DebugLog appends them to some messages).
+  - Correctly sets map_folders_list_empty=true when markers are adjacent (both formats).
+  - New fields: map_folder_lines, map_folder_parser_strategy, timestamped_debuglog_detected.
+  - Schema bumped to v0.2.
+- scripts/prepare-build42-map7f-registration-diagnostic-packet.ps1:
+  - .local/ output guard; refuses paths outside .local/.
+  - Writes MAP_7F_REGISTRATION_DIAGNOSTIC_PACKET.md.
+  - Writes MAP_7F_MANUAL_RETEST_RECORD.local-template.md.
+  - Writes MAP_7F_MAP_LINE_VARIANTS_TO_TEST.md (variants A/B/C with HUMAN-ONLY notes).
+  - Writes MAP_7F_LOG_CAPTURE_AND_ANALYSIS_COMMANDS.md.
+  - Writes map7f-registration-preflight.json (public_playable_claim_allowed=false).
+  - Writes map7f-registration-preflight.md.
+  - No PZ folder writes. No PZ execution.
+- scripts/test-build42-map7f-registration-diagnostic.ps1: 11 assertions.
+  - Tests 1-2: analyzer still detects timeout and LexState (bare format).
+  - Test 3: bare format empty list still detected.
+  - Tests 4-5: timestamped format correctly sets map_folders_list_empty=true,
+    timestamped_debuglog_detected=true.
+  - Test 6: timestamped format with folder entries correctly counts > 0.
+  - Test 7: timestamped empty map-folder -> PARTIAL_PASS classification.
+  - Test 8: MAP-7F packet refuses output outside .local.
+  - Tests 9-11: packet exits 0, all 6 files present, preflight has
+    public_playable_claim_allowed=false, all Map= variants and HUMAN-ONLY markers.
+  - psTotal 851->862.
+- scripts/validate.ps1: MAP-7F section; psTotal 851->862; v0.35.
+- scripts/write-proof-packet.ps1: v0.35; map7f=11; total 862.
+- scripts/test-proof-packet.ps1: assertions updated (11/862, schema v0.35).
+- docs/IMPLEMENTATION.md: MAP-7F ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7F section.
+
+No load test. No binary writer change. No PZ assets. No playable claim.
+PS 862 / .NET 556 (unchanged).
+
 ### Added (MAP-7E: Record MAP-7D partial load diagnostics)
 - docs/MAP_7E_EMPTY_WORLD_MAP_REGISTRATION_DIAGNOSTICS.md: result record.
   - MAP-7D no-BOM server retest: MAP7D_LOAD_TEST_PARTIAL_PASS_IN_GAME_EMPTY_WORLD.

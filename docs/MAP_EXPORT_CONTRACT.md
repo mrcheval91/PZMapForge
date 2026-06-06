@@ -552,6 +552,25 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7F — Map folder registration diagnostic and analyzer fix:**
+MAP-7E confirmed MAP7D_LOAD_TEST_PARTIAL_PASS_IN_GAME_EMPTY_WORLD. IsoMetaGrid
+found no map folders. Candidate map folder was not registered or discovered.
+Analyzer bug fixed: timestamped DebugLog format caused map_folders_list_empty=False
+despite visible empty list. Fix: line-by-line prefix-stripping parser.
+
+Status labels:
+```text
+MAP_FOLDER_SCAN_EMPTY_CONFIRMED
+MAP_FOLDER_REGISTRATION_BLOCKER_ACTIVE
+ANALYZER_TIMESTAMPED_LOG_BUG_FIXED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No PZ assets.
+Registration diagnostic packet prepared. Three Map= variants to test manually.
+Recommended next: human-only retest with Map= variants A/B/C; capture DebugLog.
+
 **MAP-7E — Empty world and map registration diagnostics:**
 MAP-7D no-BOM retest: MAP7D_LOAD_TEST_PARTIAL_PASS_IN_GAME_EMPTY_WORLD (in-game in 32s).
 Cleared: LexState, BOM, spawn null, player-data timeout.
