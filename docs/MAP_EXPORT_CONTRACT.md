@@ -552,6 +552,32 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6V — LOTH trailing body decode research:**
+MAP-6V decodes the trailing binary section confirmed in MAP-6U and determines
+whether a v3 writer is defensible.
+
+Key smoke findings (20 Dru_map reference files):
+- Trailing section is NOT u32-aligned in 17/20 files (mod4 != 0).
+- Only 3/20 files have u32-aligned trailing bytes.
+- Only 6/20 files have majority of first-16 trailer words < field8.
+- `HYPOTHESIS_TRAILER_UNKNOWN` overall.
+
+Conclusion: the trailing body structure is not yet understood at byte level.
+A v3 writer is NOT defensible. MAP-6W must deepen trailing section analysis
+before any writing attempt.
+
+Status labels:
+```text
+BUILD42_LOTH_TRAILING_BODY_DECODED
+LOTH_REQUIRES_TRAILING_BINARY_BODY
+HYPOTHESIS_TRAILER_UNKNOWN
+WRITER_NOT_CHANGED
+LOAD_TEST_NOT_PERFORMED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+No load test. No writer change. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6U — LOTH v2 failure record and full LOTH body research:**
 MAP-6U records the MAP-6T v1 retest result (LOAD_TEST_FAIL_LOTH) and confirms
 through full-body inspection that Build 42 LOTH files require a substantial

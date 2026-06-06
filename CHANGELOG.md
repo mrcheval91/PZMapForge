@@ -8,6 +8,37 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6V: LOTH trailing body decode research)
+- docs/MAP_6V_LOTH_TRAILING_BODY_DECODE_RESEARCH.md: decode research doc.
+  - MAP-6U basis; trailing body 7018-33558 bytes, 20/20 files.
+  - Smoke: 17/20 NOT u32-aligned; 3/20 u32-aligned; HYPOTHESIS_TRAILER_UNKNOWN.
+  - v3 writer NOT defensible; MAP-6W must deepen analysis before writing.
+  - BUILD42_LOTH_TRAILING_BODY_DECODED; HYPOTHESIS_TRAILER_UNKNOWN;
+    WRITER_NOT_CHANGED; LOAD_TEST_NOT_PERFORMED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/decode-build42-loth-trailing-body.ps1:
+  - Guards: ReferenceRoot and Output under .local.
+  - Reads full file bytes (bounded by MaxBytesPerFile).
+  - Parses ASCII region; records trailing_bytes_count/mod4/u32_count.
+  - Analyses: zero/nonzero words, words < field8, words in coordinate ranges.
+  - Emits per-file and overall hypotheses.
+  - Smoke 20 Dru_map: 3/20 u32-aligned; 6/20 references string table; UNKNOWN overall.
+- scripts/test-build42-loth-trailing-body-decode.ps1: 17 assertions.
+  - Tests 1-2: path guards. Tests 3-5: exits 0, JSON+MD exist.
+  - Tests 6-10: magic/ascii/trailing/mod4/u32 fields.
+  - Tests 11-12: HYPOTHESIS_TRAILER_U32_RECORDS + REFERENCES_STRING_TABLE.
+  - Tests 13-16: status labels in MD.
+  - psTotal 686->703.
+- scripts/validate.ps1: label drift fixed (.NET 465->490 in header); MAP-6V section; psTotal 686->703.
+- scripts/write-proof-packet.ps1: v0.25; map6v=17; total 703.
+- scripts/test-proof-packet.ps1: assertions updated (17/703).
+- docs/IMPLEMENTATION.md: MAP-6V ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6V section.
+
+No load test. No writer change. No PZ assets into repo. No playable export claim.
+PS 703 / .NET 490.
+
+---
+
 ### Added (MAP-6U: LOTH v2 failure record and full LOTH body research)
 - docs/MAP_6U_LOTH_V2_FAILURE_AND_FULL_BODY_RESEARCH.md: failure record.
   - MAP-6T v1 retest: LOAD_TEST_FAIL_LOTH; IsoLot.readInt EOF same as MAP-6Q.
