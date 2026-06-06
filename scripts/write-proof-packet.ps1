@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.29) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.30) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
     planning recommendation artifacts, plan-recommendations contract (incl. thresholds_used),
     and a separate dotnet_validation_summary section tracking .NET xUnit test counts.
@@ -147,7 +147,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.29'
+    schema                  = 'pzmapforge.proof-packet.v0.30'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -198,7 +198,8 @@ $packet = [ordered]@{
         map6w_byte_pattern_tests          = 20
         map6x_per_entry_record_tests      = 20
         map6y_fixed_1048_block_tests      = 20
-        total_expected_assertions         = 763
+        map7a_load_test_packet_tests      = 23
+        total_expected_assertions         = 786
     }
     dotnet_validation_summary = [ordered]@{
         test_total                          = 518
@@ -278,7 +279,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.29
+Schema: pzmapforge.proof-packet.v0.30
 
 ## Claim boundary
 
@@ -352,7 +353,8 @@ planning_artifact_only_not_pz_load_tested
 | MAP-6W byte pattern tests | 20 |
 | MAP-6X per-entry record model tests | 20 |
 | MAP-6Y fixed 1048 block tests | 20 |
-| Total | 763 |
+| MAP-7A load test packet tests | 23 |
+| Total | 786 |
 
 ## .NET validation summary (separate lane)
 

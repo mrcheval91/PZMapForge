@@ -8,6 +8,48 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7A: Build 42 LOTH v3 load test packet)
+- docs/MAP_7A_LOTH_V3_LOAD_TEST_PACKET.md: packet doc.
+  - MAP-6Z basis: empty_grass_v2 with 29646-byte LOTH and 1048-byte stable trailer.
+  - Diagnostic value table: FAIL_LOTH / FAIL_LOTP / FAIL_CHUNKDATA / FAIL_OBJECTS_LUA / PASS / INCONCLUSIVE.
+  - No load test. No writer change. No PZ writes. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+  - MAP7A_LOTH_V3_LOAD_TEST_PACKET_CREATED; HUMAN_ONLY_COPY_REQUIRED.
+- scripts/prepare-build42-loth-v3-load-test-packet.ps1:
+  - Guard: -Output under .local.
+  - Generates empty_grass_v2 candidate via CLI (--no-build).
+  - 24-point preflight: 7 file existence, 8 LOTH binary (magic/version/count/first/last/
+    trailer_size/trailer_sha256/total_size), 2 sizes (LOTP/chunkdata), 7 report fields.
+  - Trailer SHA-256 computed live and compared to canonical MAP-6Y value.
+  - Writes MAP_7A_LOAD_TEST_PACKET.md + RECORD.local-template.md +
+    INSTALL_AND_SERVER_WIRING_COMMANDS.md + map7a-preflight.json + map7a-preflight.md.
+  - All install/wiring instructions marked HUMAN-ONLY; no automatic PZ folder writes.
+  - Preflight JSON: schema map7a-preflight.v0.1, loth_trailer_sha256 field.
+- scripts/test-build42-loth-v3-load-test-packet.ps1: 23 assertions.
+  - Test 1: Output outside .local refused.
+  - Test 2: exits 0. Tests 3-6: 5 output files exist.
+  - Test 7: preflight candidate_profile == empty_grass_v2.
+  - Test 8: preflight entry_count == 1024.
+  - Test 9: preflight loth_size == 29646.
+  - Test 10: preflight loth_trailer_size == 1048.
+  - Test 11: preflight loth_trailer_sha256 == canonical MAP-6Y value.
+  - Test 12: preflight lotp_size == 1056780.
+  - Test 13: preflight chunkdata_size == 1026.
+  - Tests 14-16: packet status labels.
+  - Tests 17-21: record template result variants.
+  - Test 22: all Copy-Item in packet marked HUMAN-ONLY.
+  - Test 23: no automatic Zomboid writes in packet.
+  - psTotal 763->786.
+- scripts/validate.ps1: MAP-7A section (doc/script/test + sentinel checks); psTotal 763->786.
+- scripts/write-proof-packet.ps1: v0.30; map7a=23; total 786.
+- scripts/test-proof-packet.ps1: assertions updated (23/786).
+- docs/IMPLEMENTATION.md: MAP-7A ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7A section.
+
+No load test. No writer change. No PZ assets into repo. No playable export claim.
+PS 786 / .NET 518.
+
+---
+
 ### Added (MAP-6Z: Build 42 LOTH v3 stable literal trailer writer)
 - docs/MAP_6Z_LOTH_V3_STABLE_LITERAL_WRITER.md: writer doc.
   - MAP-6Y basis: 80 Dru_map simple cells, all_1048_blocks_identical=true.

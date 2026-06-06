@@ -228,6 +228,33 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-7A LOTH v3 load test packet ---"
+$map7aDoc    = Join-Path $repoRoot 'docs\MAP_7A_LOTH_V3_LOAD_TEST_PACKET.md'
+$map7aScript = Join-Path $repoRoot 'scripts\prepare-build42-loth-v3-load-test-packet.ps1'
+$map7aTests  = Join-Path $repoRoot 'scripts\test-build42-loth-v3-load-test-packet.ps1'
+if (-not (Test-Path -LiteralPath $map7aDoc))    { throw "MAP-7A doc missing" }
+Write-Output "OK: docs\MAP_7A_LOTH_V3_LOAD_TEST_PACKET.md"
+if (-not (Test-Path -LiteralPath $map7aScript)) { throw "MAP-7A script missing" }
+Write-Output "OK: scripts\prepare-build42-loth-v3-load-test-packet.ps1"
+if (-not (Test-Path -LiteralPath $map7aTests))  { throw "MAP-7A tests missing" }
+Write-Output "OK: scripts\test-build42-loth-v3-load-test-packet.ps1"
+$map7aDocContent = Get-Content -LiteralPath $map7aDoc -Raw
+if ($map7aDocContent -notmatch 'MAP7A_LOTH_V3_LOAD_TEST_PACKET_CREATED') { throw "MAP-7A doc missing MAP7A_LOTH_V3_LOAD_TEST_PACKET_CREATED" }
+Write-Output "OK: doc contains MAP7A_LOTH_V3_LOAD_TEST_PACKET_CREATED"
+if ($map7aDocContent -notmatch 'HUMAN_ONLY_COPY_REQUIRED') { throw "MAP-7A doc missing HUMAN_ONLY_COPY_REQUIRED" }
+Write-Output "OK: doc contains HUMAN_ONLY_COPY_REQUIRED"
+if ($map7aDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-7A doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+$map7aScriptContent = Get-Content -LiteralPath $map7aScript -Raw
+if ($map7aScriptContent -notmatch '\.local') { throw "MAP-7A script missing .local refusal" }
+Write-Output "OK: script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-7A load test packet tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7aTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7A load test packet tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-6Y LOTH fixed 1048-byte block research ---"
 $map6yDoc    = Join-Path $repoRoot 'docs\MAP_6Y_LOTH_FIXED_1048_BLOCK_RESEARCH.md'
 $map6yScript = Join-Path $repoRoot 'scripts\analyze-build42-loth-fixed-1048-block.ps1'
@@ -755,15 +782,16 @@ $psChecks = [ordered]@{
     'MAP-6W byte pattern tests'            = 20
     'MAP-6X per-entry record model tests'  = 20
     'MAP-6Y fixed 1048 block tests'        = 20
+    'MAP-7A load test packet tests'        = 23
 }
-$psTotal = 763   # = validation_summary.total_expected_assertions in proof-packet v0.29
+$psTotal = 786   # = validation_summary.total_expected_assertions in proof-packet v0.30
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 328   # PZMapForge.Cli.Tests (MAP-6Z: +28 Build42 LOTH v3 tests)
 $dnTotal     = 518   # = dotnet_validation_summary.test_total in proof-packet v0.29
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.29):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.30):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -771,7 +799,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.29 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.30 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

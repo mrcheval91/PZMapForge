@@ -552,6 +552,35 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7A — Build 42 LOTH v3 controlled load-test packet:**
+MAP-7A prepares the human-only load-test packet for the `empty_grass_v2` candidate.
+
+Key script: `scripts/prepare-build42-loth-v3-load-test-packet.ps1`
+Key test: `scripts/test-build42-loth-v3-load-test-packet.ps1` (23 assertions)
+Doc: `docs/MAP_7A_LOTH_V3_LOAD_TEST_PACKET.md`
+
+Preflight verifies 24 checks including:
+- LOTH trailer_size=1048 and trailer_sha256=93a8f3ccf2cafdc2fb7cd4f3836c29d87076f244f5ba685f92659fbdaf778ec7
+- LOTH total_size=29646 = 12 + 28586 + 1048
+- LOTP size=1056780 and chunkdata size=1026 (both unchanged)
+- Report: profile=empty_grass_v2, trailer_strategy=map6y_stable_literal_1048_block
+
+Packet outputs: PACKET.md, RECORD.local-template.md, WIRING_COMMANDS.md, preflight.json, preflight.md.
+All PZ folder operations are HUMAN-ONLY. Script writes only under .local.
+
+Status labels:
+```text
+MAP7A_LOTH_V3_LOAD_TEST_PACKET_CREATED
+EMPTY_GRASS_V2_CANDIDATE_GENERATED
+HUMAN_ONLY_COPY_REQUIRED
+LOAD_TEST_NOT_PERFORMED
+WRITER_NOT_CHANGED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+No load test. No writer change. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+Recommended next: human-only retest; result classified as PASS/FAIL_LOTH/FAIL_LOTP/FAIL_CHUNKDATA/FAIL_OBJECTS_LUA/INCONCLUSIVE.
+
 **MAP-6Z — Build 42 LOTH v3 stable literal trailer writer:**
 MAP-6Z adds `empty_grass_v2` profile to the candidate writer. LOTH v3 uses the same
 1024 generated entries as v1 plus the canonical 1048-byte stable trailer from MAP-6Y.
