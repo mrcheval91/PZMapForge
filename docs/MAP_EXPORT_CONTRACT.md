@@ -552,6 +552,31 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6X — LOTH per-entry record model research:**
+MAP-6X tests per-entry record hypotheses for the LOTH trailing body.
+
+Critical finding: all 40 smallest Dru_map cells have EXACTLY 1048 trailing bytes.
+- 1048 is U32-aligned (1048 % 4 = 0 = 262 U32 words).
+- All 32 first-bytes of the trailing block are STABLE across all focus cells.
+- Per-entry record model REJECTED for simple/grass cells.
+- For simple cells: trailing body is a FIXED-SIZE 1048-byte block.
+- Complex/urban cells (Dru_map sorted descending) had variable 7018-33558 bytes.
+- `LOTH_TRAILING_BODY_FIXED_SIZE_FOR_SIMPLE_CELLS` confirmed.
+- MAP-6Y must confirm whether the 1048-byte block is entirely constant.
+
+Status labels:
+```text
+BUILD42_LOTH_PER_ENTRY_RECORD_MODEL_ANALYSED
+LOTH_TRAILING_BODY_FIXED_SIZE_FOR_SIMPLE_CELLS
+HYPOTHESIS_FIXED_HEADER_PLUS_RECORDS
+WRITER_NOT_DEFENSIBLE
+WRITER_NOT_CHANGED
+LOAD_TEST_NOT_PERFORMED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+No load test. No writer change. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6W — LOTH trailing byte pattern research:**
 MAP-6W deepens LOTH trailing body analysis to byte/U16 level.
 

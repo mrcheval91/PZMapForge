@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (723)
+    Final output reports the complete PowerShell validation lane total (743)
     and the .NET lane total (490) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.26 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.27 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,33 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-6X LOTH per-entry record model research ---"
+$map6xDoc    = Join-Path $repoRoot 'docs\MAP_6X_LOTH_PER_ENTRY_RECORD_MODEL_RESEARCH.md'
+$map6xScript = Join-Path $repoRoot 'scripts\analyze-build42-loth-per-entry-record-model.ps1'
+$map6xTests  = Join-Path $repoRoot 'scripts\test-build42-loth-per-entry-record-model.ps1'
+if (-not (Test-Path -LiteralPath $map6xDoc))    { throw "MAP-6X doc missing" }
+Write-Output "OK: docs\MAP_6X_LOTH_PER_ENTRY_RECORD_MODEL_RESEARCH.md"
+if (-not (Test-Path -LiteralPath $map6xScript)) { throw "MAP-6X script missing" }
+Write-Output "OK: scripts\analyze-build42-loth-per-entry-record-model.ps1"
+if (-not (Test-Path -LiteralPath $map6xTests))  { throw "MAP-6X tests missing" }
+Write-Output "OK: scripts\test-build42-loth-per-entry-record-model.ps1"
+$map6xDocContent = Get-Content -LiteralPath $map6xDoc -Raw
+if ($map6xDocContent -notmatch 'BUILD42_LOTH_PER_ENTRY_RECORD_MODEL_ANALYSED') { throw "MAP-6X doc missing BUILD42_LOTH_PER_ENTRY_RECORD_MODEL_ANALYSED" }
+Write-Output "OK: doc contains BUILD42_LOTH_PER_ENTRY_RECORD_MODEL_ANALYSED"
+if ($map6xDocContent -notmatch 'LOTH_TRAILING_BODY_FIXED_SIZE_FOR_SIMPLE_CELLS') { throw "MAP-6X doc missing LOTH_TRAILING_BODY_FIXED_SIZE_FOR_SIMPLE_CELLS" }
+Write-Output "OK: doc contains LOTH_TRAILING_BODY_FIXED_SIZE_FOR_SIMPLE_CELLS"
+if ($map6xDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6X doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+$map6xScriptContent = Get-Content -LiteralPath $map6xScript -Raw
+if ($map6xScriptContent -notmatch '\.local') { throw "MAP-6X script missing .local refusal" }
+Write-Output "OK: script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-6X per-entry record model tests ---"
+& powershell -ExecutionPolicy Bypass -File $map6xTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-6X per-entry record model tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-6W LOTH trailing byte pattern research ---"
@@ -671,7 +698,7 @@ Write-Output "PZMapForge validation summary"
 Write-Output "========================================"
 
 # ---------------------------------------------------------------------------
-# Ledger constants - sourced from proof-packet v0.26 / docs/VALIDATION_LEDGER.md.
+# Ledger constants - sourced from proof-packet v0.27 / docs/VALIDATION_LEDGER.md.
 # Update here when counts change; update the proof packet schema and ledger too.
 # ---------------------------------------------------------------------------
 
@@ -699,15 +726,16 @@ $psChecks = [ordered]@{
     'MAP-6U full body tests'             = 14
     'MAP-6V trailing body decode tests'  = 17
     'MAP-6W byte pattern tests'          = 20
+    'MAP-6X per-entry record model tests' = 20
 }
-$psTotal = 723   # = validation_summary.total_expected_assertions in proof-packet v0.26
+$psTotal = 743   # = validation_summary.total_expected_assertions in proof-packet v0.27
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 300   # PZMapForge.Cli.Tests (MAP-6S: +25 Build42 LOTH v2 tests)
-$dnTotal     = 490   # = dotnet_validation_summary.test_total in proof-packet v0.26
+$dnTotal     = 490   # = dotnet_validation_summary.test_total in proof-packet v0.27
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.26):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.27):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -715,7 +743,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.26 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.27 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

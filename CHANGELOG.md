@@ -8,6 +8,37 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6X: LOTH per-entry record model research)
+- docs/MAP_6X_LOTH_PER_ENTRY_RECORD_MODEL_RESEARCH.md: research doc.
+  - Per-entry model REJECTED for simple cells.
+  - Critical: all 40 smallest cells have EXACTLY 1048 trailing bytes (constant).
+  - 1048 % 4 = 0 (U32-aligned: 262 words). 32/32 stable prefix bytes.
+  - LOTH_TRAILING_BODY_FIXED_SIZE_FOR_SIMPLE_CELLS.
+  - MAP-6Y: confirm whether full 1048-byte block is constant.
+  - WRITER_NOT_DEFENSIBLE until block content confirmed.
+- scripts/analyze-build42-loth-per-entry-record-model.ps1:
+  - Guards: ReferenceRoot and Output under .local.
+  - Record size scoreboard (4,5,6,7,8,9,10,12,16).
+  - Bytes-per-entry ratio; best record size by abs remainder and overhead.
+  - Per-record sampling (first 8 records for rs=5/6/7/8).
+  - Stability analysis across focus cells (32 prefix byte positions).
+  - Cross-file scoreboard and overall hypotheses.
+- scripts/test-build42-loth-per-entry-record-model.ps1: 20 assertions.
+  - Tests 1-2: path guards. Tests 3-5: exits 0, JSON+MD exist.
+  - Tests 6-15: all analysis fields present and populated.
+  - Tests 16-19: status labels in MD.
+  - psTotal 723->743.
+- scripts/validate.ps1: MAP-6X section; psTotal 723->743.
+- scripts/write-proof-packet.ps1: v0.27; map6x=20; total 743.
+- scripts/test-proof-packet.ps1: assertions updated (20/743).
+- docs/IMPLEMENTATION.md: MAP-6X ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6X section.
+
+No load test. No writer change. No PZ assets into repo. No playable export claim.
+PS 743 / .NET 490.
+
+---
+
 ### Added (MAP-6W: LOTH trailing byte pattern research)
 - docs/MAP_6W_LOTH_TRAILING_BYTE_PATTERN_RESEARCH.md: byte-level research doc.
   - MAP-6V basis; why U32 model rejected.
