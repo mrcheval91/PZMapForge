@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.28) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.29) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
     planning recommendation artifacts, plan-recommendations contract (incl. thresholds_used),
     and a separate dotnet_validation_summary section tracking .NET xUnit test counts.
@@ -147,7 +147,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.28'
+    schema                  = 'pzmapforge.proof-packet.v0.29'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -201,9 +201,9 @@ $packet = [ordered]@{
         total_expected_assertions         = 763
     }
     dotnet_validation_summary = [ordered]@{
-        test_total                          = 490
+        test_total                          = 518
         core_tests = 190
-        cli_tests                           = 300
+        cli_tests                           = 328
         process_cli_tests_present           = $true
         full_pipeline_contract_tests_present = $true
         full_pipeline_artifact_count        = 7
@@ -278,7 +278,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.28
+Schema: pzmapforge.proof-packet.v0.29
 
 ## Claim boundary
 
@@ -358,9 +358,9 @@ planning_artifact_only_not_pz_load_tested
 
 | Field | Value |
 |---|---|
-| test_total | 490 |
+| test_total | 518 |
 | core_tests | 190 |
-| cli_tests | 300 |
+| cli_tests | 328 |
 | process_cli_tests_present | true |
 | full_pipeline_contract_tests_present | true |
 | full_pipeline_artifact_count | 7 |

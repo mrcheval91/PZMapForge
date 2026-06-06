@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Validates .local/mapforge/proof-packet.json against the v0.28 proof-packet contract.
+    Validates .local/mapforge/proof-packet.json against the v0.29 proof-packet contract.
 
     Runs write-proof-packet.ps1 first if proof-packet.json does not exist.
     Exits 0 if all checks pass, exits 1 if any fail.
@@ -83,8 +83,8 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.28') `
-    "schema == 'pzmapforge.proof-packet.v0.28' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.29') `
+    "schema == 'pzmapforge.proof-packet.v0.29' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
@@ -145,9 +145,9 @@ Assert-True ([int]$p.validation_summary.total_expected_assertions              -
 Write-Output ""
 Write-Output "--- dotnet_validation_summary ---"
 $d = $p.dotnet_validation_summary
-Assert-True ([int]$d.test_total                                -eq 490)  "dotnet test_total == 490"
+Assert-True ([int]$d.test_total                                -eq 518)  "dotnet test_total == 518"
 Assert-True ([int]$d.core_tests -eq 190)  "dotnet core_tests == 190"
-Assert-True ([int]$d.cli_tests                                 -eq 300)  "dotnet cli_tests == 300"
+Assert-True ([int]$d.cli_tests                                 -eq 328)  "dotnet cli_tests == 328"
 Assert-True ($d.process_cli_tests_present                      -eq $true) "process_cli_tests_present == true"
 Assert-True ($d.full_pipeline_contract_tests_present           -eq $true) "full_pipeline_contract_tests_present == true"
 Assert-True ([int]$d.full_pipeline_artifact_count              -eq 7)    "dotnet full_pipeline_artifact_count == 7"

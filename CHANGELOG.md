@@ -8,6 +8,54 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6Z: Build 42 LOTH v3 stable literal trailer writer)
+- docs/MAP_6Z_LOTH_V3_STABLE_LITERAL_WRITER.md: writer doc.
+  - MAP-6Y basis: 80 Dru_map simple cells, all_1048_blocks_identical=true.
+  - v3 LOTH structure: 12-byte header + 28586-byte ASCII table + 1048-byte stable trailer.
+  - Total LOTH size: 29646 bytes.
+  - Canonical trailer: first two U32LE = 8, rest zero. SHA-256: 93a8f3ccf2cafdc2fb7cd4f3836c29d87076f244f5ba685f92659fbdaf778ec7.
+  - LOTP and chunkdata: unchanged.
+  - objects.lua secondary parse issue: still pending.
+  - Recommended next: MAP-7A controlled LOTH v3 load-test packet and retest.
+  - BUILD42_LOTH_V3_STABLE_LITERAL_WRITER_IMPLEMENTED; LOAD_TEST_NOT_PERFORMED;
+    PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- src/PZMapForge.Cli/Program.cs:
+  - Profile empty_grass_v2 added to Build42CandidateWriterCommand.
+  - Validation accepts empty_grass_v0, empty_grass_v1, and empty_grass_v2.
+  - empty_grass_v2: same 1024 entries as v1 + BuildMap6yCanonicalTrailer() appended.
+  - BuildMap6yCanonicalTrailer(): bytes[0]=0x08, bytes[4]=0x08, rest zero. 1048 bytes.
+  - Report fields added: loth_trailer_strategy, loth_trailer_size, loth_trailer_status,
+    loth_trailer_sha256.
+  - loth_known_risk for v2: stable_reference_block_may_not_match_generated_tile_table_or_cell_payload.
+  - remaining_unknowns for v2: includes loth_trailer_acceptance_at_eof.
+  - loth_entry_strategy, loth_known_risk, loth_entries_source, remaining_unknowns: made
+    dynamic via switch expression (all profiles now accurate in JSON and MD reports).
+  - mdRemainingUnknowns: dynamic per profile (fixes v0/v1 MD which had hardcoded v0 list).
+  - LOTP and chunkdata: unchanged.
+- tests/PZMapForge.Cli.Tests/MapExportBuild42CandidateWriterV2ProcessTests.cs: 28 assertions.
+  - Test 1: exits 0. Test 2: 42/ exists. Test 3: lotheader exists.
+  - Tests 4-6: magic/version/entry_count.
+  - Test 7: 1024 ASCII entries parsed before trailer via FindTrailerStart.
+  - Tests 8-9: first/last entry names.
+  - Test 10: trailer size == 1048.
+  - Test 11: trailer starts at 12 + computed ascii_table_bytes.
+  - Test 12: trailer SHA-256 == canonical MAP-6Y value (structure-derived + constant).
+  - Test 13: total size == trailerStart + 1048.
+  - Tests 14-23: report field assertions.
+  - Tests 24-27: LOTP and chunkdata unchanged.
+  - Test 28: output outside .local refused.
+  - dnCliTests 300->328; dnTotal 490->518.
+- scripts/validate.ps1: dnCliTests 300->328; dnTotal 490->518; v0.29 labels.
+- scripts/write-proof-packet.ps1: v0.29; cli_tests=328; test_total=518.
+- scripts/test-proof-packet.ps1: assertions updated (328/518).
+- docs/IMPLEMENTATION.md: MAP-6Z ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6Z section.
+
+No load test. LOTP/chunkdata unchanged. No PZ assets into repo. No playable export claim.
+PS 763 / .NET 518 (core=190, cli=328).
+
+---
+
 ### Added (MAP-6Y: LOTH fixed 1048-byte block research)
 - docs/MAP_6Y_LOTH_FIXED_1048_BLOCK_RESEARCH.md: research doc.
   - MAP-6X basis: per-entry model rejected; all 40 smallest cells have 1048 trailing bytes.

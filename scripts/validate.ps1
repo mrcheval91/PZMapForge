@@ -756,14 +756,14 @@ $psChecks = [ordered]@{
     'MAP-6X per-entry record model tests'  = 20
     'MAP-6Y fixed 1048 block tests'        = 20
 }
-$psTotal = 763   # = validation_summary.total_expected_assertions in proof-packet v0.28
+$psTotal = 763   # = validation_summary.total_expected_assertions in proof-packet v0.29
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
-$dnCliTests  = 300   # PZMapForge.Cli.Tests (MAP-6S: +25 Build42 LOTH v2 tests)
-$dnTotal     = 490   # = dotnet_validation_summary.test_total in proof-packet v0.27
+$dnCliTests  = 328   # PZMapForge.Cli.Tests (MAP-6Z: +28 Build42 LOTH v3 tests)
+$dnTotal     = 518   # = dotnet_validation_summary.test_total in proof-packet v0.29
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.28):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.29):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -771,7 +771,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.28 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.29 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

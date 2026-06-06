@@ -552,6 +552,32 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6Z — Build 42 LOTH v3 stable literal trailer writer:**
+MAP-6Z adds `empty_grass_v2` profile to the candidate writer. LOTH v3 uses the same
+1024 generated entries as v1 plus the canonical 1048-byte stable trailer from MAP-6Y.
+
+Key facts:
+- Total LOTH size: 29646 bytes (12 + 28586 ASCII + 1048 trailer).
+- Trailer: first two U32LE = 8, remaining 1040 bytes = zero.
+- Trailer SHA-256: 93a8f3ccf2cafdc2fb7cd4f3836c29d87076f244f5ba685f92659fbdaf778ec7
+- LOTP and chunkdata: unchanged.
+- objects.lua secondary parse issue: still pending.
+- 28 process tests added to CLI test suite.
+
+Status labels:
+```text
+BUILD42_LOTH_V3_STABLE_LITERAL_WRITER_IMPLEMENTED
+LOTH_TRAILER_STRATEGY=map6y_stable_literal_1048_block
+LOTP_UNCHANGED
+CHUNKDATA_UNCHANGED
+OBJECTS_LUA_SECONDARY_PARSE_ISSUE_PENDING
+LOAD_TEST_NOT_PERFORMED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+No load test. No writer change to LOTP/chunkdata. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+Recommended next: MAP-7A controlled LOTH v3 load-test packet and retest.
+
 **MAP-6Y — LOTH fixed 1048-byte block research:**
 MAP-6Y inspects whether the 1048-byte simple-cell LOTH trailer is constant,
 partially stable, or variable across reference Build 42 cells.

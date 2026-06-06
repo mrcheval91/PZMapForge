@@ -1631,10 +1631,10 @@ static int Build42CandidateWriterCommand(
     // Profile: empty_grass_v0 — minimal all-zero/grass hypothesis.
     // Not load-tested. Not a playable export. Candidate only.
 
-    if (profile != "empty_grass_v0" && profile != "empty_grass_v1")
+    if (profile != "empty_grass_v0" && profile != "empty_grass_v1" && profile != "empty_grass_v2")
     {
         Console.Error.WriteLine(
-            $"build42-candidate-writer: unknown profile '{profile}'. Supported profiles: empty_grass_v0, empty_grass_v1.");
+            $"build42-candidate-writer: unknown profile '{profile}'. Supported profiles: empty_grass_v0, empty_grass_v1, empty_grass_v2.");
         return 1;
     }
 
@@ -1715,7 +1715,7 @@ BOUNDARY STATEMENT:
 
 BINARY CANDIDATE FORMATS ({profile}):
 - chunkdata: 1026 bytes, header 00 01, 1024-byte all-zero body (MAP-6H evidence).
-- lotheader: LOTH magic, version 1, {(profile == "empty_grass_v1" ? "1024 generated entries blends_grassoverlays_01_0..._01_1023 (MAP-6S)" : "1 entry blends_grassoverlays_01_0 (MAP-4E committed evidence only)")}.
+- lotheader: LOTH magic, version 1, {profile switch { "empty_grass_v2" => "1024 generated entries + 1048-byte stable trailer from MAP-6Y research (MAP-6Z)", "empty_grass_v1" => "1024 generated entries blends_grassoverlays_01_0..._01_1023 (MAP-6S)", _ => "1 entry blends_grassoverlays_01_0 (MAP-4E committed evidence only)" }}.
 - lotpack: LOTP magic, version 1, 1024 chunks x 1024 zero bytes (MAP-6K most_common_size).
 """, Encoding.UTF8);
 
@@ -1729,20 +1729,29 @@ BINARY CANDIDATE FORMATS ({profile}):
     // ---- 0_0.lotheader ----
     // Profile empty_grass_v0 (MAP-6L): 1 committed entry from MAP-4E evidence.
     // Profile empty_grass_v1 (MAP-6S): 1024 generated contiguous grass overlay entries.
-    //   Based on MAP-6R evidence: reference field8=920-2007, bytes 12+ immediately ASCII.
     //   Entry range: blends_grassoverlays_01_0 ... blends_grassoverlays_01_1023.
     //   Entries are generated -- not copied from any reference mod. Candidate only.
     //   loth_known_risk: generated_entries_may_not_match_loaded_tile_definitions
-    var lothEntries = profile == "empty_grass_v1"
+    // Profile empty_grass_v2 (MAP-6Z): same 1024 entries as v1 + canonical 1048-byte trailer.
+    //   Trailer is the MAP-6Y stable literal block (80 Dru_map simple cells, all identical).
+    //   loth_known_risk: stable_reference_block_may_not_match_generated_tile_table_or_cell_payload
+    var lothEntries = (profile == "empty_grass_v1" || profile == "empty_grass_v2")
         ? Enumerable.Range(0, 1024).Select(i => $"blends_grassoverlays_01_{i}").ToArray()
         : new[] { "blends_grassoverlays_01_0" }; // MAP-4E committed evidence
-    var lothEntryData  = Encoding.ASCII.GetBytes(string.Join("\n", lothEntries) + "\n");
-    var lothBytes      = new byte[12 + lothEntryData.Length];
+    var lothEntryData = Encoding.ASCII.GetBytes(string.Join("\n", lothEntries) + "\n");
+    // MAP-6Z: canonical 1048-byte simple-cell trailer from MAP-6Y reference research.
+    // Source: 80 Dru_map simple cells (all_1048_blocks_identical=true). First two U32LE=8, rest zero.
+    // SHA-256: 93a8f3ccf2cafdc2fb7cd4f3836c29d87076f244f5ba685f92659fbdaf778ec7
+    // Not copied from PZ game assets. Derived from MAP-6Y analysis. Candidate only.
+    var lothTrailer = profile == "empty_grass_v2" ? BuildMap6yCanonicalTrailer() : Array.Empty<byte>();
+    var lothBytes   = new byte[12 + lothEntryData.Length + lothTrailer.Length];
     lothBytes[0] = 0x4C; lothBytes[1] = 0x4F; lothBytes[2] = 0x54; lothBytes[3] = 0x48; // LOTH
     lothBytes[4] = 0x01; // version = 1 (LE)
     var entryCountLeBytes = BitConverter.GetBytes((uint)lothEntries.Length);
     Array.Copy(entryCountLeBytes, 0, lothBytes, 8, 4);
     Array.Copy(lothEntryData, 0, lothBytes, 12, lothEntryData.Length);
+    if (lothTrailer.Length > 0)
+        Array.Copy(lothTrailer, 0, lothBytes, 12 + lothEntryData.Length, lothTrailer.Length);
     File.WriteAllBytes(Path.Combine(mapDataDir, $"{cellCoord}.lotheader"), lothBytes);
 
     // ---- world_x_y.lotpack (MAP-6L: LOTP format, 1024 chunks x 1024 zero bytes) ----
@@ -1822,18 +1831,34 @@ BINARY CANDIDATE FORMATS ({profile}):
         loth_entries                 = lothEntries.Length > 3
             ? new[] { lothEntries[0], $"...({lothEntries.Length - 2} more)...", lothEntries[^1] }
             : lothEntries,
-        loth_entries_source          = profile == "empty_grass_v1"
+        loth_entries_source          = (profile == "empty_grass_v1" || profile == "empty_grass_v2")
             ? "generated_contiguous_range_not_copied_from_reference"
             : "committed_evidence_only_map4e",
-        loth_entry_strategy          = profile == "empty_grass_v1"
-            ? "generated_contiguous_grass_overlay_range"
-            : "single_committed_entry_map4e",
-        loth_known_risk              = profile == "empty_grass_v1"
-            ? "generated_entries_may_not_match_loaded_tile_definitions"
-            : "single_entry_insufficient_per_map6r_evidence",
+        loth_entry_strategy          = profile switch
+        {
+            "empty_grass_v2" => "generated_contiguous_grass_overlay_range_with_map6y_stable_trailer",
+            "empty_grass_v1" => "generated_contiguous_grass_overlay_range",
+            _                => "single_committed_entry_map4e",
+        },
+        loth_known_risk              = profile switch
+        {
+            "empty_grass_v2" => "stable_reference_block_may_not_match_generated_tile_table_or_cell_payload",
+            "empty_grass_v1" => "generated_entries_may_not_match_loaded_tile_definitions",
+            _                => "single_entry_insufficient_per_map6r_evidence",
+        },
         loth_status                  = "generated_not_load_tested",
         loth_size_bytes              = lothBytes.Length,
         loth_sha256                  = lothSha256,
+        loth_trailer_strategy        = profile == "empty_grass_v2"
+            ? "map6y_stable_literal_1048_block"
+            : "none_no_trailer",
+        loth_trailer_size            = lothTrailer.Length,
+        loth_trailer_status          = profile == "empty_grass_v2"
+            ? "generated_not_load_tested"
+            : "not_applicable",
+        loth_trailer_sha256          = lothTrailer.Length > 0
+            ? string.Join("", SHA256.HashData(lothTrailer).Select(b => b.ToString("x2")))
+            : "",
         lotp_candidate_profile       = profile,
         lotp_payload_strategy        = "uniform_zero_1024_per_chunk",
         lotp_offset_strategy         = "sequential_u64_offsets",
@@ -1845,9 +1870,12 @@ BINARY CANDIDATE FORMATS ({profile}):
         lotp_sha256                  = lotpSha256,
         geometry_model               = "32x32_chunk_grid_256x256_cell",
         geometry_status              = "strongly_supported_not_load_tested",
-        remaining_unknowns = profile == "empty_grass_v1"
-            ? new[] { "loth_generated_entry_acceptance", "lotp_zero_payload_load_acceptance", "chunkdata_zero_body_acceptance", "build42_load_test" }
-            : new[] { "lotp_zero_payload_load_acceptance", "loth_minimum_entries_acceptance", "missing_trailer_acceptance", "build42_load_test" },
+        remaining_unknowns = profile switch
+        {
+            "empty_grass_v2" => new[] { "loth_generated_entry_acceptance", "loth_trailer_acceptance_at_eof", "lotp_zero_payload_load_acceptance", "chunkdata_zero_body_acceptance", "build42_load_test" },
+            "empty_grass_v1" => new[] { "loth_generated_entry_acceptance", "lotp_zero_payload_load_acceptance", "chunkdata_zero_body_acceptance", "build42_load_test" },
+            _                => new[] { "lotp_zero_payload_load_acceptance", "loth_minimum_entries_acceptance", "missing_trailer_acceptance", "build42_load_test" },
+        },
     };
 
     var jsonOpts = new JsonSerializerOptions { WriteIndented = true };
@@ -1855,6 +1883,12 @@ BINARY CANDIDATE FORMATS ({profile}):
     File.WriteAllText(reportPath, JsonSerializer.Serialize(report, jsonOpts), Encoding.UTF8);
 
     // ---- Report MD ----
+    var mdRemainingUnknowns = profile switch
+    {
+        "empty_grass_v2" => "- loth_generated_entry_acceptance\n- loth_trailer_acceptance_at_eof\n- lotp_zero_payload_load_acceptance\n- chunkdata_zero_body_acceptance\n- build42_load_test",
+        "empty_grass_v1" => "- loth_generated_entry_acceptance\n- lotp_zero_payload_load_acceptance\n- chunkdata_zero_body_acceptance\n- build42_load_test",
+        _                => "- lotp_zero_payload_load_acceptance\n- loth_minimum_entries_acceptance\n- missing_trailer_acceptance\n- build42_load_test",
+    };
     var md = $"""
 # Build 42 Candidate Writer Report
 
@@ -1876,16 +1910,13 @@ No PZ assets copied. No repo media/maps writes. Experimental only.
 
 | File | Size | Format | Status |
 |---|---|---|---|
-| {cellCoord}.lotheader | {lothBytes.Length} | LOTH magic+version+{lothEntries.Length} {(lothEntries.Length == 1 ? "entry" : "entries")} | generated_not_load_tested |
+| {cellCoord}.lotheader | {lothBytes.Length} | LOTH magic+version+{lothEntries.Length} {(lothEntries.Length == 1 ? "entry" : "entries")}{(lothTrailer.Length > 0 ? $"+{lothTrailer.Length}-byte stable trailer" : "")} | generated_not_load_tested |
 | world_{cellCoord}.lotpack | {lotpExpectedSize} | LOTP magic+version+1024 chunks | generated_not_load_tested |
 | chunkdata_{cellCoord}.bin | 1026 | 00 01 header + 1024 zero bytes | generated_not_load_tested |
 
 ## Remaining unknowns
 
-- lotp_zero_payload_load_acceptance
-- loth_minimum_entries_acceptance
-- missing_trailer_acceptance
-- build42_load_test
+{mdRemainingUnknowns}
 
 ## Non-claims
 
@@ -1958,6 +1989,21 @@ static void WritePlaceholderPng(string path, string line1, string line2)
     if (!string.IsNullOrEmpty(line2))
         g.DrawString(line2, font, System.Drawing.Brushes.LightGray, 4f, 22f);
     bmp.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+}
+
+// MAP-6Z: canonical 1048-byte simple-cell trailer from MAP-6Y reference research.
+// Source: 80 Dru_map reference lotheader files, all_1048_blocks_identical=true (MAP-6Y).
+// Structure: bytes 0-3 = U32LE 8, bytes 4-7 = U32LE 8, bytes 8-1047 = zero.
+// SHA-256: 93a8f3ccf2cafdc2fb7cd4f3836c29d87076f244f5ba685f92659fbdaf778ec7
+// Not copied from PZ game assets. Derived from MAP-6Y analysis of reference data.
+// Applies only to the experimental simple-cell candidate profile empty_grass_v2.
+static byte[] BuildMap6yCanonicalTrailer()
+{
+    var t = new byte[1048];
+    t[0] = 0x08; // first U32LE = 8
+    t[4] = 0x08; // second U32LE = 8
+    // bytes 8-1047: zero (initialized by new byte[])
+    return t;
 }
 
 static int ImageCheckCommand(string[] args)
