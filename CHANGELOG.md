@@ -8,6 +8,37 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6R: Build 42 LOTH structure research)
+- docs/MAP_6R_BUILD42_LOTH_STRUCTURE_RESEARCH.md: research doc.
+  - Why 38-byte LOTH is insufficient.
+  - How MAP-6R results guide MAP-6S.
+  - Status labels: BUILD42_LOTH_STRUCTURE_INSPECTED etc.
+- scripts/inspect-build42-loth-structure.ps1:
+  - Guards: ReferenceRoot and Output under .local.
+  - Reads bounded prefix (default 512 bytes) per *.lotheader.
+  - Extracts: magic, version, field8, u32le_words_first_128, null/newline count,
+    first_printable_offset, ascii_lines_from_offset_12, binary_gap_before_ascii.
+  - Smoke (20 Dru_map files): binaryGap=False (bytes 12+ immediately ASCII);
+    field8=920-2007; candidate field8=1 grossly insufficient.
+  - No binary section between 12-byte header and string table confirmed.
+- scripts/test-build42-loth-structure.ps1: 14 assertions.
+  - Tests 1-2: path guards.
+  - Tests 3-5: exits 0; JSON+MD exist.
+  - Tests 6-7: magic LOTH + version 1 detected.
+  - Tests 8-10: first_printable_offset, newline_count, u32le_words recorded.
+  - Tests 11-14: status labels in MD.
+  - psTotal 640->654.
+- scripts/validate.ps1: MAP-6R section; psTotal 640->654.
+- scripts/write-proof-packet.ps1: v0.21; map6r=14; total 654.
+- scripts/test-proof-packet.ps1: assertions updated (14/654).
+- docs/IMPLEMENTATION.md: MAP-6R ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6R section.
+
+No load test. No writer change. No PZ assets into repo. No playable export claim.
+PS 654 / .NET 465.
+
+---
+
 ### Added (MAP-6Q: Spawn activation fixed; candidate lotheader EOF failure)
 - docs/MAP_6Q_SPAWN_FIXED_LOTHEADER_EOF_FAILURE_RECORD.md: failure record.
   - Spawn wiring fixed: spawnregions.lua, Mods=, Map=, server _spawnregions.lua.

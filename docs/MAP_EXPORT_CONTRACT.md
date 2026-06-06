@@ -552,6 +552,39 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6R — Build 42 LOTH structure research:**
+MAP-6R deepens the LOTH lotheader inspection to explain the MAP-6Q EOF failure
+and produce writer-ready structural evidence.
+
+Key smoke findings (20 Dru_map reference files, 512-byte prefix):
+- `binaryGap=False` on ALL 20 files: bytes 12+ are immediately ASCII entries.
+  No hidden binary section between the 12-byte header and the string table.
+- `field8` = entry count (920-2007 per cell). Candidate has `field8=1`. Minimum
+  for an empty grass cell is unknown but far above 1.
+- `magic=LOTH`, `version=1` stable across all references.
+
+Conclusion: the MAP-6L writer is structurally correct (LOTH magic + version +
+field8 + ASCII entries) but the entry count is orders of magnitude too small.
+MAP-6S must increase the entry set to the real tile requirements.
+
+Status labels:
+```text
+BUILD42_LOTH_STRUCTURE_INSPECTED
+LOTH_REFERENCE_PREFIX_ANALYSED
+CANDIDATE_LOTHEADER_TOO_SHORT_CONFIRMED
+WRITER_RESEARCH_ONLY
+WRITER_NOT_CHANGED
+LOAD_TEST_NOT_PERFORMED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+Artifacts:
+- `docs/MAP_6R_BUILD42_LOTH_STRUCTURE_RESEARCH.md` — research doc.
+- `scripts/inspect-build42-loth-structure.ps1` — .local-only bounded prefix
+  inspector for LOTH files.
+
+No load test. No writer change. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6Q — Spawn activation fixed; candidate lotheader EOF failure:**
 MAP-6Q records that spawn activation wiring was fixed and the candidate map
 files were exercised for the first time, confirming a LOTH lotheader rejection.
