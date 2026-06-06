@@ -552,6 +552,41 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6Q — Spawn activation fixed; candidate lotheader EOF failure:**
+MAP-6Q records that spawn activation wiring was fixed and the candidate map
+files were exercised for the first time, confirming a LOTH lotheader rejection.
+
+Wiring fixed: spawnregions.lua placed, server ini Map= and Mods= updated,
+server _spawnregions.lua references candidate. Retest produced:
+- Error 3 crash before city choice.
+- `java.io.EOFException` at `IsoLot.readInt(IsoLot.java:75)` on 0_0.lotheader.
+- `IsoMetaGrid$MetaGridLoaderThread.loadCell` in stack.
+
+The MAP-6L LOTH lotheader (38 bytes) is too small — the smallest reference
+Build 42 lotheader is 34920 bytes. The LOTH structure needs more entries.
+LOTP and chunkdata remain unproven (load stopped at lotheader).
+
+Status labels:
+```text
+SPAWN_ACTIVATION_WIRING_FIXED
+CANDIDATE_MAP_FILES_EXERCISED
+CURRENT_CANDIDATE_LOTHEADER_EOF
+LOTHEADER_STRUCTURE_REJECTED
+LOTP_NOT_REACHED
+CHUNKDATA_NOT_REACHED
+LOAD_TEST_FAIL_CURRENT_CANDIDATE
+WRITER_NOT_CHANGED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+Artifacts:
+- `docs/MAP_6Q_SPAWN_FIXED_LOTHEADER_EOF_FAILURE_RECORD.md` — full failure record.
+- `scripts/compare-build42-lotheader-candidate.ps1` — .local-only lotheader
+  comparison: reads candidate + reference LOTH files; reports size, magic,
+  version, field8, stable word summary; smoke: candidate 38b vs min ref 34920b.
+
+No load test by Claude. No writer change. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6P — Clean retest result and spawn activation gap:**
 MAP-6P records the MAP-6O clean retest outcome and defines the spawn activation
 diagnostic protocol.

@@ -8,6 +8,39 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6Q: Spawn activation fixed; candidate lotheader EOF failure)
+- docs/MAP_6Q_SPAWN_FIXED_LOTHEADER_EOF_FAILURE_RECORD.md: failure record.
+  - Spawn wiring fixed: spawnregions.lua, Mods=, Map=, server _spawnregions.lua.
+  - Retest: java.io.EOFException at IsoLot.readInt on 0_0.lotheader.
+  - SPAWN_ACTIVATION_WIRING_FIXED; CANDIDATE_MAP_FILES_EXERCISED;
+    CURRENT_CANDIDATE_LOTHEADER_EOF; LOTHEADER_STRUCTURE_REJECTED;
+    LOTP_NOT_REACHED; CHUNKDATA_NOT_REACHED; LOAD_TEST_FAIL_CURRENT_CANDIDATE;
+    WRITER_NOT_CHANGED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/compare-build42-lotheader-candidate.ps1:
+  - Guards: CandidateLotheader, ReferenceRoot, Output all under .local.
+  - Reads candidate + reference *.lotheader bounded prefixes (128 bytes max).
+  - Reports: size, magic, version, field8, u32le_words_first_64.
+  - Comparison: candidate_smaller_than_all_references, stable word summary.
+  - Status labels: BUILD42_LOTHEADER_CANDIDATE_COMPARISON_CREATED etc.
+  - Smoke: candidate 38 bytes, min reference 34920 bytes; candidate_smaller=true.
+- scripts/test-build42-lotheader-candidate-comparison.ps1: 13 assertions.
+  - Tests 1-3: path guards (candidate/reference/output outside .local refused).
+  - Tests 4-6: exits 0; JSON and MD exist.
+  - Tests 7-8: candidate+reference magic LOTH detected.
+  - Test 9: candidate_smaller_than_all_references=true.
+  - Tests 10-13: status labels in MD.
+  - psTotal 627->640.
+- scripts/validate.ps1: MAP-6Q section; psTotal 627->640.
+- scripts/write-proof-packet.ps1: v0.20; map6q=13; total 640.
+- scripts/test-proof-packet.ps1: assertions updated (13/640).
+- docs/IMPLEMENTATION.md: MAP-6Q ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6Q section.
+
+No load test by Claude. No writer change. No PZ assets into repo. No playable export claim.
+PS 640 / .NET 465.
+
+---
+
 ### Added (MAP-6P: Clean retest result and spawn activation gap)
 - docs/MAP_6P_CLEAN_RETEST_SPAWN_ACTIVATION_RECORD.md: MAP-6O clean retest recorded.
   - BUILD42_CANDIDATE_MOD_LOAD_CONFIRMED: current_candidate_matches=2, no exception.

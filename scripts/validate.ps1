@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (627)
+    Final output reports the complete PowerShell validation lane total (640)
     and the .NET lane total (465) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.19 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.20 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,33 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-6Q spawn activation fixed; lotheader EOF failure ---"
+$map6qDoc    = Join-Path $repoRoot 'docs\MAP_6Q_SPAWN_FIXED_LOTHEADER_EOF_FAILURE_RECORD.md'
+$map6qScript = Join-Path $repoRoot 'scripts\compare-build42-lotheader-candidate.ps1'
+$map6qTests  = Join-Path $repoRoot 'scripts\test-build42-lotheader-candidate-comparison.ps1'
+if (-not (Test-Path -LiteralPath $map6qDoc))    { throw "MAP-6Q doc missing" }
+Write-Output "OK: docs\MAP_6Q_SPAWN_FIXED_LOTHEADER_EOF_FAILURE_RECORD.md"
+if (-not (Test-Path -LiteralPath $map6qScript)) { throw "MAP-6Q script missing" }
+Write-Output "OK: scripts\compare-build42-lotheader-candidate.ps1"
+if (-not (Test-Path -LiteralPath $map6qTests))  { throw "MAP-6Q tests missing" }
+Write-Output "OK: scripts\test-build42-lotheader-candidate-comparison.ps1"
+$map6qDocContent = Get-Content -LiteralPath $map6qDoc -Raw
+if ($map6qDocContent -notmatch 'CURRENT_CANDIDATE_LOTHEADER_EOF') { throw "MAP-6Q doc missing CURRENT_CANDIDATE_LOTHEADER_EOF" }
+Write-Output "OK: doc contains CURRENT_CANDIDATE_LOTHEADER_EOF"
+if ($map6qDocContent -notmatch 'LOTHEADER_STRUCTURE_REJECTED') { throw "MAP-6Q doc missing LOTHEADER_STRUCTURE_REJECTED" }
+Write-Output "OK: doc contains LOTHEADER_STRUCTURE_REJECTED"
+if ($map6qDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6Q doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+$map6qScriptContent = Get-Content -LiteralPath $map6qScript -Raw
+if ($map6qScriptContent -notmatch '\.local') { throw "MAP-6Q script missing .local refusal" }
+Write-Output "OK: script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-6Q lotheader comparison tests ---"
+& powershell -ExecutionPolicy Bypass -File $map6qTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-6Q lotheader comparison tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-6P clean retest and spawn activation diagnostic ---"
@@ -509,7 +536,7 @@ Write-Output "PZMapForge validation summary"
 Write-Output "========================================"
 
 # ---------------------------------------------------------------------------
-# Ledger constants - sourced from proof-packet v0.19 / docs/VALIDATION_LEDGER.md.
+# Ledger constants - sourced from proof-packet v0.20 / docs/VALIDATION_LEDGER.md.
 # Update here when counts change; update the proof packet schema and ledger too.
 # ---------------------------------------------------------------------------
 
@@ -531,15 +558,16 @@ $psChecks = [ordered]@{
     'MAP-6N log triage tests'            = 12
     'MAP-6O retest checklist tests'      = 15
     'MAP-6P spawn activation tests'      = 12
+    'MAP-6Q lotheader comparison tests'  = 13
 }
-$psTotal = 627   # = validation_summary.total_expected_assertions in proof-packet v0.19
+$psTotal = 640   # = validation_summary.total_expected_assertions in proof-packet v0.20
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 275   # PZMapForge.Cli.Tests (MAP-6L: +25 Build42 candidate writer tests)
-$dnTotal     = 465   # = dotnet_validation_summary.test_total in proof-packet v0.19
+$dnTotal     = 465   # = dotnet_validation_summary.test_total in proof-packet v0.20
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.19):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.20):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -547,7 +575,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.19 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.20 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"
