@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (862)
+    Final output reports the complete PowerShell validation lane total (870)
     and the .NET lane total (556) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.35 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.36 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,34 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-7G Variant A registration failure ---"
+$map7gDoc    = Join-Path $repoRoot 'docs\MAP_7G_VARIANT_A_REGISTRATION_FAILURE.md'
+$map7gTests  = Join-Path $repoRoot 'scripts\test-build42-map7g-variant-a-failure.ps1'
+if (-not (Test-Path -LiteralPath $map7gDoc))   { throw "MAP-7G doc missing" }
+Write-Output "OK: docs\MAP_7G_VARIANT_A_REGISTRATION_FAILURE.md"
+if (-not (Test-Path -LiteralPath $map7gTests)) { throw "MAP-7G tests missing" }
+Write-Output "OK: scripts\test-build42-map7g-variant-a-failure.ps1"
+$map7gDocContent = Get-Content -LiteralPath $map7gDoc -Raw
+if ($map7gDocContent -notmatch 'MAP7F_VARIANT_A_MAP_FOLDER_SCAN_EMPTY') { throw "MAP-7G doc missing MAP7F_VARIANT_A_MAP_FOLDER_SCAN_EMPTY" }
+Write-Output "OK: doc contains MAP7F_VARIANT_A_MAP_FOLDER_SCAN_EMPTY"
+if ($map7gDocContent -notmatch 'CANDIDATE_NOT_IN_MAP_FOLDER_LIST') { throw "MAP-7G doc missing CANDIDATE_NOT_IN_MAP_FOLDER_LIST" }
+Write-Output "OK: doc contains CANDIDATE_NOT_IN_MAP_FOLDER_LIST"
+if ($map7gDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-7G doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+if ($map7gDocContent -notmatch 'LOAD_TEST_NOT_PERFORMED') { throw "MAP-7G doc missing LOAD_TEST_NOT_PERFORMED" }
+Write-Output "OK: doc contains LOAD_TEST_NOT_PERFORMED"
+$map7gAnalyzerContent = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts\inspect-build42-map7d-load-result.ps1') -Raw
+if ($map7gAnalyzerContent -notmatch 'ExpectedMapId') { throw "MAP-7G analyzer missing ExpectedMapId param" }
+Write-Output "OK: analyzer contains ExpectedMapId parameter"
+if ($map7gAnalyzerContent -notmatch 'VariantLabel') { throw "MAP-7G analyzer missing VariantLabel param" }
+Write-Output "OK: analyzer contains VariantLabel parameter"
+
+Write-Output ""
+Write-Output "--- MAP-7G variant A failure tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7gTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7G variant A failure tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-7F map folder registration diagnostic ---"
@@ -928,17 +956,18 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-7G variant A failure tests'       = 8
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 862   # = validation_summary.total_expected_assertions in proof-packet v0.35
+$psTotal = 870   # = validation_summary.total_expected_assertions in proof-packet v0.36
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.35):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.36):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -946,7 +975,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.35 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.36 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

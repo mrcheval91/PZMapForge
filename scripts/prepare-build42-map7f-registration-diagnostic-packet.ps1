@@ -318,8 +318,16 @@ ${fence}powershell
 powershell -ExecutionPolicy Bypass `
     -File .\scripts\inspect-build42-map7d-load-result.ps1 `
     -LogPath .\.local\map7f-logs\DebugLog-variant-A.txt `
-    -Output .\.local\map7f-analysis\variant-A
+    -Output .\.local\map7f-analysis\variant-A `
+    -ExpectedMapId $MapId `
+    -VariantLabel VariantA
 ${fence}
+
+Use -VariantLabel VariantB or VariantC for the other Map= variants.
+When the map folder scan is empty, the classification will be:
+  MAP7F_VARIANT_A_MAP_FOLDER_SCAN_EMPTY
+  MAP7F_VARIANT_B_MAP_FOLDER_SCAN_EMPTY
+  MAP7F_VARIANT_C_MAP_FOLDER_SCAN_EMPTY
 
 ## Check map folder scan section
 

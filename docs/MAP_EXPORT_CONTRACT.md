@@ -552,6 +552,26 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7G — Variant A registration failure and real DebugLog parser fix:**
+Variant A tested: `Map=pzmapforge_build42_candidate_v4_001;Muldraugh, KY`.
+Result: MAP7F_VARIANT_A_MAP_FOLDER_SCAN_EMPTY. IsoMetaGrid map folder list still empty.
+Muldraugh terrain loaded (confirming built-in maps resolve from Map= line).
+Custom candidate does not appear in folder scan.
+Analyzer fix: real PZ DebugLog format uses `f:N st:N>` not `, timestamp>`.
+New params: `-ExpectedMapId`, `-VariantLabel`.
+
+Status labels:
+```text
+MAP7F_VARIANT_A_MAP_FOLDER_SCAN_EMPTY
+VARIANT_A_TESTED_MAP_LINE
+CANDIDATE_NOT_IN_MAP_FOLDER_LIST
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No PZ assets.
+Recommended next: test Variants B and C; investigate IsoMetaGrid discovery path.
+
 **MAP-7F — Map folder registration diagnostic and analyzer fix:**
 MAP-7E confirmed MAP7D_LOAD_TEST_PARTIAL_PASS_IN_GAME_EMPTY_WORLD. IsoMetaGrid
 found no map folders. Candidate map folder was not registered or discovered.

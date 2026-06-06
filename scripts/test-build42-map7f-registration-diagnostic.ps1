@@ -53,7 +53,7 @@ Looking in these map folders:
 WARN: initSpawnBuildings: no room or building at 150,150,0
 "@
 
-# Synthetic: timestamped DebugLog format, empty map-folder list (MAP-7F fix target)
+# Synthetic: real PZ DebugLog format (f:N st:N>), empty map-folder list
 $tsEmptyLog = Join-Path $logDir 'ts-empty.txt'
 Set-Content -Path $tsEmptyLog -Encoding ASCII -Value @"
 INFO: loading pzmapforge_build42_candidate_v4_001
@@ -61,22 +61,22 @@ INFO: Player data received from the server
 INFO: game loading took 32 seconds
 INFO: STATE: exit zombie.gameStates.GameLoadingState
 INFO: STATE: exit zombie.gameStates.IngameState
-[06-06-26 14:23:01] LOG  : General     , 1749218581842> Looking in these map folders:.
-[06-06-26 14:23:01] LOG  : General     , 1749218581842> <End of map-folders list>.
-WARN: initSpawnBuildings: no room or building at 150,150,0
+[06-06-26 10:27:38.628] LOG  : General      f:0 st:0> Looking in these map folders:.
+[06-06-26 10:27:38.629] LOG  : General      f:0 st:0> <End of map-folders list>.
+[06-06-26 10:27:54.061] WARN : General      f:0 st:0 at SpawnPoints.initSpawnBuildings      > initSpawnBuildings: no room or building at 150,150,0.
 "@
 
-# Synthetic: timestamped DebugLog format, with folder entries between markers
+# Synthetic: real PZ DebugLog format, with folder entries between markers
 $tsWithFoldersLog = Join-Path $logDir 'ts-with-folders.txt'
 Set-Content -Path $tsWithFoldersLog -Encoding ASCII -Value @"
 INFO: loading pzmapforge_build42_candidate_v4_001
 INFO: Player data received from the server
 INFO: game loading took 32 seconds
 INFO: STATE: exit zombie.gameStates.GameLoadingState
-[06-06-26 14:23:01] LOG  : General     , 1749218581842> Looking in these map folders:.
-[06-06-26 14:23:01] LOG  : General     , 1749218581842> pzmapforge_build42_candidate_v4_001.
-[06-06-26 14:23:01] LOG  : General     , 1749218581842> Muldraugh, KY.
-[06-06-26 14:23:01] LOG  : General     , 1749218581842> <End of map-folders list>.
+[06-06-26 10:27:38.628] LOG  : General      f:0 st:0> Looking in these map folders:.
+[06-06-26 10:27:38.629] LOG  : General      f:0 st:0> pzmapforge_build42_candidate_v4_001.
+[06-06-26 10:27:38.630] LOG  : General      f:0 st:0> Muldraugh, KY.
+[06-06-26 10:27:38.631] LOG  : General      f:0 st:0> <End of map-folders list>.
 "@
 
 # Synthetic: timeout log (bare format - existing behavior preserved)

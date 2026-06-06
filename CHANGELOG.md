@@ -8,6 +8,49 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7G: Record Variant A map registration failure)
+- docs/MAP_7G_VARIANT_A_REGISTRATION_FAILURE.md: Variant A result record.
+  - Variant A: Map=pzmapforge_build42_candidate_v4_001;Muldraugh, KY.
+  - MAP7F_VARIANT_A_MAP_FOLDER_SCAN_EMPTY: pzmapforge absent from IsoMetaGrid folder list.
+  - Muldraugh terrain loaded (not black void), confirming Muldraugh, KY resolves from Map=.
+  - Custom candidate does not resolve to a scanned map folder path.
+  - Spawn warning persists. No city choice. World forest/grass.
+  - Analyzer DebugLog parser fix documented.
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-map7d-load-result.ps1: real DebugLog prefix fix.
+  - Strip-DebugLogPrefix regex updated: '^\[.*?\]\s+\w+\s*:\s+\w+\s+f:\d+[^>]*>\s*'
+  - Handles real Build 42 format: [date time.ms] LOG/WARN : category      f:N st:N> msg
+  - Handles WARN lines: f:N st:N at Class.method          > msg
+  - Handles early startup lines: f:N> msg (no st:N)
+  - Handles multiplayer lines: f:N st:N,M,P at class> msg
+  - New params: -ExpectedMapId (optional), -VariantLabel (optional).
+  - Classification: MAP7F_VARIANT_A_MAP_FOLDER_SCAN_EMPTY when ExpectedMapId+VariantLabel+empty scan.
+  - VariantLabel->VARIANT_KEY: VariantA->VARIANT_A, VariantB->VARIANT_B.
+  - New report fields: expected_map_id, variant_label, variant_classification.
+  - Schema bumped to v0.3.
+- scripts/test-build42-map7f-registration-diagnostic.ps1: fixtures updated.
+  - Updated tsEmptyLog and tsWithFoldersLog to use real f:0 st:0> format.
+  - WARN line format updated to real f:0 st:0 at Class.method>.
+  - All 11 MAP-7F assertions still pass.
+- scripts/prepare-build42-map7f-registration-diagnostic-packet.ps1:
+  - MAP_7F_LOG_CAPTURE_AND_ANALYSIS_COMMANDS.md now includes -ExpectedMapId and
+    -VariantLabel in the analyzer command examples.
+- scripts/test-build42-map7g-variant-a-failure.ps1: 8 assertions.
+  - Tests 1-3: real f:0 st:0> empty list, timestamped_debuglog_detected, WARN not counted.
+  - Test 4: real format with 2 folder entries -> count=2.
+  - Test 5: -ExpectedMapId -VariantLabel VariantA + empty scan -> MAP7F_VARIANT_A_MAP_FOLDER_SCAN_EMPTY.
+  - Tests 6-7: expected_map_id and variant_label fields populated correctly.
+  - Test 8: timeout regression test without new params.
+  - psTotal 862->870.
+- scripts/validate.ps1: MAP-7G section; psTotal 862->870; v0.36.
+- scripts/write-proof-packet.ps1: v0.36; map7g=8; total 870.
+- scripts/test-proof-packet.ps1: assertions updated (8/870, schema v0.36).
+- docs/IMPLEMENTATION.md: MAP-7G ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7G section.
+
+No load test. No binary writer change. No PZ assets. No playable claim.
+PS 870 / .NET 556 (unchanged).
+
 ### Added (MAP-7F: Diagnose Build 42 map folder registration)
 - docs/MAP_7F_MAP_FOLDER_REGISTRATION_DIAGNOSTIC.md: registration diagnostic record.
   - MAP-7E confirmed MAP_FOLDER_SCAN_EMPTY_CONFIRMED: IsoMetaGrid found no map folders.

@@ -16,15 +16,29 @@
 .PARAMETER Output
     Path under .local/ for report output.
 
+.PARAMETER ExpectedMapId
+    Optional. When provided, the analyzer checks whether this map ID appears in
+    the map folder scan list. Used with -VariantLabel to produce variant-specific
+    classification labels.
+
+.PARAMETER VariantLabel
+    Optional. When provided together with -ExpectedMapId and an empty map folder
+    scan, the classification becomes MAP7F_<VARIANT_KEY>_MAP_FOLDER_SCAN_EMPTY.
+    Example: -VariantLabel VariantA -> MAP7F_VARIANT_A_MAP_FOLDER_SCAN_EMPTY.
+
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\scripts\inspect-build42-map7d-load-result.ps1 `
-        -LogPath .\.local\map7d-logs\console-map7d-20260606.txt `
-        -Output .\.local\map7d-analysis
+        -LogPath .\.local\map7f-logs\DebugLog-variant-A.txt `
+        -Output .\.local\map7f-analysis\variant-A `
+        -ExpectedMapId pzmapforge_build42_candidate_v4_001 `
+        -VariantLabel VariantA
 #>
 
 param(
     [Parameter(Mandatory=$true)][string]$LogPath,
-    [Parameter(Mandatory=$true)][string]$Output
+    [Parameter(Mandatory=$true)][string]$Output,
+    [string]$ExpectedMapId = '',
+    [string]$VariantLabel  = ''
 )
 
 Set-StrictMode -Version Latest
@@ -77,14 +91,20 @@ $gameLoadingCompleted          = $logContent -match 'game loading took'
 $enteredIngameState            = $logContent -match 'STATE: exit zombie\.gameStates\.GameLoadingState'
 $exitedIngameState             = $logContent -match 'STATE: exit zombie\.gameStates\.IngameState'
 
-# Map folder scan — handles bare and timestamped DebugLog formats.
-# Timestamped format: [date] LOG : General     , \d+> Message text.
-# Bare format:        Message text
+# Map folder scan — handles bare and real PZ DebugLog formats.
+#
+# Real PZ DebugLog format (Build 42):
+#   [date time.ms] LOG  : category      f:N st:N> Message text.
+#   [date time.ms] WARN : category      f:N st:N at Class.method          > Message text.
+#   (st:N may be absent on early startup lines; st:N,M,P possible in multiplayer)
+#
+# Bare format: Message text (no timestamp prefix)
 # Both may have a trailing period on the map-folder messages.
 
 function Strip-DebugLogPrefix {
     param([string]$Line)
-    $s = $Line -replace '^\[.*?\]\s+LOG\s*:\s+\S+\s*,\s*\d+>\s*', ''
+    # Real PZ format: [date time] LOG/WARN : category      f:N [st:N] [at class.method] >
+    $s = $Line -replace '^\[.*?\]\s+\w+\s*:\s+\w+\s+f:\d+[^>]*>\s*', ''
     return $s.TrimEnd('.')
 }
 
@@ -141,10 +161,20 @@ $mannequinWarning              = $logContent -match 'mannequin'
 
 $classification = 'MAP7D_LOAD_TEST_INCONCLUSIVE'
 
+# Compute variant key for classification label when -VariantLabel is supplied.
+# Converts camelCase to UPPER_SNAKE: VariantA -> VARIANT_A, VariantB -> VARIANT_B.
+$variantClassification = ''
+if ($VariantLabel -ne '') {
+    $variantKey            = ($VariantLabel -creplace '(?<=[a-zA-Z])([A-Z])', '_$1').ToUpper()
+    $variantClassification = "MAP7F_${variantKey}_MAP_FOLDER_SCAN_EMPTY"
+}
+
 if ($timeoutWaitingPlayerData) {
     $classification = 'MAP7D_LOAD_TEST_FAIL_TIMEOUT_PLAYER_DATA'
 } elseif ($lexstateTokenStr) {
     $classification = 'MAP7D_LOAD_TEST_FAIL_LUA_BOM_OR_LEXSTATE'
+} elseif ($ExpectedMapId -ne '' -and $VariantLabel -ne '' -and $mapFoldersScanFound -and $mapFoldersListEmpty) {
+    $classification = $variantClassification
 } elseif ($candidateLoaded -and $playerDataReceived -and $gameLoadingCompleted -and
           $enteredIngameState -and (-not $timeoutWaitingPlayerData) -and
           ($mapFoldersListEmpty -or $spawnBuildingWarning)) {
@@ -172,7 +202,7 @@ $statusLabels = [string[]]@(
 # ---------------------------------------------------------------------------
 
 $report = [ordered]@{
-    schema                             = 'pzmapforge.build42-map7d-load-result.v0.2'
+    schema                             = 'pzmapforge.build42-map7d-load-result.v0.3'
     log_path                           = $LogPath
     classification                     = $classification
     candidate_loaded                   = $candidateLoaded
@@ -195,6 +225,9 @@ $report = [ordered]@{
     spawn_building_warning_found       = $spawnBuildingWarning
     no_room_or_building_at_spawn_found = $noRoomOrBuildingAtSpawn
     mannequin_warning_found            = $mannequinWarning
+    expected_map_id                    = $ExpectedMapId
+    variant_label                      = $VariantLabel
+    variant_classification             = $variantClassification
     status_labels                      = $statusLabels
     public_playable_claim_allowed      = $false
 }
