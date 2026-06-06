@@ -552,6 +552,34 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6T — Build 42 LOTH v2 load test packet:**
+MAP-6T prepares the controlled retest packet for `empty_grass_v1`.
+
+The packet script generates the v1 candidate, runs a 20-point preflight,
+and writes human-only instructions for install, server wiring, and log capture.
+
+Key preflight summary:
+- LOTH size: 28598 bytes; entry_count: 1024; magic: LOTH; version: 1
+- LOTP size: 1056780 bytes; chunkdata: 1026 bytes; all safety flags: false
+
+Diagnostic classification:
+- IsoLot.readInt fails again → LOAD_TEST_FAIL_LOTH (v2 structure still wrong)
+- LOTP fails → LOAD_TEST_FAIL_LOTP (LOTH accepted; next: LOTP v2)
+- Chunkdata fails → LOAD_TEST_FAIL_CHUNKDATA
+- World loads → LOAD_TEST_PASS (record carefully; no public claim until reviewed)
+
+Status labels:
+```text
+MAP6T_LOTH_V2_LOAD_TEST_PACKET_CREATED
+EMPTY_GRASS_V1_CANDIDATE_GENERATED
+HUMAN_ONLY_COPY_REQUIRED
+LOAD_TEST_NOT_PERFORMED
+WRITER_NOT_CHANGED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+No load test performed. No PZ writes. No writer change. No playable claim.
+
 **MAP-6S — Build 42 LOTH candidate writer v2:**
 MAP-6S adds the `empty_grass_v1` profile to the CLI candidate writer. This is
 the first LOTH at reference scale.

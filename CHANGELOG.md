@@ -8,6 +8,37 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6T: Build 42 LOTH v2 load test packet)
+- docs/MAP_6T_LOTH_V2_LOAD_TEST_PACKET.md: packet doc.
+  - MAP-6S basis; what the packet prepares; diagnostic value table.
+  - MAP6T_LOTH_V2_LOAD_TEST_PACKET_CREATED; HUMAN_ONLY_COPY_REQUIRED;
+    LOAD_TEST_NOT_PERFORMED; WRITER_NOT_CHANGED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/prepare-build42-loth-v2-load-test-packet.ps1:
+  - Guard: -Output under .local.
+  - Generates empty_grass_v1 candidate via CLI.
+  - 20-point preflight: 7 file existence, 6 LOTH binary, 2 sizes, 5 report flags.
+  - Writes MAP_6T_LOAD_TEST_PACKET.md, RECORD.local-template.md,
+    INSTALL_AND_SERVER_WIRING_COMMANDS.md, map6t-preflight.json, map6t-preflight.md.
+  - All copy/wiring instructions marked HUMAN-ONLY; no PZ writes by script.
+- scripts/test-build42-loth-v2-load-test-packet.ps1: 18 assertions.
+  - Test 1: Output outside .local refused.
+  - Test 2: exits 0; Tests 3-6: all 4 output files + JSON exist.
+  - Tests 7-10: preflight JSON entry_count/loth/lotp/chunkdata sizes.
+  - Tests 11-13: packet status labels.
+  - Tests 14-16: record template result variants.
+  - Tests 17-18: no automatic Copy-Item or Set-Content to PZ paths.
+  - psTotal 654->672.
+- scripts/validate.ps1: MAP-6T section; psTotal 654->672.
+- scripts/write-proof-packet.ps1: v0.23; map6t=18; total 672.
+- scripts/test-proof-packet.ps1: assertions updated (18/672).
+- docs/IMPLEMENTATION.md: MAP-6T ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6T section.
+
+No load test. No writer change. No PZ assets into repo. No playable export claim.
+PS 672 / .NET 490.
+
+---
+
 ### Added (MAP-6S: Build 42 LOTH candidate writer v2)
 - docs/MAP_6S_BUILD42_LOTH_WRITER_V2.md: writer doc.
   - MAP-6Q failure basis; MAP-6R structure basis.

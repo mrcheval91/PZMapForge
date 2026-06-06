@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Validates .local/mapforge/proof-packet.json against the v0.22 proof-packet contract.
+    Validates .local/mapforge/proof-packet.json against the v0.23 proof-packet contract.
 
     Runs write-proof-packet.ps1 first if proof-packet.json does not exist.
     Exits 0 if all checks pass, exits 1 if any fail.
@@ -83,8 +83,8 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.22') `
-    "schema == 'pzmapforge.proof-packet.v0.22' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.23') `
+    "schema == 'pzmapforge.proof-packet.v0.23' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
@@ -130,7 +130,8 @@ Assert-True ([int]$p.validation_summary.map6o_retest_checklist_tests          -e
 Assert-True ([int]$p.validation_summary.map6p_spawn_activation_tests          -eq 12)  "map6p_spawn_activation_tests == 12"
 Assert-True ([int]$p.validation_summary.map6q_lotheader_comparison_tests      -eq 13)  "map6q_lotheader_comparison_tests == 13"
 Assert-True ([int]$p.validation_summary.map6r_loth_structure_tests            -eq 14)  "map6r_loth_structure_tests == 14"
-Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 654) "total_expected_assertions == 654"
+Assert-True ([int]$p.validation_summary.map6t_load_test_packet_tests          -eq 18)  "map6t_load_test_packet_tests == 18"
+Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 672) "total_expected_assertions == 672"
 
 # ---------------------------------------------------------------------------
 # dotnet_validation_summary (separate lane)
