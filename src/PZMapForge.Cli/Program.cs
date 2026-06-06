@@ -1632,10 +1632,10 @@ static int Build42CandidateWriterCommand(
     // Not load-tested. Not a playable export. Candidate only.
 
     if (profile != "empty_grass_v0" && profile != "empty_grass_v1" &&
-        profile != "empty_grass_v2" && profile != "empty_grass_v3")
+        profile != "empty_grass_v2" && profile != "empty_grass_v3" && profile != "empty_grass_v4")
     {
         Console.Error.WriteLine(
-            $"build42-candidate-writer: unknown profile '{profile}'. Supported profiles: empty_grass_v0, empty_grass_v1, empty_grass_v2, empty_grass_v3.");
+            $"build42-candidate-writer: unknown profile '{profile}'. Supported profiles: empty_grass_v0, empty_grass_v1, empty_grass_v2, empty_grass_v3, empty_grass_v4.");
         return 1;
     }
 
@@ -1648,6 +1648,16 @@ static int Build42CandidateWriterCommand(
     Directory.CreateDirectory(versionedDir);
     Directory.CreateDirectory(mapDataDir);
 
+    // MAP-7D: v4 uses no-BOM UTF-8 for all game-read text files.
+    // MAP-7C retest confirmed UTF-8 BOM (EF BB BF) in generated files — first bytes of v3
+    // objects.lua were EF BB BF. The PZ Lua engine likely misinterprets BOM as a token,
+    // producing LexState.token2str ArrayIndexOutOfBoundsException index 65022 (BOM-derived).
+    // For v0-v3: Encoding.UTF8 (existing behavior, unchanged).
+    // For v4: new UTF8Encoding(false) — no BOM on all game-read text files.
+    var gameReadEnc = profile == "empty_grass_v4"
+        ? new System.Text.UTF8Encoding(false)
+        : Encoding.UTF8;
+
     // ---- mod.info ----
     File.WriteAllText(Path.Combine(versionedDir, "mod.info"), $"""
 name=PZMapForge Build42 Candidate - {mapId}
@@ -1659,7 +1669,7 @@ pzversion=42.0
 versionMin=42.0
 poster=poster.png
 icon=poster.png
-""", Encoding.UTF8);
+""", gameReadEnc);
 
     // ---- Placeholder poster.png ----
     WritePlaceholderPng(Path.Combine(versionedDir, "poster.png"),
@@ -1671,13 +1681,29 @@ title=PZMapForge Build42 Candidate - {mapId}
 lots={mapId}
 description=BUILD42 CANDIDATE -- NOT VALIDATED. Not a playable Project Zomboid map. Not load-tested.
 fixed2x=true
-""", Encoding.UTF8);
+""", gameReadEnc);
 
     // ---- spawnpoints.lua ----
     // Profile empty_grass_v3 (MAP-7C): uses unemployed key and explicit PZ spawn fields.
     //   MAP-7A retest showed spawn NullPointerException in getSpawnRegionsAux.
     //   The 'all' key used in v0-v2 may not be valid; 'unemployed' is a known PZ profession key.
-    if (profile == "empty_grass_v3")
+    if (profile == "empty_grass_v4")
+    {
+        // MAP-7D: same unemployed key format as v3 but with no-BOM encoding.
+        // No BOM applied via gameReadEnc = new UTF8Encoding(false).
+        File.WriteAllText(Path.Combine(mapDataDir, "spawnpoints.lua"), $$"""
+-- PZMapForge MAP-7D: candidate spawn point. No BOM encoding (MAP-7D fix).
+-- Not load-tested. Not a playable Project Zomboid map.
+function SpawnPoints()
+    return {
+        unemployed = {
+            { worldX = {{cellX}}, worldY = {{cellY}}, posX = 150, posY = 150, posZ = 0 },
+        },
+    }
+end
+""", gameReadEnc);
+    }
+    else if (profile == "empty_grass_v3")
     {
         File.WriteAllText(Path.Combine(mapDataDir, "spawnpoints.lua"), $$"""
 -- PZMapForge MAP-7C: candidate spawn point for experimental empty cell.
@@ -1710,10 +1736,15 @@ end
     // Profile empty_grass_v3 (MAP-7C): comment-only to avoid the return {} Lua lexer issue from MAP-7A retest.
     //   MAP-7A: LexState.token2str ArrayIndexOutOfBoundsException index 65022 on return {}.
     //   Comment-only avoids any evaluable Lua token while still being a valid Lua file.
-    var objectsLuaContent = profile == "empty_grass_v3"
-        ? "-- PZMapForge MAP-7C: no objects or zones for this experimental empty cell.\n-- objects.lua is a placeholder. Not load-tested. Not a playable Project Zomboid map.\n"
-        : "return {}\n";
-    File.WriteAllText(Path.Combine(mapDataDir, "objects.lua"), objectsLuaContent, Encoding.UTF8);
+    // MAP-7D: v4 uses comment-only with no-BOM encoding.
+    // v3 used comment-only with BOM (UTF8) — BOM caused same LexState error as return {}.
+    var objectsLuaContent = profile switch
+    {
+        "empty_grass_v4" => "-- PZMapForge MAP-7D: no objects or zones for this experimental empty cell.\n-- objects.lua placeholder. No BOM encoding applied (MAP-7D fix). Not load-tested.\n",
+        "empty_grass_v3" => "-- PZMapForge MAP-7C: no objects or zones for this experimental empty cell.\n-- objects.lua is a placeholder. Not load-tested. Not a playable Project Zomboid map.\n",
+        _                => "return {}\n",
+    };
+    File.WriteAllText(Path.Combine(mapDataDir, "objects.lua"), objectsLuaContent, gameReadEnc);
 
     // ---- thumb.png ----
     WritePlaceholderPng(Path.Combine(mapDataDir, "thumb.png"),
@@ -1746,7 +1777,7 @@ BINARY CANDIDATE FORMATS ({profile}):
 - objects.lua: {(profile == "empty_grass_v3" ? "comment-only placeholder (MAP-7C: avoids MAP-7A Lua lexer error)" : "return {} (candidate, may need fix)") }
 - spawnpoints.lua: {(profile == "empty_grass_v3" ? "unemployed key format (MAP-7C: explicit spawn profession)" : "all key format (candidate)")}.
 - lotpack: LOTP magic, version 1, 1024 chunks x 1024 zero bytes (MAP-6K most_common_size).
-""", Encoding.UTF8);
+""", gameReadEnc);
 
     // ---- chunkdata_x_y.bin (MAP-6L: 1026 bytes, 00 01 header + 1024 zero bytes) ----
     var chunkdataBytes = new byte[1026];
@@ -1764,7 +1795,7 @@ BINARY CANDIDATE FORMATS ({profile}):
     // Profile empty_grass_v2 (MAP-6Z): same 1024 entries as v1 + canonical 1048-byte trailer.
     //   Trailer is the MAP-6Y stable literal block (80 Dru_map simple cells, all identical).
     //   loth_known_risk: stable_reference_block_may_not_match_generated_tile_table_or_cell_payload
-    var lothEntries = (profile == "empty_grass_v1" || profile == "empty_grass_v2" || profile == "empty_grass_v3")
+    var lothEntries = (profile is "empty_grass_v1" or "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4")
         ? Enumerable.Range(0, 1024).Select(i => $"blends_grassoverlays_01_{i}").ToArray()
         : new[] { "blends_grassoverlays_01_0" }; // MAP-4E committed evidence
     var lothEntryData = Encoding.ASCII.GetBytes(string.Join("\n", lothEntries) + "\n");
@@ -1772,7 +1803,7 @@ BINARY CANDIDATE FORMATS ({profile}):
     // Source: 80 Dru_map simple cells (all_1048_blocks_identical=true). First two U32LE=8, rest zero.
     // SHA-256: 93a8f3ccf2cafdc2fb7cd4f3836c29d87076f244f5ba685f92659fbdaf778ec7
     // Not copied from PZ game assets. Derived from MAP-6Y analysis. Candidate only.
-    var lothTrailer = (profile == "empty_grass_v2" || profile == "empty_grass_v3") ? BuildMap6yCanonicalTrailer() : Array.Empty<byte>();
+    var lothTrailer = (profile is "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4") ? BuildMap6yCanonicalTrailer() : Array.Empty<byte>();
     var lothBytes   = new byte[12 + lothEntryData.Length + lothTrailer.Length];
     lothBytes[0] = 0x4C; lothBytes[1] = 0x4F; lothBytes[2] = 0x54; lothBytes[3] = 0x48; // LOTH
     lothBytes[4] = 0x01; // version = 1 (LE)
@@ -1860,11 +1891,12 @@ BINARY CANDIDATE FORMATS ({profile}):
         loth_entries                 = lothEntries.Length > 3
             ? new[] { lothEntries[0], $"...({lothEntries.Length - 2} more)...", lothEntries[^1] }
             : lothEntries,
-        loth_entries_source          = (profile == "empty_grass_v1" || profile == "empty_grass_v2" || profile == "empty_grass_v3")
+        loth_entries_source          = (profile is "empty_grass_v1" or "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4")
             ? "generated_contiguous_range_not_copied_from_reference"
             : "committed_evidence_only_map4e",
         loth_entry_strategy          = profile switch
         {
+            "empty_grass_v4" => "generated_contiguous_grass_overlay_range_with_map6y_stable_trailer_no_bom_encoding",
             "empty_grass_v3" => "generated_contiguous_grass_overlay_range_with_map6y_stable_trailer_and_fixed_lua_metadata",
             "empty_grass_v2" => "generated_contiguous_grass_overlay_range_with_map6y_stable_trailer",
             "empty_grass_v1" => "generated_contiguous_grass_overlay_range",
@@ -1872,35 +1904,53 @@ BINARY CANDIDATE FORMATS ({profile}):
         },
         loth_known_risk              = profile switch
         {
-            "empty_grass_v3" or "empty_grass_v2" => "stable_reference_block_may_not_match_generated_tile_table_or_cell_payload",
+            "empty_grass_v4" or "empty_grass_v3" or "empty_grass_v2" => "stable_reference_block_may_not_match_generated_tile_table_or_cell_payload",
             "empty_grass_v1" => "generated_entries_may_not_match_loaded_tile_definitions",
             _                => "single_entry_insufficient_per_map6r_evidence",
         },
         loth_status                  = "generated_not_load_tested",
         loth_size_bytes              = lothBytes.Length,
         loth_sha256                  = lothSha256,
-        loth_trailer_strategy        = (profile == "empty_grass_v2" || profile == "empty_grass_v3")
+        loth_trailer_strategy        = (profile is "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4")
             ? "map6y_stable_literal_1048_block"
             : "none_no_trailer",
         loth_trailer_size            = lothTrailer.Length,
-        loth_trailer_status          = (profile == "empty_grass_v2" || profile == "empty_grass_v3")
+        loth_trailer_status          = (profile is "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4")
             ? "generated_not_load_tested"
             : "not_applicable",
         loth_trailer_sha256          = lothTrailer.Length > 0
             ? string.Join("", SHA256.HashData(lothTrailer).Select(b => b.ToString("x2")))
             : "",
-        lua_metadata_strategy        = profile == "empty_grass_v3"
-            ? "objects_lua_comment_only"
-            : "return_empty_table",
-        objects_lua_strategy         = profile == "empty_grass_v3"
-            ? "comment_only_lua"
-            : "return_empty_table",
-        objects_lua_known_risk       = profile == "empty_grass_v3"
-            ? "build42_may_expect_specific_zone_table_format"
-            : "return_table_led_to_lexer_exception_in_map7a",
-        spawnpoints_strategy         = profile == "empty_grass_v3"
-            ? "minimal_unemployed_spawnpoint"
-            : "all_key_spawn_point",
+        text_encoding_strategy       = profile == "empty_grass_v4"
+            ? "ascii_no_bom_for_game_read_lua_and_info"
+            : "utf8_with_bom_default",
+        lua_metadata_strategy        = profile switch
+        {
+            "empty_grass_v4" => "objects_lua_comment_only_no_bom",
+            "empty_grass_v3" => "objects_lua_comment_only",
+            _                => "return_empty_table",
+        },
+        objects_lua_strategy         = profile switch
+        {
+            "empty_grass_v4" => "comment_only_lua_no_bom",
+            "empty_grass_v3" => "comment_only_lua",
+            _                => "return_empty_table",
+        },
+        objects_lua_known_risk       = profile switch
+        {
+            "empty_grass_v4" => "build42_may_expect_specific_zone_table_format_no_bom_encoding_applied",
+            "empty_grass_v3" => "build42_may_expect_specific_zone_table_format",
+            _                => "return_table_led_to_lexer_exception_in_map7a",
+        },
+        spawnpoints_strategy         = profile switch
+        {
+            "empty_grass_v4" => "minimal_unemployed_spawnpoint_no_bom",
+            "empty_grass_v3" => "minimal_unemployed_spawnpoint",
+            _                => "all_key_spawn_point",
+        },
+        spawnregions_packet_strategy = profile == "empty_grass_v4"
+            ? "server_spawnregions_single_candidate_region"
+            : "not_applicable",
         lotp_candidate_profile       = profile,
         lotp_payload_strategy        = "uniform_zero_1024_per_chunk",
         lotp_offset_strategy         = "sequential_u64_offsets",
@@ -1914,6 +1964,7 @@ BINARY CANDIDATE FORMATS ({profile}):
         geometry_status              = "strongly_supported_not_load_tested",
         remaining_unknowns = profile switch
         {
+            "empty_grass_v4" => new[] { "bom_removal_acceptance", "objects_lua_format_acceptance_no_bom", "spawn_region_null_cause", "loth_trailer_acceptance_at_eof", "lotp_zero_payload_load_acceptance", "chunkdata_zero_body_acceptance", "build42_load_test" },
             "empty_grass_v3" => new[] { "objects_lua_format_acceptance", "spawn_region_null_cause", "loth_trailer_acceptance_at_eof", "lotp_zero_payload_load_acceptance", "chunkdata_zero_body_acceptance", "build42_load_test" },
             "empty_grass_v2" => new[] { "loth_generated_entry_acceptance", "loth_trailer_acceptance_at_eof", "lotp_zero_payload_load_acceptance", "chunkdata_zero_body_acceptance", "build42_load_test" },
             "empty_grass_v1" => new[] { "loth_generated_entry_acceptance", "lotp_zero_payload_load_acceptance", "chunkdata_zero_body_acceptance", "build42_load_test" },
@@ -1928,6 +1979,7 @@ BINARY CANDIDATE FORMATS ({profile}):
     // ---- Report MD ----
     var mdRemainingUnknowns = profile switch
     {
+        "empty_grass_v4" => "- bom_removal_acceptance\n- objects_lua_format_acceptance_no_bom\n- spawn_region_null_cause\n- loth_trailer_acceptance_at_eof\n- lotp_zero_payload_load_acceptance\n- chunkdata_zero_body_acceptance\n- build42_load_test",
         "empty_grass_v3" => "- objects_lua_format_acceptance\n- spawn_region_null_cause\n- loth_trailer_acceptance_at_eof\n- lotp_zero_payload_load_acceptance\n- chunkdata_zero_body_acceptance\n- build42_load_test",
         "empty_grass_v2" => "- loth_generated_entry_acceptance\n- loth_trailer_acceptance_at_eof\n- lotp_zero_payload_load_acceptance\n- chunkdata_zero_body_acceptance\n- build42_load_test",
         "empty_grass_v1" => "- loth_generated_entry_acceptance\n- lotp_zero_payload_load_acceptance\n- chunkdata_zero_body_acceptance\n- build42_load_test",

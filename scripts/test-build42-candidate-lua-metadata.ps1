@@ -165,6 +165,34 @@ $spUnemp = if ($null -ne $data) { [bool]$data.spawnpoints_lua_has_unemployed } e
 Assert-True ($spUnemp -eq $true) "Test18: spawnpoints_lua_has_unemployed == true (got $spUnemp)"
 
 # ---------------------------------------------------------------------------
+# Tests 19-21: BOM detection (MAP-7D additions)
+# ---------------------------------------------------------------------------
+
+Write-Output ''
+Write-Output '--- Test 19: objects_lua_has_bom field exists in JSON ---'
+$hasBomField = if ($null -ne $data) { $null -ne $data.PSObject.Properties['objects_lua_has_bom'] } else { $false }
+Assert-True ($hasBomField) 'Test19: objects_lua_has_bom field exists in JSON'
+
+Write-Output ''
+Write-Output '--- Test 20: ASCII fixture has no BOM on objects_lua ---'
+$objBom = if ($null -ne $data) { [bool]$data.objects_lua_has_bom } else { $true }
+Assert-True ($objBom -eq $false) "Test20: ASCII fixture objects_lua_has_bom == false (got $objBom)"
+
+Write-Output ''
+Write-Output '--- Test 21: BOM-encoded mod.info detected as has_bom == true ---'
+$cand3Base = Join-Path $testBase '.local\cand3\42'
+$out3      = Join-Path $testBase '.local\output3'
+New-Item -ItemType Directory -Force -Path $cand3Base | Out-Null
+# PS 5.1 Set-Content -Encoding UTF8 writes UTF-8 BOM (EF BB BF)
+Set-Content -Path (Join-Path $cand3Base 'mod.info') -Value "id=test_7d_bom`n" -Encoding UTF8
+$t21Exit = Invoke-Mod -CandidateRoot $cand3Base -Output $out3
+$data3 = if (Test-Path (Join-Path $out3 'build42-candidate-lua-metadata.json')) {
+    Get-Content (Join-Path $out3 'build42-candidate-lua-metadata.json') -Raw | ConvertFrom-Json
+} else { $null }
+$bomDetected = if ($null -ne $data3) { [bool]$data3.mod_info_has_bom } else { $false }
+Assert-True ($bomDetected -eq $true) "Test21: BOM-encoded mod.info → mod_info_has_bom == true (got $bomDetected)"
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 

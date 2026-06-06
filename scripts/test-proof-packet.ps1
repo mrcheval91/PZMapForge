@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Validates .local/mapforge/proof-packet.json against the v0.32 proof-packet contract.
+    Validates .local/mapforge/proof-packet.json against the v0.33 proof-packet contract.
 
     Runs write-proof-packet.ps1 first if proof-packet.json does not exist.
     Exits 0 if all checks pass, exits 1 if any fail.
@@ -83,8 +83,8 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.32') `
-    "schema == 'pzmapforge.proof-packet.v0.32' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.33') `
+    "schema == 'pzmapforge.proof-packet.v0.33' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
@@ -137,9 +137,10 @@ Assert-True ([int]$p.validation_summary.map6w_byte_pattern_tests              -e
 Assert-True ([int]$p.validation_summary.map6x_per_entry_record_tests          -eq 20)  "map6x_per_entry_record_tests == 20"
 Assert-True ([int]$p.validation_summary.map6y_fixed_1048_block_tests          -eq 20)  "map6y_fixed_1048_block_tests == 20"
 Assert-True ([int]$p.validation_summary.map7a_load_test_packet_tests          -eq 23)  "map7a_load_test_packet_tests == 23"
-Assert-True ([int]$p.validation_summary.map7b_lua_metadata_tests               -eq 18)  "map7b_lua_metadata_tests == 18"
+Assert-True ([int]$p.validation_summary.map7b_lua_metadata_tests               -eq 21)  "map7b_lua_metadata_tests == 21"
 Assert-True ([int]$p.validation_summary.map7c_metadata_v3_packet_tests         -eq 18)  "map7c_metadata_v3_packet_tests == 18"
-Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 822) "total_expected_assertions == 822"
+Assert-True ([int]$p.validation_summary.map7d_metadata_v4_packet_tests         -eq 15)  "map7d_metadata_v4_packet_tests == 15"
+Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 840) "total_expected_assertions == 840"
 
 # ---------------------------------------------------------------------------
 # dotnet_validation_summary (separate lane)
@@ -148,9 +149,9 @@ Assert-True ([int]$p.validation_summary.total_expected_assertions              -
 Write-Output ""
 Write-Output "--- dotnet_validation_summary ---"
 $d = $p.dotnet_validation_summary
-Assert-True ([int]$d.test_total                                -eq 538)  "dotnet test_total == 538"
+Assert-True ([int]$d.test_total                                -eq 556)  "dotnet test_total == 556"
 Assert-True ([int]$d.core_tests -eq 190)  "dotnet core_tests == 190"
-Assert-True ([int]$d.cli_tests                                 -eq 348)  "dotnet cli_tests == 348"
+Assert-True ([int]$d.cli_tests                                 -eq 366)  "dotnet cli_tests == 366"
 Assert-True ($d.process_cli_tests_present                      -eq $true) "process_cli_tests_present == true"
 Assert-True ($d.full_pipeline_contract_tests_present           -eq $true) "full_pipeline_contract_tests_present == true"
 Assert-True ([int]$d.full_pipeline_artifact_count              -eq 7)    "dotnet full_pipeline_artifact_count == 7"

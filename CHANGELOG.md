@@ -8,6 +8,54 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7D: Harden Build 42 candidate Lua encoding)
+- docs/MAP_7D_TIMEOUT_AND_LUA_ENCODING_FIX.md: MAP-7C result record.
+  - MAP-7C retest: LOAD_TEST_FAIL_TIMEOUT_PLAYER_DATA.
+  - loth_error=false, lotp_error=false, chunkdata_error=false.
+  - objects_lua_error=true (same LexState error), spawn_region_error=true.
+  - UTF-8 BOM hypothesis: inspector confirmed EF BB BF in v3 files.
+  - MAP-7D fix: empty_grass_v4 uses UTF8Encoding(false) for all game-read text files.
+  - OBJECTS_LUA_NO_BOM_FIX_APPLIED; LOAD_TEST_NOT_PERFORMED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- src/PZMapForge.Cli/Program.cs:
+  - Profile empty_grass_v4 added; validation accepts v0-v4.
+  - gameReadEnc = new UTF8Encoding(false) for v4; Encoding.UTF8 for v0-v3 (unchanged).
+  - All game-read text file writes (mod.info, map.info, spawnpoints.lua, objects.lua, README)
+    use gameReadEnc → no BOM for v4.
+  - objects.lua v4: MAP-7D comment (no BOM). v3 content unchanged.
+  - spawnpoints.lua v4: MAP-7D comment + unemployed key (no BOM). v3 content unchanged.
+  - text_encoding_strategy, spawnregions_packet_strategy added to report.
+  - remaining_unknowns, mdRemainingUnknowns: updated for v4.
+- tests/PZMapForge.Cli.Tests/MapExportBuild42CandidateWriterV4ProcessTests.cs: 18 tests.
+  - LOTH size 29646 and trailer SHA canonical.
+  - No BOM: objects.lua, spawnpoints.lua, mod.info, map.info.
+  - Objects comment-only (not return_only). Spawnpoints: unemployed/worldX/Y/posX/Y/Z.
+  - Report: profile=v4, text_encoding_strategy, load_tested=false, playable=false.
+  - dnCliTests 348->366; dnTotal 538->556.
+- scripts/inspect-build42-candidate-lua-metadata.ps1: updated.
+  - has_bom field added to inspect-file return (all paths, including early-return and notFound).
+  - JSON report: objects_lua_has_bom, mod_info_has_bom, map_info_has_bom, spawnpoints_lua_has_bom.
+- scripts/test-build42-candidate-lua-metadata.ps1: 18->21 assertions.
+  - Test 19: objects_lua_has_bom field exists in JSON.
+  - Test 20: ASCII fixture objects_lua_has_bom == false.
+  - Test 21: BOM-encoded mod.info detected → mod_info_has_bom == true.
+- scripts/prepare-build42-metadata-v4-load-test-packet.ps1:
+  - Generates empty_grass_v4, runs inspector, preflight includes BOM checks.
+  - Preflight: no_bom_objects_lua, no_bom_spawnpoints_lua, no_bom_mod_info, no_bom_map_info.
+  - Writes MAP_7D_* output files.
+- scripts/test-build42-metadata-v4-load-test-packet.ps1: 15 assertions.
+  - Path guard, exits 0, 5 output files, preflight fields (profile, no_bom, loth_size),
+    packet labels, record LOAD_TEST_FAIL_TIMEOUT_PLAYER_DATA and LOAD_TEST_PASS.
+- scripts/validate.ps1: MAP-7D section; MAP-7B 18->21; psTotal 822->840; v0.33.
+- scripts/write-proof-packet.ps1: v0.33; map7b=21, map7c=18, map7d=15; total 840; cli=366; .NET 556.
+- scripts/test-proof-packet.ps1: assertions updated.
+- docs/IMPLEMENTATION.md: MAP-7D ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7D section.
+
+No load test. LOTH/LOTP/chunkdata unchanged. No PZ assets into repo. No playable claim.
+PS 840 / .NET 556 (core=190, cli=366).
+
+---
+
 ### Added (MAP-7C: Fix Build 42 candidate Lua metadata)
 - docs/MAP_7C_OBJECTS_LUA_SPAWN_METADATA_FIX.md: fix doc.
   - MAP-7B basis: LOTH v3 passed, objects.lua failed with LexState.token2str.

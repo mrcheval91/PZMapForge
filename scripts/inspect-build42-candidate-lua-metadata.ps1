@@ -97,6 +97,7 @@ function inspect-file ([string]$path, [int]$readLimit) {
             first_bytes_hex = ''
             first_lines     = [string[]]@()
             ascii_clean     = $false
+            has_bom         = $false
         }
     }
     $size    = (Get-Item $path).Length
@@ -110,6 +111,7 @@ function inspect-file ([string]$path, [int]$readLimit) {
         first_bytes_hex = bytes-hex $bytes 32
         first_lines     = first-lines $bytes 20
         ascii_clean     = is-ascii-clean $bytes
+        has_bom         = ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)
     }
 }
 
@@ -142,7 +144,7 @@ $objPath     = if ($mapDataDir) { Join-Path $mapDataDir 'objects.lua'     } else
 # Inspect each file
 # ---------------------------------------------------------------------------
 
-$notFound  = [ordered]@{ exists = $false; size_bytes = 0; first_bytes_hex = ''; first_lines = [string[]]@(); ascii_clean = $false }
+$notFound  = [ordered]@{ exists = $false; size_bytes = 0; first_bytes_hex = ''; first_lines = [string[]]@(); ascii_clean = $false; has_bom = $false }
 $mapInfo   = if ($mapInfoPath) { inspect-file $mapInfoPath  4096 } else { $notFound }
 $spawnInfo = if ($spawnPath)   { inspect-file $spawnPath    8192 } else { $notFound }
 $objInfo   = if ($objPath)     { inspect-file $objPath      4096 } else { $notFound }
@@ -307,8 +309,12 @@ $report = [ordered]@{
     objects_lua_first_bytes_hex  = $objInfo.first_bytes_hex
     objects_lua_first_lines      = $objInfo.first_lines
     objects_lua_ascii_clean      = $objInfo.ascii_clean
+    objects_lua_has_bom          = $objInfo.has_bom
     objects_lua_content_type     = $objectsLuaContentType
     objects_lua_recommendation   = $objectsLuaRecommendation
+    mod_info_has_bom             = $modInfo.has_bom
+    map_info_has_bom             = $mapInfo.has_bom
+    spawnpoints_lua_has_bom      = $spawnInfo.has_bom
     candidate_files_read         = $candidateFilesRead
     pz_assets_read               = $pzAssetsRead
     pz_install_read              = $pzInstallRead

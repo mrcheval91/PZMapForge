@@ -552,6 +552,22 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7D — Timeout and Lua encoding fix:**
+MAP-7C retest: LOAD_TEST_FAIL_TIMEOUT_PLAYER_DATA. Inspector confirmed UTF-8 BOM on v3 files.
+MAP-7D adds `empty_grass_v4` with `UTF8Encoding(false)` for all game-read text files.
+
+Status labels:
+```text
+MAP7C_MANUAL_RETEST_RECORDED
+LOAD_TEST_FAIL_TIMEOUT_PLAYER_DATA
+OBJECTS_LUA_NO_BOM_FIX_APPLIED
+LOAD_TEST_NOT_PERFORMED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+No load test. LOTH/LOTP/chunkdata unchanged. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+Recommended next: MAP-7D controlled retest with `empty_grass_v4` (no-BOM).
+
 **MAP-7C — objects.lua and spawn metadata fix:**
 MAP-7C adds `empty_grass_v3` profile with fixed Lua metadata. LOTH/LOTP/chunkdata unchanged.
 
