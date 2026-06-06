@@ -8,6 +8,49 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7E: Record MAP-7D partial load diagnostics)
+- docs/MAP_7E_EMPTY_WORLD_MAP_REGISTRATION_DIAGNOSTICS.md: result record.
+  - MAP-7D no-BOM server retest: MAP7D_LOAD_TEST_PARTIAL_PASS_IN_GAME_EMPTY_WORLD.
+  - Cleared blockers: objects.lua LexState (no-BOM), server spawnregions BOM LexState,
+    spawn null, player-data timeout.
+  - Remaining: map_folders_list_empty, no city choice, spawn at 150,150,0 (no room/building).
+  - 5 diagnostic branches for empty-world/map-registration gap documented.
+  - Controlled partial in-game load proof. No public playable claim.
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-map7d-load-result.ps1:
+  - .local guard on -Output.
+  - Reads log, extracts: candidate_loaded, player_data_received, game_loading_completed,
+    entered_ingame_state, exited_ingame_state, lexstate_token2str_found, candidate_objects_lua_error,
+    server_spawnregions_lua_error, spawn_region_null_error, timeout_waiting_player_data,
+    map_folders_list_empty (regex match between log markers), map_folders_list_count,
+    spawn_building_warning_found, mannequin_warning_found.
+  - Classifies: MAP7D_LOAD_TEST_PARTIAL_PASS_IN_GAME_EMPTY_WORLD /
+    MAP7D_LOAD_TEST_FAIL_TIMEOUT_PLAYER_DATA / MAP7D_LOAD_TEST_FAIL_LUA_BOM_OR_LEXSTATE /
+    MAP7D_LOAD_TEST_INCONCLUSIVE.
+  - Writes map7d-load-result.json + .md.
+- scripts/prepare-build42-map7e-diagnostics-packet.ps1:
+  - .local guard; generates v4 candidate; verifies no-BOM on all text files.
+  - Preflight: no-BOM + binary sizes unchanged.
+  - Writes MAP_7E_DIAGNOSTIC_PACKET.md + MANUAL_RETEST_RECORD + OBSERVATION_CHECKLIST +
+    SERVER_WIRING_NO_BOM_TEMPLATE (all PZ writes HUMAN-ONLY) + preflight JSON/MD.
+  - public_playable_claim_allowed=false in preflight JSON.
+- scripts/test-build42-map7e-diagnostics.ps1: 11 assertions.
+  - Tests 1-6: analyzer path guard, PARTIAL_PASS, TIMEOUT, LEXSTATE classifications,
+    map_folders_list_empty, spawn_building_warning.
+  - Tests 7-11: packet path guard, exits 0, required files, public_playable=false,
+    HUMAN-ONLY markers in wiring template.
+  - psTotal 840->851.
+- scripts/validate.ps1: MAP-7E section; psTotal 840->851; v0.34.
+- scripts/write-proof-packet.ps1: v0.34; map7e=11; total 851.
+- scripts/test-proof-packet.ps1: assertions updated (11/851).
+- docs/IMPLEMENTATION.md: MAP-7E ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7E section.
+
+No load test. No binary writer change. No PZ assets. No playable claim.
+PS 851 / .NET 556 (unchanged).
+
+---
+
 ### Added (MAP-7D: Harden Build 42 candidate Lua encoding)
 - docs/MAP_7D_TIMEOUT_AND_LUA_ENCODING_FIX.md: MAP-7C result record.
   - MAP-7C retest: LOAD_TEST_FAIL_TIMEOUT_PLAYER_DATA.

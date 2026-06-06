@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Validates .local/mapforge/proof-packet.json against the v0.33 proof-packet contract.
+    Validates .local/mapforge/proof-packet.json against the v0.34 proof-packet contract.
 
     Runs write-proof-packet.ps1 first if proof-packet.json does not exist.
     Exits 0 if all checks pass, exits 1 if any fail.
@@ -83,8 +83,8 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.33') `
-    "schema == 'pzmapforge.proof-packet.v0.33' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.34') `
+    "schema == 'pzmapforge.proof-packet.v0.34' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
@@ -140,7 +140,8 @@ Assert-True ([int]$p.validation_summary.map7a_load_test_packet_tests          -e
 Assert-True ([int]$p.validation_summary.map7b_lua_metadata_tests               -eq 21)  "map7b_lua_metadata_tests == 21"
 Assert-True ([int]$p.validation_summary.map7c_metadata_v3_packet_tests         -eq 18)  "map7c_metadata_v3_packet_tests == 18"
 Assert-True ([int]$p.validation_summary.map7d_metadata_v4_packet_tests         -eq 15)  "map7d_metadata_v4_packet_tests == 15"
-Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 840) "total_expected_assertions == 840"
+Assert-True ([int]$p.validation_summary.map7e_diagnostics_tests                -eq 11)  "map7e_diagnostics_tests == 11"
+Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 851) "total_expected_assertions == 851"
 
 # ---------------------------------------------------------------------------
 # dotnet_validation_summary (separate lane)

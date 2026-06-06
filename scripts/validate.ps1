@@ -228,6 +228,36 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-7E empty world diagnostics ---"
+$map7eDoc          = Join-Path $repoRoot 'docs\MAP_7E_EMPTY_WORLD_MAP_REGISTRATION_DIAGNOSTICS.md'
+$map7eAnalyzer     = Join-Path $repoRoot 'scripts\inspect-build42-map7d-load-result.ps1'
+$map7ePacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map7e-diagnostics-packet.ps1'
+$map7eTests        = Join-Path $repoRoot 'scripts\test-build42-map7e-diagnostics.ps1'
+if (-not (Test-Path -LiteralPath $map7eDoc))          { throw "MAP-7E doc missing" }
+Write-Output "OK: docs\MAP_7E_EMPTY_WORLD_MAP_REGISTRATION_DIAGNOSTICS.md"
+if (-not (Test-Path -LiteralPath $map7eAnalyzer))     { throw "MAP-7E analyzer script missing" }
+Write-Output "OK: scripts\inspect-build42-map7d-load-result.ps1"
+if (-not (Test-Path -LiteralPath $map7ePacketScript)) { throw "MAP-7E packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map7e-diagnostics-packet.ps1"
+if (-not (Test-Path -LiteralPath $map7eTests))        { throw "MAP-7E tests missing" }
+Write-Output "OK: scripts\test-build42-map7e-diagnostics.ps1"
+$map7eDocContent = Get-Content -LiteralPath $map7eDoc -Raw
+if ($map7eDocContent -notmatch 'MAP7D_LOAD_TEST_PARTIAL_PASS_IN_GAME_EMPTY_WORLD') { throw "MAP-7E doc missing MAP7D_LOAD_TEST_PARTIAL_PASS_IN_GAME_EMPTY_WORLD" }
+Write-Output "OK: doc contains MAP7D_LOAD_TEST_PARTIAL_PASS_IN_GAME_EMPTY_WORLD"
+if ($map7eDocContent -notmatch 'LOAD_TEST_NOT_PERFORMED') { throw "MAP-7E doc missing LOAD_TEST_NOT_PERFORMED" }
+Write-Output "OK: doc contains LOAD_TEST_NOT_PERFORMED"
+if ($map7eDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-7E doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+$map7eAnalyzerContent = Get-Content -LiteralPath $map7eAnalyzer -Raw
+if ($map7eAnalyzerContent -notmatch '\.local') { throw "MAP-7E analyzer missing .local refusal" }
+Write-Output "OK: analyzer script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-7E diagnostics tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7eTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7E diagnostics tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-7D timeout and Lua encoding fix ---"
 $map7dDoc          = Join-Path $repoRoot 'docs\MAP_7D_TIMEOUT_AND_LUA_ENCODING_FIX.md'
 $map7dPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-metadata-v4-load-test-packet.ps1'
@@ -869,15 +899,16 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 840   # = validation_summary.total_expected_assertions in proof-packet v0.33
+$psTotal = 851   # = validation_summary.total_expected_assertions in proof-packet v0.34
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.33
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.33):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.34):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -885,7 +916,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.33 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.34 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

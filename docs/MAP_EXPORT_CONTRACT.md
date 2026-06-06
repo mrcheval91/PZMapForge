@@ -552,6 +552,21 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7E — Empty world and map registration diagnostics:**
+MAP-7D no-BOM retest: MAP7D_LOAD_TEST_PARTIAL_PASS_IN_GAME_EMPTY_WORLD (in-game in 32s).
+Cleared: LexState, BOM, spawn null, player-data timeout.
+Remaining: map folders list empty, no city choice, spawn building warning.
+
+Status labels:
+```text
+MAP7D_LOAD_TEST_PARTIAL_PASS_IN_GAME_EMPTY_WORLD
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+This is a controlled partial in-game load proof. No public playable claim.
+Recommended next: MAP-7E diagnostic retest to capture map folder registration evidence.
+
 **MAP-7D — Timeout and Lua encoding fix:**
 MAP-7C retest: LOAD_TEST_FAIL_TIMEOUT_PLAYER_DATA. Inspector confirmed UTF-8 BOM on v3 files.
 MAP-7D adds `empty_grass_v4` with `UTF8Encoding(false)` for all game-read text files.
