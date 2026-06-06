@@ -8,6 +8,39 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6U: LOTH v2 failure record and full LOTH body research)
+- docs/MAP_6U_LOTH_V2_FAILURE_AND_FULL_BODY_RESEARCH.md: failure record.
+  - MAP-6T v1 retest: LOAD_TEST_FAIL_LOTH; IsoLot.readInt EOF same as MAP-6Q.
+  - Scale alone insufficient; hypothesis: LOTH trailing binary body missing.
+  - MAP6T_CLEAN_V1_LOAD_TEST_RECORDED; EMPTY_GRASS_V1_LOTHEADER_REJECTED;
+    CURRENT_CANDIDATE_LOTHEADER_EOF; LOTP_NOT_REACHED; CHUNKDATA_NOT_REACHED;
+    OBJECTS_LUA_SECONDARY_PARSE_ERROR_OBSERVED; LOAD_TEST_FAIL_LOTH;
+    WRITER_NOT_CHANGED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-loth-full-body.ps1:
+  - Guards: ReferenceRoot and Output under .local.
+  - Reads FULL file bytes per *.lotheader.
+  - Parses ASCII region from offset 12; finds where it ends.
+  - Records trailing_bytes_count, first_64_trailing_bytes_hex, trailing_u32le_words.
+  - Hypothesis: LOTH_REQUIRES_TRAILING_BINARY_BODY if all files have trailing.
+  - Smoke 20 Dru_map files: hypothesis confirmed; 20/20 have trailing;
+    min=7018 bytes, max=33558 bytes; field8 exactly matches ascii_entry_count.
+- scripts/test-build42-loth-full-body.ps1: 14 assertions.
+  - Tests 1-2: path guards. Tests 3-5: exits 0, JSON+MD exist.
+  - Tests 6-10: magic, field8, ASCII region, trailing bytes detected.
+  - Test 11: hypothesis LOTH_REQUIRES_TRAILING_BINARY_BODY confirmed.
+  - Tests 12-14: status labels in MD.
+  - psTotal 672->686.
+- scripts/validate.ps1: MAP-6U section; psTotal 672->686.
+- scripts/write-proof-packet.ps1: v0.24; map6u=14; total 686.
+- scripts/test-proof-packet.ps1: assertions updated (14/686).
+- docs/IMPLEMENTATION.md: MAP-6U ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6U section.
+
+No load test. No writer change. No PZ assets into repo. No playable export claim.
+PS 686 / .NET 490.
+
+---
+
 ### Added (MAP-6T: Build 42 LOTH v2 load test packet)
 - docs/MAP_6T_LOTH_V2_LOAD_TEST_PACKET.md: packet doc.
   - MAP-6S basis; what the packet prepares; diagnostic value table.

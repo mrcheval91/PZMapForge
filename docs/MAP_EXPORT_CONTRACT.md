@@ -552,6 +552,40 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6U — LOTH v2 failure record and full LOTH body research:**
+MAP-6U records the MAP-6T v1 retest result (LOAD_TEST_FAIL_LOTH) and confirms
+through full-body inspection that Build 42 LOTH files require a substantial
+trailing binary section after the ASCII string table.
+
+MAP-6T clean retest result:
+- IsoLot.readInt EOF at the same location as MAP-6Q (v0).
+- Increasing LOTH from 38 bytes (1 entry) to 28598 bytes (1024 entries) did not resolve the EOF.
+- Scale alone is insufficient; the LOTH format is structurally incomplete.
+
+MAP-6U full-body smoke (20 Dru_map files):
+- ALL 20 reference LOTH files have trailing binary bytes after the ASCII string table.
+- `LOTH_REQUIRES_TRAILING_BINARY_BODY` confirmed (20/20 files).
+- Trailing range: 7018–33558 bytes per file.
+- The MAP-6S/MAP-6T candidate has ZERO trailing bytes.
+
+Status labels:
+```text
+MAP6T_CLEAN_V1_LOAD_TEST_RECORDED
+EMPTY_GRASS_V1_LOTHEADER_REJECTED
+CURRENT_CANDIDATE_LOTHEADER_EOF
+LOTP_NOT_REACHED
+CHUNKDATA_NOT_REACHED
+OBJECTS_LUA_SECONDARY_PARSE_ERROR_OBSERVED
+LOAD_TEST_FAIL_LOTH
+LOTH_REQUIRES_TRAILING_BINARY_BODY
+WRITER_NOT_CHANGED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+Next: MAP-6V must decode the trailing binary section and implement a writer for it.
+
+No load test. No writer change. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6T — Build 42 LOTH v2 load test packet:**
 MAP-6T prepares the controlled retest packet for `empty_grass_v1`.
 

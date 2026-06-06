@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.23) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.24) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
     planning recommendation artifacts, plan-recommendations contract (incl. thresholds_used),
     and a separate dotnet_validation_summary section tracking .NET xUnit test counts.
@@ -147,7 +147,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.23'
+    schema                  = 'pzmapforge.proof-packet.v0.24'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -193,7 +193,8 @@ $packet = [ordered]@{
         map6q_lotheader_comparison_tests  = 13
         map6r_loth_structure_tests        = 14
         map6t_load_test_packet_tests      = 18
-        total_expected_assertions         = 672
+        map6u_full_body_tests             = 14
+        total_expected_assertions         = 686
     }
     dotnet_validation_summary = [ordered]@{
         test_total                          = 490
@@ -273,7 +274,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.23
+Schema: pzmapforge.proof-packet.v0.24
 
 ## Claim boundary
 
@@ -342,7 +343,8 @@ planning_artifact_only_not_pz_load_tested
 | MAP-6Q lotheader comparison tests | 13 |
 | MAP-6R LOTH structure tests | 14 |
 | MAP-6T load test packet tests | 18 |
-| Total | 672 |
+| MAP-6U full body tests | 14 |
+| Total | 686 |
 
 ## .NET validation summary (separate lane)
 
