@@ -8,6 +8,38 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6W: LOTH trailing byte pattern research)
+- docs/MAP_6W_LOTH_TRAILING_BYTE_PATTERN_RESEARCH.md: byte-level research doc.
+  - MAP-6V basis; why U32 model rejected.
+  - Smoke: mod2=10/20, mod4=3/20, avg_entropy=2.657, avg_u16_ratio=0.245.
+  - No LP-strings, no compression. HYPOTHESIS_TRAILER_UNKNOWN.
+  - WRITER_NOT_DEFENSIBLE. MAP-6X must try per-entry record model.
+  - Entropy ~2.66 -> packed small integers (tile IDs, sprite indices, etc.)
+- scripts/analyze-build42-loth-trailing-byte-patterns.ps1:
+  - Guards: ReferenceRoot and Output under .local.
+  - Byte histogram (top 16); entropy; zero/printable/high-bit counts.
+  - U16 first-64 analysis; U16/U32 top values; string-index ratio.
+  - Length-prefixed string scan (U8 and U16).
+  - Compression probe (zlib headers, gzip magic).
+  - Structural markers (newlines, CRLF, first/last nonzero offset).
+  - Focus-file stability analysis.
+  - Per-file and overall hypotheses + writer_readiness + next_step.
+- scripts/test-build42-loth-trailing-byte-patterns.ps1: 20 assertions.
+  - Tests 1-2: path guards. Tests 3-5: exits 0, JSON+MD exist.
+  - Tests 6-15: all major analysis fields present and populated.
+  - Tests 16-19: status labels in MD.
+  - psTotal 703->723.
+- scripts/validate.ps1: MAP-6W section; psTotal 703->723.
+- scripts/write-proof-packet.ps1: v0.26; map6w=20; total 723.
+- scripts/test-proof-packet.ps1: assertions updated (20/723).
+- docs/IMPLEMENTATION.md: MAP-6W ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6W section.
+
+No load test. No writer change. No PZ assets into repo. No playable export claim.
+PS 723 / .NET 490.
+
+---
+
 ### Added (MAP-6V: LOTH trailing body decode research)
 - docs/MAP_6V_LOTH_TRAILING_BODY_DECODE_RESEARCH.md: decode research doc.
   - MAP-6U basis; trailing body 7018-33558 bytes, 20/20 files.

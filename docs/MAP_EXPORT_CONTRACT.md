@@ -552,6 +552,32 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6W — LOTH trailing byte pattern research:**
+MAP-6W deepens LOTH trailing body analysis to byte/U16 level.
+
+Key smoke findings (20 Dru_map files):
+- Mod2-aligned: 10/20; Mod4-aligned: 3/20. No dominant alignment.
+- Avg entropy: 2.657 bits (consistent with packed small-integer structure).
+- Avg U16 string-index ratio: 0.245 (slightly below 0.3 threshold).
+- No length-prefixed strings (lp_u16=0 all files).
+- No compression candidates.
+- `HYPOTHESIS_TRAILER_UNKNOWN` persists.
+- `WRITER_NOT_DEFENSIBLE`.
+- Recommended: MAP-6X try per-entry record model (~6 bytes/entry based on 43_43 math).
+
+Status labels:
+```text
+BUILD42_LOTH_TRAILING_BYTE_PATTERNS_ANALYSED
+LOTH_REQUIRES_TRAILING_BINARY_BODY
+HYPOTHESIS_TRAILER_UNKNOWN
+WRITER_NOT_DEFENSIBLE
+WRITER_NOT_CHANGED
+LOAD_TEST_NOT_PERFORMED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+No load test. No writer change. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6V — LOTH trailing body decode research:**
 MAP-6V decodes the trailing binary section confirmed in MAP-6U and determines
 whether a v3 writer is defensible.
