@@ -8,6 +8,38 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6S: Build 42 LOTH candidate writer v2)
+- docs/MAP_6S_BUILD42_LOTH_WRITER_V2.md: writer doc.
+  - MAP-6Q failure basis; MAP-6R structure basis.
+  - empty_grass_v1: 1024 generated contiguous entries (blends_grassoverlays_01_0..._01_1023).
+  - Entries generated in source; not copied from any reference mod.
+  - Why Dru_map entries not embedded.
+  - LOTP/chunkdata unchanged; LOAD_TEST_NOT_PERFORMED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+  - Recommended next: MAP-6T controlled retest.
+- src/PZMapForge.Cli/Program.cs: empty_grass_v1 profile added.
+  - Profile validation accepts empty_grass_v0 and empty_grass_v1.
+  - empty_grass_v1: 1024 entries via Enumerable.Range(0,1024).
+  - Report: loth_entry_strategy, loth_known_risk, updated remaining_unknowns.
+  - LOTP and chunkdata unchanged.
+- tests/PZMapForge.Cli.Tests/MapExportBuild42CandidateWriterV1ProcessTests.cs: 25 tests.
+  - Exits 0; 42/ layout; LOTH exists; LOTH magic; LOTH version=1.
+  - entry_count=1024; 1024 entries; first entry; last entry; size>38; size>=25000.
+  - Report profile/entry_count/loth_status/load_tested/playable/pz_assets/known_risk.
+  - LOTP+chunkdata sizes unchanged; output outside .local refused.
+  - dnCliTests 275->300; dnTotal 465->490.
+- Smoke: v1 candidate 28598 bytes vs smallest Dru_map ref 34920 bytes (21% gap).
+  candidate_smaller_than_all_references=true; candidate_magic=LOTH.
+- scripts/validate.ps1: .NET count constants updated (300/490); psTotal unchanged.
+- scripts/write-proof-packet.ps1: v0.22; dnCliTests=300; dnTotal=490.
+- scripts/test-proof-packet.ps1: assertions updated (300/490).
+- docs/IMPLEMENTATION.md: MAP-6S ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6S section.
+
+No load test. No PZ assets into repo. No reference entry copying. No playable export claim.
+PS 654 / .NET 490.
+
+---
+
 ### Added (MAP-6R: Build 42 LOTH structure research)
 - docs/MAP_6R_BUILD42_LOTH_STRUCTURE_RESEARCH.md: research doc.
   - Why 38-byte LOTH is insufficient.

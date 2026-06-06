@@ -552,6 +552,40 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6S — Build 42 LOTH candidate writer v2:**
+MAP-6S adds the `empty_grass_v1` profile to the CLI candidate writer. This is
+the first LOTH at reference scale.
+
+Profile `empty_grass_v1` generates 1024 contiguous entries:
+- Entry range: `blends_grassoverlays_01_0` ... `blends_grassoverlays_01_1023`
+- Entries are generated in source; not copied from any Workshop mod or reference LOTH.
+- `loth_known_risk = generated_entries_may_not_match_loaded_tile_definitions`
+
+LOTH v2 size: 28598 bytes (vs v0: 38 bytes; smallest Dru_map reference: 34920 bytes).
+The v1 candidate is now within 21% of the smallest reference (was 918x too small).
+`candidate_smaller_than_all_references = true` (within reference range, not exceeding).
+
+LOTP (1,056,780 bytes) and chunkdata (1,026 bytes) are unchanged from MAP-6L.
+
+Status labels:
+```text
+BUILD42_LOTH_WRITER_V2_IMPLEMENTED
+LOTH_ENTRY_COUNT=1024
+LOTH_ENTRY_STRATEGY=generated_contiguous_grass_overlay_range
+LOTH_KNOWN_RISK=generated_entries_may_not_match_loaded_tile_definitions
+LOTP_UNCHANGED
+CHUNKDATA_UNCHANGED
+LOAD_TEST_NOT_PERFORMED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+Artifacts:
+- `docs/MAP_6S_BUILD42_LOTH_WRITER_V2.md` — writer doc.
+- `src/PZMapForge.Cli/Program.cs`: `empty_grass_v1` profile in `Build42CandidateWriterCommand`.
+- `tests/PZMapForge.Cli.Tests/MapExportBuild42CandidateWriterV1ProcessTests.cs`: 25 tests.
+
+No load test. No PZ assets. No reference entry copying. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6R — Build 42 LOTH structure research:**
 MAP-6R deepens the LOTH lotheader inspection to explain the MAP-6Q EOF failure
 and produce writer-ready structural evidence.

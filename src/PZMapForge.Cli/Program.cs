@@ -1631,10 +1631,10 @@ static int Build42CandidateWriterCommand(
     // Profile: empty_grass_v0 — minimal all-zero/grass hypothesis.
     // Not load-tested. Not a playable export. Candidate only.
 
-    if (profile != "empty_grass_v0")
+    if (profile != "empty_grass_v0" && profile != "empty_grass_v1")
     {
         Console.Error.WriteLine(
-            $"build42-candidate-writer: unknown profile '{profile}'. Only 'empty_grass_v0' is supported.");
+            $"build42-candidate-writer: unknown profile '{profile}'. Supported profiles: empty_grass_v0, empty_grass_v1.");
         return 1;
     }
 
@@ -1713,9 +1713,9 @@ BOUNDARY STATEMENT:
 - Manual load test required before any claim changes.
 - Output is under .local only.
 
-BINARY CANDIDATE FORMATS (empty_grass_v0):
+BINARY CANDIDATE FORMATS ({profile}):
 - chunkdata: 1026 bytes, header 00 01, 1024-byte all-zero body (MAP-6H evidence).
-- lotheader: LOTH magic, version 1, 1 grass entry (committed MAP-4E evidence only).
+- lotheader: LOTH magic, version 1, {(profile == "empty_grass_v1" ? "1024 generated entries blends_grassoverlays_01_0..._01_1023 (MAP-6S)" : "1 entry blends_grassoverlays_01_0 (MAP-4E committed evidence only)")}.
 - lotpack: LOTP magic, version 1, 1024 chunks x 1024 zero bytes (MAP-6K most_common_size).
 """, Encoding.UTF8);
 
@@ -1726,17 +1726,22 @@ BINARY CANDIDATE FORMATS (empty_grass_v0):
     // bytes 2-1025: all zero (body 1024 bytes, all-zero hypothesis from MAP-6H)
     File.WriteAllBytes(Path.Combine(mapDataDir, $"chunkdata_{cellCoord}.bin"), chunkdataBytes);
 
-    // ---- 0_0.lotheader (MAP-6L: LOTH format, 1 committed-evidence entry) ----
-    // Entry from committed MAP-4E evidence (docs/COMPILED_CELL_FORMAT_EVIDENCE.md §16).
-    // Candidate minimal set — minimum required entries unknown; marked unproven.
-    const string lothGrassEntry = "blends_grassoverlays_01_0"; // MAP-4E committed evidence
-    var lothEntries   = new[] { lothGrassEntry };
-    var lothEntryData = Encoding.ASCII.GetBytes(lothGrassEntry + "\n");
-    var lothBytes     = new byte[12 + lothEntryData.Length];
+    // ---- 0_0.lotheader ----
+    // Profile empty_grass_v0 (MAP-6L): 1 committed entry from MAP-4E evidence.
+    // Profile empty_grass_v1 (MAP-6S): 1024 generated contiguous grass overlay entries.
+    //   Based on MAP-6R evidence: reference field8=920-2007, bytes 12+ immediately ASCII.
+    //   Entry range: blends_grassoverlays_01_0 ... blends_grassoverlays_01_1023.
+    //   Entries are generated -- not copied from any reference mod. Candidate only.
+    //   loth_known_risk: generated_entries_may_not_match_loaded_tile_definitions
+    var lothEntries = profile == "empty_grass_v1"
+        ? Enumerable.Range(0, 1024).Select(i => $"blends_grassoverlays_01_{i}").ToArray()
+        : new[] { "blends_grassoverlays_01_0" }; // MAP-4E committed evidence
+    var lothEntryData  = Encoding.ASCII.GetBytes(string.Join("\n", lothEntries) + "\n");
+    var lothBytes      = new byte[12 + lothEntryData.Length];
     lothBytes[0] = 0x4C; lothBytes[1] = 0x4F; lothBytes[2] = 0x54; lothBytes[3] = 0x48; // LOTH
     lothBytes[4] = 0x01; // version = 1 (LE)
-    // entry_count = 1 as U32 LE
-    lothBytes[8] = 0x01; lothBytes[9] = 0x00; lothBytes[10] = 0x00; lothBytes[11] = 0x00;
+    var entryCountLeBytes = BitConverter.GetBytes((uint)lothEntries.Length);
+    Array.Copy(entryCountLeBytes, 0, lothBytes, 8, 4);
     Array.Copy(lothEntryData, 0, lothBytes, 12, lothEntryData.Length);
     File.WriteAllBytes(Path.Combine(mapDataDir, $"{cellCoord}.lotheader"), lothBytes);
 
@@ -1814,8 +1819,18 @@ BINARY CANDIDATE FORMATS (empty_grass_v0):
         chunkdata_sha256             = cdataSha256,
         loth_candidate_profile       = profile,
         loth_entry_count             = lothEntries.Length,
-        loth_entries                 = lothEntries,
-        loth_entries_source          = "committed_evidence_only_map4e",
+        loth_entries                 = lothEntries.Length > 3
+            ? new[] { lothEntries[0], $"...({lothEntries.Length - 2} more)...", lothEntries[^1] }
+            : lothEntries,
+        loth_entries_source          = profile == "empty_grass_v1"
+            ? "generated_contiguous_range_not_copied_from_reference"
+            : "committed_evidence_only_map4e",
+        loth_entry_strategy          = profile == "empty_grass_v1"
+            ? "generated_contiguous_grass_overlay_range"
+            : "single_committed_entry_map4e",
+        loth_known_risk              = profile == "empty_grass_v1"
+            ? "generated_entries_may_not_match_loaded_tile_definitions"
+            : "single_entry_insufficient_per_map6r_evidence",
         loth_status                  = "generated_not_load_tested",
         loth_size_bytes              = lothBytes.Length,
         loth_sha256                  = lothSha256,
@@ -1830,13 +1845,9 @@ BINARY CANDIDATE FORMATS (empty_grass_v0):
         lotp_sha256                  = lotpSha256,
         geometry_model               = "32x32_chunk_grid_256x256_cell",
         geometry_status              = "strongly_supported_not_load_tested",
-        remaining_unknowns = new[]
-        {
-            "lotp_zero_payload_load_acceptance",
-            "loth_minimum_entries_acceptance",
-            "missing_trailer_acceptance",
-            "build42_load_test",
-        },
+        remaining_unknowns = profile == "empty_grass_v1"
+            ? new[] { "loth_generated_entry_acceptance", "lotp_zero_payload_load_acceptance", "chunkdata_zero_body_acceptance", "build42_load_test" }
+            : new[] { "lotp_zero_payload_load_acceptance", "loth_minimum_entries_acceptance", "missing_trailer_acceptance", "build42_load_test" },
     };
 
     var jsonOpts = new JsonSerializerOptions { WriteIndented = true };
@@ -1865,7 +1876,7 @@ No PZ assets copied. No repo media/maps writes. Experimental only.
 
 | File | Size | Format | Status |
 |---|---|---|---|
-| {cellCoord}.lotheader | {lothBytes.Length} | LOTH magic+version+1 entry | generated_not_load_tested |
+| {cellCoord}.lotheader | {lothBytes.Length} | LOTH magic+version+{lothEntries.Length} {(lothEntries.Length == 1 ? "entry" : "entries")} | generated_not_load_tested |
 | world_{cellCoord}.lotpack | {lotpExpectedSize} | LOTP magic+version+1024 chunks | generated_not_load_tested |
 | chunkdata_{cellCoord}.bin | 1026 | 00 01 header + 1024 zero bytes | generated_not_load_tested |
 
