@@ -8,6 +8,60 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-6Y: LOTH fixed 1048-byte block research)
+- docs/MAP_6Y_LOTH_FIXED_1048_BLOCK_RESEARCH.md: research doc.
+  - MAP-6X basis: per-entry model rejected; all 40 smallest cells have 1048 trailing bytes.
+  - MAP-6Y compares the full 1048-byte block byte-by-byte across reference cells.
+  - Determines: fully constant / stable prefix + variable body / stable header + zero body /
+    cell coordinate fields / variable unknown / not enough reference files.
+  - Writer readiness verdict: NOT_DEFENSIBLE until real reference smoke confirms stability.
+  - BUILD42_LOTH_FIXED_1048_BLOCK_ANALYSED; WRITER_NOT_DEFENSIBLE;
+    WRITER_NOT_CHANGED; LOAD_TEST_NOT_PERFORMED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/analyze-build42-loth-fixed-1048-block.ps1:
+  - Guards: ReferenceRoot and Output under .local.
+  - Collects *.lotheader files (sorted by size, bounded by MaxFiles).
+  - Parses: magic, version u32le, field8 u32le, ASCII string table (offset 12).
+  - Selects files where trailing_bytes_count == OnlyTrailingSize (default 1048).
+  - Per file: sha256_trailer, zero/nonzero_byte_count, u32_word_count,
+    first/last_64_trailer_hex, first/last_32_u32le_words, cell_x/cell_y.
+  - Cross-file: SHA-256 deduplication, byte-level stability flags (per-position
+    HashSet), stable/variable_byte_count, compute-runs for ranges,
+    stable_prefix/suffix_length, U32 word stability, coordinate correlation.
+  - Hypotheses: FULLY_CONSTANT / STABLE_PREFIX_VARIABLE_BODY / STABLE_HEADER_ZERO_BODY /
+    CELL_COORDINATE_FIELDS / VARIABLE_UNKNOWN / NOT_ENOUGH_REFERENCE_FILES.
+  - Writer readiness: NOT_DEFENSIBLE / MAYBE_DEFENSIBLE_WITH_ZERO_1048_BLOCK /
+    MAYBE_DEFENSIBLE_WITH_STABLE_LITERAL_1048_BLOCK /
+    MAYBE_DEFENSIBLE_WITH_STABLE_PREFIX_ZERO_REMAINDER.
+  - Writes build42-loth-fixed-1048-block.json (depth 8) + .md.
+- scripts/test-build42-loth-fixed-1048-block.ps1: 20 assertions.
+  - Synthetic fixtures: ref1 (3 entries, standard trailer), ref2 (4 entries, same trailer),
+    ref3 (5 entries, one byte at position 64 changed to 0xFF).
+  - Test 1: ReferenceRoot outside .local refused.
+  - Test 2: Output outside .local refused.
+  - Test 3: exits 0. Tests 4-5: JSON and MD exist.
+  - Test 6: selected_file_count == 3.
+  - Test 7: unique_trailer_sha256_count == 2.
+  - Test 8: all_1048_blocks_identical == false.
+  - Test 9: stable_byte_count == 1047.
+  - Test 10: variable_byte_count == 1.
+  - Test 11: stable_byte_ranges has 2 ranges.
+  - Test 12: variable_byte_ranges has 1 range.
+  - Test 13: stable_prefix_length == 64.
+  - Test 14: stable_suffix_length == 983.
+  - Tests 15-16: hypotheses and writer_readiness present.
+  - Tests 17-20: status labels in MD.
+  - psTotal 743->763.
+- scripts/validate.ps1: MAP-6Y section; psTotal 743->763.
+- scripts/write-proof-packet.ps1: v0.28; map6y=20; total 763.
+- scripts/test-proof-packet.ps1: assertions updated (20/763).
+- docs/IMPLEMENTATION.md: MAP-6Y ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-6Y section.
+
+No load test. No writer change. No PZ assets into repo. No playable export claim.
+PS 763 / .NET 490.
+
+---
+
 ### Added (MAP-6X: LOTH per-entry record model research)
 - docs/MAP_6X_LOTH_PER_ENTRY_RECORD_MODEL_RESEARCH.md: research doc.
   - Per-entry model REJECTED for simple cells.

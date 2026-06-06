@@ -228,6 +228,33 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-6Y LOTH fixed 1048-byte block research ---"
+$map6yDoc    = Join-Path $repoRoot 'docs\MAP_6Y_LOTH_FIXED_1048_BLOCK_RESEARCH.md'
+$map6yScript = Join-Path $repoRoot 'scripts\analyze-build42-loth-fixed-1048-block.ps1'
+$map6yTests  = Join-Path $repoRoot 'scripts\test-build42-loth-fixed-1048-block.ps1'
+if (-not (Test-Path -LiteralPath $map6yDoc))    { throw "MAP-6Y doc missing" }
+Write-Output "OK: docs\MAP_6Y_LOTH_FIXED_1048_BLOCK_RESEARCH.md"
+if (-not (Test-Path -LiteralPath $map6yScript)) { throw "MAP-6Y script missing" }
+Write-Output "OK: scripts\analyze-build42-loth-fixed-1048-block.ps1"
+if (-not (Test-Path -LiteralPath $map6yTests))  { throw "MAP-6Y tests missing" }
+Write-Output "OK: scripts\test-build42-loth-fixed-1048-block.ps1"
+$map6yDocContent = Get-Content -LiteralPath $map6yDoc -Raw
+if ($map6yDocContent -notmatch 'BUILD42_LOTH_FIXED_1048_BLOCK_ANALYSED') { throw "MAP-6Y doc missing BUILD42_LOTH_FIXED_1048_BLOCK_ANALYSED" }
+Write-Output "OK: doc contains BUILD42_LOTH_FIXED_1048_BLOCK_ANALYSED"
+if ($map6yDocContent -notmatch 'LOTH_TRAILING_BODY_FIXED_SIZE_FOR_SIMPLE_CELLS') { throw "MAP-6Y doc missing LOTH_TRAILING_BODY_FIXED_SIZE_FOR_SIMPLE_CELLS" }
+Write-Output "OK: doc contains LOTH_TRAILING_BODY_FIXED_SIZE_FOR_SIMPLE_CELLS"
+if ($map6yDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-6Y doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+$map6yScriptContent = Get-Content -LiteralPath $map6yScript -Raw
+if ($map6yScriptContent -notmatch '\.local') { throw "MAP-6Y script missing .local refusal" }
+Write-Output "OK: script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-6Y fixed 1048-byte block tests ---"
+& powershell -ExecutionPolicy Bypass -File $map6yTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-6Y fixed 1048-byte block tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-6X LOTH per-entry record model research ---"
 $map6xDoc    = Join-Path $repoRoot 'docs\MAP_6X_LOTH_PER_ENTRY_RECORD_MODEL_RESEARCH.md'
 $map6xScript = Join-Path $repoRoot 'scripts\analyze-build42-loth-per-entry-record-model.ps1'
@@ -703,39 +730,40 @@ Write-Output "========================================"
 # ---------------------------------------------------------------------------
 
 $psChecks = [ordered]@{
-    'Schema file sanity'                  = 214
-    'Artifact contract'                   = 40
-    'Palette SHA-256 verification'        = 5
-    'TMX integrity'                       = 21
-    'Hardening harness'                   = 36
-    'Region extraction'                   = 24
-    'Primitive classification'            = 22
-    'Plan recommendations contract'       = 28
-    'Proof packet'                        = 102
-    'Build42 geometry inspector tests'    = 23
-    'Build42 format design matrix tests' = 13
-    'Build42 writer contract tests'      = 20
-    'Build42 LOTP payload window tests'  = 20
-    'Build42 candidate packet tests'     = 20
-    'MAP-6N log triage tests'            = 12
-    'MAP-6O retest checklist tests'      = 15
-    'MAP-6P spawn activation tests'      = 12
-    'MAP-6Q lotheader comparison tests'  = 13
-    'MAP-6R LOTH structure tests'        = 14
-    'MAP-6T load test packet tests'      = 18
-    'MAP-6U full body tests'             = 14
-    'MAP-6V trailing body decode tests'  = 17
-    'MAP-6W byte pattern tests'          = 20
-    'MAP-6X per-entry record model tests' = 20
+    'Schema file sanity'                   = 214
+    'Artifact contract'                    = 40
+    'Palette SHA-256 verification'         = 5
+    'TMX integrity'                        = 21
+    'Hardening harness'                    = 36
+    'Region extraction'                    = 24
+    'Primitive classification'             = 22
+    'Plan recommendations contract'        = 28
+    'Proof packet'                         = 102
+    'Build42 geometry inspector tests'     = 23
+    'Build42 format design matrix tests'   = 13
+    'Build42 writer contract tests'        = 20
+    'Build42 LOTP payload window tests'    = 20
+    'Build42 candidate packet tests'       = 20
+    'MAP-6N log triage tests'             = 12
+    'MAP-6O retest checklist tests'        = 15
+    'MAP-6P spawn activation tests'        = 12
+    'MAP-6Q lotheader comparison tests'    = 13
+    'MAP-6R LOTH structure tests'          = 14
+    'MAP-6T load test packet tests'        = 18
+    'MAP-6U full body tests'               = 14
+    'MAP-6V trailing body decode tests'    = 17
+    'MAP-6W byte pattern tests'            = 20
+    'MAP-6X per-entry record model tests'  = 20
+    'MAP-6Y fixed 1048 block tests'        = 20
 }
-$psTotal = 743   # = validation_summary.total_expected_assertions in proof-packet v0.27
+$psTotal = 763   # = validation_summary.total_expected_assertions in proof-packet v0.28
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 300   # PZMapForge.Cli.Tests (MAP-6S: +25 Build42 LOTH v2 tests)
 $dnTotal     = 490   # = dotnet_validation_summary.test_total in proof-packet v0.27
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.27):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.28):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -743,7 +771,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.27 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.28 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

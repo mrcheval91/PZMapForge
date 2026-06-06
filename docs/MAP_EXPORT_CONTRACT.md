@@ -552,6 +552,36 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-6Y — LOTH fixed 1048-byte block research:**
+MAP-6Y inspects whether the 1048-byte simple-cell LOTH trailer is constant,
+partially stable, or variable across reference Build 42 cells.
+
+Key script: `scripts/analyze-build42-loth-fixed-1048-block.ps1`
+Key test:   `scripts/test-build42-loth-fixed-1048-block.ps1` (20 assertions)
+Doc:        `docs/MAP_6Y_LOTH_FIXED_1048_BLOCK_RESEARCH.md`
+
+Analysis fields:
+- Per file: sha256_trailer, zero/nonzero_byte_count, u32_word_count, first/last_64_hex.
+- Cross-file: selected_file_count, unique_trailer_sha256_count, all_1048_blocks_identical.
+- Stability: stable/variable_byte_count, byte_ranges, prefix/suffix_length, U32 word stability.
+- Coordinate correlation: tests if variable bytes match cell_x/cell_y.
+- Hypotheses: FULLY_CONSTANT / STABLE_PREFIX_VARIABLE_BODY / STABLE_HEADER_ZERO_BODY /
+  CELL_COORDINATE_FIELDS / VARIABLE_UNKNOWN / NOT_ENOUGH_REFERENCE_FILES.
+- Writer readiness: NOT_DEFENSIBLE / MAYBE_DEFENSIBLE_WITH_ZERO_1048_BLOCK /
+  MAYBE_DEFENSIBLE_WITH_STABLE_LITERAL / MAYBE_DEFENSIBLE_WITH_STABLE_PREFIX_ZERO_REMAINDER.
+
+Status labels:
+```text
+BUILD42_LOTH_FIXED_1048_BLOCK_ANALYSED
+LOTH_TRAILING_BODY_FIXED_SIZE_FOR_SIMPLE_CELLS
+WRITER_NOT_DEFENSIBLE
+WRITER_NOT_CHANGED
+LOAD_TEST_NOT_PERFORMED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+No load test. No writer change. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+
 **MAP-6X — LOTH per-entry record model research:**
 MAP-6X tests per-entry record hypotheses for the LOTH trailing body.
 
