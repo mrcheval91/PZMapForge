@@ -8,6 +8,48 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7B: LOTH v3 retest result and objects.lua failure record)
+- docs/MAP_7B_LOTH_V3_RETEST_OBJECTS_LUA_FAILURE.md: retest record and blocker analysis.
+  - MAP-7A manual retest: empty_grass_v2, correct wiring, clean log.
+  - LOTH_V3_EOF_NOT_OBSERVED: no lotheader EOF in this run. Prior blocker cleared.
+  - ISO_META_GRID_FINISHED_LOADING: 11.728 seconds. Map grid loaded.
+  - OBJECTS_LUA_PRIMARY_BLOCKER: LexState.token2str ArrayIndexOutOfBoundsException
+    (index 65022, length 31). Current format: return {}. Rejected by PZ Lua engine.
+  - SPAWN_REGION_SECONDARY_BLOCKER: NullPointerException in getSpawnRegionsAux.
+  - LOAD_TEST_FAIL_OBJECTS_LUA.
+  - Interpretation: 4 possible causes for objects.lua failure documented.
+  - Recommended next: MAP-7C fix objects.lua and spawn metadata.
+  - WRITER_NOT_CHANGED; LOAD_TEST_NOT_PERFORMED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-candidate-lua-metadata.ps1:
+  - Guards: -CandidateRoot and -Output under .local.
+  - Detects map_id from mod.info id= field.
+  - Inspects: mod.info (id match), map.info (lots match), spawnpoints.lua (function/return
+    shape for SpawnPoints compatibility), objects.lua (content type: empty / return_only /
+    binary_looking / other_lua).
+  - Per file: exists, size, first_bytes_hex, first_lines (20 max), ascii_clean.
+  - Sentinels: candidate_files_read=true, pz_assets_read=false, pz_install_read=false.
+  - Writes build42-candidate-lua-metadata.json (depth 6) + .md.
+- scripts/test-build42-candidate-lua-metadata.ps1: 15 assertions.
+  - Synthetic fixtures: mod.info with id=test_map_7b, map.info lots=test_map_7b,
+    spawnpoints.lua with function SpawnPoints(), objects.lua with return {}.
+  - Tests 1-2: path guards. Tests 3-5: exits 0, JSON+MD exist.
+  - Tests 6-9: all 4 candidate files detected as existing.
+  - Test 10: objects_lua_content_type == return_only.
+  - Test 11: spawnpoints_lua_compatible_shape == true.
+  - Tests 12-13: id/lots match == true.
+  - Tests 14-15: status labels in MD.
+  - psTotal 786->801.
+- scripts/validate.ps1: MAP-7B section; psTotal 786->801; v0.31 labels.
+- scripts/write-proof-packet.ps1: v0.31; map7b=15; total 801.
+- scripts/test-proof-packet.ps1: assertions updated (15/801).
+- docs/IMPLEMENTATION.md: MAP-7B ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7B section.
+
+No load test. No writer change. No PZ assets into repo. No playable export claim.
+PS 801 / .NET 518.
+
+---
+
 ### Added (MAP-7A: Build 42 LOTH v3 load test packet)
 - docs/MAP_7A_LOTH_V3_LOAD_TEST_PACKET.md: packet doc.
   - MAP-6Z basis: empty_grass_v2 with 29646-byte LOTH and 1048-byte stable trailer.

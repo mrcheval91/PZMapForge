@@ -552,6 +552,34 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7B — LOTH v3 retest result and objects.lua failure record:**
+MAP-7B records the MAP-7A manual retest outcome and adds a local diagnostic inspector.
+
+Key findings:
+- LOTH v3 (empty_grass_v2): no lotheader EOF observed. IsoMetaGrid loaded in 11.728 s.
+- objects.lua LexState.token2str ArrayIndexOutOfBoundsException (index 65022, length 31).
+- Spawn region NullPointerException in getSpawnRegionsAux (secondary blocker).
+- Classification: LOAD_TEST_FAIL_OBJECTS_LUA.
+
+Inspector: `scripts/inspect-build42-candidate-lua-metadata.ps1`
+- Reads mod.info, map.info, spawnpoints.lua, objects.lua from generated .local candidate.
+- Reports: exists, size, ASCII sanity, id/lots match, spawnpoints compatibility, objects content type.
+
+Status labels:
+```text
+MAP7A_CLEAN_RETEST_RECORDED
+LOTH_V3_EOF_NOT_OBSERVED
+ISO_META_GRID_FINISHED_LOADING
+OBJECTS_LUA_PRIMARY_BLOCKER
+SPAWN_REGION_SECONDARY_BLOCKER
+LOAD_TEST_FAIL_OBJECTS_LUA
+LOAD_TEST_NOT_PERFORMED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+No load test in MAP-7B. No writer change. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+Recommended next: MAP-7C objects.lua/spawn metadata fix and controlled retest.
+
 **MAP-7A — Build 42 LOTH v3 controlled load-test packet:**
 MAP-7A prepares the human-only load-test packet for the `empty_grass_v2` candidate.
 

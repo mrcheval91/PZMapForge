@@ -228,6 +228,35 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-7B retest result and Lua metadata inspector ---"
+$map7bDoc    = Join-Path $repoRoot 'docs\MAP_7B_LOTH_V3_RETEST_OBJECTS_LUA_FAILURE.md'
+$map7bScript = Join-Path $repoRoot 'scripts\inspect-build42-candidate-lua-metadata.ps1'
+$map7bTests  = Join-Path $repoRoot 'scripts\test-build42-candidate-lua-metadata.ps1'
+if (-not (Test-Path -LiteralPath $map7bDoc))    { throw "MAP-7B doc missing" }
+Write-Output "OK: docs\MAP_7B_LOTH_V3_RETEST_OBJECTS_LUA_FAILURE.md"
+if (-not (Test-Path -LiteralPath $map7bScript)) { throw "MAP-7B script missing" }
+Write-Output "OK: scripts\inspect-build42-candidate-lua-metadata.ps1"
+if (-not (Test-Path -LiteralPath $map7bTests))  { throw "MAP-7B tests missing" }
+Write-Output "OK: scripts\test-build42-candidate-lua-metadata.ps1"
+$map7bDocContent = Get-Content -LiteralPath $map7bDoc -Raw
+if ($map7bDocContent -notmatch 'MAP7A_CLEAN_RETEST_RECORDED') { throw "MAP-7B doc missing MAP7A_CLEAN_RETEST_RECORDED" }
+Write-Output "OK: doc contains MAP7A_CLEAN_RETEST_RECORDED"
+if ($map7bDocContent -notmatch 'OBJECTS_LUA_PRIMARY_BLOCKER') { throw "MAP-7B doc missing OBJECTS_LUA_PRIMARY_BLOCKER" }
+Write-Output "OK: doc contains OBJECTS_LUA_PRIMARY_BLOCKER"
+if ($map7bDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-7B doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+$map7bScriptContent = Get-Content -LiteralPath $map7bScript -Raw
+if ($map7bScriptContent -notmatch '\.local') { throw "MAP-7B script missing .local refusal" }
+Write-Output "OK: script contains .local refusal language"
+if ($map7bScriptContent -notmatch 'candidate_files_read') { throw "MAP-7B script missing candidate_files_read sentinel" }
+Write-Output "OK: script contains candidate_files_read sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-7B Lua metadata tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7bTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7B Lua metadata tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-7A LOTH v3 load test packet ---"
 $map7aDoc    = Join-Path $repoRoot 'docs\MAP_7A_LOTH_V3_LOAD_TEST_PACKET.md'
 $map7aScript = Join-Path $repoRoot 'scripts\prepare-build42-loth-v3-load-test-packet.ps1'
@@ -783,15 +812,16 @@ $psChecks = [ordered]@{
     'MAP-6X per-entry record model tests'  = 20
     'MAP-6Y fixed 1048 block tests'        = 20
     'MAP-7A load test packet tests'        = 23
+    'MAP-7B Lua metadata tests'            = 15
 }
-$psTotal = 786   # = validation_summary.total_expected_assertions in proof-packet v0.30
+$psTotal = 801   # = validation_summary.total_expected_assertions in proof-packet v0.31
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 328   # PZMapForge.Cli.Tests (MAP-6Z: +28 Build42 LOTH v3 tests)
 $dnTotal     = 518   # = dotnet_validation_summary.test_total in proof-packet v0.29
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.30):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.31):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -799,7 +829,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.30 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.31 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"
