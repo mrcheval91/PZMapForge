@@ -228,6 +228,33 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-7C candidate Lua metadata fix ---"
+$map7cDoc          = Join-Path $repoRoot 'docs\MAP_7C_OBJECTS_LUA_SPAWN_METADATA_FIX.md'
+$map7cPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-metadata-v3-load-test-packet.ps1'
+$map7cPacketTests  = Join-Path $repoRoot 'scripts\test-build42-metadata-v3-load-test-packet.ps1'
+if (-not (Test-Path -LiteralPath $map7cDoc))          { throw "MAP-7C doc missing" }
+Write-Output "OK: docs\MAP_7C_OBJECTS_LUA_SPAWN_METADATA_FIX.md"
+if (-not (Test-Path -LiteralPath $map7cPacketScript)) { throw "MAP-7C packet script missing" }
+Write-Output "OK: scripts\prepare-build42-metadata-v3-load-test-packet.ps1"
+if (-not (Test-Path -LiteralPath $map7cPacketTests))  { throw "MAP-7C packet tests missing" }
+Write-Output "OK: scripts\test-build42-metadata-v3-load-test-packet.ps1"
+$map7cDocContent = Get-Content -LiteralPath $map7cDoc -Raw
+if ($map7cDocContent -notmatch 'OBJECTS_LUA_FIXED_COMMENT_ONLY') { throw "MAP-7C doc missing OBJECTS_LUA_FIXED_COMMENT_ONLY" }
+Write-Output "OK: doc contains OBJECTS_LUA_FIXED_COMMENT_ONLY"
+if ($map7cDocContent -notmatch 'LOAD_TEST_NOT_PERFORMED') { throw "MAP-7C doc missing LOAD_TEST_NOT_PERFORMED" }
+Write-Output "OK: doc contains LOAD_TEST_NOT_PERFORMED"
+if ($map7cDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-7C doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+$map7cPacketScriptContent = Get-Content -LiteralPath $map7cPacketScript -Raw
+if ($map7cPacketScriptContent -notmatch '\.local') { throw "MAP-7C packet script missing .local refusal" }
+Write-Output "OK: packet script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-7C metadata v3 packet tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7cPacketTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7C metadata v3 packet tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-7B retest result and Lua metadata inspector ---"
 $map7bDoc    = Join-Path $repoRoot 'docs\MAP_7B_LOTH_V3_RETEST_OBJECTS_LUA_FAILURE.md'
 $map7bScript = Join-Path $repoRoot 'scripts\inspect-build42-candidate-lua-metadata.ps1'
@@ -812,16 +839,17 @@ $psChecks = [ordered]@{
     'MAP-6X per-entry record model tests'  = 20
     'MAP-6Y fixed 1048 block tests'        = 20
     'MAP-7A load test packet tests'        = 23
-    'MAP-7B Lua metadata tests'            = 15
+    'MAP-7B Lua metadata tests'            = 18
+    'MAP-7C metadata v3 packet tests'     = 18
 }
-$psTotal = 801   # = validation_summary.total_expected_assertions in proof-packet v0.31
+$psTotal = 822   # = validation_summary.total_expected_assertions in proof-packet v0.32
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
-$dnCliTests  = 328   # PZMapForge.Cli.Tests (MAP-6Z: +28 Build42 LOTH v3 tests)
-$dnTotal     = 518   # = dotnet_validation_summary.test_total in proof-packet v0.29
+$dnCliTests  = 348   # PZMapForge.Cli.Tests (MAP-7C: +20 Build42 LOTH v3 metadata tests)
+$dnTotal     = 538   # = dotnet_validation_summary.test_total in proof-packet v0.32
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.31):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.32):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -829,7 +857,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.31 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.32 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

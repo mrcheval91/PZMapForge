@@ -552,6 +552,27 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7C — objects.lua and spawn metadata fix:**
+MAP-7C adds `empty_grass_v3` profile with fixed Lua metadata. LOTH/LOTP/chunkdata unchanged.
+
+Key changes from v2:
+- objects.lua: `return {}` → comment-only (avoids MAP-7A LexState.token2str exception)
+- spawnpoints.lua: `all` key → `unemployed` key with explicit worldX/worldY/posX/posY/posZ
+- Inspector: detects `comment_only`, spawn fields, recommendations
+
+Status labels:
+```text
+MAP7C_OBJECTS_LUA_METADATA_PACKET_CREATED
+OBJECTS_LUA_FIXED_COMMENT_ONLY
+SPAWNPOINTS_LUA_UNEMPLOYED_KEY
+LOAD_TEST_NOT_PERFORMED
+WRITER_NOT_CHANGED
+PLAYABLE_EXPORT_CLAIM_ALLOWED=false
+```
+
+No load test. LOTH/LOTP/chunkdata writer unchanged. No PZ assets. PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+Recommended next: human-only MAP-7C retest with `empty_grass_v3` candidate.
+
 **MAP-7B — LOTH v3 retest result and objects.lua failure record:**
 MAP-7B records the MAP-7A manual retest outcome and adds a local diagnostic inspector.
 

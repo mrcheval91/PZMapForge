@@ -52,7 +52,8 @@ New-Item -ItemType Directory -Force -Path $badPath     | Out-Null
 # Write synthetic candidate files (ASCII to avoid UTF-8 BOM from PS Set-Content)
 Set-Content -Path (Join-Path $candBase 'mod.info') -Value "name=Test Map`nid=test_map_7b`ncategory=map`n" -Encoding ASCII
 Set-Content -Path (Join-Path $mapDataBase 'map.info') -Value "lots=test_map_7b`ntitle=Test`n" -Encoding ASCII
-Set-Content -Path (Join-Path $mapDataBase 'spawnpoints.lua') -Value "function SpawnPoints()`nreturn { all = {} }`nend`n" -Encoding ASCII
+# v3-style spawnpoints.lua: unemployed key with full coordinates
+Set-Content -Path (Join-Path $mapDataBase 'spawnpoints.lua') -Value "function SpawnPoints()`nreturn { unemployed = { { worldX = 0, worldY = 0, posX = 150, posY = 150, posZ = 0 } } }`nend`n" -Encoding ASCII
 Set-Content -Path (Join-Path $mapDataBase 'objects.lua') -Value "return {}`n" -Encoding ASCII
 
 # ---------------------------------------------------------------------------
@@ -129,6 +130,39 @@ Assert-True ($mdContent -match 'OBJECTS_LUA_PRIMARY_BLOCKER') `
 # Test 15: MD contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false
 Assert-True ($mdContent -match 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') `
     'Test15: MD contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false'
+
+# ---------------------------------------------------------------------------
+# Tests 16-18: Extended inspector capabilities (MAP-7C additions)
+# ---------------------------------------------------------------------------
+
+Write-Output ''
+Write-Output '--- Test 16: comment_only detection ---'
+# Create a second fixture with comment-only objects.lua
+$cand2Base    = Join-Path $testBase '.local\cand2\42'
+$mapData2     = Join-Path $cand2Base 'media\maps\test_7b_2'
+$outDir2      = Join-Path $testBase '.local\output2'
+New-Item -ItemType Directory -Force -Path $mapData2 | Out-Null
+Set-Content -Path (Join-Path $cand2Base 'mod.info') -Value "id=test_7b_2`n" -Encoding ASCII
+Set-Content -Path (Join-Path $mapData2 'map.info') -Value "lots=test_7b_2`n" -Encoding ASCII
+Set-Content -Path (Join-Path $mapData2 'spawnpoints.lua') -Value "function SpawnPoints()`nreturn { all = {} }`nend`n" -Encoding ASCII
+Set-Content -Path (Join-Path $mapData2 'objects.lua') -Value "-- MAP-7C comment only placeholder`n" -Encoding ASCII
+
+$t16Exit = Invoke-Mod -CandidateRoot $cand2Base -Output $outDir2
+$data2 = if (Test-Path (Join-Path $outDir2 'build42-candidate-lua-metadata.json')) {
+    Get-Content (Join-Path $outDir2 'build42-candidate-lua-metadata.json') -Raw | ConvertFrom-Json
+} else { $null }
+$olct2 = if ($null -ne $data2) { [string]$data2.objects_lua_content_type } else { '' }
+Assert-True ($olct2 -eq 'comment_only') "Test16: comment-only fixture → content_type == comment_only (got '$olct2')"
+
+Write-Output ''
+Write-Output '--- Test 17: return_only recommendation is risky ---'
+$olrec = if ($null -ne $data) { [string]$data.objects_lua_recommendation } else { '' }
+Assert-True ($olrec -match 'risky') "Test17: return_only → recommendation contains risky (got '$olrec')"
+
+Write-Output ''
+Write-Output '--- Test 18: spawnpoints_lua_has_unemployed detected ---'
+$spUnemp = if ($null -ne $data) { [bool]$data.spawnpoints_lua_has_unemployed } else { $false }
+Assert-True ($spUnemp -eq $true) "Test18: spawnpoints_lua_has_unemployed == true (got $spUnemp)"
 
 # ---------------------------------------------------------------------------
 # Summary

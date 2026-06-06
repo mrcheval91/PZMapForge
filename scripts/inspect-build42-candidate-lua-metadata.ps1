@@ -70,7 +70,10 @@ function bytes-hex ([byte[]]$b, [int]$len) {
 }
 
 function is-ascii-clean ([byte[]]$b) {
-    foreach ($bv in $b) {
+    # Start after UTF-8 BOM if present (EF BB BF)
+    $start = if ($b.Length -ge 3 -and $b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF) { 3 } else { 0 }
+    for ($i = $start; $i -lt $b.Length; $i++) {
+        $bv = [int]$b[$i]
         if ($bv -lt 0x09) { return $false }
         if ($bv -eq 0x0B -or $bv -eq 0x0C) { return $false }
         if ($bv -ge 0x0E -and $bv -le 0x1F) { return $false }
@@ -169,14 +172,26 @@ if ($mapInfo.exists -and $mapInfoPath) {
 # spawnpoints.lua analysis
 # ---------------------------------------------------------------------------
 
-$spawnHasFunction   = $false
+$spawnHasFunction    = $false
 $spawnHasReturnTable = $false
-$spawnCompatible    = $false
+$spawnCompatible     = $false
+$spawnHasWorldX      = $false
+$spawnHasWorldY      = $false
+$spawnHasPosX        = $false
+$spawnHasPosY        = $false
+$spawnHasPosZ        = $false
+$spawnHasUnemployed  = $false
 if ($spawnInfo.exists -and $spawnPath) {
     $spText = [System.IO.File]::ReadAllText($spawnPath)
     $spawnHasFunction    = ($spText -match '(?i)function\s+SpawnPoints\s*\(')
     $spawnHasReturnTable = ($spText -match 'return\s*\{')
     $spawnCompatible     = ($spawnHasFunction -and $spawnHasReturnTable)
+    $spawnHasWorldX      = ($spText -match 'worldX\s*=')
+    $spawnHasWorldY      = ($spText -match 'worldY\s*=')
+    $spawnHasPosX        = ($spText -match 'posX\s*=')
+    $spawnHasPosY        = ($spText -match 'posY\s*=')
+    $spawnHasPosZ        = ($spText -match 'posZ\s*=')
+    $spawnHasUnemployed  = ($spText -match 'unemployed\s*=')
 }
 
 # ---------------------------------------------------------------------------
@@ -193,8 +208,12 @@ function get-objects-lua-type ([string]$path) {
     $fs    = [System.IO.File]::OpenRead($path)
     try { [void]$fs.Read($bytes, 0, $readN) } finally { $fs.Dispose() }
 
+    # Skip UTF-8 BOM (EF BB BF) if present before binary detection
+    $scanStart = if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) { 3 } else { 0 }
+
     # Check for binary (non-text) content
-    foreach ($bv in $bytes) {
+    for ($bi = $scanStart; $bi -lt $bytes.Length; $bi++) {
+        $bv = [int]$bytes[$bi]
         if ($bv -lt 0x09) { return 'binary_looking' }
         if ($bv -eq 0x0B -or $bv -eq 0x0C) { return 'binary_looking' }
         if ($bv -ge 0x0E -and $bv -le 0x1F) { return 'binary_looking' }
@@ -202,8 +221,13 @@ function get-objects-lua-type ([string]$path) {
         if ($bv -ge 0x80) { return 'binary_looking' }
     }
 
-    $text    = [System.Text.Encoding]::UTF8.GetString($bytes)
+    # Decode text; TrimStart removes UTF-8 BOM char U+FEFF that Encoding.UTF8 may produce
+    $text    = [System.Text.Encoding]::UTF8.GetString($bytes).TrimStart([char]0xFEFF)
     $trimmed = $text.Trim()
+
+    # Detect comment-only: all non-empty, non-whitespace lines start with '--'
+    $nonCommentLines = @($text -split "`n" | Where-Object { $_.Trim().Length -gt 0 -and -not $_.Trim().StartsWith('--') })
+    if ($nonCommentLines.Count -eq 0) { return 'comment_only' }
 
     # Detect return-only pattern: return {} or return{} with optional whitespace
     if ($trimmed -match '^return\s*\{\s*\}\s*$') { return 'return_only' }
@@ -212,6 +236,22 @@ function get-objects-lua-type ([string]$path) {
 }
 
 $objectsLuaContentType = if ($objPath) { get-objects-lua-type $objPath } else { 'missing' }
+
+# Recommendations
+$objectsLuaRecommendation = switch ($objectsLuaContentType) {
+    'comment_only' { 'safe_candidate_try_next' }
+    'return_only'  { 'risky_led_to_map7a_failure_try_comment_only' }
+    'empty'        { 'unknown_effect_worth_trying_if_pz_tolerates_absent' }
+    'missing'      { 'file_absent_may_be_acceptable_pending_retest' }
+    default        { 'unknown_content_inspect_manually' }
+}
+$spawnpointsLuaRecommendation = if ($spawnCompatible -and $spawnHasUnemployed) {
+    'explicit_unemployed_key_present'
+} elseif ($spawnCompatible) {
+    'compatible_shape_but_no_unemployed_key'
+} else {
+    'incompatible_shape_missing_function_or_return'
+}
 
 # ---------------------------------------------------------------------------
 # Build report
@@ -252,15 +292,23 @@ $report = [ordered]@{
     spawnpoints_lua_first_bytes_hex = $spawnInfo.first_bytes_hex
     spawnpoints_lua_first_lines  = $spawnInfo.first_lines
     spawnpoints_lua_ascii_clean  = $spawnInfo.ascii_clean
-    spawnpoints_lua_has_function = $spawnHasFunction
+    spawnpoints_lua_has_function     = $spawnHasFunction
     spawnpoints_lua_has_return_table = $spawnHasReturnTable
     spawnpoints_lua_compatible_shape = $spawnCompatible
-    objects_lua_exists           = $objInfo.exists
+    spawnpoints_lua_has_worldX       = $spawnHasWorldX
+    spawnpoints_lua_has_worldY       = $spawnHasWorldY
+    spawnpoints_lua_has_posX         = $spawnHasPosX
+    spawnpoints_lua_has_posY         = $spawnHasPosY
+    spawnpoints_lua_has_posZ         = $spawnHasPosZ
+    spawnpoints_lua_has_unemployed   = $spawnHasUnemployed
+    spawnpoints_lua_recommendation   = $spawnpointsLuaRecommendation
+    objects_lua_exists               = $objInfo.exists
     objects_lua_size_bytes       = $objInfo.size_bytes
     objects_lua_first_bytes_hex  = $objInfo.first_bytes_hex
     objects_lua_first_lines      = $objInfo.first_lines
     objects_lua_ascii_clean      = $objInfo.ascii_clean
     objects_lua_content_type     = $objectsLuaContentType
+    objects_lua_recommendation   = $objectsLuaRecommendation
     candidate_files_read         = $candidateFilesRead
     pz_assets_read               = $pzAssetsRead
     pz_install_read              = $pzInstallRead

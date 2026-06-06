@@ -8,6 +8,57 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7C: Fix Build 42 candidate Lua metadata)
+- docs/MAP_7C_OBJECTS_LUA_SPAWN_METADATA_FIX.md: fix doc.
+  - MAP-7B basis: LOTH v3 passed, objects.lua failed with LexState.token2str.
+  - objects.lua strategy: comment-only (avoids return {} Lua lexer issue from MAP-7A).
+  - spawnpoints.lua strategy: unemployed key with worldX/worldY/posX/posY/posZ.
+  - LOTH/LOTP/chunkdata: unchanged from v2 (MAP-6Z).
+  - Known risk: build42_may_expect_specific_zone_table_format.
+  - OBJECTS_LUA_FIXED_COMMENT_ONLY; SPAWNPOINTS_LUA_UNEMPLOYED_KEY;
+    LOAD_TEST_NOT_PERFORMED; WRITER_NOT_CHANGED; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- src/PZMapForge.Cli/Program.cs:
+  - Profile empty_grass_v3 added; validation accepts v0/v1/v2/v3.
+  - objects.lua for v3: comment-only placeholder.
+  - spawnpoints.lua for v3: unemployed key format with explicit coords.
+  - New report fields: lua_metadata_strategy, objects_lua_strategy, objects_lua_known_risk,
+    spawnpoints_strategy.
+  - loth_entries, lothTrailer, remaining_unknowns: updated for v3.
+  - LOTH/LOTP/chunkdata: unchanged from v2.
+- tests/PZMapForge.Cli.Tests/MapExportBuild42CandidateWriterV3ProcessTests.cs: 20 tests.
+  - LOTH: magic/version/count/size unchanged (29646). Trailer SHA canonical.
+  - Objects: not return_only, starts with comment (--).
+  - Spawnpoints: unemployed key, worldX/worldY, posX/posY/posZ.
+  - Report: profile=v3, lua_metadata_strategy, objects_lua_strategy, load_tested=false.
+  - LOTP size unchanged (1056780).
+  - dnCliTests 328->348; dnTotal 518->538.
+- scripts/inspect-build42-candidate-lua-metadata.ps1: updated.
+  - objects.lua type: comment_only added (all non-empty lines start with --).
+  - Spawn fields: has_worldX/worldY/posX/posY/posZ/unemployed.
+  - Recommendations: objects_lua_recommendation, spawnpoints_lua_recommendation.
+- scripts/test-build42-candidate-lua-metadata.ps1: 15->18 assertions.
+  - Test 16: comment_only fixture → content_type == comment_only.
+  - Test 17: return_only → recommendation contains risky.
+  - Test 18: spawnpoints_lua_has_unemployed == true (from updated fixture).
+- scripts/prepare-build42-metadata-v3-load-test-packet.ps1:
+  - Generates empty_grass_v3 candidate, runs inspector, 24-point preflight.
+  - Extra checks: objects_lua_not_return_only, objects_lua_is_comment_only_or_safe,
+    spawnpoints_compatible_shape, spawnpoints_has_unemployed.
+  - Writes MAP_7C_LOAD_TEST_PACKET.md + RECORD template + WIRING_COMMANDS + preflight JSON/MD.
+- scripts/test-build42-metadata-v3-load-test-packet.ps1: 18 assertions.
+  - Path guard, exits 0, 5 output files, preflight fields, packet labels,
+    record variants, HUMAN-ONLY guards.
+- scripts/validate.ps1: MAP-7C section; MAP-7B count 15->18; psTotal 801->822; v0.32.
+- scripts/write-proof-packet.ps1: v0.32; map7b=18, map7c=18; total 822; cli=348; .NET 538.
+- scripts/test-proof-packet.ps1: assertions updated.
+- docs/IMPLEMENTATION.md: MAP-7C ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7C section.
+
+No load test. LOTH/LOTP/chunkdata unchanged. No PZ assets into repo. No playable claim.
+PS 822 / .NET 538 (core=190, cli=348).
+
+---
+
 ### Added (MAP-7B: LOTH v3 retest result and objects.lua failure record)
 - docs/MAP_7B_LOTH_V3_RETEST_OBJECTS_LUA_FAILURE.md: retest record and blocker analysis.
   - MAP-7A manual retest: empty_grass_v2, correct wiring, clean log.

@@ -1631,10 +1631,11 @@ static int Build42CandidateWriterCommand(
     // Profile: empty_grass_v0 — minimal all-zero/grass hypothesis.
     // Not load-tested. Not a playable export. Candidate only.
 
-    if (profile != "empty_grass_v0" && profile != "empty_grass_v1" && profile != "empty_grass_v2")
+    if (profile != "empty_grass_v0" && profile != "empty_grass_v1" &&
+        profile != "empty_grass_v2" && profile != "empty_grass_v3")
     {
         Console.Error.WriteLine(
-            $"build42-candidate-writer: unknown profile '{profile}'. Supported profiles: empty_grass_v0, empty_grass_v1, empty_grass_v2.");
+            $"build42-candidate-writer: unknown profile '{profile}'. Supported profiles: empty_grass_v0, empty_grass_v1, empty_grass_v2, empty_grass_v3.");
         return 1;
     }
 
@@ -1673,7 +1674,26 @@ fixed2x=true
 """, Encoding.UTF8);
 
     // ---- spawnpoints.lua ----
-    File.WriteAllText(Path.Combine(mapDataDir, "spawnpoints.lua"), $$"""
+    // Profile empty_grass_v3 (MAP-7C): uses unemployed key and explicit PZ spawn fields.
+    //   MAP-7A retest showed spawn NullPointerException in getSpawnRegionsAux.
+    //   The 'all' key used in v0-v2 may not be valid; 'unemployed' is a known PZ profession key.
+    if (profile == "empty_grass_v3")
+    {
+        File.WriteAllText(Path.Combine(mapDataDir, "spawnpoints.lua"), $$"""
+-- PZMapForge MAP-7C: candidate spawn point for experimental empty cell.
+-- Not load-tested. Not a playable Project Zomboid map.
+function SpawnPoints()
+    return {
+        unemployed = {
+            { worldX = {{cellX}}, worldY = {{cellY}}, posX = 150, posY = 150, posZ = 0 },
+        },
+    }
+end
+""", Encoding.UTF8);
+    }
+    else
+    {
+        File.WriteAllText(Path.Combine(mapDataDir, "spawnpoints.lua"), $$"""
 -- PZMapForge MAP-6L Build42 candidate output -- NOT VALIDATED -- not a playable Project Zomboid map.
 -- Spawn point is candidate-only. Not load-tested. Coordinates not verified.
 function SpawnPoints()
@@ -1684,9 +1704,16 @@ return {
 }
 end
 """, Encoding.UTF8);
+    }
 
     // ---- objects.lua ----
-    File.WriteAllText(Path.Combine(mapDataDir, "objects.lua"), "return {}\n", Encoding.UTF8);
+    // Profile empty_grass_v3 (MAP-7C): comment-only to avoid the return {} Lua lexer issue from MAP-7A retest.
+    //   MAP-7A: LexState.token2str ArrayIndexOutOfBoundsException index 65022 on return {}.
+    //   Comment-only avoids any evaluable Lua token while still being a valid Lua file.
+    var objectsLuaContent = profile == "empty_grass_v3"
+        ? "-- PZMapForge MAP-7C: no objects or zones for this experimental empty cell.\n-- objects.lua is a placeholder. Not load-tested. Not a playable Project Zomboid map.\n"
+        : "return {}\n";
+    File.WriteAllText(Path.Combine(mapDataDir, "objects.lua"), objectsLuaContent, Encoding.UTF8);
 
     // ---- thumb.png ----
     WritePlaceholderPng(Path.Combine(mapDataDir, "thumb.png"),
@@ -1715,7 +1742,9 @@ BOUNDARY STATEMENT:
 
 BINARY CANDIDATE FORMATS ({profile}):
 - chunkdata: 1026 bytes, header 00 01, 1024-byte all-zero body (MAP-6H evidence).
-- lotheader: LOTH magic, version 1, {profile switch { "empty_grass_v2" => "1024 generated entries + 1048-byte stable trailer from MAP-6Y research (MAP-6Z)", "empty_grass_v1" => "1024 generated entries blends_grassoverlays_01_0..._01_1023 (MAP-6S)", _ => "1 entry blends_grassoverlays_01_0 (MAP-4E committed evidence only)" }}.
+- lotheader: LOTH magic, version 1, {profile switch { "empty_grass_v3" => "1024 generated entries + 1048-byte stable trailer (MAP-6Z/MAP-7C)", "empty_grass_v2" => "1024 generated entries + 1048-byte stable trailer from MAP-6Y research (MAP-6Z)", "empty_grass_v1" => "1024 generated entries blends_grassoverlays_01_0..._01_1023 (MAP-6S)", _ => "1 entry blends_grassoverlays_01_0 (MAP-4E committed evidence only)" }}.
+- objects.lua: {(profile == "empty_grass_v3" ? "comment-only placeholder (MAP-7C: avoids MAP-7A Lua lexer error)" : "return {} (candidate, may need fix)") }
+- spawnpoints.lua: {(profile == "empty_grass_v3" ? "unemployed key format (MAP-7C: explicit spawn profession)" : "all key format (candidate)")}.
 - lotpack: LOTP magic, version 1, 1024 chunks x 1024 zero bytes (MAP-6K most_common_size).
 """, Encoding.UTF8);
 
@@ -1735,7 +1764,7 @@ BINARY CANDIDATE FORMATS ({profile}):
     // Profile empty_grass_v2 (MAP-6Z): same 1024 entries as v1 + canonical 1048-byte trailer.
     //   Trailer is the MAP-6Y stable literal block (80 Dru_map simple cells, all identical).
     //   loth_known_risk: stable_reference_block_may_not_match_generated_tile_table_or_cell_payload
-    var lothEntries = (profile == "empty_grass_v1" || profile == "empty_grass_v2")
+    var lothEntries = (profile == "empty_grass_v1" || profile == "empty_grass_v2" || profile == "empty_grass_v3")
         ? Enumerable.Range(0, 1024).Select(i => $"blends_grassoverlays_01_{i}").ToArray()
         : new[] { "blends_grassoverlays_01_0" }; // MAP-4E committed evidence
     var lothEntryData = Encoding.ASCII.GetBytes(string.Join("\n", lothEntries) + "\n");
@@ -1743,7 +1772,7 @@ BINARY CANDIDATE FORMATS ({profile}):
     // Source: 80 Dru_map simple cells (all_1048_blocks_identical=true). First two U32LE=8, rest zero.
     // SHA-256: 93a8f3ccf2cafdc2fb7cd4f3836c29d87076f244f5ba685f92659fbdaf778ec7
     // Not copied from PZ game assets. Derived from MAP-6Y analysis. Candidate only.
-    var lothTrailer = profile == "empty_grass_v2" ? BuildMap6yCanonicalTrailer() : Array.Empty<byte>();
+    var lothTrailer = (profile == "empty_grass_v2" || profile == "empty_grass_v3") ? BuildMap6yCanonicalTrailer() : Array.Empty<byte>();
     var lothBytes   = new byte[12 + lothEntryData.Length + lothTrailer.Length];
     lothBytes[0] = 0x4C; lothBytes[1] = 0x4F; lothBytes[2] = 0x54; lothBytes[3] = 0x48; // LOTH
     lothBytes[4] = 0x01; // version = 1 (LE)
@@ -1831,34 +1860,47 @@ BINARY CANDIDATE FORMATS ({profile}):
         loth_entries                 = lothEntries.Length > 3
             ? new[] { lothEntries[0], $"...({lothEntries.Length - 2} more)...", lothEntries[^1] }
             : lothEntries,
-        loth_entries_source          = (profile == "empty_grass_v1" || profile == "empty_grass_v2")
+        loth_entries_source          = (profile == "empty_grass_v1" || profile == "empty_grass_v2" || profile == "empty_grass_v3")
             ? "generated_contiguous_range_not_copied_from_reference"
             : "committed_evidence_only_map4e",
         loth_entry_strategy          = profile switch
         {
+            "empty_grass_v3" => "generated_contiguous_grass_overlay_range_with_map6y_stable_trailer_and_fixed_lua_metadata",
             "empty_grass_v2" => "generated_contiguous_grass_overlay_range_with_map6y_stable_trailer",
             "empty_grass_v1" => "generated_contiguous_grass_overlay_range",
             _                => "single_committed_entry_map4e",
         },
         loth_known_risk              = profile switch
         {
-            "empty_grass_v2" => "stable_reference_block_may_not_match_generated_tile_table_or_cell_payload",
+            "empty_grass_v3" or "empty_grass_v2" => "stable_reference_block_may_not_match_generated_tile_table_or_cell_payload",
             "empty_grass_v1" => "generated_entries_may_not_match_loaded_tile_definitions",
             _                => "single_entry_insufficient_per_map6r_evidence",
         },
         loth_status                  = "generated_not_load_tested",
         loth_size_bytes              = lothBytes.Length,
         loth_sha256                  = lothSha256,
-        loth_trailer_strategy        = profile == "empty_grass_v2"
+        loth_trailer_strategy        = (profile == "empty_grass_v2" || profile == "empty_grass_v3")
             ? "map6y_stable_literal_1048_block"
             : "none_no_trailer",
         loth_trailer_size            = lothTrailer.Length,
-        loth_trailer_status          = profile == "empty_grass_v2"
+        loth_trailer_status          = (profile == "empty_grass_v2" || profile == "empty_grass_v3")
             ? "generated_not_load_tested"
             : "not_applicable",
         loth_trailer_sha256          = lothTrailer.Length > 0
             ? string.Join("", SHA256.HashData(lothTrailer).Select(b => b.ToString("x2")))
             : "",
+        lua_metadata_strategy        = profile == "empty_grass_v3"
+            ? "objects_lua_comment_only"
+            : "return_empty_table",
+        objects_lua_strategy         = profile == "empty_grass_v3"
+            ? "comment_only_lua"
+            : "return_empty_table",
+        objects_lua_known_risk       = profile == "empty_grass_v3"
+            ? "build42_may_expect_specific_zone_table_format"
+            : "return_table_led_to_lexer_exception_in_map7a",
+        spawnpoints_strategy         = profile == "empty_grass_v3"
+            ? "minimal_unemployed_spawnpoint"
+            : "all_key_spawn_point",
         lotp_candidate_profile       = profile,
         lotp_payload_strategy        = "uniform_zero_1024_per_chunk",
         lotp_offset_strategy         = "sequential_u64_offsets",
@@ -1872,6 +1914,7 @@ BINARY CANDIDATE FORMATS ({profile}):
         geometry_status              = "strongly_supported_not_load_tested",
         remaining_unknowns = profile switch
         {
+            "empty_grass_v3" => new[] { "objects_lua_format_acceptance", "spawn_region_null_cause", "loth_trailer_acceptance_at_eof", "lotp_zero_payload_load_acceptance", "chunkdata_zero_body_acceptance", "build42_load_test" },
             "empty_grass_v2" => new[] { "loth_generated_entry_acceptance", "loth_trailer_acceptance_at_eof", "lotp_zero_payload_load_acceptance", "chunkdata_zero_body_acceptance", "build42_load_test" },
             "empty_grass_v1" => new[] { "loth_generated_entry_acceptance", "lotp_zero_payload_load_acceptance", "chunkdata_zero_body_acceptance", "build42_load_test" },
             _                => new[] { "lotp_zero_payload_load_acceptance", "loth_minimum_entries_acceptance", "missing_trailer_acceptance", "build42_load_test" },
@@ -1885,6 +1928,7 @@ BINARY CANDIDATE FORMATS ({profile}):
     // ---- Report MD ----
     var mdRemainingUnknowns = profile switch
     {
+        "empty_grass_v3" => "- objects_lua_format_acceptance\n- spawn_region_null_cause\n- loth_trailer_acceptance_at_eof\n- lotp_zero_payload_load_acceptance\n- chunkdata_zero_body_acceptance\n- build42_load_test",
         "empty_grass_v2" => "- loth_generated_entry_acceptance\n- loth_trailer_acceptance_at_eof\n- lotp_zero_payload_load_acceptance\n- chunkdata_zero_body_acceptance\n- build42_load_test",
         "empty_grass_v1" => "- loth_generated_entry_acceptance\n- lotp_zero_payload_load_acceptance\n- chunkdata_zero_body_acceptance\n- build42_load_test",
         _                => "- lotp_zero_payload_load_acceptance\n- loth_minimum_entries_acceptance\n- missing_trailer_acceptance\n- build42_load_test",

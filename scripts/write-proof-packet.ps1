@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.31) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.32) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
     planning recommendation artifacts, plan-recommendations contract (incl. thresholds_used),
     and a separate dotnet_validation_summary section tracking .NET xUnit test counts.
@@ -147,7 +147,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.31'
+    schema                  = 'pzmapforge.proof-packet.v0.32'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -199,13 +199,14 @@ $packet = [ordered]@{
         map6x_per_entry_record_tests      = 20
         map6y_fixed_1048_block_tests      = 20
         map7a_load_test_packet_tests      = 23
-        map7b_lua_metadata_tests          = 15
-        total_expected_assertions         = 801
+        map7b_lua_metadata_tests          = 18
+        map7c_metadata_v3_packet_tests    = 18
+        total_expected_assertions         = 822
     }
     dotnet_validation_summary = [ordered]@{
-        test_total                          = 518
+        test_total                          = 538
         core_tests = 190
-        cli_tests                           = 328
+        cli_tests                           = 348
         process_cli_tests_present           = $true
         full_pipeline_contract_tests_present = $true
         full_pipeline_artifact_count        = 7
@@ -280,7 +281,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.31
+Schema: pzmapforge.proof-packet.v0.32
 
 ## Claim boundary
 
@@ -355,16 +356,17 @@ planning_artifact_only_not_pz_load_tested
 | MAP-6X per-entry record model tests | 20 |
 | MAP-6Y fixed 1048 block tests | 20 |
 | MAP-7A load test packet tests | 23 |
-| MAP-7B Lua metadata tests | 15 |
-| Total | 801 |
+| MAP-7B Lua metadata tests | 18 |
+| MAP-7C metadata v3 packet tests | 18 |
+| Total | 822 |
 
 ## .NET validation summary (separate lane)
 
 | Field | Value |
 |---|---|
-| test_total | 518 |
+| test_total | 538 |
 | core_tests | 190 |
-| cli_tests | 328 |
+| cli_tests | 348 |
 | process_cli_tests_present | true |
 | full_pipeline_contract_tests_present | true |
 | full_pipeline_artifact_count | 7 |
