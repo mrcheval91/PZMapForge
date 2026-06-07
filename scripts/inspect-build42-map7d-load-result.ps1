@@ -163,6 +163,39 @@ $lotheaderFilesMissing         = $logContent -match 'Failed to find any \.lothea
 $mannequinWarning              = $logContent -match 'mannequin'
 
 # ---------------------------------------------------------------------------
+# MAP-7Q: Build 42 Workshop / runtime signals for DruMapBaseline
+# ---------------------------------------------------------------------------
+
+$workshopId3355966216Seen   = $logContent -match '3355966216'
+$workshopDownloadSeen        = $logContent -match 'Workshop.*[Dd]ownload|[Dd]ownloading.*Workshop|[Dd]ownload.*3355966216'
+$workshopInstalledSeen       = $logContent -match 'Workshop.*Installed|Installed.*3355966216'
+$workshopReadySeen            = $logContent -match 'Workshop.*Ready|Ready.*3355966216'
+$multiplayerReached           = $logContent -match 'Game Mode: Multiplayer'
+$lotheaderMetaEvidenceFound   = $logContent -match '\.lotheader'
+$lotheaderMetaPathsOrNames    = [string[]]@()
+if ($lotheaderMetaEvidenceFound) {
+    $lhMatches = [regex]::Matches($logContent, '[\w]+\.lotheader')
+    $lhSet     = [System.Collections.Generic.HashSet[string]]::new()
+    foreach ($m in $lhMatches) { [void]$lhSet.Add($m.Value) }
+    $lotheaderMetaPathsOrNames = [string[]]($lhSet | Sort-Object)
+}
+
+# Expected mod loaded -- when ExpectedMapId provided, detect "loading <ExpectedMapId>"
+$expectedModLoaded = $false
+if ($ExpectedMapId -ne '') {
+    $expectedModLoaded = $logContent -match ('loading\s+' + [regex]::Escape($ExpectedMapId))
+}
+
+# Runtime success evidence composite (conservative multi-signal)
+$runtimeSuccessEvidenceFound = (
+    ($workshopInstalledSeen -or $workshopReadySeen) -and
+    $expectedModLoaded -and
+    $playerDataReceived -and
+    $gameLoadingCompleted -and
+    ($multiplayerReached -or $lotheaderMetaEvidenceFound)
+)
+
+# ---------------------------------------------------------------------------
 # Classification
 # ---------------------------------------------------------------------------
 
@@ -182,6 +215,9 @@ if ($timeoutWaitingPlayerData) {
     $classification = 'MAP7D_LOAD_TEST_FAIL_LUA_BOM_OR_LEXSTATE'
 } elseif ($mapFoldersScanFound -and (-not $mapFoldersListEmpty) -and $lotheaderFilesMissing) {
     $classification = 'MAP_FOLDER_SCAN_FOUND_BUT_LOTHEADER_FILES_MISSING'
+} elseif ($VariantLabel -eq 'DruMapBaseline' -and $ExpectedMapId -ne '' -and
+          $runtimeSuccessEvidenceFound) {
+    $classification = 'MAP7Q_DRUMAP_BASELINE_RUNTIME_SUCCESS'
 } elseif ($VariantLabel -eq 'DruMapBaseline' -and $ExpectedMapId -ne '' -and
           $mapFoldersScanFound -and (-not $mapFoldersListEmpty)) {
     $foundInList = @($mapFolderLines | Where-Object { $_ -match [regex]::Escape($ExpectedMapId) })
@@ -219,8 +255,10 @@ $statusLabels = [string[]]@(
 # Build report
 # ---------------------------------------------------------------------------
 
+$emptyClientScanDecisive = -not ($VariantLabel -eq 'DruMapBaseline' -and $runtimeSuccessEvidenceFound)
+
 $report = [ordered]@{
-    schema                             = 'pzmapforge.build42-map7d-load-result.v0.3'
+    schema                             = 'pzmapforge.build42-map7d-load-result.v0.4'
     log_path                           = $LogPath
     classification                     = $classification
     candidate_loaded                   = $candidateLoaded
@@ -247,6 +285,17 @@ $report = [ordered]@{
     expected_map_id                    = $ExpectedMapId
     variant_label                      = $VariantLabel
     variant_classification             = $variantClassification
+    expected_mod_loaded                = $expectedModLoaded
+    workshop_id_3355966216_seen        = $workshopId3355966216Seen
+    workshop_download_seen             = $workshopDownloadSeen
+    workshop_installed_seen            = $workshopInstalledSeen
+    workshop_ready_seen                = $workshopReadySeen
+    multiplayer_reached                = $multiplayerReached
+    lotheader_meta_evidence_found      = $lotheaderMetaEvidenceFound
+    lotheader_meta_paths_or_names      = $lotheaderMetaPathsOrNames
+    runtime_success_evidence_found     = $runtimeSuccessEvidenceFound
+    empty_client_map_folder_scan_decisive = $emptyClientScanDecisive
+    visual_confirmation_required       = ($VariantLabel -eq 'DruMapBaseline')
     status_labels                      = $statusLabels
     public_playable_claim_allowed      = $false
 }

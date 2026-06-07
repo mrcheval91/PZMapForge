@@ -552,6 +552,47 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7Q — Dru_map runtime baseline success and corrected evidence model:**
+MAP-7Q records the Dru_map baseline as runtime successful and corrects the
+Build 42 analyzer evidence model.
+
+The MAP-7P analyzer produced `MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_EMPTY`.
+The human result was unambiguously successful: player spawned into a real built
+Drummondville/Dru_map world with roads and houses visible.
+
+Key finding: empty printed client map-folder scan is NOT decisive for Build 42
+coop/server with Workshop-activated mods. (`EMPTY_CLIENT_SCAN_NOT_DECISIVE`)
+
+New classification: `MAP7Q_DRUMAP_BASELINE_RUNTIME_SUCCESS` fires when
+`VariantLabel=DruMapBaseline` AND all runtime success signals are present
+(Workshop Installed/Ready + expected mod loaded + lotheader evidence +
+player data + multiplayer), even if `map_folders_list_empty=true`.
+
+New report fields: `expected_mod_loaded`, `workshop_installed_seen`,
+`workshop_ready_seen`, `multiplayer_reached`, `lotheader_meta_evidence_found`,
+`lotheader_meta_paths_or_names`, `runtime_success_evidence_found`,
+`empty_client_map_folder_scan_decisive`, `visual_confirmation_required`.
+
+Analyzer schema: v0.3 -> v0.4.
+
+Next investigation target: runtime activation / mounting. The discriminator
+between Dru_map (works) and PZMapForge candidate (does not) is the Workshop
+subscription/download/Installed/Ready flow. PZMapForge candidate must reach
+lotheader/meta load evidence before binary writer quality becomes relevant.
+
+Status labels:
+```text
+MAP7Q_DRUMAP_BASELINE_RUNTIME_SUCCESS
+EMPTY_CLIENT_SCAN_NOT_DECISIVE
+DRUMAP_BASELINE_RUNTIME_SUCCESSFUL
+VARIANTS_ABCDEFGHI_EXHAUSTED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No automatic Workshop upload.
+No PZ assets outside .local. No forbidden writes.
+
 **MAP-7P — Variant I failure record and known-working runtime baseline:**
 MAP-7P records the Experiment I (Variant I) failure result and pivots diagnostic
 focus from static layout to runtime activation.

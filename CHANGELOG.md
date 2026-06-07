@@ -8,6 +8,36 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7Q: Record Dru_map runtime baseline success)
+- docs/MAP_7Q_DRUMAP_RUNTIME_BASELINE_SUCCESS.md: Dru_map baseline corrected.
+  - MAP7Q_DRUMAP_BASELINE_RUNTIME_SUCCESS: new classification for runtime success.
+  - EMPTY_CLIENT_SCAN_NOT_DECISIVE: empty printed client map-folder scan is not decisive in Build 42 coop/server.
+  - Dru_map baseline human result: player spawned into real built world with roads and houses.
+  - Old analyzer produced MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_EMPTY (incorrect).
+  - Runtime success signals: Workshop Installed/Ready, mod loaded, lotheader evidence, player data, multiplayer.
+  - Next: runtime activation / mounting investigation (WorkshopItems= flow).
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-map7d-load-result.ps1: MAP-7Q runtime success model added.
+  - New fields: expected_mod_loaded, workshop_id_3355966216_seen, workshop_download_seen,
+    workshop_installed_seen, workshop_ready_seen, multiplayer_reached,
+    lotheader_meta_evidence_found, lotheader_meta_paths_or_names,
+    runtime_success_evidence_found, empty_client_map_folder_scan_decisive,
+    visual_confirmation_required.
+  - MAP7Q_DRUMAP_BASELINE_RUNTIME_SUCCESS: fires when DruMapBaseline + multi-signal runtime evidence,
+    even if map_folders_list_empty=true.
+  - Backward compatible: MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_FOUND/EMPTY preserved.
+  - Schema bumped: v0.3 -> v0.4.
+- scripts/prepare-build42-map7q-runtime-activation-next-packet.ps1:
+  - .local/ output guard; no PZ run; no Workshop/mods/Server writes.
+  - 7 packet files: runtime activation packet, Dru_map result summary, analyzer evidence model,
+    next decision tree, Workshop-style activation hypotheses, preflight JSON+MD.
+  - preflight: drumap_baseline_runtime_success_model=true, empty_client_scan_not_decisive=true,
+    variants_abcdefghi_exhausted=true, public_playable_claim_allowed=false.
+  - Decision tree: WorkshopItems= flow, lotheader evidence gate, binary writer gate.
+  - No automatic Workshop upload.
+- scripts/test-build42-map7q-runtime-baseline-success.ps1: 20 assertions.
+- psTotal 998->1019; proof-packet v0.45->v0.46.
+
 ### Added (MAP-7P: Record Variant I and add known-working runtime baseline)
 - docs/MAP_7P_VARIANT_I_AND_RUNTIME_BASELINE.md: Variant I failure record and runtime baseline plan.
   - Experiment I result: MAP7F_VARIANT_I_MAP_FOLDER_SCAN_EMPTY.
