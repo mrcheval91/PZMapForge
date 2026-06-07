@@ -8,6 +8,31 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7R: Record borrowed WorkshopItems trigger failure)
+- docs/MAP_7R_VARIANT_J_WORKSHOP_TRIGGER_FAILURE.md: Variant J recorded.
+  - MAP7R_VARIANT_J_WORKSHOP_TRIGGER_INSUFFICIENT: WorkshopItems=3355966216 (Dru_map's ID) was insufficient for local loose mod.
+  - BORROWED_WORKSHOPITEMS_TRIGGER_EXHAUSTED: borrowed Workshop ID ruled out.
+  - Workshop ID 3355966216 reached Ready but activated Dru_map's path, not PZMapForge's.
+  - PZMapForge candidate still only loads at mod registration level, no expected-map lotheader evidence.
+  - STATIC_VARIANTS_ABCDEFGHI_EXHAUSTED + BORROWED_WORKSHOPITEMS_TRIGGER_EXHAUSTED.
+  - Next: real candidate Workshop-style activation (human-approved private/unlisted upload).
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-map7d-load-result.ps1: MAP-7R fields and VariantJ classification added.
+  - New field: expected_map_lotheader_meta_evidence_found (checks expected map ID near .lotheader in log).
+  - MAP7R_VARIANT_J_WORKSHOP_TRIGGER_INSUFFICIENT: fires when VariantJ + Workshop Installed/Ready + candidate loaded + game reached + no expected-map lotheader evidence.
+  - Generic lotheader lines (Muldraugh/vanilla) do not satisfy expected_map_lotheader_meta_evidence_found.
+  - Backward compatible: all existing classifications preserved.
+- scripts/prepare-build42-map7r-workshop-activation-decision-packet.ps1:
+  - .local/ output guard; no PZ run; no Workshop/mods/Server writes; no upload.
+  - 7 packet files: decision packet, Variant J summary, next decision tree,
+    private Workshop upload requirements, no-more-static-layout-tests, preflight JSON+MD.
+  - preflight: variant_j_result=MAP7R_VARIANT_J_WORKSHOP_TRIGGER_INSUFFICIENT,
+    borrowed_workshopitems_trigger_insufficient=true, static_variants_abcdefghi_exhausted=true,
+    no_more_static_layout_tests=true, public_playable_claim_allowed=false.
+  - Decision tree: real Workshop upload (human-approved), binary writer gate, lotheader evidence gate.
+- scripts/test-build42-map7r-workshop-trigger-failure.ps1: 20 assertions.
+- psTotal 1019->1040; proof-packet v0.46->v0.47.
+
 ### Added (MAP-7Q: Record Dru_map runtime baseline success)
 - docs/MAP_7Q_DRUMAP_RUNTIME_BASELINE_SUCCESS.md: Dru_map baseline corrected.
   - MAP7Q_DRUMAP_BASELINE_RUNTIME_SUCCESS: new classification for runtime success.

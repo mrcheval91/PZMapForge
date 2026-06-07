@@ -186,6 +186,15 @@ if ($ExpectedMapId -ne '') {
     $expectedModLoaded = $logContent -match ('loading\s+' + [regex]::Escape($ExpectedMapId))
 }
 
+# Expected-map specific lotheader/meta evidence (MAP-7R)
+# Detects whether the expected map ID appears near a .lotheader reference in the log.
+# Generic lotheader lines (e.g. Muldraugh/vanilla) do not satisfy this.
+$expectedMapLotheaderMetaFound = $false
+if ($ExpectedMapId -ne '' -and $lotheaderMetaEvidenceFound) {
+    $lhPattern = [regex]::Escape($ExpectedMapId) + '.*\.lotheader|\.lotheader.*' + [regex]::Escape($ExpectedMapId)
+    $expectedMapLotheaderMetaFound = $logContent -match $lhPattern
+}
+
 # Runtime success evidence composite (conservative multi-signal)
 $runtimeSuccessEvidenceFound = (
     ($workshopInstalledSeen -or $workshopReadySeen) -and
@@ -227,6 +236,12 @@ if ($timeoutWaitingPlayerData) {
 } elseif ($VariantLabel -eq 'DruMapBaseline' -and $ExpectedMapId -ne '' -and
           $mapFoldersScanFound -and $mapFoldersListEmpty) {
     $classification = 'MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_EMPTY'
+} elseif ($VariantLabel -eq 'VariantJ' -and $ExpectedMapId -ne '' -and
+          ($workshopInstalledSeen -or $workshopReadySeen) -and
+          $expectedModLoaded -and
+          ($playerDataReceived -or $multiplayerReached -or $gameLoadingCompleted) -and
+          -not $expectedMapLotheaderMetaFound) {
+    $classification = 'MAP7R_VARIANT_J_WORKSHOP_TRIGGER_INSUFFICIENT'
 } elseif ($ExpectedMapId -ne '' -and $VariantLabel -ne '' -and $mapFoldersScanFound -and $mapFoldersListEmpty) {
     $classification = $variantClassification
 } elseif ($candidateLoaded -and $playerDataReceived -and $gameLoadingCompleted -and
@@ -293,6 +308,7 @@ $report = [ordered]@{
     multiplayer_reached                = $multiplayerReached
     lotheader_meta_evidence_found      = $lotheaderMetaEvidenceFound
     lotheader_meta_paths_or_names      = $lotheaderMetaPathsOrNames
+    expected_map_lotheader_meta_evidence_found = $expectedMapLotheaderMetaFound
     runtime_success_evidence_found     = $runtimeSuccessEvidenceFound
     empty_client_map_folder_scan_decisive = $emptyClientScanDecisive
     visual_confirmation_required       = ($VariantLabel -eq 'DruMapBaseline')

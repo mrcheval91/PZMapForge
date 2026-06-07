@@ -228,6 +228,42 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-7R Variant J Workshop trigger failure ---"
+$map7rDoc          = Join-Path $repoRoot 'docs\MAP_7R_VARIANT_J_WORKSHOP_TRIGGER_FAILURE.md'
+$map7rPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map7r-workshop-activation-decision-packet.ps1'
+$map7rTests        = Join-Path $repoRoot 'scripts\test-build42-map7r-workshop-trigger-failure.ps1'
+if (-not (Test-Path -LiteralPath $map7rDoc))          { throw "MAP-7R doc missing" }
+Write-Output "OK: docs\MAP_7R_VARIANT_J_WORKSHOP_TRIGGER_FAILURE.md"
+if (-not (Test-Path -LiteralPath $map7rPacketScript)) { throw "MAP-7R packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map7r-workshop-activation-decision-packet.ps1"
+if (-not (Test-Path -LiteralPath $map7rTests))        { throw "MAP-7R tests missing" }
+Write-Output "OK: scripts\test-build42-map7r-workshop-trigger-failure.ps1"
+$map7rDocContent = Get-Content -LiteralPath $map7rDoc -Raw
+if ($map7rDocContent -notmatch 'MAP7R_VARIANT_J_WORKSHOP_TRIGGER_INSUFFICIENT') { throw "MAP-7R doc missing MAP7R_VARIANT_J_WORKSHOP_TRIGGER_INSUFFICIENT" }
+Write-Output "OK: doc contains MAP7R_VARIANT_J_WORKSHOP_TRIGGER_INSUFFICIENT"
+if ($map7rDocContent -notmatch 'BORROWED_WORKSHOPITEMS_TRIGGER_EXHAUSTED') { throw "MAP-7R doc missing BORROWED_WORKSHOPITEMS_TRIGGER_EXHAUSTED" }
+Write-Output "OK: doc contains BORROWED_WORKSHOPITEMS_TRIGGER_EXHAUSTED"
+if ($map7rDocContent -notmatch 'NO_MORE_STATIC_LAYOUT_TESTS') { throw "MAP-7R doc missing NO_MORE_STATIC_LAYOUT_TESTS" }
+Write-Output "OK: doc contains NO_MORE_STATIC_LAYOUT_TESTS"
+if ($map7rDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-7R doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+if ($map7rDocContent -notmatch 'LOAD_TEST_NOT_PERFORMED') { throw "MAP-7R doc missing LOAD_TEST_NOT_PERFORMED" }
+Write-Output "OK: doc contains LOAD_TEST_NOT_PERFORMED"
+$map7rPacketContent = Get-Content -LiteralPath $map7rPacketScript -Raw
+if ($map7rPacketContent -notmatch '\.local') { throw "MAP-7R packet script missing .local refusal" }
+Write-Output "OK: packet script contains .local refusal language"
+$map7rAnalyzerContent = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts\inspect-build42-map7d-load-result.ps1') -Raw
+if ($map7rAnalyzerContent -notmatch 'MAP7R_VARIANT_J_WORKSHOP_TRIGGER_INSUFFICIENT') { throw "MAP-7R analyzer missing MAP7R_VARIANT_J_WORKSHOP_TRIGGER_INSUFFICIENT" }
+Write-Output "OK: analyzer contains MAP7R_VARIANT_J_WORKSHOP_TRIGGER_INSUFFICIENT"
+if ($map7rAnalyzerContent -notmatch 'expectedMapLotheaderMetaFound') { throw "MAP-7R analyzer missing expectedMapLotheaderMetaFound" }
+Write-Output "OK: analyzer contains expectedMapLotheaderMetaFound"
+
+Write-Output ""
+Write-Output "--- MAP-7R Workshop trigger failure tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7rTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7R Workshop trigger failure tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-7Q Dru_map runtime baseline success ---"
 $map7qDoc          = Join-Path $repoRoot 'docs\MAP_7Q_DRUMAP_RUNTIME_BASELINE_SUCCESS.md'
 $map7qPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map7q-runtime-activation-next-packet.ps1'
@@ -1300,7 +1336,7 @@ $psChecks = [ordered]@{
     'Region extraction'                    = 24
     'Primitive classification'             = 22
     'Plan recommendations contract'        = 28
-    'Proof packet'                         = 104
+    'Proof packet'                         = 105
     'Build42 geometry inspector tests'     = 23
     'Build42 format design matrix tests'   = 13
     'Build42 writer contract tests'        = 20
@@ -1321,6 +1357,7 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-7R Workshop trigger failure tests'       = 20
     'MAP-7Q runtime baseline success tests'      = 20
     'MAP-7P runtime baseline tests'              = 20
     'MAP-7O Dru_map-aligned experiment tests' = 19
@@ -1335,14 +1372,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 1019  # = validation_summary.total_expected_assertions in proof-packet v0.46
+$psTotal = 1040  # = validation_summary.total_expected_assertions in proof-packet v0.47
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.46):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.47):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -1350,7 +1387,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.46 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.47 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

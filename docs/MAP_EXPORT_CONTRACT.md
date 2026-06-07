@@ -552,6 +552,43 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7R — Variant J borrowed WorkshopItems trigger failure:**
+MAP-7R records Variant J: adding `WorkshopItems=3355966216` (Dru_map's Workshop ID)
+while keeping PZMapForge as a local loose mod did not mount the PZMapForge
+candidate as a custom map. The Workshop ID activated Dru_map's runtime path,
+not the PZMapForge candidate's path.
+
+Analyzer updated: new field `expected_map_lotheader_meta_evidence_found` detects
+whether the expected map ID appears near a `.lotheader` reference in the log.
+Generic lotheader lines (Muldraugh/vanilla) do not satisfy this condition.
+
+New classification: `MAP7R_VARIANT_J_WORKSHOP_TRIGGER_INSUFFICIENT` fires when
+`VariantLabel=VariantJ` AND Workshop Installed/Ready present AND candidate mod
+loaded AND game reached AND no expected-map lotheader evidence.
+
+Exhausted paths:
+- Static layout variants A through I
+- Borrowed WorkshopItems trigger J
+
+Next: real candidate Workshop-style activation (private/unlisted Workshop upload).
+This requires explicit operator approval and a separate MAP task. No automatic upload.
+
+Binary writer gate: do not investigate LOTH/LOTP/chunkdata until PZMapForge
+candidate reaches expected-map lotheader/meta evidence.
+
+Status labels:
+```text
+MAP7R_VARIANT_J_WORKSHOP_TRIGGER_INSUFFICIENT
+BORROWED_WORKSHOPITEMS_TRIGGER_EXHAUSTED
+STATIC_VARIANTS_ABCDEFGHI_EXHAUSTED
+NO_MORE_STATIC_LAYOUT_TESTS
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No Steam Workshop upload.
+No PZ assets outside .local. No forbidden writes.
+
 **MAP-7Q — Dru_map runtime baseline success and corrected evidence model:**
 MAP-7Q records the Dru_map baseline as runtime successful and corrects the
 Build 42 analyzer evidence model.
