@@ -23,22 +23,30 @@
     Path under .local/ for report output.
 
 .PARAMETER MapId
-    Map ID to inspect. Default: pzmapforge_build42_candidate_v4_001
+    Map ID for the candidate mod. Default: pzmapforge_build42_candidate_v4_001
+
+.PARAMETER ReferenceMapId
+    Map ID for the reference mod. Defaults to the value of -MapId when omitted.
+    Use when the reference mod has a different map folder name than the candidate.
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\scripts\inspect-build42-known-working-map-contract.ps1 `
         -CandidateRoot .\.local\map7m-packet\experiment-h-candidate\pzmapforge_build42_candidate_v4_001 `
-        -ReferenceRoot .\.local\map7m-packet\reference-known-working-map\MyKnownMod `
-        -Output .\.local\map7m-packet `
-        -MapId pzmapforge_build42_candidate_v4_001
+        -ReferenceRoot .\.local\map7m-packet\reference-known-working-map\Dru_map `
+        -Output .\.local\map7m-packet\comparison-dru-map `
+        -MapId pzmapforge_build42_candidate_v4_001 `
+        -ReferenceMapId Dru_map
 #>
 
 param(
     [Parameter(Mandatory=$true)][string]$CandidateRoot,
     [Parameter(Mandatory=$true)][string]$ReferenceRoot,
     [Parameter(Mandatory=$true)][string]$Output,
-    [string]$MapId = 'pzmapforge_build42_candidate_v4_001'
+    [string]$MapId          = 'pzmapforge_build42_candidate_v4_001',
+    [string]$ReferenceMapId = ''
 )
+
+if ($ReferenceMapId -eq '') { $ReferenceMapId = $MapId }
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -192,10 +200,10 @@ function Get-ModLayout {
 # Scan both roots
 # ---------------------------------------------------------------------------
 
-Write-Output "Scanning candidate: $CandidateRoot"
+Write-Output "Scanning candidate: $CandidateRoot (MapId=$MapId)"
 $cand = Get-ModLayout -Root $CandidateRoot -MapId2 $MapId
-Write-Output "Scanning reference: $ReferenceRoot"
-$ref  = Get-ModLayout -Root $ReferenceRoot -MapId2 $MapId
+Write-Output "Scanning reference: $ReferenceRoot (ReferenceMapId=$ReferenceMapId)"
+$ref  = Get-ModLayout -Root $ReferenceRoot -MapId2 $ReferenceMapId
 
 # ---------------------------------------------------------------------------
 # Compare mod.info fields
@@ -259,9 +267,11 @@ if ($decision_signals.Count -eq 0)        { $decision_signals += 'no_structural_
 # ---------------------------------------------------------------------------
 
 $report = [ordered]@{
-    schema                                = 'pzmapforge.build42-known-working-contract.v0.1'
+    schema                                = 'pzmapforge.build42-known-working-contract.v0.2'
     candidate_root                        = $CandidateRoot
     reference_root                        = $ReferenceRoot
+    candidate_map_id                      = $MapId
+    reference_map_id                      = $ReferenceMapId
     map_id                                = $MapId
     candidate_layout                      = $cand
     reference_layout                      = $ref
@@ -299,7 +309,8 @@ $md = @"
 ${fence}text
 candidate_root=$CandidateRoot
 reference_root=$ReferenceRoot
-map_id=$MapId
+candidate_map_id=$MapId
+reference_map_id=$ReferenceMapId
 variant_h_result=MAP7F_VARIANT_H_MAP_FOLDER_SCAN_EMPTY
 variants_abcdefgh_exhausted=true
 version_folder_differs=$version_folder_differs

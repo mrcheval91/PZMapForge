@@ -8,6 +8,48 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7N: Add reference map id support to known-working comparator)
+- docs/MAP_7N_REFERENCE_MAP_ID_COMPARATOR.md: patch record and Dru_map comparison.
+  - Comparator needed -ReferenceMapId when reference map folder name != candidate.
+  - Dru_map (workshop mod) copied to .local/ for comparison.
+  - Dru_map structure: root mod.info + 42/mod.info + common/media/maps/Dru_map/
+    (same layout as our experiment-H but with ROOT mod.info, not common/mod.info).
+  - decision_signals: map_info_fields_in_reference_not_candidate (zoomX, zoomY, zoomS).
+  - mod.info gap: none (candidate has all reference fields plus extras).
+  - Key finding: reference uses root mod.info + 42/mod.info, NOT common/mod.info.
+    Candidate experiment-H used common/mod.info -- never tested root mod.info
+    combined with common/media/maps layout.
+  - lots field bug: candidate has lots=<map_id>, reference has lots=NONE.
+  - Recommended Experiment I: root mod.info + 42/mod.info + common/media/maps/ +
+    lots=NONE + zoomX/zoomY/zoomS in map.info (exact Dru_map structure).
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-known-working-map-contract.ps1: -ReferenceMapId added.
+  - New parameter: -ReferenceMapId (defaults to -MapId when omitted).
+  - Candidate scan uses -MapId, reference scan uses -ReferenceMapId.
+  - New report fields: candidate_map_id, reference_map_id.
+  - Schema bumped from v0.1 to v0.2.
+  - Updated markdown header to show both IDs.
+  - Updated .EXAMPLE to show Dru_map usage.
+- scripts/prepare-build42-map7m-known-working-contract-packet.ps1:
+  - Updated command examples in generated instructions to include -ReferenceMapId.
+- scripts/test-build42-map7n-reference-map-id.ps1: 9 assertions.
+  - Tests 1-2: path guards (CandidateRoot/ReferenceRoot non-.local regression).
+  - Test 3: exits 0 with separate MapId and ReferenceMapId.
+  - Test 4: reference common/media/maps/<ReferenceMapId> found.
+  - Tests 5-6: candidate_map_id and reference_map_id reported correctly.
+  - Test 7: candidate layout scanned with candidate MapId.
+  - Test 8: packet command examples contain -ReferenceMapId.
+  - Test 9: public_playable_claim_allowed=false.
+  - psTotal 949->958.
+- scripts/validate.ps1: MAP-7N section; psTotal 949->958; v0.43.
+- scripts/write-proof-packet.ps1: v0.43; map7n=9; total 958.
+- scripts/test-proof-packet.ps1: assertions updated (9/958, schema v0.43).
+- docs/IMPLEMENTATION.md: MAP-7N ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7N section.
+
+No load test. No binary writer change. No PZ assets outside .local. No playable claim.
+PS 958 / .NET 556 (unchanged).
+
 ### Added (MAP-7M: Record Variant H and add known-working map contract comparator)
 - docs/MAP_7M_VARIANT_H_AND_WORKING_MAP_CONTRACT.md: Variant H result record.
   - Variant H: common/media/maps layout. MAP7F_VARIANT_H_MAP_FOLDER_SCAN_EMPTY.

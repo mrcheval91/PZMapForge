@@ -158,8 +158,11 @@ powershell -ExecutionPolicy Bypass ``
   -CandidateRoot "$expHBase" ``
   -ReferenceRoot "<reference mod root under .local>" ``
   -Output "$Output\comparison" ``
-  -MapId $MapId
+  -MapId $MapId ``
+  -ReferenceMapId "<map folder name inside the reference mod>"
 ${fence}
+
+Use -ReferenceMapId when the reference map folder name differs from $MapId.
 
 Do NOT copy the mod from your PZ Workshop folder directly by path reference.
 The comparator ONLY reads from .local/ paths.
@@ -227,11 +230,15 @@ ${fence}powershell
 powershell -ExecutionPolicy Bypass ``
   -File .\scripts\inspect-build42-known-working-map-contract.ps1 ``
   -CandidateRoot "$expHBase" ``
-  -ReferenceRoot "<place reference mod root here>" ``
+  -ReferenceRoot "$refBase\<working-map-mod>" ``
   -Output "$Output\comparison" ``
-  -MapId $MapId
+  -MapId $MapId ``
+  -ReferenceMapId "<reference map id here>"
 ${fence}
 
+Use -ReferenceMapId when the reference mod has a different map folder name
+than the candidate. Example: -MapId pzmapforge_build42_candidate_v4_001
+-ReferenceMapId Dru_map.
 Both CandidateRoot and ReferenceRoot must be under .local/.
 The comparator does NOT read PZ install or Workshop paths.
 

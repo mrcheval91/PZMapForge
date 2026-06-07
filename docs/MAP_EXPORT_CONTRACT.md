@@ -552,6 +552,21 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7N — Reference map ID support and Dru_map comparison:**
+Comparator patched: `-ReferenceMapId` parameter added (defaults to `-MapId`).
+Candidate uses `-MapId`, reference uses `-ReferenceMapId`.
+Dru_map (known-working Build 42 mod) copied to `.local/` and compared.
+Dru_map layout: root mod.info + 42/mod.info + common/media/maps/Dru_map/ (same layout as experiment-H).
+
+```text
+REFERENCE_MAP_ID_SUPPORT_ADDED
+DRU_MAP_COMPARISON_EXECUTED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No PZ assets outside .local.
+
 **MAP-7M — Variant H failure and known-working map contract comparator:**
 Variant H: common/media/maps layout -- still empty scan. `VARIANTS_ABCDEFGH_EXHAUSTED`.
 `COMMON_LAYOUT_ALONE_INSUFFICIENT`. `MAP_FOLDER_DISCOVERY_CONTRACT_UNKNOWN`.
