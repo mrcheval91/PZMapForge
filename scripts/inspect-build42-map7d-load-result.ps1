@@ -182,6 +182,15 @@ if ($timeoutWaitingPlayerData) {
     $classification = 'MAP7D_LOAD_TEST_FAIL_LUA_BOM_OR_LEXSTATE'
 } elseif ($mapFoldersScanFound -and (-not $mapFoldersListEmpty) -and $lotheaderFilesMissing) {
     $classification = 'MAP_FOLDER_SCAN_FOUND_BUT_LOTHEADER_FILES_MISSING'
+} elseif ($VariantLabel -eq 'DruMapBaseline' -and $ExpectedMapId -ne '' -and
+          $mapFoldersScanFound -and (-not $mapFoldersListEmpty)) {
+    $foundInList = @($mapFolderLines | Where-Object { $_ -match [regex]::Escape($ExpectedMapId) })
+    if ($foundInList.Count -gt 0) {
+        $classification = 'MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_FOUND'
+    }
+} elseif ($VariantLabel -eq 'DruMapBaseline' -and $ExpectedMapId -ne '' -and
+          $mapFoldersScanFound -and $mapFoldersListEmpty) {
+    $classification = 'MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_EMPTY'
 } elseif ($ExpectedMapId -ne '' -and $VariantLabel -ne '' -and $mapFoldersScanFound -and $mapFoldersListEmpty) {
     $classification = $variantClassification
 } elseif ($candidateLoaded -and $playerDataReceived -and $gameLoadingCompleted -and

@@ -228,6 +228,42 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-7P Variant I and runtime baseline ---"
+$map7pDoc          = Join-Path $repoRoot 'docs\MAP_7P_VARIANT_I_AND_RUNTIME_BASELINE.md'
+$map7pPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map7p-known-working-runtime-baseline-packet.ps1'
+$map7pTests        = Join-Path $repoRoot 'scripts\test-build42-map7p-known-working-runtime-baseline.ps1'
+if (-not (Test-Path -LiteralPath $map7pDoc))          { throw "MAP-7P doc missing" }
+Write-Output "OK: docs\MAP_7P_VARIANT_I_AND_RUNTIME_BASELINE.md"
+if (-not (Test-Path -LiteralPath $map7pPacketScript)) { throw "MAP-7P packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map7p-known-working-runtime-baseline-packet.ps1"
+if (-not (Test-Path -LiteralPath $map7pTests))        { throw "MAP-7P tests missing" }
+Write-Output "OK: scripts\test-build42-map7p-known-working-runtime-baseline.ps1"
+$map7pDocContent = Get-Content -LiteralPath $map7pDoc -Raw
+if ($map7pDocContent -notmatch 'MAP7F_VARIANT_I_MAP_FOLDER_SCAN_EMPTY') { throw "MAP-7P doc missing MAP7F_VARIANT_I_MAP_FOLDER_SCAN_EMPTY" }
+Write-Output "OK: doc contains MAP7F_VARIANT_I_MAP_FOLDER_SCAN_EMPTY"
+if ($map7pDocContent -notmatch 'VARIANTS_ABCDEFGHI_EXHAUSTED') { throw "MAP-7P doc missing VARIANTS_ABCDEFGHI_EXHAUSTED" }
+Write-Output "OK: doc contains VARIANTS_ABCDEFGHI_EXHAUSTED"
+if ($map7pDocContent -notmatch 'DRUMAP_BASELINE_DIAGNOSTIC_REQUIRED') { throw "MAP-7P doc missing DRUMAP_BASELINE_DIAGNOSTIC_REQUIRED" }
+Write-Output "OK: doc contains DRUMAP_BASELINE_DIAGNOSTIC_REQUIRED"
+if ($map7pDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-7P doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+if ($map7pDocContent -notmatch 'LOAD_TEST_NOT_PERFORMED') { throw "MAP-7P doc missing LOAD_TEST_NOT_PERFORMED" }
+Write-Output "OK: doc contains LOAD_TEST_NOT_PERFORMED"
+$map7pPacketContent = Get-Content -LiteralPath $map7pPacketScript -Raw
+if ($map7pPacketContent -notmatch '\.local') { throw "MAP-7P packet script missing .local refusal" }
+Write-Output "OK: packet script contains .local refusal language"
+$map7pAnalyzerContent = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts\inspect-build42-map7d-load-result.ps1') -Raw
+if ($map7pAnalyzerContent -notmatch 'MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_FOUND') { throw "MAP-7P analyzer missing MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_FOUND" }
+Write-Output "OK: analyzer contains MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_FOUND"
+if ($map7pAnalyzerContent -notmatch 'MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_EMPTY') { throw "MAP-7P analyzer missing MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_EMPTY" }
+Write-Output "OK: analyzer contains MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_EMPTY"
+
+Write-Output ""
+Write-Output "--- MAP-7P runtime baseline tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7pTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7P runtime baseline tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-7O Dru_map-aligned experiment I ---"
 $map7oDoc          = Join-Path $repoRoot 'docs\MAP_7O_DRUMAP_ALIGNED_EXPERIMENT_I.md'
 $map7oPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map7o-drumap-aligned-experiment-packet.ps1'
@@ -1228,7 +1264,7 @@ $psChecks = [ordered]@{
     'Region extraction'                    = 24
     'Primitive classification'             = 22
     'Plan recommendations contract'        = 28
-    'Proof packet'                         = 102
+    'Proof packet'                         = 103
     'Build42 geometry inspector tests'     = 23
     'Build42 format design matrix tests'   = 13
     'Build42 writer contract tests'        = 20
@@ -1249,6 +1285,7 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-7P runtime baseline tests'              = 20
     'MAP-7O Dru_map-aligned experiment tests' = 19
     'MAP-7N reference map id tests'          = 9
     'MAP-7M known-working contract tests'    = 12
@@ -1261,14 +1298,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 977   # = validation_summary.total_expected_assertions in proof-packet v0.44
+$psTotal = 998   # = validation_summary.total_expected_assertions in proof-packet v0.45
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.44):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.45):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -1276,7 +1313,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.44 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.45 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

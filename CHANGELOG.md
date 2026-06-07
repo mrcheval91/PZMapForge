@@ -8,6 +8,28 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7P: Record Variant I and add known-working runtime baseline)
+- docs/MAP_7P_VARIANT_I_AND_RUNTIME_BASELINE.md: Variant I failure record and runtime baseline plan.
+  - Experiment I result: MAP7F_VARIANT_I_MAP_FOLDER_SCAN_EMPTY.
+  - VARIANTS_ABCDEFGHI_EXHAUSTED: all nine layout variants exhausted.
+  - Blocker is runtime activation, not static layout.
+  - Decision tree: Dru_map baseline diagnostic to determine runtime contract.
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/prepare-build42-map7p-known-working-runtime-baseline-packet.ps1:
+  - .local/ output guard.
+  - Writes 7 packet files: packet, variant-I summary, server wiring, log capture, decision tree, preflight JSON+MD.
+  - preflight records variant_i_result=MAP7F_VARIANT_I_MAP_FOLDER_SCAN_EMPTY and variants_abcdefghi_exhausted=true.
+  - Human-only instructions for Dru_map baseline: Mods=Dru_map, WorkshopItems=3355966216, Map=Dru_map;Muldraugh, KY.
+  - Analyzer commands include -ExpectedMapId Dru_map -VariantLabel DruMapBaseline.
+  - Note: if Dru_map only works via Workshop flow, local mods may not mount the same way.
+  - No PZ run, no Workshop/mods/Server writes, no Dru_map auto-copy.
+- scripts/inspect-build42-map7d-load-result.ps1: DruMapBaseline classifications added.
+  - DruMapBaseline + non-empty scan + expected map found -> MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_FOUND.
+  - DruMapBaseline + empty scan -> MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_EMPTY.
+  - Existing Variant A-I classifications unchanged.
+- scripts/test-build42-map7p-known-working-runtime-baseline.ps1: 20 assertions.
+- psTotal 977->998; proof-packet v0.44->v0.45.
+
 ### Added (MAP-7O: Add Dru_map aligned metadata experiment)
 - docs/MAP_7O_DRUMAP_ALIGNED_EXPERIMENT_I.md: Experiment I plan.
   - Dru_map comparison findings: root mod.info + 42/mod.info + common/media/maps/.

@@ -552,6 +552,51 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7P — Variant I failure record and known-working runtime baseline:**
+MAP-7P records the Experiment I (Variant I) failure result and pivots diagnostic
+focus from static layout to runtime activation.
+
+Experiment I result: `MAP7F_VARIANT_I_MAP_FOLDER_SCAN_EMPTY`. All nine layout
+variants A through I are exhausted (`VARIANTS_ABCDEFGHI_EXHAUSTED`). The
+Dru_map-aligned static structure (root mod.info, no common/mod.info,
+common/media/maps/, lots=NONE, zoomX/Y/S) was not sufficient for IsoMetaGrid
+to scan and register the candidate map folder.
+
+The new diagnostic is a known-working runtime baseline using Dru_map (Workshop
+ID: 3355966216). If Dru_map appears in the IsoMetaGrid map folder scan, the
+runtime pipeline can discover Workshop mods. The PZMapForge candidate then lacks
+a runtime activation condition that Dru_map satisfies.
+
+Baseline server wiring:
+```text
+Mods=Dru_map
+WorkshopItems=3355966216
+Map=Dru_map;Muldraugh, KY
+Public=false
+```
+
+Analyzer updated: DruMapBaseline-specific classifications added to
+`inspect-build42-map7d-load-result.ps1`:
+- `MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_FOUND`: non-empty scan with expected map.
+- `MAP7P_DRUMAP_BASELINE_MAP_FOLDER_SCAN_EMPTY`: empty scan.
+
+Packet script: `scripts/prepare-build42-map7p-known-working-runtime-baseline-packet.ps1`
+Writes 7 packet files under `.local/` only. Does not run PZ. Does not write to
+Workshop, mods, Server, or PZ install paths. Does not copy Dru_map automatically.
+
+Status labels:
+```text
+MAP7F_VARIANT_I_MAP_FOLDER_SCAN_EMPTY
+VARIANTS_ABCDEFGHI_EXHAUSTED
+DRUMAP_BASELINE_DIAGNOSTIC_REQUIRED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No PZ assets outside .local.
+If Dru_map scan found but PZMapForge scan empty: next task is runtime
+activation contract alignment, not binary writing.
+
 **MAP-7O — Dru_map-aligned Experiment I preparation:**
 Experiment I contract: root `mod.info` + `42/mod.info` + NO `common/mod.info` +
 `common/media/maps/<MapId>/` + `lots=NONE` + `zoomX/zoomY/zoomS` in map.info.
