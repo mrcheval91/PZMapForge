@@ -8,6 +8,59 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7L: Record Variant G and add common layout experiment)
+- docs/MAP_7L_VARIANT_G_AND_COMMON_LAYOUT_PIVOT.md: Variant G result record.
+  - Variant G: mod.info map= field (H8). MAP7F_VARIANT_G_MAP_FOLDER_SCAN_EMPTY.
+  - H8_MOD_INFO_MAP_FIELD_RULED_OUT; VARIANTS_ABCDEFG_EXHAUSTED.
+  - Operator-provided Build 42 structure evidence: common/media/maps/<MapId>/.
+  - COMMON_LAYOUT_PIVOT: map files must be under common/, not 42/ or root.
+  - Diagnostic distinction maintained: SCAN_EMPTY vs LOTHEADER_FILES_MISSING.
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-map-discovery-path.ps1: updated to v0.3.
+  - New fields: has_common_mod_info, has_common_media_maps, has_common_map_info,
+    has_common_maps_subfolder, has_common_worldmap_xml, has_common_worldmap_forest_xml,
+    has_common_thumb_png, has_common_biomemap_folder, has_world_xy_lotpack_pattern,
+    has_plain_xy_lotpack_pattern, common_media_maps_recommended, variant_g_result,
+    variants_abcdefg_exhausted.
+  - New discovery risk: LOWER_COMMON_FULL_LAYOUT (when common/mod.info + common/media/maps present).
+  - Schema bumped to v0.3.
+- scripts/prepare-build42-map7l-common-layout-experiment-packet.ps1:
+  - .local/ output guard.
+  - Generates empty_grass_v4 candidate via CLI.
+  - Creates experiment-H candidate with documented common/ layout:
+    42/mod.info (version layer) + common/mod.info + common/media/maps/<MapId>/.
+  - Map data files (binary + text) copied byte-exact to common/.
+  - thumb.png placeholder (1x1 via System.Drawing or empty fallback).
+  - worldmap.xml and worldmap-forest.xml minimal XML placeholders.
+  - maps/biomemap_0_0.png placeholder.
+  - SHA-256 verification that binary files are unchanged.
+  - Runs discovery path + metadata contract inspectors.
+  - Writes 12 packet files: MAP_7L_COMMON_LAYOUT_PACKET.md,
+    MAP_7L_VARIANT_G_RESULT_SUMMARY.md, MAP_7L_OPERATOR_STRUCTURE_EVIDENCE.md,
+    MAP_7L_EXPERIMENT_H_MANUAL_INSTALL_COMMANDS.md (HUMAN-ONLY),
+    MAP_7L_EXPERIMENT_H_LOG_CAPTURE_COMMANDS.md, result template,
+    map7l-common-layout-preflight.json, map7l-common-layout-preflight.md,
+    discovery + metadata inspector outputs (4 files).
+- scripts/test-build42-map7l-common-layout-experiment.ps1: 15 assertions.
+  - Test 1: path guard.
+  - Test 2: all 12 files present + exit 0.
+  - Tests 3-8: common/ layout structure (mod.info, map.info, spawnpoints,
+    objects, lotheader, chunkdata).
+  - Test 9: LOTH/LOTP/chunkdata sizes unchanged (29646/1056780/1026).
+  - Test 10: text files no-BOM.
+  - Tests 11-13: preflight variant_g_result, variants_abcdefg_exhausted,
+    common_media_maps_layout.
+  - Tests 14-15: HUMAN-ONLY marker, public_playable=false.
+  - psTotal 922->937.
+- scripts/validate.ps1: MAP-7L section; psTotal 922->937; v0.41.
+- scripts/write-proof-packet.ps1: v0.41; map7l=15; total 937.
+- scripts/test-proof-packet.ps1: assertions updated (15/937, schema v0.41).
+- docs/IMPLEMENTATION.md: MAP-7L ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7L section.
+
+No load test. No binary writer change. No PZ assets. No playable claim.
+PS 937 / .NET 556 (unchanged).
+
 ### Added (MAP-7K: Record Variant F folder id discovery failure)
 - docs/MAP_7K_VARIANT_F_FOLDER_ID_FAILURE.md: Variant F result record.
   - Variant F: exact folder name == mod.info id (H5 hypothesis).

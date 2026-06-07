@@ -552,6 +552,27 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7L — Variant G failure and Build 42 common/media/maps layout pivot:**
+Variant G: mod.info map= field (H8) -- still empty scan. `VARIANTS_ABCDEFG_EXHAUSTED`.
+Operator evidence: documented Build 42 layout uses `common/media/maps/<MapId>/`.
+`COMMON_LAYOUT_PIVOT`. Discovery inspector updated v0.3 with common/ detection.
+Experiment H: generates candidate with `common/media/maps/` structure.
+
+Status labels:
+```text
+MAP7F_VARIANT_G_MAP_FOLDER_SCAN_EMPTY
+H8_MOD_INFO_MAP_FIELD_RULED_OUT
+VARIANTS_ABCDEFG_EXHAUSTED
+COMMON_LAYOUT_PIVOT
+BUILD42_COMMON_MEDIA_MAPS_HYPOTHESIS
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No PZ assets.
+Next: Experiment H human-only retest with common/media/maps/<MapId>/ layout.
+If scan becomes non-empty: progress to MAP_FOLDER_SCAN_FOUND_BUT_LOTHEADER_FILES_MISSING stage.
+
 **MAP-7K — Variant F folder/id alignment failure and Experiment G preparation:**
 Variant F: exact folder/id alignment (H5) -- still empty scan.
 `H5_FOLDER_ID_ALIGNMENT_RULED_OUT`. `VARIANTS_ABCDEF_EXHAUSTED`.
