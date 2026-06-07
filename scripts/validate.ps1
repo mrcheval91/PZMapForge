@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (894)
+    Final output reports the complete PowerShell validation lane total (911)
     and the .NET lane total (556) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.38 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.39 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,50 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-7J Variant E metadata contract failure ---"
+$map7jDoc           = Join-Path $repoRoot 'docs\MAP_7J_VARIANT_E_METADATA_CONTRACT_FAILURE.md'
+$map7jInspector     = Join-Path $repoRoot 'scripts\inspect-build42-map-metadata-contract.ps1'
+$map7jPacketScript  = Join-Path $repoRoot 'scripts\prepare-build42-map7j-metadata-contract-packet.ps1'
+$map7jTests         = Join-Path $repoRoot 'scripts\test-build42-map7j-metadata-contract.ps1'
+if (-not (Test-Path -LiteralPath $map7jDoc))          { throw "MAP-7J doc missing" }
+Write-Output "OK: docs\MAP_7J_VARIANT_E_METADATA_CONTRACT_FAILURE.md"
+if (-not (Test-Path -LiteralPath $map7jInspector))    { throw "MAP-7J inspector missing" }
+Write-Output "OK: scripts\inspect-build42-map-metadata-contract.ps1"
+if (-not (Test-Path -LiteralPath $map7jPacketScript)) { throw "MAP-7J packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map7j-metadata-contract-packet.ps1"
+if (-not (Test-Path -LiteralPath $map7jTests))        { throw "MAP-7J tests missing" }
+Write-Output "OK: scripts\test-build42-map7j-metadata-contract.ps1"
+$map7jDocContent = Get-Content -LiteralPath $map7jDoc -Raw
+if ($map7jDocContent -notmatch 'MAP7F_VARIANT_E_MAP_FOLDER_SCAN_EMPTY') { throw "MAP-7J doc missing MAP7F_VARIANT_E_MAP_FOLDER_SCAN_EMPTY" }
+Write-Output "OK: doc contains MAP7F_VARIANT_E_MAP_FOLDER_SCAN_EMPTY"
+if ($map7jDocContent -notmatch 'VARIANTS_ABCDE_EXHAUSTED') { throw "MAP-7J doc missing VARIANTS_ABCDE_EXHAUSTED" }
+Write-Output "OK: doc contains VARIANTS_ABCDE_EXHAUSTED"
+if ($map7jDocContent -notmatch 'METADATA_CONTRACT_FOCUS') { throw "MAP-7J doc missing METADATA_CONTRACT_FOCUS" }
+Write-Output "OK: doc contains METADATA_CONTRACT_FOCUS"
+if ($map7jDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-7J doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+if ($map7jDocContent -notmatch 'LOAD_TEST_NOT_PERFORMED') { throw "MAP-7J doc missing LOAD_TEST_NOT_PERFORMED" }
+Write-Output "OK: doc contains LOAD_TEST_NOT_PERFORMED"
+$map7jInspContent = Get-Content -LiteralPath $map7jInspector -Raw
+if ($map7jInspContent -notmatch '\.local') { throw "MAP-7J inspector missing .local refusal" }
+Write-Output "OK: inspector contains .local refusal language"
+if ($map7jInspContent -notmatch 'metadata_contract_focus') { throw "MAP-7J inspector missing metadata_contract_focus field" }
+Write-Output "OK: inspector contains metadata_contract_focus field"
+$map7jPacketContent = Get-Content -LiteralPath $map7jPacketScript -Raw
+if ($map7jPacketContent -notmatch '\.local') { throw "MAP-7J packet script missing .local refusal" }
+Write-Output "OK: packet script contains .local refusal language"
+$map7jAnalyzerContent = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts\inspect-build42-map7d-load-result.ps1') -Raw
+if ($map7jAnalyzerContent -notmatch 'Failed to find any') { throw "MAP-7J analyzer missing lotheader discovery failure detection" }
+Write-Output "OK: analyzer contains lotheader discovery failure detection"
+if ($map7jAnalyzerContent -notmatch 'MAP_FOLDER_SCAN_FOUND_BUT_LOTHEADER_FILES_MISSING') { throw "MAP-7J analyzer missing MAP_FOLDER_SCAN_FOUND_BUT_LOTHEADER_FILES_MISSING classification" }
+Write-Output "OK: analyzer contains MAP_FOLDER_SCAN_FOUND_BUT_LOTHEADER_FILES_MISSING"
+
+Write-Output ""
+Write-Output "--- MAP-7J metadata contract tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7jTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7J metadata contract tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-7I Variant D root media failure ---"
@@ -1031,20 +1075,21 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-7J metadata contract tests'        = 17
     'MAP-7I root modinfo experiment tests'  = 12
     'MAP-7H discovery path tests'          = 12
     'MAP-7G variant A failure tests'       = 8
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 894   # = validation_summary.total_expected_assertions in proof-packet v0.38
+$psTotal = 911   # = validation_summary.total_expected_assertions in proof-packet v0.39
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.38):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.39):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -1052,7 +1097,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.38 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.39 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

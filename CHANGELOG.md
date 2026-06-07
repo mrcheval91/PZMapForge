@@ -8,6 +8,59 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7J: Record Variant E metadata discovery failure)
+- docs/MAP_7J_VARIANT_E_METADATA_CONTRACT_FAILURE.md: Variant E result record.
+  - Variant E: root mod.info + root media/maps + 42/ dual layout.
+    MAP7F_VARIANT_E_MAP_FOLDER_SCAN_EMPTY; ROOT_MOD_INFO_EXPERIMENT_FAILED.
+  - VARIANTS_ABCDE_EXHAUSTED: A/B/C/D/E layout experiments exhausted.
+  - METADATA_CONTRACT_FOCUS: investigation shifts to mod/map metadata shape.
+  - Diagnostic distinction: MAP_FOLDER_SCAN_EMPTY (our blocker) vs
+    MAP_FOLDER_SCAN_FOUND_BUT_LOTHEADER_FILES_MISSING (different stage).
+  - Forum evidence: seen in other mods; different from our case.
+  - Hypotheses H4-H8 recorded (map.info fields, mod.info id, map= field).
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-map7d-load-result.ps1: lotheader detection added.
+  - New field: lotheader_files_missing (detects 'Failed to find any .lotheader files').
+  - New classification: MAP_FOLDER_SCAN_FOUND_BUT_LOTHEADER_FILES_MISSING
+    (triggers when scan non-empty AND lotheader files missing).
+  - Does not affect existing A-E classifications (scan is empty in all our cases).
+- scripts/inspect-build42-map-metadata-contract.ps1: new inspector.
+  - Parses mod.info and map.info from 42/ and root layouts.
+  - Extracts key/value fields, raw lines, SHA-256, no-BOM, ASCII status.
+  - Detects byte-identity between root/42 copies.
+  - Records id field match vs expected ModId/MapId.
+  - Adds variant_e_result, metadata_contract_focus, map_line_variants_exhausted.
+  - .local/ output guard; refuses PZ user paths.
+  - Writes map-metadata-contract-report.json + .md.
+- scripts/prepare-build42-map7j-metadata-contract-packet.ps1:
+  - .local/ output guard.
+  - Generates empty_grass_v4 candidate via CLI.
+  - Creates experiment-F dual-layout candidate (same as experiment-E).
+  - Runs discovery path inspector and metadata contract inspector.
+  - Writes 11 packet files:
+    MAP_7J_METADATA_CONTRACT_PACKET.md, MAP_7J_VARIANT_E_RESULT_SUMMARY.md,
+    MAP_7J_METADATA_CONTRACT_REPORT.md, MAP_7J_NEXT_HYPOTHESES.md,
+    MAP_7J_EXPERIMENT_F_MANUAL_RESULT.local-template.md,
+    map7j-metadata-contract-preflight.json, map7j-metadata-contract-preflight.md,
+    map-discovery-path-report.json, map-discovery-path-report.md,
+    map-metadata-contract-report.json, map-metadata-contract-report.md.
+  - Variant F requires human decision; packet does not auto-schedule it.
+- scripts/test-build42-map7j-metadata-contract.ps1: 17 assertions.
+  - Tests 1-10: inspector path guard, mod.info/map.info id parsing, no-BOM,
+    byte-identical detection, id match, JSON/MD output, public_playable=false.
+  - Tests 11-17: packet path guard, all 11 files present, variant_e_result,
+    metadata_contract_focus, VARIANTS_ABCDE_EXHAUSTED, LOAD_TEST_NOT_PERFORMED,
+    public_playable=false.
+  - psTotal 894->911.
+- scripts/validate.ps1: MAP-7J section; psTotal 894->911; v0.39.
+- scripts/write-proof-packet.ps1: v0.39; map7j=17; total 911.
+- scripts/test-proof-packet.ps1: assertions updated (17/911, schema v0.39).
+- docs/IMPLEMENTATION.md: MAP-7J ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7J section.
+
+No load test. No binary writer change. No PZ assets. No playable claim.
+PS 911 / .NET 556 (unchanged).
+
 ### Added (MAP-7I: Record Variant D root media failure)
 - docs/MAP_7I_VARIANT_D_ROOT_MEDIA_FAILURE.md: Variant D result record.
   - Variant D: root media/maps duplicate + 42/media/maps existing.

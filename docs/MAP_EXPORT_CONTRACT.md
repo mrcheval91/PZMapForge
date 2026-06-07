@@ -552,6 +552,26 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7J — Variant E metadata contract failure:**
+Variant E: root mod.info + root media/maps + 42/ — still empty scan.
+`VARIANTS_ABCDE_EXHAUSTED`. Layout experiments exhausted. `METADATA_CONTRACT_FOCUS`.
+Diagnostic distinction: `MAP_FOLDER_SCAN_EMPTY` (discovery blocker, our case A-E) vs
+`MAP_FOLDER_SCAN_FOUND_BUT_LOTHEADER_FILES_MISSING` (later-stage, seen in forum evidence).
+Analyzer updated with new lotheader classification. Hypotheses H4-H8 recorded.
+Variant F requires human decision after metadata field comparison.
+
+Status labels:
+```text
+MAP7F_VARIANT_E_MAP_FOLDER_SCAN_EMPTY
+VARIANTS_ABCDE_EXHAUSTED
+METADATA_CONTRACT_FOCUS
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No PZ assets.
+Next: operator compares candidate metadata against a reference mod before Variant F.
+
 **MAP-7I — Variant D root media failure and Experiment E preparation:**
 Variant D: root `media/maps/` duplicate + `42/media/maps/` — still empty scan.
 `ROOT_MEDIA_MAPS_ALONE_INSUFFICIENT` confirmed. Root `mod.info` absent in Variant D.

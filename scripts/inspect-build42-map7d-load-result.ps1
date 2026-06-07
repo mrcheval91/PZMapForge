@@ -152,6 +152,13 @@ if ($startIdx -ge 0 -and $endIdx -ge 0) {
 $spawnBuildingWarning          = $logContent -match 'no room or building at'
 $noRoomOrBuildingAtSpawn       = $spawnBuildingWarning
 
+# Lotheader file discovery failure (future diagnostic: scan found path but no .lotheader files).
+# MAP_FOLDER_SCAN_FOUND_BUT_LOTHEADER_FILES_MISSING distinguishes from MAP7F_*_MAP_FOLDER_SCAN_EMPTY:
+#   SCAN_EMPTY = IsoMetaGrid found zero map folder paths (our current blocker A-E).
+#   LOTHEADER_MISSING = IsoMetaGrid found a map folder path but no .lotheader files in it.
+# This is a later-stage failure, not our current result.
+$lotheaderFilesMissing         = $logContent -match 'Failed to find any \.lotheader files'
+
 # Miscellaneous
 $mannequinWarning              = $logContent -match 'mannequin'
 
@@ -173,6 +180,8 @@ if ($timeoutWaitingPlayerData) {
     $classification = 'MAP7D_LOAD_TEST_FAIL_TIMEOUT_PLAYER_DATA'
 } elseif ($lexstateTokenStr) {
     $classification = 'MAP7D_LOAD_TEST_FAIL_LUA_BOM_OR_LEXSTATE'
+} elseif ($mapFoldersScanFound -and (-not $mapFoldersListEmpty) -and $lotheaderFilesMissing) {
+    $classification = 'MAP_FOLDER_SCAN_FOUND_BUT_LOTHEADER_FILES_MISSING'
 } elseif ($ExpectedMapId -ne '' -and $VariantLabel -ne '' -and $mapFoldersScanFound -and $mapFoldersListEmpty) {
     $classification = $variantClassification
 } elseif ($candidateLoaded -and $playerDataReceived -and $gameLoadingCompleted -and
@@ -224,6 +233,7 @@ $report = [ordered]@{
     timestamped_debuglog_detected      = $timestampedDebuglogDetected
     spawn_building_warning_found       = $spawnBuildingWarning
     no_room_or_building_at_spawn_found = $noRoomOrBuildingAtSpawn
+    lotheader_files_missing            = $lotheaderFilesMissing
     mannequin_warning_found            = $mannequinWarning
     expected_map_id                    = $ExpectedMapId
     variant_label                      = $VariantLabel
