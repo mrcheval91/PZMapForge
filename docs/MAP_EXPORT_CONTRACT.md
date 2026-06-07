@@ -552,6 +552,25 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7K — Variant F folder/id alignment failure and Experiment G preparation:**
+Variant F: exact folder/id alignment (H5) -- still empty scan.
+`H5_FOLDER_ID_ALIGNMENT_RULED_OUT`. `VARIANTS_ABCDEF_EXHAUSTED`.
+Inspector updated: `mod_info_has_map_field`, `h5_folder_id_alignment_result`, `h8_mod_info_map_field_recommended`.
+Experiment G: adds `map=<MapId>` to mod.info to test H8.
+
+Status labels:
+```text
+MAP7F_VARIANT_F_MAP_FOLDER_SCAN_EMPTY
+H5_FOLDER_ID_ALIGNMENT_RULED_OUT
+H8_MOD_INFO_MAP_FIELD_RECOMMENDED
+VARIANTS_ABCDEF_EXHAUSTED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No PZ assets.
+Next: Experiment G human-only retest with map= field in mod.info.
+
 **MAP-7J — Variant E metadata contract failure:**
 Variant E: root mod.info + root media/maps + 42/ — still empty scan.
 `VARIANTS_ABCDE_EXHAUSTED`. Layout experiments exhausted. `METADATA_CONTRACT_FOCUS`.

@@ -8,6 +8,47 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7K: Record Variant F folder id discovery failure)
+- docs/MAP_7K_VARIANT_F_FOLDER_ID_FAILURE.md: Variant F result record.
+  - Variant F: exact folder name == mod.info id (H5 hypothesis).
+    MAP7F_VARIANT_F_MAP_FOLDER_SCAN_EMPTY; H5_FOLDER_ID_ALIGNMENT_RULED_OUT.
+  - VARIANTS_ABCDEF_EXHAUSTED: six experiments produced empty scan.
+  - Next: H8 -- mod.info map= field to register media path.
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-map-metadata-contract.ps1: updated to v0.2.
+  - New fields: mod_info_has_map_field, v42_mod_info_map_value,
+    root_mod_info_map_value, mod_info_map_value_matches_expected,
+    h5_folder_id_alignment_result, h8_mod_info_map_field_recommended.
+  - h8_mod_info_map_field_recommended=true when map= field absent.
+- scripts/prepare-build42-map7k-modinfo-map-field-experiment-packet.ps1:
+  - .local/ output guard.
+  - Generates empty_grass_v4 candidate via CLI.
+  - Creates experiment-G dual-layout candidate: root + 42/ mod.info + media/maps/.
+  - Adds map=pzmapforge_build42_candidate_v4_001 to both mod.info files.
+  - Preserves no-BOM UTF-8 encoding on modified mod.info files.
+  - LOTH/LOTP/chunkdata binary files unchanged from empty_grass_v4.
+  - Runs discovery path + metadata contract inspectors.
+  - Writes 11 packet files: MAP_7K_MODINFO_MAP_FIELD_PACKET.md,
+    MAP_7K_VARIANT_F_RESULT_SUMMARY.md, EXPERIMENT_G install commands (HUMAN-ONLY),
+    log capture commands, result template, preflight JSON + MD, inspector outputs.
+  - Analyzer command uses -ExpectedMapId and -VariantLabel VariantG.
+- scripts/test-build42-map7k-modinfo-map-field-experiment.ps1: 11 assertions.
+  - Tests 1-2: path guard, all 11 files present + exit 0.
+  - Tests 3-4: root/42 mod.info contain map=<MapId>.
+  - Test 5: mod.info files remain no-BOM.
+  - Test 6: LOTH/LOTP/chunkdata sizes unchanged (29646/1056780/1026).
+  - Tests 7-9: preflight variant_f_result, h5_ruled_out, h8_map_field.
+  - Tests 10-11: HUMAN-ONLY marker, public_playable=false.
+  - psTotal 911->922.
+- scripts/validate.ps1: MAP-7K section; psTotal 911->922; v0.40.
+- scripts/write-proof-packet.ps1: v0.40; map7k=11; total 922.
+- scripts/test-proof-packet.ps1: assertions updated (11/922, schema v0.40).
+- docs/IMPLEMENTATION.md: MAP-7K ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7K section.
+
+No load test. No binary writer change. No PZ assets. No playable claim.
+PS 922 / .NET 556 (unchanged).
+
 ### Added (MAP-7J: Record Variant E metadata discovery failure)
 - docs/MAP_7J_VARIANT_E_METADATA_CONTRACT_FAILURE.md: Variant E result record.
   - Variant E: root mod.info + root media/maps + 42/ dual layout.

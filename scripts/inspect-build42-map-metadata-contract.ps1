@@ -175,6 +175,18 @@ $rootMapInfoContainsMapId  = ($rootMapInfo.exists -and (($rootMapInfo.raw_lines 
 $modInfoBytesIdentical = ($v42ModInfo.sha256  -ne '' -and $v42ModInfo.sha256  -eq $rootModInfo.sha256)
 $mapInfoBytesIdentical = ($v42MapInfo.sha256  -ne '' -and $v42MapInfo.sha256  -eq $rootMapInfo.sha256)
 
+# H8: mod.info map= field analysis
+# Check whether mod.info contains a map= key that registers the map/media path.
+$v42ModInfoMapValue   = Get-FieldValue $v42ModInfo.fields  'map'
+$rootModInfoMapValue  = Get-FieldValue $rootModInfo.fields 'map'
+$modInfoHasMapField   = ($v42ModInfoMapValue -ne '') -or ($rootModInfoMapValue -ne '')
+$modInfoMapValueMatchesExpected = ($MapId -ne '') -and (
+    ($v42ModInfoMapValue -eq $MapId) -or ($rootModInfoMapValue -eq $MapId))
+# Variant F confirmed folder/id alignment does not fix registration.
+# H8 is recommended when map= field is absent from mod.info.
+$h5FolderIdAlignmentResult    = 'MAP7F_VARIANT_F_MAP_FOLDER_SCAN_EMPTY'
+$h8ModInfoMapFieldRecommended = -not $modInfoHasMapField
+
 # ---------------------------------------------------------------------------
 # Hypothesis notes (no validity claims -- observations only)
 # ---------------------------------------------------------------------------
@@ -191,7 +203,7 @@ $hypothesisNotes = [string[]]@(
 # ---------------------------------------------------------------------------
 
 $report = [ordered]@{
-    schema                               = 'pzmapforge.build42-map-metadata-contract.v0.1'
+    schema                               = 'pzmapforge.build42-map-metadata-contract.v0.2'
     candidate_root                       = $CandidateRoot
     expected_map_id                      = $MapId
     expected_mod_id                      = $ModId
@@ -211,6 +223,12 @@ $report = [ordered]@{
     root_map_info_contains_map_id        = $rootMapInfoContainsMapId
     mod_info_bytes_identical             = $modInfoBytesIdentical
     map_info_bytes_identical             = $mapInfoBytesIdentical
+    mod_info_has_map_field               = $modInfoHasMapField
+    v42_mod_info_map_value               = $v42ModInfoMapValue
+    root_mod_info_map_value              = $rootModInfoMapValue
+    mod_info_map_value_matches_expected  = $modInfoMapValueMatchesExpected
+    h5_folder_id_alignment_result        = $h5FolderIdAlignmentResult
+    h8_mod_info_map_field_recommended    = $h8ModInfoMapFieldRecommended
     hypothesis_notes                     = $hypothesisNotes
     variant_e_result                     = 'MAP7F_VARIANT_E_MAP_FOLDER_SCAN_EMPTY'
     map_line_variants_exhausted          = $true
@@ -249,6 +267,12 @@ v42_map_info_id_matches_expected=$($v42MapInfoIdMatchesExpected.ToString().ToLow
 root_map_info_id_matches_expected=$($rootMapInfoIdMatchesExpected.ToString().ToLower())
 mod_info_bytes_identical=$($modInfoBytesIdentical.ToString().ToLower())
 map_info_bytes_identical=$($mapInfoBytesIdentical.ToString().ToLower())
+mod_info_has_map_field=$($modInfoHasMapField.ToString().ToLower())
+v42_mod_info_map_value=$v42ModInfoMapValue
+root_mod_info_map_value=$rootModInfoMapValue
+mod_info_map_value_matches_expected=$($modInfoMapValueMatchesExpected.ToString().ToLower())
+h5_folder_id_alignment_result=$h5FolderIdAlignmentResult
+h8_mod_info_map_field_recommended=$($h8ModInfoMapFieldRecommended.ToString().ToLower())
 variant_e_result=MAP7F_VARIANT_E_MAP_FOLDER_SCAN_EMPTY
 metadata_contract_focus=true
 public_playable_claim_allowed=false

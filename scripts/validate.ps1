@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (911)
+    Final output reports the complete PowerShell validation lane total (922)
     and the .NET lane total (556) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.39 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.40 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,42 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-7K Variant F folder/id failure ---"
+$map7kDoc          = Join-Path $repoRoot 'docs\MAP_7K_VARIANT_F_FOLDER_ID_FAILURE.md'
+$map7kPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map7k-modinfo-map-field-experiment-packet.ps1'
+$map7kTests        = Join-Path $repoRoot 'scripts\test-build42-map7k-modinfo-map-field-experiment.ps1'
+if (-not (Test-Path -LiteralPath $map7kDoc))          { throw "MAP-7K doc missing" }
+Write-Output "OK: docs\MAP_7K_VARIANT_F_FOLDER_ID_FAILURE.md"
+if (-not (Test-Path -LiteralPath $map7kPacketScript)) { throw "MAP-7K packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map7k-modinfo-map-field-experiment-packet.ps1"
+if (-not (Test-Path -LiteralPath $map7kTests))        { throw "MAP-7K tests missing" }
+Write-Output "OK: scripts\test-build42-map7k-modinfo-map-field-experiment.ps1"
+$map7kDocContent = Get-Content -LiteralPath $map7kDoc -Raw
+if ($map7kDocContent -notmatch 'MAP7F_VARIANT_F_MAP_FOLDER_SCAN_EMPTY') { throw "MAP-7K doc missing MAP7F_VARIANT_F_MAP_FOLDER_SCAN_EMPTY" }
+Write-Output "OK: doc contains MAP7F_VARIANT_F_MAP_FOLDER_SCAN_EMPTY"
+if ($map7kDocContent -notmatch 'H5_FOLDER_ID_ALIGNMENT_RULED_OUT') { throw "MAP-7K doc missing H5_FOLDER_ID_ALIGNMENT_RULED_OUT" }
+Write-Output "OK: doc contains H5_FOLDER_ID_ALIGNMENT_RULED_OUT"
+if ($map7kDocContent -notmatch 'H8_MOD_INFO_MAP_FIELD_RECOMMENDED') { throw "MAP-7K doc missing H8_MOD_INFO_MAP_FIELD_RECOMMENDED" }
+Write-Output "OK: doc contains H8_MOD_INFO_MAP_FIELD_RECOMMENDED"
+if ($map7kDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-7K doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+if ($map7kDocContent -notmatch 'LOAD_TEST_NOT_PERFORMED') { throw "MAP-7K doc missing LOAD_TEST_NOT_PERFORMED" }
+Write-Output "OK: doc contains LOAD_TEST_NOT_PERFORMED"
+$map7kPacketContent = Get-Content -LiteralPath $map7kPacketScript -Raw
+if ($map7kPacketContent -notmatch '\.local') { throw "MAP-7K packet script missing .local refusal" }
+Write-Output "OK: packet script contains .local refusal language"
+$map7kInspContent = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts\inspect-build42-map-metadata-contract.ps1') -Raw
+if ($map7kInspContent -notmatch 'mod_info_has_map_field') { throw "MAP-7K inspector missing mod_info_has_map_field" }
+Write-Output "OK: inspector contains mod_info_has_map_field"
+if ($map7kInspContent -notmatch 'h8_mod_info_map_field_recommended') { throw "MAP-7K inspector missing h8_mod_info_map_field_recommended" }
+Write-Output "OK: inspector contains h8_mod_info_map_field_recommended"
+
+Write-Output ""
+Write-Output "--- MAP-7K modinfo map field experiment tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7kTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7K modinfo map field experiment tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-7J Variant E metadata contract failure ---"
@@ -1075,6 +1111,7 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-7K modinfo map field tests'         = 11
     'MAP-7J metadata contract tests'        = 17
     'MAP-7I root modinfo experiment tests'  = 12
     'MAP-7H discovery path tests'          = 12
@@ -1082,14 +1119,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 911   # = validation_summary.total_expected_assertions in proof-packet v0.39
+$psTotal = 922   # = validation_summary.total_expected_assertions in proof-packet v0.40
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.39):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.40):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -1097,7 +1134,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.39 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.40 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"
