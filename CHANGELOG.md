@@ -8,6 +8,31 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7T: Record Workshop K002 runtime payload comparison)
+- docs/MAP_7T_WORKSHOP_K002_RUNTIME_PAYLOAD_COMPARISON.md: K002 recorded.
+  - Workshop ID 3740642200 downloaded, installed, reached Ready.
+  - PZMapForge mod loaded (pzmapforge_build42_candidate_v4_001).
+  - No expected-map lotheader/meta evidence. Fallback forest.
+  - Binary writer gate still closed.
+  - Empty map-folder scan still failure evidence here (no lotheader + no built world).
+  - Next: compare actual downloaded payload vs Dru_map payload structure.
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-workshop-runtime-payload.ps1:
+  - .local/ output guard. Reads only the two explicit roots provided.
+  - Detects: root mod.info, 42/mod.info, common/mod.info, mods/<id>, Contents/mods/<id>,
+    common/media/maps/<id>, map.info fields (lots=NONE, zoomX/Y), spawnpoints/objects/worldmap,
+    lotheader/lotpack/chunkdata file names and sizes, BOM violations.
+  - Outputs: workshop-runtime-payload-comparison.json + .md
+  - Schema: pzmapforge.workshop-runtime-payload-comparison.v0.1
+- scripts/prepare-build42-map7t-k002-record-packet.ps1:
+  - .local/ guard. No PZ run. No Workshop writes.
+  - Records K002 result: MAP7F_VARIANT_W_S_UPLOAD_K002_MAP_FOLDER_SCAN_EMPTY, Workshop 3740642200 Installed/Ready, mod loaded, no expected-map evidence.
+  - Writes: MAP_7T_K002_RESULT_SUMMARY.md, MAP_7T_NEXT_DECISION_TREE.md, preflight JSON+MD.
+  - Optionally runs comparison if operator provides both roots.
+  - Decision tree: payload comparison, binary gate, server-side logs.
+- scripts/test-build42-map7t-k002-runtime-payload.ps1: 20 assertions.
+- psTotal 1061->1082; proof-packet v0.48->v0.49.
+
 ### Added (MAP-7S: Prepare private Workshop staging packet)
 - docs/MAP_7S_PRIVATE_WORKSHOP_STAGING_PACKET.md: Staging packet doctrine.
   - MAP7S_WORKSHOP_STAGING_PACKET_CREATED; NO_AUTOMATIC_WORKSHOP_UPLOAD; STAGED_PACKAGE_LOCAL_ONLY.

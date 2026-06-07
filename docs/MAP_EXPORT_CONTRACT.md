@@ -552,6 +552,34 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7T — Workshop K002 runtime payload comparison:**
+MAP-7T records K002 (Workshop ID 3740642200): the PZMapForge Workshop item now
+downloads, reaches Installed/Ready, and loads the mod — but still does not
+produce expected-map lotheader/meta evidence or a visible custom map world.
+
+New tool: `scripts/inspect-build42-workshop-runtime-payload.ps1` compares two
+explicit operator-provided Workshop payload roots (candidate and reference).
+Detects: mod.info locations (root/42/common/mods/Contents), common/media/maps
+presence, map.info fields (lots=NONE, zoomX/Y), binary file names and sizes,
+BOM violations. Output is `.local/` only; reads only the provided paths.
+
+Binary writer gate remains closed:
+`BINARY_WRITER_GATE_STILL_CLOSED` — do not mutate LOTH/LOTP/chunkdata until
+`expected_map_lotheader_meta_evidence_found=true`.
+
+Status labels:
+```text
+MAP7T_K002_WORKSHOP_ACTIVATION_RECORDED
+K002_WORKSHOP_ITEM_INSTALLED_READY
+K002_MOD_LOADED_NO_EXPECTED_MAP_EVIDENCE
+BINARY_WRITER_GATE_STILL_CLOSED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No Steam Workshop upload.
+No PZ assets outside allowed explicit roots. No forbidden writes.
+
 **MAP-7S — Private Workshop upload staging packet:**
 MAP-7S prepares the human-only private/unlisted Workshop upload staging packet
 for the PZMapForge candidate.
