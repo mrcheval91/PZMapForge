@@ -8,6 +8,57 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7I: Record Variant D root media failure)
+- docs/MAP_7I_VARIANT_D_ROOT_MEDIA_FAILURE.md: Variant D result record.
+  - Variant D: root media/maps duplicate + 42/media/maps existing.
+    MAP7F_VARIANT_D_MAP_FOLDER_SCAN_EMPTY; ROOT_MEDIA_MAPS_ALONE_INSUFFICIENT.
+  - Square/blocked visual area observed. NOT proof of map registration.
+  - Next hypothesis: root mod.info required to mount root media path.
+  - Experiment E defined: root mod.info + root media/maps + 42/ preserved.
+  - EXPERIMENT_E_ROOT_MOD_INFO_RECOMMENDED.
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-map-discovery-path.ps1: updated to v0.2.
+  - New fields: has_dual_mod_info_layout, has_dual_media_maps_layout,
+    root_mod_info_missing, experiment_d_root_media_maps_result,
+    experiment_e_root_mod_info_recommended.
+  - Updated map_folder_discovery_risk logic to reflect D finding:
+    ROOT_MEDIA_MAPS_WITHOUT_ROOT_MOD_INFO_INSUFFICIENT,
+    LOWER_DUAL_FULL_LAYOUT, HIGH_42_VERSION_LAYER_MAY_NOT_BE_SCANNED.
+  - Updated markdown output with new fields.
+- scripts/prepare-build42-map7i-root-modinfo-experiment-packet.ps1:
+  - .local/ output guard.
+  - Generates empty_grass_v4 candidate via CLI.
+  - Creates dual-layout experiment-E candidate under .local/:
+    root mod.info + root media/maps/ + 42/mod.info + 42/media/maps/ all present.
+  - Verifies no-BOM on all 8 text files (42/mod.info, root/mod.info,
+    42/map.info/spawnpoints/objects, root/map.info/spawnpoints/objects).
+  - Runs inspector on experiment-E candidate.
+  - Writes 9 packet files:
+    MAP_7I_ROOT_MODINFO_EXPERIMENT_PACKET.md,
+    MAP_7I_VARIANT_D_RESULT_SUMMARY.md,
+    MAP_7I_EXPERIMENT_E_MANUAL_INSTALL_COMMANDS.md (HUMAN-ONLY),
+    MAP_7I_EXPERIMENT_E_LOG_CAPTURE_COMMANDS.md,
+    MAP_7I_EXPERIMENT_E_MANUAL_RESULT.local-template.md,
+    map7i-root-modinfo-preflight.json, map7i-root-modinfo-preflight.md,
+    map-discovery-path-report.json, map-discovery-path-report.md.
+  - Analyzer command in log capture uses -ExpectedMapId and -VariantLabel VariantE.
+- scripts/test-build42-map7i-root-modinfo-experiment.ps1: 12 assertions.
+  - Test 1: packet path guard.
+  - Tests 2-6: packet exits 0, experiment-E root mod.info, root map.info,
+    42/mod.info preserved, 42/map.info preserved.
+  - Tests 7-8: no-BOM on root mod.info, root map.info via inspector JSON.
+  - Tests 9-10: preflight variant_d_result, experiment_e_root_mod_info.
+  - Tests 11-12: HUMAN-ONLY marker, public_playable=false.
+  - psTotal 882->894.
+- scripts/validate.ps1: MAP-7I section; psTotal 882->894; v0.38.
+- scripts/write-proof-packet.ps1: v0.38; map7i=12; total 894.
+- scripts/test-proof-packet.ps1: assertions updated (12/894, schema v0.38).
+- docs/IMPLEMENTATION.md: MAP-7I ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7I section.
+
+No load test. No binary writer change. No PZ assets. No playable claim.
+PS 894 / .NET 556 (unchanged).
+
 ### Added (MAP-7H: Record Variant BC map discovery failure)
 - docs/MAP_7H_VARIANT_BC_AND_DISCOVERY_PATH.md: Variant B/C result record.
   - Variant B: Map=candidate. MAP7F_VARIANT_B_MAP_FOLDER_SCAN_EMPTY.

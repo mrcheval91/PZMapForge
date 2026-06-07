@@ -181,20 +181,33 @@ $rootModInfoFields = Parse-IniLike $rootModInfo
 # Discovery risk analysis
 # ---------------------------------------------------------------------------
 
-# IsoMetaGrid may only scan non-versioned media/maps/ paths.
-# The 42/ version layer is for mod loader routing, not for IsoMetaGrid scan.
-$possibleVersionLayerNotScanned = $hasVersioned42MediaMaps -and (-not $hasRootMediaMaps)
-$rootMediaMapsMissing           = -not $hasRootMediaMaps
-$mapFolderDiscoveryRisk         = if ($possibleVersionLayerNotScanned) { 'HIGH_42_VERSION_LAYER_MAY_NOT_BE_SCANNED' } `
-                                  elseif ($hasRootMediaMaps)            { 'LOWER_ROOT_MEDIA_MAPS_PRESENT' } `
-                                  else                                  { 'UNKNOWN' }
+$rootModInfoMissing              = -not $hasRootModInfo
+$rootMediaMapsMissing            = -not $hasRootMediaMaps
+$hasDualModInfoLayout            = $has42ModInfo -and $hasRootModInfo
+$hasDualMediaMapsLayout          = $hasVersioned42MediaMaps -and $hasRootMediaMaps
+$possibleVersionLayerNotScanned  = $hasVersioned42MediaMaps -and (-not $hasRootMediaMaps)
+
+# Variant D finding: root media/maps without root mod.info is insufficient.
+$experimentDRootMediaMapsResult  =
+    if    ($hasRootMediaMaps -and $hasRootModInfo)  { 'HAS_BOTH_ROOT_LAYOUTS' }
+    elseif ($hasRootMediaMaps -and -not $hasRootModInfo) { 'ROOT_MEDIA_MAPS_WITHOUT_ROOT_MOD_INFO_INSUFFICIENT' }
+    else  { 'NO_ROOT_MEDIA_MAPS' }
+
+$experimentERootModInfoRecommended = -not $hasRootModInfo
+
+$mapFolderDiscoveryRisk =
+    if    ($hasDualMediaMapsLayout -and $hasDualModInfoLayout)   { 'LOWER_DUAL_FULL_LAYOUT' }
+    elseif ($hasRootMediaMaps -and -not $hasRootModInfo)         { 'ROOT_MEDIA_MAPS_WITHOUT_ROOT_MOD_INFO_INSUFFICIENT' }
+    elseif ($possibleVersionLayerNotScanned)                     { 'HIGH_42_VERSION_LAYER_MAY_NOT_BE_SCANNED' }
+    elseif ($hasRootMediaMaps)                                   { 'LOWER_ROOT_MEDIA_MAPS_PRESENT' }
+    else                                                         { 'UNKNOWN' }
 
 # ---------------------------------------------------------------------------
 # Build report
 # ---------------------------------------------------------------------------
 
 $report = [ordered]@{
-    schema                                         = 'pzmapforge.build42-map-discovery-path.v0.1'
+    schema                                         = 'pzmapforge.build42-map-discovery-path.v0.2'
     candidate_root                                 = $CandidateRoot
     map_id                                         = $MapId
     has_versioned_42_media_maps                    = $hasVersioned42MediaMaps
@@ -203,8 +216,13 @@ $report = [ordered]@{
     has_root_mod_info                              = $hasRootModInfo
     has_root_media_maps                            = $hasRootMediaMaps
     has_root_map_info                              = $hasRootMapInfo
+    has_dual_mod_info_layout                       = $hasDualModInfoLayout
+    has_dual_media_maps_layout                     = $hasDualMediaMapsLayout
+    root_mod_info_missing                          = $rootModInfoMissing
     root_media_maps_missing                        = $rootMediaMapsMissing
     possible_build42_version_layer_not_scanned_by_isometagrid = $possibleVersionLayerNotScanned
+    experiment_d_root_media_maps_result            = $experimentDRootMediaMapsResult
+    experiment_e_root_mod_info_recommended         = $experimentERootModInfoRecommended
     map_folder_discovery_risk                      = $mapFolderDiscoveryRisk
     versioned_42_files                             = $v42Files
     root_files                                     = $rootFiles
@@ -229,16 +247,20 @@ Write-Output "JSON: $jsonPath"
 
 $fence = '```'
 $md = @"
-# MAP-7H Build 42 Map Discovery Path Inspection
+# MAP-7H/7I Build 42 Map Discovery Path Inspection
 
 ${fence}text
 map_id=$MapId
 has_versioned_42_media_maps=$($hasVersioned42MediaMaps.ToString().ToLower())
 has_root_media_maps=$($hasRootMediaMaps.ToString().ToLower())
-root_media_maps_missing=$($rootMediaMapsMissing.ToString().ToLower())
-possible_build42_version_layer_not_scanned_by_isometagrid=$($possibleVersionLayerNotScanned.ToString().ToLower())
-map_folder_discovery_risk=$mapFolderDiscoveryRisk
 has_root_mod_info=$($hasRootModInfo.ToString().ToLower())
+has_dual_mod_info_layout=$($hasDualModInfoLayout.ToString().ToLower())
+has_dual_media_maps_layout=$($hasDualMediaMapsLayout.ToString().ToLower())
+root_mod_info_missing=$($rootModInfoMissing.ToString().ToLower())
+root_media_maps_missing=$($rootMediaMapsMissing.ToString().ToLower())
+experiment_d_root_media_maps_result=$experimentDRootMediaMapsResult
+experiment_e_root_mod_info_recommended=$($experimentERootModInfoRecommended.ToString().ToLower())
+map_folder_discovery_risk=$mapFolderDiscoveryRisk
 public_playable_claim_allowed=false
 load_test_not_performed=true
 ${fence}

@@ -552,6 +552,25 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7I — Variant D root media failure and Experiment E preparation:**
+Variant D: root `media/maps/` duplicate + `42/media/maps/` — still empty scan.
+`ROOT_MEDIA_MAPS_ALONE_INSUFFICIENT` confirmed. Root `mod.info` absent in Variant D.
+Square/blocked visual area observed — NOT proof of map registration (scan empty).
+Experiment E: root `mod.info` + root `media/maps/` + `42/` preserved.
+Inspector updated: `has_dual_mod_info_layout`, `experiment_e_root_mod_info_recommended`.
+
+Status labels:
+```text
+MAP7F_VARIANT_D_MAP_FOLDER_SCAN_EMPTY
+ROOT_MEDIA_MAPS_ALONE_INSUFFICIENT
+EXPERIMENT_E_ROOT_MOD_INFO_RECOMMENDED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No PZ assets.
+Next: Experiment E human-only retest with dual-layout candidate.
+
 **MAP-7H — Variant B/C registration failures and discovery path investigation:**
 Variants B (`Map=candidate`) and C (`Map=Muldraugh;candidate`) both confirm empty
 IsoMetaGrid map folder scan. Map= ordering variants A/B/C exhausted.
