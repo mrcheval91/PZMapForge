@@ -8,6 +8,55 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7M: Record Variant H and add known-working map contract comparator)
+- docs/MAP_7M_VARIANT_H_AND_WORKING_MAP_CONTRACT.md: Variant H result record.
+  - Variant H: common/media/maps layout. MAP7F_VARIANT_H_MAP_FOLDER_SCAN_EMPTY.
+  - COMMON_LAYOUT_ALONE_INSUFFICIENT; VARIANTS_ABCDEFGH_EXHAUSTED.
+  - Decisive signal clarification: map_folders_list_empty=true is decisive.
+    No city choice, forest world, player death/respawn are NOT decisive.
+  - KNOWN_WORKING_MAP_COMPARATOR_REQUIRED; MAP_FOLDER_DISCOVERY_CONTRACT_UNKNOWN.
+  - Decision tree for comparator results.
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-known-working-map-contract.ps1: new comparator.
+  - Accepts CandidateRoot and ReferenceRoot -- both MUST be under .local/.
+  - Does NOT read PZ install, Workshop, mods, or Server paths.
+  - Compares: layout (42/, 42.0/, common/), mod.info/map.info field names and values,
+    file naming (world_0_0 vs 0_0 lotpack), worldmap files, biomemap folder,
+    no-BOM/ASCII status, SHA-256 hashes, file sizes.
+  - Reports: mod/map_info_fields_in_reference_not_candidate, value differences,
+    decision_signals, version_folder_differs, common_folder_differs.
+  - Writes map-known-working-contract-report.json + .md.
+  - No binary contents copied into report (names/sizes/hashes only).
+- scripts/prepare-build42-map7m-known-working-contract-packet.ps1:
+  - .local/ output guard.
+  - Generates experiment-H candidate (common/ layout, same as MAP-7L).
+  - Creates reference-known-working-map/ placeholder under .local/.
+  - Writes README with instructions for human to place reference mod.
+  - Does NOT run comparator automatically (no reference available yet).
+  - Writes 6 packet files:
+    MAP_7M_KNOWN_WORKING_CONTRACT_PACKET.md, MAP_7M_VARIANT_H_RESULT_SUMMARY.md,
+    MAP_7M_REFERENCE_CAPTURE_INSTRUCTIONS.md, MAP_7M_NEXT_DECISION_TREE.md,
+    map7m-preflight.json (VARIANTS_ABCDEFGH_EXHAUSTED=true, comparator_run=false),
+    map7m-preflight.md.
+- scripts/test-build42-map7m-known-working-contract.ps1: 12 assertions.
+  - Tests 1-2: comparator refuses non-.local CandidateRoot/ReferenceRoot.
+  - Test 3: comparator produces report for two .local fixtures.
+  - Tests 4-5: detects differing mod.info/map.info fields.
+  - Test 6: detects 42 vs 42.0 folder difference.
+  - Test 7: detects common/media/maps presence in reference.
+  - Test 8: detects no-BOM/ASCII for text files.
+  - Tests 9-12: packet all 6 docs present, VARIANTS_ABCDEFGH_EXHAUSTED,
+    public_playable=false, no_automatic_pz_read_or_write=true.
+  - psTotal 937->949.
+- scripts/validate.ps1: MAP-7M section; psTotal 937->949; v0.42.
+- scripts/write-proof-packet.ps1: v0.42; map7m=12; total 949.
+- scripts/test-proof-packet.ps1: assertions updated (12/949, schema v0.42).
+- docs/IMPLEMENTATION.md: MAP-7M ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7M section.
+
+No load test. No binary writer change. No PZ assets. No playable claim.
+PS 949 / .NET 556 (unchanged).
+
 ### Added (MAP-7L: Record Variant G and add common layout experiment)
 - docs/MAP_7L_VARIANT_G_AND_COMMON_LAYOUT_PIVOT.md: Variant G result record.
   - Variant G: mod.info map= field (H8). MAP7F_VARIANT_G_MAP_FOLDER_SCAN_EMPTY.

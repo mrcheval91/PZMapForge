@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.41) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.42) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
     planning recommendation artifacts, plan-recommendations contract (incl. thresholds_used),
     and a separate dotnet_validation_summary section tracking .NET xUnit test counts.
@@ -147,7 +147,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.41'
+    schema                  = 'pzmapforge.proof-packet.v0.42'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -202,6 +202,7 @@ $packet = [ordered]@{
         map7b_lua_metadata_tests          = 21
         map7c_metadata_v3_packet_tests    = 18
         map7d_metadata_v4_packet_tests    = 15
+        map7m_known_working_contract_tests   = 12
         map7l_common_layout_experiment_tests = 15
         map7k_modinfo_map_field_tests        = 11
         map7j_metadata_contract_tests       = 17
@@ -210,7 +211,7 @@ $packet = [ordered]@{
         map7g_variant_a_failure_tests     = 8
         map7f_registration_diagnostic_tests = 11
         map7e_diagnostics_tests           = 11
-        total_expected_assertions         = 937
+        total_expected_assertions         = 949
     }
     dotnet_validation_summary = [ordered]@{
         test_total                          = 556

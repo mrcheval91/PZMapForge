@@ -552,6 +552,28 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7M — Variant H failure and known-working map contract comparator:**
+Variant H: common/media/maps layout -- still empty scan. `VARIANTS_ABCDEFGH_EXHAUSTED`.
+`COMMON_LAYOUT_ALONE_INSUFFICIENT`. `MAP_FOLDER_DISCOVERY_CONTRACT_UNKNOWN`.
+Key clarification: no city choice, forest world, and player death are NOT decisive signals.
+`map_folders_list_empty=true` is the only decisive signal.
+New comparator: `inspect-build42-known-working-map-contract.ps1` -- reads both roots
+from `.local/` only; compares layout, mod.info/map.info fields, naming, no-BOM.
+
+Status labels:
+```text
+MAP7F_VARIANT_H_MAP_FOLDER_SCAN_EMPTY
+COMMON_LAYOUT_ALONE_INSUFFICIENT
+VARIANTS_ABCDEFGH_EXHAUSTED
+MAP_FOLDER_DISCOVERY_CONTRACT_UNKNOWN
+KNOWN_WORKING_MAP_COMPARATOR_REQUIRED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No PZ assets.
+Next human action: provide known-working Build 42 map mod under .local/ for comparison.
+
 **MAP-7L — Variant G failure and Build 42 common/media/maps layout pivot:**
 Variant G: mod.info map= field (H8) -- still empty scan. `VARIANTS_ABCDEFG_EXHAUSTED`.
 Operator evidence: documented Build 42 layout uses `common/media/maps/<MapId>/`.
