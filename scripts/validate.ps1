@@ -228,6 +228,43 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-7U Coordinate-aligned diagnostic ---"
+$map7uDoc          = Join-Path $repoRoot 'docs\MAP_7U_MODROOT_LAYOUT_MATCH_AND_COORDINATE_DISCRIMINATOR.md'
+$map7uInspector    = Join-Path $repoRoot 'scripts\inspect-build42-workshop-cell-coordinate-contract.ps1'
+$map7uPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map7u-coordinate-discriminator-packet.ps1'
+$map7uTests        = Join-Path $repoRoot 'scripts\test-build42-map7u-coordinate-discriminator.ps1'
+if (-not (Test-Path -LiteralPath $map7uDoc))          { throw "MAP-7U doc missing" }
+Write-Output "OK: docs\MAP_7U_MODROOT_LAYOUT_MATCH_AND_COORDINATE_DISCRIMINATOR.md"
+if (-not (Test-Path -LiteralPath $map7uInspector))    { throw "MAP-7U inspector missing" }
+Write-Output "OK: scripts\inspect-build42-workshop-cell-coordinate-contract.ps1"
+if (-not (Test-Path -LiteralPath $map7uPacketScript)) { throw "MAP-7U packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map7u-coordinate-discriminator-packet.ps1"
+if (-not (Test-Path -LiteralPath $map7uTests))        { throw "MAP-7U tests missing" }
+Write-Output "OK: scripts\test-build42-map7u-coordinate-discriminator.ps1"
+$map7uDocContent = Get-Content -LiteralPath $map7uDoc -Raw
+if ($map7uDocContent -notmatch 'MAP7U_MODROOT_LAYOUT_MATCH_CONFIRMED') { throw "MAP-7U doc missing MAP7U_MODROOT_LAYOUT_MATCH_CONFIRMED" }
+Write-Output "OK: doc contains MAP7U_MODROOT_LAYOUT_MATCH_CONFIRMED"
+if ($map7uDocContent -notmatch 'COORDINATE_DISCRIMINATOR_IDENTIFIED') { throw "MAP-7U doc missing COORDINATE_DISCRIMINATOR_IDENTIFIED" }
+Write-Output "OK: doc contains COORDINATE_DISCRIMINATOR_IDENTIFIED"
+if ($map7uDocContent -notmatch 'BINARY_WRITER_GATE_STILL_CLOSED') { throw "MAP-7U doc missing BINARY_WRITER_GATE_STILL_CLOSED" }
+Write-Output "OK: doc contains BINARY_WRITER_GATE_STILL_CLOSED"
+if ($map7uDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-7U doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+$map7uInspContent = Get-Content -LiteralPath $map7uInspector -Raw
+if ($map7uInspContent -notmatch '\.local') { throw "MAP-7U inspector missing .local refusal" }
+Write-Output "OK: inspector contains .local refusal language"
+if ($map7uInspContent -notmatch 'workshop-cell-coordinate-contract') { throw "MAP-7U inspector missing output filename" }
+Write-Output "OK: inspector contains workshop-cell-coordinate-contract output"
+$map7uPacketContent = Get-Content -LiteralPath $map7uPacketScript -Raw
+if ($map7uPacketContent -notmatch '\.local') { throw "MAP-7U packet script missing .local refusal" }
+Write-Output "OK: packet script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-7U coordinate-aligned diagnostic tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7uTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7U coordinate-aligned diagnostic tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-7T Workshop K002 runtime payload comparison ---"
 $map7tDoc          = Join-Path $repoRoot 'docs\MAP_7T_WORKSHOP_K002_RUNTIME_PAYLOAD_COMPARISON.md'
 $map7tInspector    = Join-Path $repoRoot 'scripts\inspect-build42-workshop-runtime-payload.ps1'
@@ -1404,7 +1441,7 @@ $psChecks = [ordered]@{
     'Region extraction'                    = 24
     'Primitive classification'             = 22
     'Plan recommendations contract'        = 28
-    'Proof packet'                         = 107
+    'Proof packet'                         = 108
     'Build42 geometry inspector tests'     = 23
     'Build42 format design matrix tests'   = 13
     'Build42 writer contract tests'        = 20
@@ -1425,6 +1462,7 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-7U coordinate-aligned diagnostic tests'  = 20
     'MAP-7T k002 runtime payload tests'           = 20
     'MAP-7S private Workshop staging tests'       = 20
     'MAP-7R Workshop trigger failure tests'       = 20
@@ -1442,14 +1480,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 1082  # = validation_summary.total_expected_assertions in proof-packet v0.49
+$psTotal = 1103  # = validation_summary.total_expected_assertions in proof-packet v0.50
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.49):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.50):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -1457,7 +1495,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.49 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.50 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

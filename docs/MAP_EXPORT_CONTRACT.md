@@ -552,6 +552,39 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7U — Mod-root layout match and coordinate-aligned diagnostic:**
+MAP-7U records that the PZMapForge candidate mod-root layout now exactly
+matches the Dru_map reference (`layout_match=True`, zero BOM violations,
+zero field gaps). The remaining discriminator is cell coordinates and spawn
+alignment: candidate uses a single cell at origin `0_0` with zoom offset `(0,0)`,
+while Dru_map uses 4130 cells centered at `(35,27)` with zoom offset `(10505,12220)`.
+
+New tool: `scripts/inspect-build42-workshop-cell-coordinate-contract.ps1` compares
+lotheader cell counts/ranges, map.info zoom fields, and spawnpoints coordinates
+between two mod roots. Output is `.local/` only.
+
+New staged package: `scripts/prepare-build42-map7u-coordinate-discriminator-packet.ps1`
+renames binary files `0_0` → `35_27` (content unchanged), updates map.info zoom
+to match Dru_map reference (`zoomX=10505, zoomY=12220, zoomS=14.5`), and updates
+spawnpoints to `worldX=35, worldY=27`. Binary writer behavior is unchanged.
+
+Binary writer gate remains closed:
+`BINARY_WRITER_GATE_STILL_CLOSED` — do not mutate LOTH/LOTP/chunkdata until
+`expected_map_lotheader_meta_evidence_found=true`.
+
+Status labels:
+```text
+MAP7U_MODROOT_LAYOUT_MATCH_CONFIRMED
+COORDINATE_DISCRIMINATOR_IDENTIFIED
+BINARY_WRITER_GATE_STILL_CLOSED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_BINARY_WRITER_CHANGES
+```
+
+No load test. No binary writer change. No Steam Workshop upload.
+No PZ assets outside allowed explicit roots. No forbidden writes.
+
 **MAP-7T — Workshop K002 runtime payload comparison:**
 MAP-7T records K002 (Workshop ID 3740642200): the PZMapForge Workshop item now
 downloads, reaches Installed/Ready, and loads the mod — but still does not

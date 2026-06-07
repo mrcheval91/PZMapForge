@@ -8,6 +8,31 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7U: Prepare coordinate-aligned Workshop diagnostic packet)
+- docs/MAP_7U_MODROOT_LAYOUT_MATCH_AND_COORDINATE_DISCRIMINATOR.md: layout match and coordinate discriminator recorded.
+  - MAP7U_MODROOT_LAYOUT_MATCH_CONFIRMED: candidate mod-root layout matches Dru_map (all bool fields equal, 0 BOM violations).
+  - COORDINATE_DISCRIMINATOR_IDENTIFIED: candidate=1 cell at 0_0, Dru_map=4130 cells centered at 35_27.
+  - Zoom discriminator: candidate zoomX/Y=0/0, Dru_map=10505/12220/14.5.
+  - Spawn discriminator: candidate worldX/Y=0/0, Dru_map=35/27.
+  - BINARY_WRITER_GATE_STILL_CLOSED; LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-workshop-cell-coordinate-contract.ps1:
+  - .local/ output guard. Reads only two explicit mod roots.
+  - Detects lotheader cell counts, minX/maxX/minY/maxY, first 40 cells.
+  - Parses map.info zoomX/Y/S fields.
+  - Parses spawnpoints.lua worldX/Y/posX/Y pairs.
+  - Checks whether candidate spawn target cell exists as lotheader file.
+  - Outputs: workshop-cell-coordinate-contract.json+.md; schema v0.1.
+- scripts/prepare-build42-map7u-coordinate-discriminator-packet.ps1:
+  - .local/ guard. Generates empty_grass_v4 via dotnet CLI.
+  - Renames binary files 0_0 -> 35_27 (content unchanged, coordinate relabel only).
+  - Updates map.info: zoomX=10505, zoomY=12220, zoomS=14.5.
+  - Updates spawnpoints.lua: worldX=35, worldY=27.
+  - 8 packet files + staged-workshop-coordinate-aligned package.
+  - preflight: modroot_layout_match=true, coordinate_aligned_target_cell=35_27, binary_contents_mutated=false.
+  - Human checklist: update existing Workshop item 3740642200 manually.
+- scripts/test-build42-map7u-coordinate-discriminator.ps1: 20 assertions.
+- psTotal 1082->1103; proof-packet v0.49->v0.50.
+
 ### Added (MAP-7T: Record Workshop K002 runtime payload comparison)
 - docs/MAP_7T_WORKSHOP_K002_RUNTIME_PAYLOAD_COMPARISON.md: K002 recorded.
   - Workshop ID 3740642200 downloaded, installed, reached Ready.
