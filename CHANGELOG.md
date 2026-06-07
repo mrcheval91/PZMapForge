@@ -8,6 +8,24 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7S: Prepare private Workshop staging packet)
+- docs/MAP_7S_PRIVATE_WORKSHOP_STAGING_PACKET.md: Staging packet doctrine.
+  - MAP7S_WORKSHOP_STAGING_PACKET_CREATED; NO_AUTOMATIC_WORKSHOP_UPLOAD; STAGED_PACKAGE_LOCAL_ONLY.
+  - Staged package uses Dru_map-aligned layout (MAP-7O contract): root mod.info + 42/mod.info + no common/mod.info + common/media/maps/.
+  - Human upload checklist: create NEW private/unlisted Workshop item; do NOT use 3355966216 (Dru_map's ID); own Workshop ID required.
+  - Server wiring template: Mods=pzmapforge_build42_candidate_v4_001 + WorkshopItems=<PZMapForgeOwnWorkshopId>.
+  - Success: expected_map_lotheader_meta_evidence_found=true; binary writer gate opens.
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false; NO_BINARY_WRITER_CHANGES.
+- scripts/prepare-build42-map7s-private-workshop-staging-packet.ps1:
+  - .local/ output guard.
+  - Generates empty_grass_v4 candidate via dotnet CLI.
+  - Stages Dru_map-aligned Workshop package under .local/staged-workshop/<MapId>/.
+  - Writes 8 packet files: staging packet, upload checklist, server wiring template, log capture, success/failure criteria, manifest, preflight JSON+MD.
+  - preflight: variant_j_result/borrowed_workshopitems_trigger_insufficient/requires_own_workshop_id/automatic_workshop_upload_performed=false/staged_package_created=true.
+  - No PZ run; no Workshop/mods/Server writes; no Steam API calls.
+- scripts/test-build42-map7s-private-workshop-staging.ps1: 20 assertions.
+- psTotal 1040->1061; proof-packet v0.47->v0.48.
+
 ### Added (MAP-7R: Record borrowed WorkshopItems trigger failure)
 - docs/MAP_7R_VARIANT_J_WORKSHOP_TRIGGER_FAILURE.md: Variant J recorded.
   - MAP7R_VARIANT_J_WORKSHOP_TRIGGER_INSUFFICIENT: WorkshopItems=3355966216 (Dru_map's ID) was insufficient for local loose mod.

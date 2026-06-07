@@ -228,6 +228,37 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-7S Private Workshop staging packet ---"
+$map7sDoc          = Join-Path $repoRoot 'docs\MAP_7S_PRIVATE_WORKSHOP_STAGING_PACKET.md'
+$map7sPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map7s-private-workshop-staging-packet.ps1'
+$map7sTests        = Join-Path $repoRoot 'scripts\test-build42-map7s-private-workshop-staging.ps1'
+if (-not (Test-Path -LiteralPath $map7sDoc))          { throw "MAP-7S doc missing" }
+Write-Output "OK: docs\MAP_7S_PRIVATE_WORKSHOP_STAGING_PACKET.md"
+if (-not (Test-Path -LiteralPath $map7sPacketScript)) { throw "MAP-7S packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map7s-private-workshop-staging-packet.ps1"
+if (-not (Test-Path -LiteralPath $map7sTests))        { throw "MAP-7S tests missing" }
+Write-Output "OK: scripts\test-build42-map7s-private-workshop-staging.ps1"
+$map7sDocContent = Get-Content -LiteralPath $map7sDoc -Raw
+if ($map7sDocContent -notmatch 'MAP7S_WORKSHOP_STAGING_PACKET_CREATED') { throw "MAP-7S doc missing MAP7S_WORKSHOP_STAGING_PACKET_CREATED" }
+Write-Output "OK: doc contains MAP7S_WORKSHOP_STAGING_PACKET_CREATED"
+if ($map7sDocContent -notmatch 'NO_AUTOMATIC_WORKSHOP_UPLOAD') { throw "MAP-7S doc missing NO_AUTOMATIC_WORKSHOP_UPLOAD" }
+Write-Output "OK: doc contains NO_AUTOMATIC_WORKSHOP_UPLOAD"
+if ($map7sDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-7S doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+if ($map7sDocContent -notmatch 'LOAD_TEST_NOT_PERFORMED') { throw "MAP-7S doc missing LOAD_TEST_NOT_PERFORMED" }
+Write-Output "OK: doc contains LOAD_TEST_NOT_PERFORMED"
+$map7sPacketContent = Get-Content -LiteralPath $map7sPacketScript -Raw
+if ($map7sPacketContent -notmatch '\.local') { throw "MAP-7S packet script missing .local refusal" }
+Write-Output "OK: packet script contains .local refusal language"
+if ($map7sPacketContent -notmatch 'dotnet run') { throw "MAP-7S packet script missing dotnet run call" }
+Write-Output "OK: packet script contains dotnet run for candidate generation"
+
+Write-Output ""
+Write-Output "--- MAP-7S private Workshop staging tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7sTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7S private Workshop staging tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-7R Variant J Workshop trigger failure ---"
 $map7rDoc          = Join-Path $repoRoot 'docs\MAP_7R_VARIANT_J_WORKSHOP_TRIGGER_FAILURE.md'
 $map7rPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map7r-workshop-activation-decision-packet.ps1'
@@ -1336,7 +1367,7 @@ $psChecks = [ordered]@{
     'Region extraction'                    = 24
     'Primitive classification'             = 22
     'Plan recommendations contract'        = 28
-    'Proof packet'                         = 105
+    'Proof packet'                         = 106
     'Build42 geometry inspector tests'     = 23
     'Build42 format design matrix tests'   = 13
     'Build42 writer contract tests'        = 20
@@ -1357,6 +1388,7 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-7S private Workshop staging tests'       = 20
     'MAP-7R Workshop trigger failure tests'       = 20
     'MAP-7Q runtime baseline success tests'      = 20
     'MAP-7P runtime baseline tests'              = 20
@@ -1372,14 +1404,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 1040  # = validation_summary.total_expected_assertions in proof-packet v0.47
+$psTotal = 1061  # = validation_summary.total_expected_assertions in proof-packet v0.48
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.47):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.48):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -1387,7 +1419,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.47 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.48 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

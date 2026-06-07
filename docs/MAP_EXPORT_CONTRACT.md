@@ -552,6 +552,41 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7S — Private Workshop upload staging packet:**
+MAP-7S prepares the human-only private/unlisted Workshop upload staging packet
+for the PZMapForge candidate.
+
+The staging script (`scripts/prepare-build42-map7s-private-workshop-staging-packet.ps1`)
+generates the `empty_grass_v4` candidate via the dotnet CLI and stages it under
+`.local/staged-workshop/<MapId>/` using the Dru_map-aligned layout (MAP-7O contract):
+root `mod.info` + `42/mod.info` + NO `common/mod.info` + `common/media/maps/<MapId>/`.
+
+Nothing is uploaded to Steam Workshop. No PZ load test is performed.
+No binary writer behavior is changed.
+
+Key checklist requirements (all HUMAN-ONLY):
+- Create a NEW private/unlisted Workshop item — do NOT use `3355966216` (Dru_map's ID).
+- Upload staged package and record the new Workshop ID.
+- Wire server: `Mods=pzmapforge_build42_candidate_v4_001 + WorkshopItems=<PZMapForgeOwnWorkshopId>`.
+- Analyze with `-ExpectedMapId pzmapforge_build42_candidate_v4_001 -VariantLabel VariantWSUpload`.
+
+Success condition: `expected_map_lotheader_meta_evidence_found=true`
+OR visible custom PZMapForge built world (not fallback forest).
+
+If success: binary writer gate opens — LOTH/LOTP/chunkdata validation becomes the focus.
+
+Status labels:
+```text
+MAP7S_WORKSHOP_STAGING_PACKET_CREATED
+NO_AUTOMATIC_WORKSHOP_UPLOAD
+STAGED_PACKAGE_LOCAL_ONLY
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No Steam Workshop upload.
+No PZ assets outside .local. No forbidden writes.
+
 **MAP-7R — Variant J borrowed WorkshopItems trigger failure:**
 MAP-7R records Variant J: adding `WorkshopItems=3355966216` (Dru_map's Workshop ID)
 while keeping PZMapForge as a local loose mod did not mount the PZMapForge
