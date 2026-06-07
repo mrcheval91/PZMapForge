@@ -552,6 +552,25 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7O — Dru_map-aligned Experiment I preparation:**
+Experiment I contract: root `mod.info` + `42/mod.info` + NO `common/mod.info` +
+`common/media/maps/<MapId>/` + `lots=NONE` + `zoomX/zoomY/zoomS` in map.info.
+Exact Dru_map layout mirrored for first time. Discovery inspector updated v0.4
+with `has_drumap_aligned_layout` and `common_mod_info_absent`.
+
+Status labels:
+```text
+DRUMAP_ALIGNED_EXPERIMENT_I_PREPARED
+EXPERIMENT_I_USES_ROOT_MOD_INFO_NO_COMMON_MOD_INFO
+MAP_INFO_LOTS_NONE
+MAP_INFO_ZOOM_FIELDS_ADDED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No PZ assets outside .local.
+Next human action: install experiment-I candidate; run Experiment I retest.
+
 **MAP-7N — Reference map ID support and Dru_map comparison:**
 Comparator patched: `-ReferenceMapId` parameter added (defaults to `-MapId`).
 Candidate uses `-MapId`, reference uses `-ReferenceMapId`.

@@ -203,6 +203,11 @@ $hasPlainXYLotpackPattern = (Test-Path -LiteralPath (Join-Path $commonMediaMaps 
 
 $commonMediaMapsRecommended = -not $hasCommonMediaMaps
 
+# Dru_map-aligned layout detection (MAP-7O):
+# root mod.info + 42/mod.info + NO common/mod.info + common/media/maps present.
+$commonModInfoAbsent     = -not $hasCommonModInfo
+$hasDrumapAlignedLayout  = $has42ModInfo -and $hasRootModInfo -and $commonModInfoAbsent -and $hasCommonMediaMaps
+
 # ---------------------------------------------------------------------------
 # Parse map.info and mod.info content
 # ---------------------------------------------------------------------------
@@ -247,7 +252,7 @@ $variantsAbcdefgExhausted = $true
 # ---------------------------------------------------------------------------
 
 $report = [ordered]@{
-    schema                                         = 'pzmapforge.build42-map-discovery-path.v0.3'
+    schema                                         = 'pzmapforge.build42-map-discovery-path.v0.4'
     candidate_root                                 = $CandidateRoot
     map_id                                         = $MapId
     has_versioned_42_media_maps                    = $hasVersioned42MediaMaps
@@ -274,6 +279,8 @@ $report = [ordered]@{
     has_world_xy_lotpack_pattern                   = $hasWorldXYLotpackPattern
     has_plain_xy_lotpack_pattern                   = $hasPlainXYLotpackPattern
     common_media_maps_recommended                  = $commonMediaMapsRecommended
+    common_mod_info_absent                         = $commonModInfoAbsent
+    has_drumap_aligned_layout                      = $hasDrumapAlignedLayout
     variant_g_result                               = $variantGResult
     variants_abcdefg_exhausted                     = $variantsAbcdefgExhausted
     map_folder_discovery_risk                      = $mapFolderDiscoveryRisk
@@ -316,6 +323,8 @@ has_common_media_maps=$($hasCommonMediaMaps.ToString().ToLower())
 has_common_map_info=$($hasCommonMapInfo.ToString().ToLower())
 has_world_xy_lotpack_pattern=$($hasWorldXYLotpackPattern.ToString().ToLower())
 common_media_maps_recommended=$($commonMediaMapsRecommended.ToString().ToLower())
+common_mod_info_absent=$($commonModInfoAbsent.ToString().ToLower())
+has_drumap_aligned_layout=$($hasDrumapAlignedLayout.ToString().ToLower())
 variant_g_result=$variantGResult
 variants_abcdefg_exhausted=$($variantsAbcdefgExhausted.ToString().ToLower())
 map_folder_discovery_risk=$mapFolderDiscoveryRisk

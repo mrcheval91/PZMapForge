@@ -8,6 +8,54 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7O: Add Dru_map aligned metadata experiment)
+- docs/MAP_7O_DRUMAP_ALIGNED_EXPERIMENT_I.md: Experiment I plan.
+  - Dru_map comparison findings: root mod.info + 42/mod.info + common/media/maps/.
+  - Untested combination: root mod.info (NOT common/mod.info) + common/media/maps/.
+  - map.info fixes: lots=NONE, zoomX/Y/S placeholders (MAP-7N evidence).
+  - Success/failure/progress conditions documented.
+  - No city choice is not decisive; map_folders_list_empty is decisive.
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-map-discovery-path.ps1: updated to v0.4.
+  - New fields: has_drumap_aligned_layout, common_mod_info_absent.
+  - has_drumap_aligned_layout: true when root+42 mod.info, no common/mod.info,
+    common/media/maps present.
+  - Updated risk logic and markdown output.
+- scripts/inspect-build42-map-metadata-contract.ps1: updated to v0.3.
+  - Added common/mod.info and common/media/maps/map.info paths.
+  - New fields: map_info_lots_is_none, map_info_has_zoomX/Y/S.
+  - All three sources (42/, root, common/) checked for zoom/lots fields.
+- scripts/prepare-build42-map7o-drumap-aligned-experiment-packet.ps1:
+  - .local/ output guard.
+  - Generates empty_grass_v4 candidate via CLI.
+  - Creates experiment-I candidate (root mod.info + 42/mod.info + NO common/mod.info +
+    common/media/maps/).
+  - Modifies map.info: lots=NONE, adds zoomX=0, zoomY=0, zoomS=1.
+  - Placeholder files: thumb.png, worldmap.xml/forest, maps/biomemap_0_0.png.
+  - Binary files byte-exact unchanged from empty_grass_v4.
+  - Runs discovery + metadata inspectors.
+  - Optionally runs Dru_map comparator if reference present under .local/.
+  - Writes 11 packet files.
+- scripts/test-build42-map7o-drumap-aligned-experiment.ps1: 19 assertions.
+  - Tests 1-2: path guard + all 11 files present.
+  - Tests 3-5: root mod.info, 42/mod.info, NO common/mod.info.
+  - Test 6: common/media/maps/map.info exists.
+  - Tests 7-10: lots=NONE, zoomX, zoomY, zoomS in map.info.
+  - Tests 11-13: no-BOM on root/42/common text files.
+  - Test 14: binary sizes unchanged (29646/1056780/1026).
+  - Tests 15-16: preflight drumap_aligned_layout, public_playable=false.
+  - Tests 17-19: HUMAN-ONLY, MAP7F_VARIANT_I_MAP_FOLDER_SCAN_EMPTY,
+    MAP_FOLDER_SCAN_FOUND_BUT_LOTHEADER_FILES_MISSING in docs.
+  - psTotal 958->977.
+- scripts/validate.ps1: MAP-7O section; psTotal 958->977; v0.44.
+- scripts/write-proof-packet.ps1: v0.44; map7o=19; total 977.
+- scripts/test-proof-packet.ps1: assertions updated (19/977, schema v0.44).
+- docs/IMPLEMENTATION.md: MAP-7O ratified row.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-7O section.
+
+No load test. No binary writer change. No PZ assets outside .local. No playable claim.
+PS 977 / .NET 556 (unchanged).
+
 ### Added (MAP-7N: Add reference map id support to known-working comparator)
 - docs/MAP_7N_REFERENCE_MAP_ID_COMPARATOR.md: patch record and Dru_map comparison.
   - Comparator needed -ReferenceMapId when reference map folder name != candidate.

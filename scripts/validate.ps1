@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (958)
+    Final output reports the complete PowerShell validation lane total (977)
     and the .NET lane total (556) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.43 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.44 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,43 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-7O Dru_map-aligned experiment I ---"
+$map7oDoc          = Join-Path $repoRoot 'docs\MAP_7O_DRUMAP_ALIGNED_EXPERIMENT_I.md'
+$map7oPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map7o-drumap-aligned-experiment-packet.ps1'
+$map7oTests        = Join-Path $repoRoot 'scripts\test-build42-map7o-drumap-aligned-experiment.ps1'
+if (-not (Test-Path -LiteralPath $map7oDoc))          { throw "MAP-7O doc missing" }
+Write-Output "OK: docs\MAP_7O_DRUMAP_ALIGNED_EXPERIMENT_I.md"
+if (-not (Test-Path -LiteralPath $map7oPacketScript)) { throw "MAP-7O packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map7o-drumap-aligned-experiment-packet.ps1"
+if (-not (Test-Path -LiteralPath $map7oTests))        { throw "MAP-7O tests missing" }
+Write-Output "OK: scripts\test-build42-map7o-drumap-aligned-experiment.ps1"
+$map7oDocContent = Get-Content -LiteralPath $map7oDoc -Raw
+if ($map7oDocContent -notmatch 'DRUMAP_ALIGNED_EXPERIMENT_I_PREPARED') { throw "MAP-7O doc missing DRUMAP_ALIGNED_EXPERIMENT_I_PREPARED" }
+Write-Output "OK: doc contains DRUMAP_ALIGNED_EXPERIMENT_I_PREPARED"
+if ($map7oDocContent -notmatch 'MAP7F_VARIANT_I_MAP_FOLDER_SCAN_EMPTY') { throw "MAP-7O doc missing MAP7F_VARIANT_I_MAP_FOLDER_SCAN_EMPTY" }
+Write-Output "OK: doc contains MAP7F_VARIANT_I_MAP_FOLDER_SCAN_EMPTY"
+if ($map7oDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-7O doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+$map7oPacketContent = Get-Content -LiteralPath $map7oPacketScript -Raw
+if ($map7oPacketContent -notmatch '\.local') { throw "MAP-7O packet script missing .local refusal" }
+Write-Output "OK: packet script contains .local refusal language"
+$map7oDiscContent = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts\inspect-build42-map-discovery-path.ps1') -Raw
+if ($map7oDiscContent -notmatch 'has_drumap_aligned_layout') { throw "MAP-7O discovery inspector missing has_drumap_aligned_layout" }
+Write-Output "OK: discovery inspector contains has_drumap_aligned_layout"
+if ($map7oDiscContent -notmatch 'common_mod_info_absent') { throw "MAP-7O discovery inspector missing common_mod_info_absent" }
+Write-Output "OK: discovery inspector contains common_mod_info_absent"
+$map7oMetaContent = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts\inspect-build42-map-metadata-contract.ps1') -Raw
+if ($map7oMetaContent -notmatch 'map_info_lots_is_none') { throw "MAP-7O metadata inspector missing map_info_lots_is_none" }
+Write-Output "OK: metadata inspector contains map_info_lots_is_none"
+if ($map7oMetaContent -notmatch 'map_info_has_zoomX') { throw "MAP-7O metadata inspector missing map_info_has_zoomX" }
+Write-Output "OK: metadata inspector contains map_info_has_zoomX"
+
+Write-Output ""
+Write-Output "--- MAP-7O Dru_map-aligned experiment tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7oTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7O Dru_map-aligned experiment tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-7N reference map id comparator ---"
@@ -1212,6 +1249,7 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-7O Dru_map-aligned experiment tests' = 19
     'MAP-7N reference map id tests'          = 9
     'MAP-7M known-working contract tests'    = 12
     'MAP-7L common layout experiment tests'  = 15
@@ -1223,14 +1261,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 958   # = validation_summary.total_expected_assertions in proof-packet v0.43
+$psTotal = 977   # = validation_summary.total_expected_assertions in proof-packet v0.44
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.43):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.44):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -1238,7 +1276,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.43 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.44 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

@@ -129,10 +129,12 @@ function Read-FileRecord {
 # File paths
 # ---------------------------------------------------------------------------
 
-$v42ModInfoPath   = Join-Path $CandidateRoot '42\mod.info'
-$rootModInfoPath  = Join-Path $CandidateRoot 'mod.info'
-$v42MapInfoPath   = Join-Path $CandidateRoot "42\media\maps\$MapId\map.info"
-$rootMapInfoPath  = Join-Path $CandidateRoot "media\maps\$MapId\map.info"
+$v42ModInfoPath      = Join-Path $CandidateRoot '42\mod.info'
+$rootModInfoPath     = Join-Path $CandidateRoot 'mod.info'
+$v42MapInfoPath      = Join-Path $CandidateRoot "42\media\maps\$MapId\map.info"
+$rootMapInfoPath     = Join-Path $CandidateRoot "media\maps\$MapId\map.info"
+$commonMapInfoPath   = Join-Path $CandidateRoot "common\media\maps\$MapId\map.info"
+$commonModInfoPath   = Join-Path $CandidateRoot 'common\mod.info'
 
 # ---------------------------------------------------------------------------
 # Read records
@@ -140,10 +142,12 @@ $rootMapInfoPath  = Join-Path $CandidateRoot "media\maps\$MapId\map.info"
 
 Write-Output "Inspecting metadata: $CandidateRoot"
 
-$v42ModInfo  = Read-FileRecord $v42ModInfoPath  '42/mod.info'
-$rootModInfo = Read-FileRecord $rootModInfoPath 'root/mod.info'
-$v42MapInfo  = Read-FileRecord $v42MapInfoPath  '42/media/maps/map.info'
-$rootMapInfo = Read-FileRecord $rootMapInfoPath 'root/media/maps/map.info'
+$v42ModInfo   = Read-FileRecord $v42ModInfoPath    '42/mod.info'
+$rootModInfo  = Read-FileRecord $rootModInfoPath   'root/mod.info'
+$commonModInfo = Read-FileRecord $commonModInfoPath 'common/mod.info'
+$v42MapInfo   = Read-FileRecord $v42MapInfoPath    '42/media/maps/map.info'
+$rootMapInfo  = Read-FileRecord $rootMapInfoPath   'root/media/maps/map.info'
+$commonMapInfo = Read-FileRecord $commonMapInfoPath 'common/media/maps/map.info'
 
 # ---------------------------------------------------------------------------
 # ID match analysis
@@ -203,7 +207,7 @@ $hypothesisNotes = [string[]]@(
 # ---------------------------------------------------------------------------
 
 $report = [ordered]@{
-    schema                               = 'pzmapforge.build42-map-metadata-contract.v0.2'
+    schema                               = 'pzmapforge.build42-map-metadata-contract.v0.3'
     candidate_root                       = $CandidateRoot
     expected_map_id                      = $MapId
     expected_mod_id                      = $ModId
@@ -229,6 +233,18 @@ $report = [ordered]@{
     mod_info_map_value_matches_expected  = $modInfoMapValueMatchesExpected
     h5_folder_id_alignment_result        = $h5FolderIdAlignmentResult
     h8_mod_info_map_field_recommended    = $h8ModInfoMapFieldRecommended
+    map_info_lots_is_none                = (Get-FieldValue $v42MapInfo.fields     'lots') -eq 'NONE' -or
+                                           (Get-FieldValue $rootMapInfo.fields    'lots') -eq 'NONE' -or
+                                           (Get-FieldValue $commonMapInfo.fields  'lots') -eq 'NONE'
+    map_info_has_zoomX                   = (Get-FieldValue $v42MapInfo.fields     'zoomX') -ne '' -or
+                                           (Get-FieldValue $rootMapInfo.fields    'zoomX') -ne '' -or
+                                           (Get-FieldValue $commonMapInfo.fields  'zoomX') -ne ''
+    map_info_has_zoomY                   = (Get-FieldValue $v42MapInfo.fields     'zoomY') -ne '' -or
+                                           (Get-FieldValue $rootMapInfo.fields    'zoomY') -ne '' -or
+                                           (Get-FieldValue $commonMapInfo.fields  'zoomY') -ne ''
+    map_info_has_zoomS                   = (Get-FieldValue $v42MapInfo.fields     'zoomS') -ne '' -or
+                                           (Get-FieldValue $rootMapInfo.fields    'zoomS') -ne '' -or
+                                           (Get-FieldValue $commonMapInfo.fields  'zoomS') -ne ''
     hypothesis_notes                     = $hypothesisNotes
     variant_e_result                     = 'MAP7F_VARIANT_E_MAP_FOLDER_SCAN_EMPTY'
     map_line_variants_exhausted          = $true
