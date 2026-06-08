@@ -552,6 +552,37 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7X — Actual registration contract result: map.bin ruled out, non-cell sidecar gap:**
+MAP-7X records the actual MAP-7W inspector run against the downloaded candidate
+Workshop root and local Dru_map reference.
+
+Key findings:
+- `map.bin`: RULED OUT — neither side has it (`reference_has_map_bin=false`).
+- 12,398 missing reference files dominated by expected Dru_map cells (4130×3=12,390).
+  Do NOT copy Dru_map cell files into PZMapForge.
+- 8 non-cell sidecar files missing from candidate: `streets.xml.bin`,
+  `worldmap.xml.bin`, `worldmap-forest.xml.bin`, and `.bak` variants, `worldmap.png`.
+- map.info/mod.info differences are expected identity differences, not proven blockers.
+
+Binary writer gate remains closed: `BINARY_WRITER_GATE_STILL_CLOSED`.
+Next branch: non-cell sidecar and runtime registration probe (generate minimal stubs
+for `streets.xml.bin` / `worldmap.xml.bin` under `.local/`, upload, test).
+
+Status labels:
+```text
+MAP7X_ACTUAL_CONTRACT_RESULT_RECORDED
+MAP_BIN_DISCRIMINATOR_FALSE
+NON_CELL_SIDECAR_GAP_IDENTIFIED
+RUNTIME_MOUNT_DISCRIMINATOR_FOUND
+BINARY_WRITER_GATE_STILL_CLOSED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_THIRD_PARTY_FILES_COPIED
+```
+
+No load test. No binary writer change. No Steam Workshop upload.
+No third-party reference files copied. No forbidden writes.
+
 **MAP-7W — Runtime map registration / map folder mounting contract inspector:**
 MAP-7W adds the runtime map-registration contract inspector in response to MAP-7V's
 finding that binary presence vs absence produces identical fallback-forest results.

@@ -228,6 +228,39 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-7X Actual registration contract result ---"
+$map7xDoc          = Join-Path $repoRoot 'docs\MAP_7X_ACTUAL_REGISTRATION_CONTRACT_RESULT.md'
+$map7xPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map7x-actual-contract-result-packet.ps1'
+$map7xTests        = Join-Path $repoRoot 'scripts\test-build42-map7x-actual-contract-result.ps1'
+if (-not (Test-Path -LiteralPath $map7xDoc))          { throw "MAP-7X doc missing" }
+Write-Output "OK: docs\MAP_7X_ACTUAL_REGISTRATION_CONTRACT_RESULT.md"
+if (-not (Test-Path -LiteralPath $map7xPacketScript)) { throw "MAP-7X packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map7x-actual-contract-result-packet.ps1"
+if (-not (Test-Path -LiteralPath $map7xTests))        { throw "MAP-7X tests missing" }
+Write-Output "OK: scripts\test-build42-map7x-actual-contract-result.ps1"
+$map7xDocContent = Get-Content -LiteralPath $map7xDoc -Raw
+if ($map7xDocContent -notmatch 'MAP7X_ACTUAL_CONTRACT_RESULT_RECORDED') { throw "MAP-7X doc missing MAP7X_ACTUAL_CONTRACT_RESULT_RECORDED" }
+Write-Output "OK: doc contains MAP7X_ACTUAL_CONTRACT_RESULT_RECORDED"
+if ($map7xDocContent -notmatch 'MAP_BIN_DISCRIMINATOR_FALSE') { throw "MAP-7X doc missing MAP_BIN_DISCRIMINATOR_FALSE" }
+Write-Output "OK: doc contains MAP_BIN_DISCRIMINATOR_FALSE"
+if ($map7xDocContent -notmatch 'NON_CELL_SIDECAR_GAP_IDENTIFIED') { throw "MAP-7X doc missing NON_CELL_SIDECAR_GAP_IDENTIFIED" }
+Write-Output "OK: doc contains NON_CELL_SIDECAR_GAP_IDENTIFIED"
+if ($map7xDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-7X doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+if ($map7xDocContent -notmatch 'LOAD_TEST_NOT_PERFORMED') { throw "MAP-7X doc missing LOAD_TEST_NOT_PERFORMED" }
+Write-Output "OK: doc contains LOAD_TEST_NOT_PERFORMED"
+if ($map7xDocContent -notmatch 'NO_THIRD_PARTY_FILES_COPIED') { throw "MAP-7X doc missing NO_THIRD_PARTY_FILES_COPIED" }
+Write-Output "OK: doc contains NO_THIRD_PARTY_FILES_COPIED"
+$map7xPacketContent = Get-Content -LiteralPath $map7xPacketScript -Raw
+if ($map7xPacketContent -notmatch '\.local') { throw "MAP-7X packet script missing .local refusal" }
+Write-Output "OK: packet script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-7X actual contract result tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7xTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7X actual contract result tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-7W Runtime map registration inspector ---"
 $map7wDoc          = Join-Path $repoRoot 'docs\MAP_7W_RUNTIME_MAP_REGISTRATION_MOUNTING_CONTRACT.md'
 $map7wInspector    = Join-Path $repoRoot 'scripts\inspect-build42-map-registration-contract.ps1'
@@ -1511,7 +1544,7 @@ $psChecks = [ordered]@{
     'Region extraction'                    = 24
     'Primitive classification'             = 22
     'Plan recommendations contract'        = 28
-    'Proof packet'                         = 110
+    'Proof packet'                         = 111
     'Build42 geometry inspector tests'     = 23
     'Build42 format design matrix tests'   = 13
     'Build42 writer contract tests'        = 20
@@ -1532,6 +1565,7 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-7X actual contract result tests'         = 20
     'MAP-7W runtime registration tests'           = 20
     'MAP-7V control results tests'                = 20
     'MAP-7U coordinate-aligned diagnostic tests'  = 20
@@ -1552,14 +1586,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 1145  # = validation_summary.total_expected_assertions in proof-packet v0.52
+$psTotal = 1166  # = validation_summary.total_expected_assertions in proof-packet v0.53
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.52):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.53):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -1567,7 +1601,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.52 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.53 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

@@ -8,6 +8,22 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7X: Record actual runtime registration contract result)
+- docs/MAP_7X_ACTUAL_REGISTRATION_CONTRACT_RESULT.md: actual MAP-7W inspector result recorded.
+  - MAP7X_ACTUAL_CONTRACT_RESULT_RECORDED; MAP_BIN_DISCRIMINATOR_FALSE; NON_CELL_SIDECAR_GAP_IDENTIFIED.
+  - map.bin: ruled out (neither reference nor candidate has it).
+  - 12,398 missing files dominated by expected Dru_map cell files (4130 lotheader + 4130 lotpack + 4130 chunkdata = 12390 cells); DO NOT copy Dru_map cells.
+  - Non-cell sidecar gap: streets.xml.bin, worldmap.xml.bin, worldmap-forest.xml.bin (and .bak variants), worldmap.png (8 files total).
+  - map.info/mod.info differences are expected identity differences, not proven blockers.
+  - BINARY_WRITER_GATE_STILL_CLOSED; NO_THIRD_PARTY_FILES_COPIED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+  - Next branch: non-cell sidecar and runtime registration probe.
+- scripts/prepare-build42-map7x-actual-contract-result-packet.ps1:
+  - .local/ guard; no PZ run; no Workshop upload; no reference file copying.
+  - 5 packet files: actual contract result, non-cell sidecar discriminators, next decision tree, preflight JSON+MD.
+  - preflight: map_bin_discriminator=false, missing_non_cell_sidecars=[streets.xml.bin etc.], binary_writer_gate_closed=true, third_party_reference_files_copied=false.
+- scripts/test-build42-map7x-actual-contract-result.ps1: 20 assertions.
+- psTotal 1145->1166; proof-packet v0.52->v0.53.
+
 ### Added (MAP-7W: Add runtime map registration contract inspector)
 - docs/MAP_7W_RUNTIME_MAP_REGISTRATION_MOUNTING_CONTRACT.md: active branch doctrine.
   - MAP7W_RUNTIME_MAP_REGISTRATION_INSPECTOR_ADDED; BINARY_FORMAT_INVESTIGATION_PAUSED.
