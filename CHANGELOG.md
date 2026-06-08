@@ -8,6 +8,34 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8B: Record version-scoped media path runtime result)
+- docs/MAP_8B_VERSION_MEDIA_RUNTIME_RESULT.md: MAP-8B partial registration breakthrough record.
+  - MAP8B_PARTIAL_REGISTRATION_BREAKTHROUGH: 42\media path visible to worldmap loader.
+  - Client attempted reads of worldmap.xml.bin and worldmap-forest.xml.bin from 42\media\maps\<MapId>\.
+  - Both failed java.io.IOException: invalid format (magic doesn't match).
+  - IsoMetaGrid map folder list still empty (server and client).
+  - Visual custom city selector visible; player fully connected at 10878,10028,0.
+  - Generated worldmap .bin stubs now actively read and rejected.
+  - Binary writer gate still closed; no binary writer changes; no third-party files copied.
+  - Next branch candidates: remove invalid .bin stubs / investigate IsoMetaGrid registration contract /
+    inspect known-working version-scoped structure without copying third-party files.
+  - PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/prepare-build42-map8b-runtime-result-packet.ps1:
+  - .local/ guard; refuses output outside .local.
+  - Writes map8b-result-packet.json (schema pzmapforge.map8b-result-packet.v0.1) + MD + packet doc.
+  - Result fields: workshop_ready/mod_loaded/visual_custom_city_selector_visible/player_fully_connected/
+    player_spawn_coordinate=10878,10028,0/iso_meta_grid_map_folder_list_empty=true/
+    version_scoped_media_path_visible_to_worldmap_loader=true/worldmap_bin_invalid_magic=true/
+    playable_claim_allowed=false/binary_writer_gate_closed=true.
+  - No PZ run; no Workshop upload; no binary writer changes; no third-party files copied.
+- scripts/test-build42-map8b-runtime-result.ps1: 20 assertions.
+- scripts/validate.ps1: MAP-8B section added; psTotal 1191->1212; proof-packet v0.55 reference.
+- scripts/write-proof-packet.ps1: v0.54->v0.55; map8b_version_media_runtime_result_tests=20;
+  total_expected_assertions 1191->1212; MD table updated.
+- scripts/test-proof-packet.ps1: map8b assertion added; total_expected_assertions check 1191->1212.
+- docs/IMPLEMENTATION.md: MAP-8B ratified row added.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-8B section added.
+
 ### Added (MAP-7Y: Prepare minimal sidecar stub probe)
 - docs/MAP_7Y_MINIMAL_SIDECAR_STUB_PROBE.md: sidecar stub probe doctrine.
   - MAP7Y_SIDECAR_STUB_PROBE_STAGED; MAP_BIN_DISCRIMINATOR_FALSE; SIDECAR_STUBS_GENERATED_FROM_SCRATCH; NO_THIRD_PARTY_FILES_COPIED.

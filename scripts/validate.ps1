@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (977)
+    Final output reports the complete PowerShell validation lane total (1212)
     and the .NET lane total (556) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.44 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.55 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,37 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-8B Version-scoped media path runtime result ---"
+$map8bDoc          = Join-Path $repoRoot 'docs\MAP_8B_VERSION_MEDIA_RUNTIME_RESULT.md'
+$map8bPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map8b-runtime-result-packet.ps1'
+$map8bTests        = Join-Path $repoRoot 'scripts\test-build42-map8b-runtime-result.ps1'
+if (-not (Test-Path -LiteralPath $map8bDoc))          { throw "MAP-8B doc missing" }
+Write-Output "OK: docs\MAP_8B_VERSION_MEDIA_RUNTIME_RESULT.md"
+if (-not (Test-Path -LiteralPath $map8bPacketScript)) { throw "MAP-8B packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map8b-runtime-result-packet.ps1"
+if (-not (Test-Path -LiteralPath $map8bTests))        { throw "MAP-8B tests missing" }
+Write-Output "OK: scripts\test-build42-map8b-runtime-result.ps1"
+$map8bDocContent = Get-Content -LiteralPath $map8bDoc -Raw
+if ($map8bDocContent -notmatch 'MAP8B_PARTIAL_REGISTRATION_BREAKTHROUGH') { throw "MAP-8B doc missing MAP8B_PARTIAL_REGISTRATION_BREAKTHROUGH" }
+Write-Output "OK: doc contains MAP8B_PARTIAL_REGISTRATION_BREAKTHROUGH"
+if ($map8bDocContent -notmatch 'WORLDMAP_BIN_INVALID_MAGIC') { throw "MAP-8B doc missing WORLDMAP_BIN_INVALID_MAGIC" }
+Write-Output "OK: doc contains WORLDMAP_BIN_INVALID_MAGIC"
+if ($map8bDocContent -notmatch 'ISO_META_GRID_MAP_FOLDER_LIST_EMPTY') { throw "MAP-8B doc missing ISO_META_GRID_MAP_FOLDER_LIST_EMPTY" }
+Write-Output "OK: doc contains ISO_META_GRID_MAP_FOLDER_LIST_EMPTY"
+if ($map8bDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-8B doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+if ($map8bDocContent -notmatch 'BINARY_WRITER_GATE_STILL_CLOSED') { throw "MAP-8B doc missing BINARY_WRITER_GATE_STILL_CLOSED" }
+Write-Output "OK: doc contains BINARY_WRITER_GATE_STILL_CLOSED"
+$map8bPacketContent = Get-Content -LiteralPath $map8bPacketScript -Raw
+if ($map8bPacketContent -notmatch '\.local') { throw "MAP-8B packet script missing .local refusal" }
+Write-Output "OK: packet script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-8B version media runtime result tests ---"
+& powershell -ExecutionPolicy Bypass -File $map8bTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-8B version media runtime result tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-7Y Minimal sidecar stub probe ---"
@@ -1579,7 +1610,7 @@ $psChecks = [ordered]@{
     'Region extraction'                    = 24
     'Primitive classification'             = 22
     'Plan recommendations contract'        = 28
-    'Proof packet'                         = 112
+    'Proof packet'                         = 113
     'Build42 geometry inspector tests'     = 23
     'Build42 format design matrix tests'   = 13
     'Build42 writer contract tests'        = 20
@@ -1600,6 +1631,7 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-8B version media runtime result tests'   = 20
     'MAP-7Y sidecar stub probe tests'             = 24
     'MAP-7X actual contract result tests'         = 20
     'MAP-7W runtime registration tests'           = 20
@@ -1622,14 +1654,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 1191  # = validation_summary.total_expected_assertions in proof-packet v0.54
+$psTotal = 1212  # = validation_summary.total_expected_assertions in proof-packet v0.55
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.54):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.55):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -1637,7 +1669,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.54 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.55 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

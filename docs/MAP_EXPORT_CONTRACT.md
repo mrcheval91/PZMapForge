@@ -585,6 +585,39 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8B — Version-scoped media path runtime result:**
+MAP-8B records the partial registration breakthrough achieved when the Workshop payload
+included the map folder under the version-scoped `42\media\maps\<MapId>\` path.
+
+Key findings:
+- The 42\media path is now visible to the worldmap / city-selection asset loader.
+  The client attempted to read `worldmap.xml.bin` and `worldmap-forest.xml.bin`
+  from `42\media\maps\<MapId>\` and received actual file-read attempts (not file-not-found).
+- Both reads failed with `java.io.IOException: invalid format (magic doesn't match)`.
+  Stack: `zombie.worldMap.WorldMapBinary.read` → `zombie.worldMap.FileTask_LoadWorldMapBinary.call`.
+  The generated ASCII-marker stubs do not satisfy the worldmap binary format.
+- IsoMetaGrid still shows an empty map folder list (server and client).
+  Cell file loading has not occurred.
+- Player fully connected at 10878,10028,0. Spawn location not confirmed as PZMapForge content.
+
+Classification: `MAP8B_PARTIAL_REGISTRATION_BREAKTHROUGH`
+
+Status labels:
+```text
+MAP8B_PARTIAL_REGISTRATION_BREAKTHROUGH
+MAP8B_VERSION_42_MEDIA_PATH_VISIBLE_TO_WORLDMAP_LOADER
+WORLDMAP_BIN_INVALID_MAGIC
+ISO_META_GRID_MAP_FOLDER_LIST_EMPTY
+BINARY_WRITER_GATE_STILL_CLOSED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_BINARY_WRITER_CHANGES
+NO_THIRD_PARTY_FILES_COPIED
+```
+
+No load test. No binary writer change. No Steam Workshop upload by script.
+No third-party files copied. No playable export claimed.
+
 **MAP-7X — Actual registration contract result: map.bin ruled out, non-cell sidecar gap:**
 MAP-7X records the actual MAP-7W inspector run against the downloaded candidate
 Workshop root and local Dru_map reference.

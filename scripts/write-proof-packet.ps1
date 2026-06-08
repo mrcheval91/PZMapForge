@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.54) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.55) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
     planning recommendation artifacts, plan-recommendations contract (incl. thresholds_used),
     and a separate dotnet_validation_summary section tracking .NET xUnit test counts.
@@ -147,7 +147,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.54'
+    schema                  = 'pzmapforge.proof-packet.v0.55'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -202,6 +202,7 @@ $packet = [ordered]@{
         map7b_lua_metadata_tests          = 21
         map7c_metadata_v3_packet_tests    = 18
         map7d_metadata_v4_packet_tests    = 15
+        map8b_version_media_runtime_result_tests = 20
         map7y_sidecar_stub_probe_tests            = 24
         map7x_actual_contract_result_tests        = 20
         map7w_runtime_registration_tests          = 20
@@ -223,7 +224,7 @@ $packet = [ordered]@{
         map7g_variant_a_failure_tests     = 8
         map7f_registration_diagnostic_tests = 11
         map7e_diagnostics_tests           = 11
-        total_expected_assertions         = 1191
+        total_expected_assertions         = 1212
     }
     dotnet_validation_summary = [ordered]@{
         test_total                          = 556
@@ -303,7 +304,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.34
+Schema: pzmapforge.proof-packet.v0.55
 
 ## Claim boundary
 
@@ -360,7 +361,7 @@ planning_artifact_only_not_pz_load_tested
 | Region extraction | 24 |
 | Primitive classification | 22 |
 | Plan recommendations contract | 28 |
-| Proof packet | 102 |
+| Proof packet | 113 |
 | Build42 geometry inspector tests | 23 |
 | Build42 format design matrix tests | 13 |
 | Build42 writer contract tests | 20 |
@@ -382,7 +383,28 @@ planning_artifact_only_not_pz_load_tested
 | MAP-7C metadata v3 packet tests | 18 |
 | MAP-7D metadata v4 packet tests | 15 |
 | MAP-7E diagnostics tests | 11 |
-| Total | 851 |
+| MAP-7F registration diagnostic tests | 11 |
+| MAP-7G variant A failure tests | 8 |
+| MAP-7H discovery path tests | 12 |
+| MAP-7I root modinfo experiment tests | 12 |
+| MAP-7J metadata contract tests | 17 |
+| MAP-7K modinfo map field tests | 11 |
+| MAP-7L common layout experiment tests | 15 |
+| MAP-7M known-working contract tests | 12 |
+| MAP-7N reference map id tests | 9 |
+| MAP-7O Dru_map-aligned experiment tests | 19 |
+| MAP-7P runtime baseline tests | 20 |
+| MAP-7Q runtime baseline success tests | 20 |
+| MAP-7R Workshop trigger failure tests | 20 |
+| MAP-7S private Workshop staging tests | 20 |
+| MAP-7T k002 runtime payload tests | 20 |
+| MAP-7U coordinate-aligned diagnostic tests | 20 |
+| MAP-7V control results tests | 20 |
+| MAP-7W runtime registration tests | 20 |
+| MAP-7X actual contract result tests | 20 |
+| MAP-7Y sidecar stub probe tests | 24 |
+| MAP-8B version media runtime result tests | 20 |
+| Total | 1212 |
 
 ## .NET validation summary (separate lane)
 
