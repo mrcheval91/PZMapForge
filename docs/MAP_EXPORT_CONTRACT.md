@@ -585,6 +585,57 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8G — Known-working Build 42 map contract comparator v2:**
+MAP-8G defines the comparator for the version-scoped `42\media\maps\<MapId>\` layout.
+The comparator reads map.info, file presence, and mod.info fields from both a
+PZMapForge candidate root and a known-working Build 42 map root (both under `.local/`).
+
+Key comparison fields: map.info `lots`/`zoomX/Y/S`/`fixed2x`; worldmap file variants
+(xml vs xml.bin); `spawnregions.lua` presence; `mod.info` fields.
+
+The operator must place text metadata files from a known-working map under `.local/`.
+No cell binary files are copied. No third-party content is redistributed.
+
+Script: `scripts/inspect-build42-known-working-map-contract-v2.ps1`
+Output: `build42-known-working-map-contract-v2.json` + `.md`
+
+Status labels:
+```text
+MAP8G_KNOWN_WORKING_CONTRACT_COMPARATOR_DEFINED
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_THIRD_PARTY_FILES_COPIED
+NO_PZ_RUN_BY_SCRIPT
+```
+
+**MAP-8F — lots=self runtime result:**
+MAP-8F changed only `lots=NONE` to `lots=<MapId>` in map.info relative to MAP-8D.
+
+Key findings:
+- The city selector now lists the PZMapForge candidate (`MAP8F_CITY_SELECTOR_VISIBLE`).
+  This is the first time the candidate appears in the city/spawn selection UI.
+- Selecting the PZMapForge city spawned the player in Muldraugh/fallback (not PZMapForge).
+- IsoMetaGrid still shows an empty map folder list.
+- `WorldMapDataAssetManager` failed to load `worldmap.xml` and `worldmap-forest.xml`.
+- No invalid magic error (stubs were removed in MAP-8D).
+
+Conclusion: `lots=<MapId>` is necessary for city-selector visibility but not sufficient
+for IsoMetaGrid map-folder mounting. The city-selector and IsoMetaGrid are separate subsystems.
+
+Status labels:
+```text
+MAP8F_LOTS_SELF_VISIBLE_BUT_NOT_MOUNTED
+MAP8F_CITY_SELECTOR_VISIBLE
+MAP8F_ISO_META_GRID_MAP_FOLDER_LIST_EMPTY
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_BINARY_WRITER_CHANGES
+NO_THIRD_PARTY_FILES_COPIED
+```
+
+No load test. No binary writer change. No Steam Workshop upload by script.
+No third-party files copied. No playable export claimed.
+
 **MAP-8D — No invalid worldmap bin stubs probe packet:**
 MAP-8D stages a Workshop package that keeps the MAP-8B version-scoped `42\media\maps\<MapId>\`
 layout but removes the invalid generated `.bin` sidecar stubs.

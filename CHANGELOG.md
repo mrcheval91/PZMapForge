@@ -8,6 +8,46 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8G: Record MAP-8F lots=self runtime result + define known-working comparator)
+- docs/MAP_8F_LOTS_SELF_RUNTIME_RESULT.md: MAP-8F runtime result record.
+  - MAP8F_LOTS_SELF_VISIBLE_BUT_NOT_MOUNTED: city selector shows candidate for first time.
+  - lots=NONE -> lots=<MapId> was the only change from MAP-8D.
+  - Player selected PZMapForge city; spawned in Muldraugh/fallback (not PZMapForge content).
+  - IsoMetaGrid map folder list still empty (server and client).
+  - WorldMapDataAssetManager failed to load worldmap.xml/worldmap-forest.xml.
+  - Invalid magic error absent (stubs removed in MAP-8D/8F).
+  - Player fully connected at 10851,9846,0; disconnected at 10856,9850,0.
+  - Conclusion: lots=<MapId> necessary for city selector but not sufficient for IsoMetaGrid.
+  - next_branch=known_working_build42_map_contract_comparator.
+  - PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/prepare-build42-map8f-runtime-result-packet.ps1:
+  - .local/ guard.
+  - Writes map8f-result-packet.json (schema pzmapforge.map8f-result-packet.v0.1) + MD + packet doc.
+  - Result fields: workshop_ready/lots_self/city_selector_visible/invalid_bin_stubs_absent/
+    worldmap_xml_failed_to_load/player_fully_connected/player_spawn_coordinate=10851,9846,0/
+    spawned_in_muldraugh_or_fallback=true/iso_meta_grid_map_folder_list_empty=true/
+    playable_claim_allowed=false/binary_writer_gate_closed=true.
+- scripts/test-build42-map8f-runtime-result.ps1: 20 assertions.
+- docs/MAP_8G_KNOWN_WORKING_CONTRACT_COMPARATOR.md: comparator planning doc.
+  - MAP8G_KNOWN_WORKING_CONTRACT_COMPARATOR_DEFINED.
+  - Scope: 42\media\maps\<MapId>\ version-scoped layout.
+  - Key fields: map.info lots/zoomX/Y/S, worldmap xml vs xml.bin, spawnregions.lua, mod.info.
+  - Human-only operator steps: place known-working map text metadata under .local/.
+  - No cell binary files copied. No third-party content redistributed.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-known-working-map-contract-v2.ps1:
+  - .local/ guard on all three parameters (CandidateRoot/ReferenceRoot/Output).
+  - Reads map.info (key=value), file presence for 11 worldmap/metadata files from both roots.
+  - Computes map_info_field_differences/file_set_differences/worldmap_bin_differs/spawnregions_lua_differs.
+  - Outputs build42-known-working-map-contract-v2.json + .md.
+  - No files copied; no binary contents read; no PZ run.
+- scripts/validate.ps1: MAP-8G + MAP-8F sections added; psTotal 1233->1254; proof-packet v0.57 reference.
+- scripts/write-proof-packet.ps1: v0.56->v0.57; map8f_lots_self_runtime_result_tests=20;
+  total_expected_assertions 1233->1254; MD table updated.
+- scripts/test-proof-packet.ps1: map8f assertion added; total check 1233->1254; schema v0.57.
+- docs/IMPLEMENTATION.md: MAP-8G and MAP-8F ratified rows added.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-8G and MAP-8F sections added.
+
 ### Added (MAP-8D: Prepare no invalid worldmap bin stubs probe packet)
 - docs/MAP_8D_NO_INVALID_WORLDMAP_BIN_STUBS_PACKET.md: probe doctrine.
   - Removes worldmap.xml.bin, worldmap-forest.xml.bin, streets.xml.bin from staged package.
