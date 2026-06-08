@@ -228,6 +228,45 @@ if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G scrip
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
 
 Write-Output ""
+Write-Output "--- MAP-7W Runtime map registration inspector ---"
+$map7wDoc          = Join-Path $repoRoot 'docs\MAP_7W_RUNTIME_MAP_REGISTRATION_MOUNTING_CONTRACT.md'
+$map7wInspector    = Join-Path $repoRoot 'scripts\inspect-build42-map-registration-contract.ps1'
+$map7wPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map7w-runtime-registration-packet.ps1'
+$map7wTests        = Join-Path $repoRoot 'scripts\test-build42-map7w-runtime-registration.ps1'
+if (-not (Test-Path -LiteralPath $map7wDoc))          { throw "MAP-7W doc missing" }
+Write-Output "OK: docs\MAP_7W_RUNTIME_MAP_REGISTRATION_MOUNTING_CONTRACT.md"
+if (-not (Test-Path -LiteralPath $map7wInspector))    { throw "MAP-7W inspector missing" }
+Write-Output "OK: scripts\inspect-build42-map-registration-contract.ps1"
+if (-not (Test-Path -LiteralPath $map7wPacketScript)) { throw "MAP-7W packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map7w-runtime-registration-packet.ps1"
+if (-not (Test-Path -LiteralPath $map7wTests))        { throw "MAP-7W tests missing" }
+Write-Output "OK: scripts\test-build42-map7w-runtime-registration.ps1"
+$map7wDocContent = Get-Content -LiteralPath $map7wDoc -Raw
+if ($map7wDocContent -notmatch 'MAP7W_RUNTIME_MAP_REGISTRATION_INSPECTOR_ADDED') { throw "MAP-7W doc missing MAP7W_RUNTIME_MAP_REGISTRATION_INSPECTOR_ADDED" }
+Write-Output "OK: doc contains MAP7W_RUNTIME_MAP_REGISTRATION_INSPECTOR_ADDED"
+if ($map7wDocContent -notmatch 'BINARY_FORMAT_INVESTIGATION_PAUSED') { throw "MAP-7W doc missing BINARY_FORMAT_INVESTIGATION_PAUSED" }
+Write-Output "OK: doc contains BINARY_FORMAT_INVESTIGATION_PAUSED"
+if ($map7wDocContent -notmatch 'BINARY_WRITER_GATE_STILL_CLOSED') { throw "MAP-7W doc missing BINARY_WRITER_GATE_STILL_CLOSED" }
+Write-Output "OK: doc contains BINARY_WRITER_GATE_STILL_CLOSED"
+if ($map7wDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-7W doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+if ($map7wDocContent -notmatch 'LOAD_TEST_NOT_PERFORMED') { throw "MAP-7W doc missing LOAD_TEST_NOT_PERFORMED" }
+Write-Output "OK: doc contains LOAD_TEST_NOT_PERFORMED"
+$map7wInspContent = Get-Content -LiteralPath $map7wInspector -Raw
+if ($map7wInspContent -notmatch '\.local') { throw "MAP-7W inspector missing .local refusal" }
+Write-Output "OK: inspector contains .local refusal language"
+if ($map7wInspContent -notmatch 'map-registration-contract') { throw "MAP-7W inspector missing output filename" }
+Write-Output "OK: inspector contains map-registration-contract output filename"
+$map7wPacketContent = Get-Content -LiteralPath $map7wPacketScript -Raw
+if ($map7wPacketContent -notmatch '\.local') { throw "MAP-7W packet script missing .local refusal" }
+Write-Output "OK: packet script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-7W runtime registration tests ---"
+& powershell -ExecutionPolicy Bypass -File $map7wTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-7W runtime registration tests failed." }
+
+Write-Output ""
 Write-Output "--- MAP-7V K004/K006 control results ---"
 $map7vDoc          = Join-Path $repoRoot 'docs\MAP_7V_K004_K006_CONTROL_RESULTS.md'
 $map7vPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map7v-control-results-packet.ps1'
@@ -1472,7 +1511,7 @@ $psChecks = [ordered]@{
     'Region extraction'                    = 24
     'Primitive classification'             = 22
     'Plan recommendations contract'        = 28
-    'Proof packet'                         = 109
+    'Proof packet'                         = 110
     'Build42 geometry inspector tests'     = 23
     'Build42 format design matrix tests'   = 13
     'Build42 writer contract tests'        = 20
@@ -1493,6 +1532,7 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-7W runtime registration tests'           = 20
     'MAP-7V control results tests'                = 20
     'MAP-7U coordinate-aligned diagnostic tests'  = 20
     'MAP-7T k002 runtime payload tests'           = 20
@@ -1512,14 +1552,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 1124  # = validation_summary.total_expected_assertions in proof-packet v0.51
+$psTotal = 1145  # = validation_summary.total_expected_assertions in proof-packet v0.52
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.51):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.52):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -1527,7 +1567,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.51 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.52 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

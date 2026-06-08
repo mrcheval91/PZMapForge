@@ -8,6 +8,27 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7W: Add runtime map registration contract inspector)
+- docs/MAP_7W_RUNTIME_MAP_REGISTRATION_MOUNTING_CONTRACT.md: active branch doctrine.
+  - MAP7W_RUNTIME_MAP_REGISTRATION_INSPECTOR_ADDED; BINARY_FORMAT_INVESTIGATION_PAUSED.
+  - Seven hypotheses: H1=map.bin missing, H2/H3=mod.info/map.info value mismatch, H4=Workshop path differs, H5=server log, H6=Map= syntax, H7=spawnregions.lua.
+  - map.bin not declared as cause until inspector proves it from local reference.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-map-registration-contract.ps1:
+  - .local/ output guard. Reads only two explicit mod roots.
+  - Inventories all files in common/media/maps/<MapId>/ (non-recursive flat list + has_map_bin, has_worldmap_xml, has_lotheader etc.).
+  - Compares mod.info and map.info key/value pairs for differences.
+  - Detects spawnpoints.lua style (function SpawnPoints() vs bare return).
+  - Parses optional log files for: Workshop Ready, mod loaded, map-folder scan, SANITY CHECK FAIL, IsoMetaGrid, lotheader evidence.
+  - Outputs: map-registration-contract.json+.md; schema v0.1.
+  - Key fields: exact_file_set_match, reference_has_map_bin, candidate_has_map_bin, map_bin_discriminator, map_info_value_differences_count, runtime_mount_discriminator_found.
+- scripts/prepare-build42-map7w-runtime-registration-packet.ps1:
+  - .local/ guard. Optionally runs inspector if roots exist. Always writes packet docs.
+  - 6 packet files: registration packet, file-set discriminators, log evidence plan, next decision tree, preflight JSON+MD.
+  - preflight: binary_format_investigation_paused=true, binary_writer_gate_closed=true, next_branch=runtime_map_registration_and_mounting.
+- scripts/test-build42-map7w-runtime-registration.ps1: 20 assertions.
+- psTotal 1124->1145; proof-packet v0.51->v0.52.
+
 ### Added (MAP-7V: Record K004 K006 map activation controls)
 - docs/MAP_7V_K004_K006_CONTROL_RESULTS.md: K004 and K006 results recorded.
   - MAP7V_K004_COORDINATE_ALIGNED_RESULT_RECORDED: coordinate-aligned binaries present, spawnpoint honored (10746,8288,0), fallback forest, no candidate lotheader evidence.

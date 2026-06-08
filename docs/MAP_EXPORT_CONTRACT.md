@@ -552,6 +552,39 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7W — Runtime map registration / map folder mounting contract inspector:**
+MAP-7W adds the runtime map-registration contract inspector in response to MAP-7V's
+finding that binary presence vs absence produces identical fallback-forest results.
+
+New tool: `scripts/inspect-build42-map-registration-contract.ps1` compares:
+- Exact file set under `common/media/maps/<MapId>/` (detects `map.bin`, worldmap files, lotheader/lotpack/chunkdata presence)
+- mod.info and map.info key/value content differences (not just field presence)
+- spawnpoints.lua style (function `SpawnPoints()` vs bare `return`)
+- Optional log file parsing (Workshop Ready, mod loaded, map-folder scan, SANITY CHECK FAIL, IsoMetaGrid events)
+
+Key output fields: `exact_file_set_match`, `reference_has_map_bin`, `candidate_has_map_bin`,
+`map_bin_discriminator`, `map_info_value_differences_count`, `runtime_mount_discriminator_found`.
+
+Seven hypotheses tracked (H1=map.bin missing, H2/H3=value mismatches, H4=Workshop path,
+H5=server logs, H6=Map= syntax, H7=spawnregions.lua). `map.bin` is NOT declared as the
+cause until the inspector proves it from the local Dru_map reference.
+
+Binary writer gate remains closed: `BINARY_WRITER_GATE_STILL_CLOSED`.
+Next branch: `runtime_map_registration_and_mounting`.
+
+Status labels:
+```text
+MAP7W_RUNTIME_MAP_REGISTRATION_INSPECTOR_ADDED
+BINARY_FORMAT_INVESTIGATION_PAUSED
+RUNTIME_MAP_REGISTRATION_IS_ACTIVE_BRANCH
+BINARY_WRITER_GATE_STILL_CLOSED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No Steam Workshop upload.
+No PZ assets outside allowed explicit roots. No forbidden writes.
+
 **MAP-7V — K004/K006 control results and binary gate decision:**
 MAP-7V records two human-only control tests that close the current binary-format
 investigation branch.
