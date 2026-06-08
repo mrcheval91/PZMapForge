@@ -8,6 +8,22 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7V: Record K004 K006 map activation controls)
+- docs/MAP_7V_K004_K006_CONTROL_RESULTS.md: K004 and K006 results recorded.
+  - MAP7V_K004_COORDINATE_ALIGNED_RESULT_RECORDED: coordinate-aligned binaries present, spawnpoint honored (10746,8288,0), fallback forest, no candidate lotheader evidence.
+  - MAP7V_K006_ZERO_BINARY_CONTROL_RECORDED: zero PZMapForge binary files, Workshop Ready, mod loaded, spawn honored, SANITY CHECK FAIL. SANITY CHECK FAIL is NOT binary parse evidence.
+  - K006 proves: binary presence is not the discriminator; same fallback-forest outcome with or without binaries.
+  - All previous fallback-forest results were map-registration evidence, not binary-format evidence.
+  - BINARY_FORMAT_INVESTIGATION_PAUSED.
+  - Next branch: runtime map registration / map folder mounting.
+  - BINARY_WRITER_GATE_STILL_CLOSED; LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/prepare-build42-map7v-control-results-packet.ps1:
+  - .local/ guard; no PZ run; no Workshop upload.
+  - 5 packet files: results, binary gate decision, next-branch, preflight JSON+MD.
+  - preflight: k006_candidate_lotheader/lotpack/chunkdata_count=0, binary_writer_gate_closed=true, binary_format_investigation_paused=true, next_branch=runtime_map_registration_and_mounting.
+- scripts/test-build42-map7v-control-results.ps1: 20 assertions.
+- psTotal 1103->1124; proof-packet v0.50->v0.51.
+
 ### Added (MAP-7U: Prepare coordinate-aligned Workshop diagnostic packet)
 - docs/MAP_7U_MODROOT_LAYOUT_MATCH_AND_COORDINATE_DISCRIMINATOR.md: layout match and coordinate discriminator recorded.
   - MAP7U_MODROOT_LAYOUT_MATCH_CONFIRMED: candidate mod-root layout matches Dru_map (all bool fields equal, 0 BOM violations).

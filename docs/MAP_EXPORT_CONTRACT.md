@@ -552,6 +552,38 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7V — K004/K006 control results and binary gate decision:**
+MAP-7V records two human-only control tests that close the current binary-format
+investigation branch.
+
+K004 (coordinate-aligned): binaries present at `35_27.*`, spawnpoint honored
+(warning at 10746,8288,0), but fallback forest and empty map scan persisted.
+
+K006 (zero-binary control): zero PZMapForge lotheader/lotpack/chunkdata files,
+Workshop Ready, mod loaded, spawn honored — same fallback forest result.
+SANITY CHECK FAIL occurred but is NOT a binary parse error (no binaries present).
+
+Key conclusions:
+- Binary presence vs binary absence produces the same fallback-forest outcome.
+- All previous fallback-forest results were map-registration evidence, not
+  binary-format evidence. The fallback forest was never binary proof.
+- `BINARY_FORMAT_INVESTIGATION_PAUSED`
+- Next branch: runtime map registration / map folder mounting.
+
+Status labels:
+```text
+MAP7V_K004_COORDINATE_ALIGNED_RESULT_RECORDED
+MAP7V_K006_ZERO_BINARY_CONTROL_RECORDED
+BINARY_FORMAT_INVESTIGATION_PAUSED
+RUNTIME_MAP_REGISTRATION_IS_NEXT_BRANCH
+BINARY_WRITER_GATE_STILL_CLOSED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No Steam Workshop upload.
+No PZ assets outside allowed roots. No forbidden writes.
+
 **MAP-7U — Mod-root layout match and coordinate-aligned diagnostic:**
 MAP-7U records that the PZMapForge candidate mod-root layout now exactly
 matches the Dru_map reference (`layout_match=True`, zero BOM violations,
