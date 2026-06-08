@@ -552,6 +552,39 @@ Artifacts:
 
 No playable export claim. No load test. No PZ assets.
 
+**MAP-7Y — Minimal non-cell sidecar stub probe:**
+MAP-7Y generates a candidate-owned minimal sidecar stub diagnostic Workshop package.
+All stubs are generated from scratch — no Dru_map sidecar files are copied.
+
+Generated stubs (PZMF_MAP7Y_STUB_* ASCII markers):
+- `streets.xml.bin`
+- `worldmap.xml.bin`
+- `worldmap-forest.xml.bin`
+- `worldmap.png` (256×64 placeholder PNG)
+
+Package also retains coordinate-aligned binaries (`35_27.*`) and uses
+`function SpawnPoints()` style spawnpoints. Binary writer behavior is unchanged.
+`.bak` variants are NOT included (likely authoring artifacts, not runtime inputs).
+
+Test outcomes:
+1. Map folder mounts / lotheader evidence → binary writer gate opens.
+2. Sidecar parse/read error → sidecar format investigation required.
+3. Fallback forest persists → sidecar presence alone not the discriminator.
+
+Status labels:
+```text
+MAP7Y_SIDECAR_STUB_PROBE_STAGED
+MAP_BIN_DISCRIMINATOR_FALSE
+SIDECAR_STUBS_GENERATED_FROM_SCRATCH
+NO_THIRD_PARTY_FILES_COPIED
+BINARY_WRITER_GATE_STILL_CLOSED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+No load test. No binary writer change. No Steam Workshop upload.
+No third-party (Dru_map) files copied. No forbidden writes.
+
 **MAP-7X — Actual registration contract result: map.bin ruled out, non-cell sidecar gap:**
 MAP-7X records the actual MAP-7W inspector run against the downloaded candidate
 Workshop root and local Dru_map reference.

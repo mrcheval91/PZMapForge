@@ -8,6 +8,25 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-7Y: Prepare minimal sidecar stub probe)
+- docs/MAP_7Y_MINIMAL_SIDECAR_STUB_PROBE.md: sidecar stub probe doctrine.
+  - MAP7Y_SIDECAR_STUB_PROBE_STAGED; MAP_BIN_DISCRIMINATOR_FALSE; SIDECAR_STUBS_GENERATED_FROM_SCRATCH; NO_THIRD_PARTY_FILES_COPIED.
+  - 12,390 cell file gap is not actionable (Dru_map assets, must not be copied).
+  - Generated candidate-owned stubs: streets.xml.bin, worldmap.xml.bin, worldmap-forest.xml.bin, worldmap.png.
+  - Retained coordinate-aligned binaries: 35_27.lotheader, world_35_27.lotpack, chunkdata_35_27.bin.
+  - Test outcomes: map folder mounts OR sidecar parse error OR fallback forest persists.
+  - Binary writer gate: still closed; stubs are sidecar files, NOT lotheader/lotpack/chunkdata changes.
+  - LOAD_TEST_NOT_PERFORMED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false; NO_BINARY_WRITER_CHANGES.
+- scripts/prepare-build42-map7y-sidecar-stub-packet.ps1:
+  - .local/ guard; no PZ run; no Workshop upload; no reference file copying.
+  - Generates empty_grass_v4 base, renames 0_0->35_27, updates map.info zoom, uses function SpawnPoints() style.
+  - Generates minimal deterministic stubs (PZMF_MAP7Y_STUB_* ASCII markers) for streets.xml.bin, worldmap.xml.bin, worldmap-forest.xml.bin.
+  - Generates 256x256 placeholder worldmap.png.
+  - 7 packet files + staged-workshop-sidecar-stubs package.
+  - preflight: source_map7x_commit=8c45c0a, map_bin_discriminator=false, sidecar_probe_created=true, bak_sidecars_created=false, third_party_reference_files_copied=false.
+- scripts/test-build42-map7y-sidecar-stub-packet.ps1: 24 assertions.
+- psTotal 1166->1191; proof-packet v0.53->v0.54.
+
 ### Added (MAP-7X: Record actual runtime registration contract result)
 - docs/MAP_7X_ACTUAL_REGISTRATION_CONTRACT_RESULT.md: actual MAP-7W inspector result recorded.
   - MAP7X_ACTUAL_CONTRACT_RESULT_RECORDED; MAP_BIN_DISCRIMINATOR_FALSE; NON_CELL_SIDECAR_GAP_IDENTIFIED.
