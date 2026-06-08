@@ -8,6 +8,33 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8H: Prepare parent/child map contract probe)
+- docs/MAP_8H_PARENT_CHILD_CONTRACT_PROBE.md: parent/child probe doctrine.
+  - Source basis: MAP-8F result + Project Russia parent/child contract observation.
+  - Project Russia: child lots=Project Russia; parent has cell binaries, no lots field.
+  - common\media\maps confirmed NOT ignored in Build 42 (Project Russia uses it).
+  - MAP-8H layout: PZMapForge/ parent (cell binaries, fixed2x=true) +
+    pzmapforge_build42_candidate_v4_001/ child (lots=PZMapForge, zoomX/Y/S).
+  - Server Map line: pzmapforge_build42_candidate_v4_001;PZMapForge;Muldraugh, KY.
+  - BINARY_WRITER_GATE_STILL_CLOSED; NO_PROJECT_RUSSIA_FILES_COPIED;
+    NO_THIRD_PARTY_FILES_COPIED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/prepare-build42-map8h-parent-child-contract-packet.ps1:
+  - .local/ guard.
+  - CLI generation fallback for cell binaries.
+  - Stages common\media\maps\PZMapForge\ with 35_27.* cell binaries + spawnpoints.
+  - Stages common\media\maps\pzmapforge_build42_candidate_v4_001\ with lots=PZMapForge.
+  - 5 packet files + staged package.
+  - Preflight JSON: source_basis/parent_map_id=PZMapForge/child_map_id/
+    layout=common_media_maps_parent_child/parent_contains_generated_cell_binaries=true/
+    no_project_russia_files_copied=true/binary_writer_gate_closed=true/playable_claim_allowed=false.
+- scripts/test-build42-map8h-parent-child-contract.ps1: 20 assertions.
+- scripts/validate.ps1: MAP-8H section added; psTotal 1254->1275; proof-packet v0.58 reference.
+- scripts/write-proof-packet.ps1: v0.57->v0.58; map8h_parent_child_contract_probe_tests=20;
+  total_expected_assertions 1254->1275; MD table updated.
+- scripts/test-proof-packet.ps1: map8h assertion added; total check 1254->1275; schema v0.58.
+- docs/IMPLEMENTATION.md: MAP-8H ratified row added.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-8H section added.
+
 ### Added (MAP-8G: Record MAP-8F lots=self runtime result + define known-working comparator)
 - docs/MAP_8F_LOTS_SELF_RUNTIME_RESULT.md: MAP-8F runtime result record.
   - MAP8F_LOTS_SELF_VISIBLE_BUT_NOT_MOUNTED: city selector shows candidate for first time.

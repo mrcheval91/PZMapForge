@@ -585,6 +585,38 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8H — Parent/child map contract probe:**
+MAP-8H stages a Workshop package that mimics the Project Russia parent/child layout
+using only PZMapForge-generated files. No Project Russia files are copied.
+
+Project Russia observation:
+- Child city folders (`Dmitrov`, `Dolgoprudny`, etc.) have `lots=Project Russia` in map.info.
+- Parent folder (`Project Russia`) contains actual cell binaries and has no `lots` field.
+- `common\media\maps` is NOT ignored in Build 42 — Project Russia proves it works.
+
+MAP-8H layout:
+- `common\media\maps\PZMapForge\` — parent (cell binaries, no lots field, `fixed2x=true`)
+- `common\media\maps\pzmapforge_build42_candidate_v4_001\` — child (city selector, `lots=PZMapForge`)
+
+Server Map line: `Map=pzmapforge_build42_candidate_v4_001;PZMapForge;Muldraugh, KY`
+
+Status labels:
+```text
+MAP8H_PARENT_CHILD_CONTRACT_PROBE_STAGED
+MAP8H_COMMON_MEDIA_MAPS_PARENT_CHILD_LAYOUT
+BINARY_WRITER_GATE_STILL_CLOSED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_BINARY_WRITER_CHANGES
+NO_THIRD_PARTY_FILES_COPIED
+NO_PROJECT_RUSSIA_FILES_COPIED
+NO_PZ_RUN_BY_SCRIPT
+NO_AUTOMATIC_WORKSHOP_UPLOAD
+```
+
+No load test. No binary writer change. No Steam Workshop upload by script.
+No Project Russia files copied. No playable export claimed.
+
 **MAP-8G — Known-working Build 42 map contract comparator v2:**
 MAP-8G defines the comparator for the version-scoped `42\media\maps\<MapId>\` layout.
 The comparator reads map.info, file presence, and mod.info fields from both a
