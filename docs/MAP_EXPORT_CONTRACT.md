@@ -585,6 +585,35 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8D — No invalid worldmap bin stubs probe packet:**
+MAP-8D stages a Workshop package that keeps the MAP-8B version-scoped `42\media\maps\<MapId>\`
+layout but removes the invalid generated `.bin` sidecar stubs.
+
+Removed: `worldmap.xml.bin`, `worldmap-forest.xml.bin`, `streets.xml.bin`.
+Retained: `worldmap.xml`, `worldmap-forest.xml`, `worldmap.png` (uncompiled XML/PNG).
+Retained: `35_27.lotheader`, `world_35_27.lotpack`, `chunkdata_35_27.bin` (binary content unchanged).
+
+Decision on `streets.xml.bin`: removed. It is an ASCII-marker stub with no valid binary magic.
+Not proven benign. Prefer clean probe over partial stub removal.
+
+Status labels:
+```text
+MAP8D_NO_INVALID_WORLDMAP_BIN_STUBS_PROBE_STAGED
+MAP8D_VERSION_42_MEDIA_PATH_RETAINED
+INVALID_WORLDMAP_BIN_STUBS_REMOVED
+STREETS_XML_BIN_REMOVED
+BINARY_WRITER_GATE_STILL_CLOSED
+LOAD_TEST_NOT_PERFORMED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_BINARY_WRITER_CHANGES
+NO_THIRD_PARTY_FILES_COPIED
+NO_PZ_RUN_BY_SCRIPT
+NO_AUTOMATIC_WORKSHOP_UPLOAD
+```
+
+No load test. No binary writer change. No Steam Workshop upload by script.
+No third-party files copied. No playable export claimed.
+
 **MAP-8B — Version-scoped media path runtime result:**
 MAP-8B records the partial registration breakthrough achieved when the Workshop payload
 included the map folder under the version-scoped `42\media\maps\<MapId>\` path.

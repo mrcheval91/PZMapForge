@@ -8,6 +8,33 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8D: Prepare no invalid worldmap bin stubs probe packet)
+- docs/MAP_8D_NO_INVALID_WORLDMAP_BIN_STUBS_PACKET.md: probe doctrine.
+  - Removes worldmap.xml.bin, worldmap-forest.xml.bin, streets.xml.bin from staged package.
+  - Retains worldmap.xml, worldmap-forest.xml, worldmap.png (uncompiled XML/PNG).
+  - Retains coordinate-aligned binaries 35_27.* (content unchanged).
+  - Decision: streets.xml.bin removed -- ASCII-marker stub, no valid binary magic, prefer clean probe.
+  - 42\media\maps\<MapId>\ version-scoped layout (no root media path).
+  - Canary: MAP8D_NO_WORLDMAP_BIN_STUBS.txt in map folder.
+  - BINARY_WRITER_GATE_STILL_CLOSED; NO_BINARY_WRITER_CHANGES; NO_THIRD_PARTY_FILES_COPIED.
+  - PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/prepare-build42-map8d-no-invalid-worldmap-bin-packet.ps1:
+  - .local/ guard; refuses output outside .local.
+  - CLI generation fallback for binaries (dotnet map-export-experimental empty_grass_v4).
+  - Stages 42\media\maps\<MapId>\ layout with all required files minus .bin stubs.
+  - 5 packet files + staged package.
+  - Preflight JSON: source_basis=MAP-8B/version_scoped_media_path=true/
+    invalid_worldmap_bin_stubs_removed=true/worldmap_xml_retained=true/
+    streets_xml_bin_removed=true/binary_writer_gate_closed=true/playable_claim_allowed=false.
+  - No PZ run; no Workshop upload; no binary writer changes; no third-party files.
+- scripts/test-build42-map8d-no-invalid-worldmap-bin.ps1: 20 assertions.
+- scripts/validate.ps1: MAP-8D section added; psTotal 1212->1233; proof-packet v0.56 reference.
+- scripts/write-proof-packet.ps1: v0.55->v0.56; map8d_no_invalid_worldmap_bin_probe_tests=20;
+  total_expected_assertions 1212->1233; MD table updated.
+- scripts/test-proof-packet.ps1: map8d assertion added; total check 1212->1233; schema v0.56.
+- docs/IMPLEMENTATION.md: MAP-8D ratified row added.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-8D section added.
+
 ### Added (MAP-8B: Record version-scoped media path runtime result)
 - docs/MAP_8B_VERSION_MEDIA_RUNTIME_RESULT.md: MAP-8B partial registration breakthrough record.
   - MAP8B_PARTIAL_REGISTRATION_BREAKTHROUGH: 42\media path visible to worldmap loader.
