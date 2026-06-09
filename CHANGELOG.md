@@ -8,6 +8,29 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8L: Worldmap XML substantial candidate)
+- docs/MAP_8L_WORLDMAP_XML_SUBSTANTIAL_CANDIDATE.md: MAP-8L doctrine.
+  - Source basis: MAP-8K found candidate worldmap.xml skeletal (52 bytes, 2 lines).
+  - Reference (Project Russia parent) worldmap.xml substantial (888KB, 30959 lines).
+  - Reference has worldmap.xml.bin; candidate does not.
+  - Hypothesis: substantial worldmap.xml may be required for IsoMetaGrid parent mount.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/prepare-build42-map8l-worldmap-xml-candidate.ps1:
+  - .local/ guard on -Output.
+  - Generates substantial PZMapForge-owned worldmap.xml (1915 bytes, 44 lines).
+  - Describes 1 cell at worldX=35, worldY=27 with coordinate proof.
+  - No Project Russia content used. No binary contents read.
+  - Outputs worldmap.xml + map8l-preflight.json + map8l-preflight.md + packet doc.
+  - Includes operator deployment command.
+- scripts/test-build42-map8l-worldmap-xml-candidate.ps1: 20 assertions.
+  - Test1: refuses output outside .local.
+  - Tests 3-5: output files exist.
+  - Tests 6-12: worldmap.xml content (size, lines, XML declaration, cell coords, lotheader ref).
+  - Tests 13-20: preflight JSON fields.
+- Updated scripts/validate.ps1: MAP-8L section before MAP-8K; psTotal 1316→1336; proof-packet v0.60→v0.61.
+- Updated scripts/write-proof-packet.ps1: map8l field; total 1316→1336; schema v0.60→v0.61.
+- Updated scripts/test-proof-packet.ps1: map8l assertion; total 1316→1336; schema v0.60→v0.61.
+
 ### Added (MAP-8K: Parent map metadata contract comparator)
 - docs/MAP_8K_PARENT_METADATA_CONTRACT_COMPARATOR.md: MAP-8K comparator doctrine.
   - MAP8K_PARENT_METADATA_CONTRACT_COMPARATOR_DEFINED.

@@ -585,6 +585,32 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8L — Worldmap XML substantial candidate:**
+MAP-8K comparator found candidate `worldmap.xml` is skeletal (52 bytes, 2 lines) while
+the Project Russia reference parent has a substantial `worldmap.xml` (888KB, 30,959 lines)
+and a `worldmap.xml.bin`. MAP-8L tests whether replacing the skeletal stub with a
+substantial PZMapForge-owned `worldmap.xml` unblocks IsoMetaGrid parent folder mount.
+
+Generated `worldmap.xml`: 1,915 bytes / 44 lines. Describes single cell at worldX=35,
+worldY=27 with coordinate proof. No Project Russia content. No binary contents.
+
+Script: `scripts\prepare-build42-map8l-worldmap-xml-candidate.ps1`
+Outputs under `.local/` only.
+
+Status labels:
+```text
+MAP8L_WORLDMAP_XML_SUBSTANTIAL_CANDIDATE_STAGED
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_PZ_RUN_BY_CLAUDE
+NO_WORKSHOP_UPLOAD_BY_CLAUDE
+NO_THIRD_PARTY_FILES_COPIED
+NO_BINARY_CONTENTS_READ
+```
+
+No load test. No binary writer change. No Steam Workshop upload by Claude.
+No Project Russia content used. No binary contents read. No playable export claimed.
+
 **MAP-8K — Parent map metadata contract comparator:**
 MAP-8K defines the evidence step for the `parent_metadata_or_binary_cell_mount_contract` branch.
 MAP-8I proved spawnpoint coordinate placement works. IsoMetaGrid still does not mount the
