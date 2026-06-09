@@ -95,13 +95,26 @@ NO_THIRD_PARTY_FILES_COPIED
 CONFIDENCE_LEVEL=low
 ```
 
+## MAP-8T result
+
+The operator ran the MAP-8S inspector. Real result: all bytes from offset 133 through
+the 4096-byte window are 0xFF (padding/sentinel). No count field, offset table, or
+cell coordinate was observed.
+
+See: docs/MAP_8T_REAL_CELL_BOUNDARY_FF_SENTINEL_RESULT.md
+
+Classification: MAP8T_REAL_CELL_BOUNDARY_FF_SENTINEL_RESULT_RECORDED
+first_non_ff_offset_known=false
+immediate_cell_index_after_string_pool_supported=false
+next_branch=igmb_first_non_ff_transition_scan_pending_operator_approval
+
 ## Next branch
 
-next_branch=igmb_cell_index_model_research_pending_operator_approval_if_boundary_evidence_sufficient
+next_branch=igmb_first_non_ff_transition_scan_pending_operator_approval (updated by MAP-8T)
 
-Inspecting the bytes after offset 133 provides structural observations about what
-section likely follows the string pool. A cell index model research step requires
-explicit operator approval and can only proceed if boundary evidence is sufficient.
+The real MAP-8S run showed entirely 0xFF bytes after offset 133 within the 4096-byte
+window. The first non-FF transition offset is unknown (beyond the observed window).
+Locating it requires a separate explicit operator approval.
 
 Binary writer gate remains CLOSED until IsoMetaGrid logs a parse attempt against
 PZMapForge lotheader/sidecar.

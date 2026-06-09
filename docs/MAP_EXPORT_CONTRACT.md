@@ -585,6 +585,25 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8T — Record real MAP-8S post-string-pool FF sentinel result:**
+The operator ran the MAP-8S inspector against Project Russia worldmap.xml.bin
+(283881 bytes, first 4096 bytes read). Result: all bytes immediately after
+string_pool_end_offset=133 within the 4096-byte window are 0xFF.
+first_128_bytes_after_string_pool_all_ff=true; first_256_bytes_after_string_pool_all_ff=true.
+No count field, offset table, or cell coordinate was observed.
+immediate_cell_index_after_string_pool_supported=false; first_non_ff_offset_known=false.
+Interpretation: 0xFF padding or sentinel within observed window. Does NOT prove
+the full file is FF after offset 133 (only first 4096 bytes were read).
+Packet: `scripts\prepare-build42-map8t-real-cell-boundary-result-packet.ps1`
+Packet tests: `scripts\test-build42-map8t-real-cell-boundary-result.ps1` (20 assertions)
+Status labels:
+```text
+MAP8T_REAL_CELL_BOUNDARY_FF_SENTINEL_RESULT_RECORDED
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+next_branch=igmb_first_non_ff_transition_scan_pending_operator_approval
+
 **MAP-8S — IGMB cell-index boundary research after string pool:**
 Operator approved bounded inspection of bytes after string_pool_end_offset=133, within
 first 4096 bytes only. Inspector: scripts/inspect-build42-igmb-cell-boundary.ps1.

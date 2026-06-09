@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (1562)
+    Final output reports the complete PowerShell validation lane total (1584)
     and the .NET lane total (556) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.68 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.69 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,30 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-8T Real cell boundary FF sentinel result ---"
+$map8tDoc          = Join-Path $repoRoot 'docs\MAP_8T_REAL_CELL_BOUNDARY_FF_SENTINEL_RESULT.md'
+$map8tPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map8t-real-cell-boundary-result-packet.ps1'
+$map8tResultTests  = Join-Path $repoRoot 'scripts\test-build42-map8t-real-cell-boundary-result.ps1'
+if (-not (Test-Path -LiteralPath $map8tDoc))          { throw "MAP-8T doc missing" }
+Write-Output "OK: docs\MAP_8T_REAL_CELL_BOUNDARY_FF_SENTINEL_RESULT.md"
+if (-not (Test-Path -LiteralPath $map8tPacketScript)) { throw "MAP-8T packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map8t-real-cell-boundary-result-packet.ps1"
+if (-not (Test-Path -LiteralPath $map8tResultTests))  { throw "MAP-8T result tests missing" }
+Write-Output "OK: scripts\test-build42-map8t-real-cell-boundary-result.ps1"
+$map8tDocContent = Get-Content -LiteralPath $map8tDoc -Raw
+if ($map8tDocContent -notmatch 'MAP8T_REAL_CELL_BOUNDARY_FF_SENTINEL_RESULT_RECORDED') { throw "MAP-8T doc missing MAP8T_REAL_CELL_BOUNDARY_FF_SENTINEL_RESULT_RECORDED" }
+Write-Output "OK: doc contains MAP8T_REAL_CELL_BOUNDARY_FF_SENTINEL_RESULT_RECORDED"
+if ($map8tDocContent -notmatch 'BINARY_WRITER_GATE_STILL_CLOSED') { throw "MAP-8T doc missing BINARY_WRITER_GATE_STILL_CLOSED" }
+Write-Output "OK: doc contains BINARY_WRITER_GATE_STILL_CLOSED"
+if ($map8tDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-8T doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+
+Write-Output ""
+Write-Output "--- MAP-8T real cell boundary result tests ---"
+& powershell -ExecutionPolicy Bypass -File $map8tResultTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-8T real cell boundary result tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-8S IGMB cell boundary research ---"
@@ -2056,7 +2080,7 @@ $psChecks = [ordered]@{
     'Region extraction'                    = 24
     'Primitive classification'             = 22
     'Plan recommendations contract'        = 28
-    'Proof packet'                         = 125
+    'Proof packet'                         = 127
     'Build42 geometry inspector tests'     = 23
     'Build42 format design matrix tests'   = 13
     'Build42 writer contract tests'        = 20
@@ -2077,6 +2101,7 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-8T real cell boundary result tests'                       = 20
     'MAP-8S IGMB cell boundary inspector tests'                    = 20
     'MAP-8S cell boundary result tests'                            = 20
     'MAP-8R real IGMB structure result tests'                      = 20
@@ -2117,14 +2142,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 1562  # = validation_summary.total_expected_assertions in proof-packet v0.68
+$psTotal = 1584  # = validation_summary.total_expected_assertions in proof-packet v0.69
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.68):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.69):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }

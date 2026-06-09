@@ -8,6 +8,33 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8T: Record real MAP-8S post-string-pool FF sentinel result)
+- docs/MAP_8T_REAL_CELL_BOUNDARY_FF_SENTINEL_RESULT.md: MAP-8T result doctrine.
+  - Classification: MAP8T_REAL_CELL_BOUNDARY_FF_SENTINEL_RESULT_RECORDED.
+  - Operator ran MAP-8S inspector against Project Russia worldmap.xml.bin (283881 bytes,
+    first 4096 bytes read).
+  - All bytes after string_pool_end_offset=133 within the 4096-byte window are 0xFF.
+  - first_128_bytes_after_string_pool_all_ff=true; first_256_bytes_after_string_pool_all_ff=true.
+  - No count field, offset table, or cell coordinate observed.
+  - immediate_cell_index_after_string_pool_supported=false; first_non_ff_offset_known=false.
+  - Interpretation: 0xFF padding or sentinel (NOT claiming full file is FF; only
+    first 4096 bytes were read; file is 283881 bytes).
+  - full_format_understood=false; cell_index_understood=false; geometry_payload_understood=false.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+  - next_branch=igmb_first_non_ff_transition_scan_pending_operator_approval.
+- scripts/prepare-build42-map8t-real-cell-boundary-result-packet.ps1:
+  - .local/ guard on -Output.
+  - Hardcoded fields from real MAP-8S run: reference_size_bytes=283881,
+    bytes_read_count=4096, max_bytes_allowed=4096, full_file_read=false,
+    first_128_bytes_after_string_pool_all_ff=true, first_256_bytes_after_string_pool_all_ff=true,
+    observed_u32le_values_after_string_pool_are_minus_one=true,
+    immediate_cell_index_after_string_pool_supported=false,
+    first_non_ff_offset_known=false, first_non_ff_offset=null,
+    binary_writer_gate_closed=true, playable_claim_allowed=false.
+  - Writes map8t-real-cell-boundary-result.json (schema pzmapforge.map8t-result.v0.1),
+    map8t-real-cell-boundary-result.md, MAP_8T_REAL_CELL_BOUNDARY_FF_SENTINEL_RESULT_PACKET.md.
+- scripts/test-build42-map8t-real-cell-boundary-result.ps1: 20 assertions.
+
 ### Added (MAP-8S: IGMB cell-index boundary research after string pool)
 - docs/MAP_8S_IGMB_CELL_INDEX_BOUNDARY_RESEARCH.md: MAP-8S cell boundary research doctrine.
   - Classification: MAP8S_IGMB_CELL_BOUNDARY_RESEARCH_DEFINED.
