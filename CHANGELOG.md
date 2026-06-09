@@ -8,6 +8,29 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8I: Record dual spawnpoint keys runtime result)
+- docs/MAP_8I_DUAL_SPAWNPOINT_RUNTIME_RESULT.md: MAP-8I dual spawnpoint runtime result doctrine.
+  - Status: MAP8I_SPAWNPOINT_FIXED_BUT_ISOMETAGRID_NOT_MOUNTED.
+  - Patch: both spawnpoints.lua files patched — unemployed + Profession_Unemployed at worldX=35 worldY=27.
+  - MAP-8H profession-key error removed.
+  - Player connected at 10746,8288,0 — matches intended 35_27 coordinate exactly.
+  - Coordinate proof: 35*300+246=10746, 27*300+188=8288.
+  - IsoMetaGrid map folder list still empty; terrain is vanilla/fallback.
+  - next_branch=parent_metadata_or_binary_cell_mount_contract.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/prepare-build42-map8i-runtime-result-packet.ps1:
+  - .local/ guard.
+  - Writes map8i-result.json (schema pzmapforge.map8i-result.v0.1).
+  - Writes map8i-result.md and MAP_8I_DUAL_SPAWNPOINT_RUNTIME_RESULT_PACKET.md.
+  - All key result fields recorded including coordinate proof and gate status.
+- scripts/test-build42-map8i-runtime-result.ps1: 20 assertions.
+  - Test1: .local guard refuses output outside .local/.
+  - Tests 3-5: packet files exist.
+  - Tests 6-20: JSON field values including spawn coordinate, worldX/Y, binary gate.
+- Updated scripts/validate.ps1: MAP-8I section before MAP-8H; psTotal 1275→1296; proof-packet v0.58→v0.59.
+- Updated scripts/write-proof-packet.ps1: map8i_dual_spawnpoint_runtime_result_tests=20 field; total 1275→1296; schema v0.58→v0.59.
+- Updated scripts/test-proof-packet.ps1: map8i assertion; total_expected_assertions 1275→1296; schema v0.58→v0.59.
+
 ### Added (MAP-8H: Prepare parent/child map contract probe)
 - docs/MAP_8H_PARENT_CHILD_CONTRACT_PROBE.md: parent/child probe doctrine.
   - Source basis: MAP-8F result + Project Russia parent/child contract observation.

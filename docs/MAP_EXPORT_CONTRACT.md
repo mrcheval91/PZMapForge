@@ -585,6 +585,36 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8I — Dual spawnpoint keys runtime result:**
+MAP-8I manually patched both `spawnpoints.lua` files in the Workshop source to add dual
+spawnpoint keys (`unemployed` + `Profession_Unemployed`) at `worldX=35, worldY=27`.
+The MAP-8H profession-key error is removed. Player spawned at 10746,8288,0 which
+confirms the intended 35_27 coordinate (35*300+246=10746, 27*300+188=8288).
+
+IsoMetaGrid still did not mount the PZMapForge parent folder. Visual terrain was
+vanilla/fallback. Classification: `MAP8I_SPAWNPOINT_FIXED_BUT_ISOMETAGRID_NOT_MOUNTED`.
+
+Next branch: `parent_metadata_or_binary_cell_mount_contract`
+
+Status labels:
+```text
+MAP8I_SPAWNPOINT_FIXED_BUT_ISOMETAGRID_NOT_MOUNTED
+DUAL_SPAWNPOINT_KEYS_PRESENT=true
+SPAWNPOINT_PROFESSION_ERROR_REMOVED=true
+PLAYER_SPAWN_COORDINATE=10746,8288,0
+SPAWN_COORDINATE_MATCHES_35_27=true
+ISO_META_GRID_MAP_FOLDER_LIST_EMPTY=true
+SPAWNED_IN_FALLBACK_OR_UNCONFIRMED_GENERATED_CONTENT=true
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_PZ_RUN_BY_CLAUDE
+NO_WORKSHOP_UPLOAD_BY_CLAUDE
+NO_THIRD_PARTY_FILES_COPIED
+```
+
+No load test. No binary writer change. No Steam Workshop upload by Claude.
+No third-party files copied. No playable export claimed.
+
 **MAP-8H — Parent/child map contract probe:**
 MAP-8H stages a Workshop package that mimics the Project Russia parent/child layout
 using only PZMapForge-generated files. No Project Russia files are copied.

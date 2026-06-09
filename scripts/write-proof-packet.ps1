@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.58) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.59) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
     planning recommendation artifacts, plan-recommendations contract (incl. thresholds_used),
     and a separate dotnet_validation_summary section tracking .NET xUnit test counts.
@@ -147,7 +147,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.58'
+    schema                  = 'pzmapforge.proof-packet.v0.59'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -202,6 +202,7 @@ $packet = [ordered]@{
         map7b_lua_metadata_tests          = 21
         map7c_metadata_v3_packet_tests    = 18
         map7d_metadata_v4_packet_tests    = 15
+        map8i_dual_spawnpoint_runtime_result_tests = 20
         map8h_parent_child_contract_probe_tests   = 20
         map8f_lots_self_runtime_result_tests      = 20
         map8d_no_invalid_worldmap_bin_probe_tests = 20
@@ -227,7 +228,7 @@ $packet = [ordered]@{
         map7g_variant_a_failure_tests     = 8
         map7f_registration_diagnostic_tests = 11
         map7e_diagnostics_tests           = 11
-        total_expected_assertions         = 1275
+        total_expected_assertions         = 1296
     }
     dotnet_validation_summary = [ordered]@{
         test_total                          = 556
@@ -307,7 +308,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.58
+Schema: pzmapforge.proof-packet.v0.59
 
 ## Claim boundary
 
@@ -406,11 +407,12 @@ planning_artifact_only_not_pz_load_tested
 | MAP-7W runtime registration tests | 20 |
 | MAP-7X actual contract result tests | 20 |
 | MAP-7Y sidecar stub probe tests | 24 |
+| MAP-8I dual spawnpoint runtime result tests | 20 |
 | MAP-8H parent/child contract probe tests | 20 |
 | MAP-8F lots=self runtime result tests | 20 |
 | MAP-8D no invalid worldmap bin probe tests | 20 |
 | MAP-8B version media runtime result tests | 20 |
-| Total | 1275 |
+| Total | 1296 |
 
 ## .NET validation summary (separate lane)
 
