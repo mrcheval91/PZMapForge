@@ -585,6 +585,36 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8Y — Experimental IGMB writer skeleton:**
+Operator approved experimental local-only writer skeleton based on MAP-8Q through MAP-8X evidence.
+Writer: `scripts\write-build42-experimental-igmb-worldmap.ps1`
+Binary layout (65536 bytes default): IGMB magic + version 2 + unknown_a=256 + unknown_b=59 +
+unknown_c=68 + string_pool_count=12 (offsets 0-23) + U16LE LP string pool 12 strings (offsets 24-132)
++ 0xFF padding (offsets 133-6388) + U32LE triplet 30/26/9 (offsets 6389-6400)
++ synthetic PZMapForge-owned U16LE pairs (offsets 6401-6432) + 0xFF pad to TotalBytes.
+Output: .local/ only. Manifest: SHA-256, schema pzmapforge.map8y-experimental-igmb-writer-manifest.v0.1.
+Writer tests: `scripts\test-build42-experimental-igmb-worldmap-writer.ps1` (30 assertions)
+Packet: `scripts\prepare-build42-map8y-experimental-igmb-writer-packet.ps1`
+Packet tests: `scripts\test-build42-map8y-experimental-igmb-writer-packet.ps1` (20 assertions)
+
+Status labels:
+```text
+MAP8Y_EXPERIMENTAL_IGMB_WRITER_SKELETON_ADDED
+EXPERIMENTAL_WRITER_LOCAL_ONLY
+WRITES_WORLDMAP_XML_BIN=true
+OUTPUT_SCOPE=.local_only
+WRITER_STATUS=experimental_skeleton_not_load_proven
+THIRD_PARTY_BYTES_COPIED=false
+PROJECT_RUSSIA_FILE_READ=false
+PLAYABLE_CLAIM_ALLOWED=false
+FULL_FORMAT_UNDERSTOOD=false
+CELL_INDEX_UNDERSTOOD=false
+GEOMETRY_PAYLOAD_UNDERSTOOD=false
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+next_branch=map8z_controlled_install_packet_pending_operator_approval.
+
 **MAP-8X — Record real MAP-8W transition structure inspection result:**
 Operator ran scripts/inspect-build42-igmb-transition-structure.ps1 against Project Russia
 worldmap.xml.bin (283881 bytes, first 65536 bytes read). transition_offset=6389, in range.

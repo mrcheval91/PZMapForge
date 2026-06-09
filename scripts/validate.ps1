@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (1721)
+    Final output reports the complete PowerShell validation lane total (1773)
     and the .NET lane total (556) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.73 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.74 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,44 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-8Y Experimental IGMB writer skeleton ---"
+$map8yDoc          = Join-Path $repoRoot 'docs\MAP_8Y_EXPERIMENTAL_IGMB_WRITER_SKELETON.md'
+$map8yWriter       = Join-Path $repoRoot 'scripts\write-build42-experimental-igmb-worldmap.ps1'
+$map8yWriterTests  = Join-Path $repoRoot 'scripts\test-build42-experimental-igmb-worldmap-writer.ps1'
+$map8yPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map8y-experimental-igmb-writer-packet.ps1'
+$map8yPacketTests  = Join-Path $repoRoot 'scripts\test-build42-map8y-experimental-igmb-writer-packet.ps1'
+if (-not (Test-Path -LiteralPath $map8yDoc))          { throw "MAP-8Y doc missing" }
+Write-Output "OK: docs\MAP_8Y_EXPERIMENTAL_IGMB_WRITER_SKELETON.md"
+if (-not (Test-Path -LiteralPath $map8yWriter))       { throw "MAP-8Y writer missing" }
+Write-Output "OK: scripts\write-build42-experimental-igmb-worldmap.ps1"
+if (-not (Test-Path -LiteralPath $map8yWriterTests))  { throw "MAP-8Y writer tests missing" }
+Write-Output "OK: scripts\test-build42-experimental-igmb-worldmap-writer.ps1"
+if (-not (Test-Path -LiteralPath $map8yPacketScript)) { throw "MAP-8Y packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map8y-experimental-igmb-writer-packet.ps1"
+if (-not (Test-Path -LiteralPath $map8yPacketTests))  { throw "MAP-8Y packet tests missing" }
+Write-Output "OK: scripts\test-build42-map8y-experimental-igmb-writer-packet.ps1"
+$map8yDocContent = Get-Content -LiteralPath $map8yDoc -Raw
+if ($map8yDocContent -notmatch 'MAP8Y_EXPERIMENTAL_IGMB_WRITER_SKELETON_ADDED') { throw "MAP-8Y doc missing MAP8Y_EXPERIMENTAL_IGMB_WRITER_SKELETON_ADDED" }
+Write-Output "OK: doc contains MAP8Y_EXPERIMENTAL_IGMB_WRITER_SKELETON_ADDED"
+if ($map8yDocContent -notmatch 'EXPERIMENTAL_WRITER_LOCAL_ONLY') { throw "MAP-8Y doc missing EXPERIMENTAL_WRITER_LOCAL_ONLY" }
+Write-Output "OK: doc contains EXPERIMENTAL_WRITER_LOCAL_ONLY"
+if ($map8yDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-8Y doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+$map8yWriterContent = Get-Content -LiteralPath $map8yWriter -Raw
+if ($map8yWriterContent -notmatch '\.local') { throw "MAP-8Y writer missing .local refusal" }
+Write-Output "OK: writer contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-8Y experimental IGMB writer tests ---"
+& powershell -ExecutionPolicy Bypass -File $map8yWriterTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-8Y experimental IGMB writer tests failed." }
+
+Write-Output ""
+Write-Output "--- MAP-8Y experimental IGMB writer packet tests ---"
+& powershell -ExecutionPolicy Bypass -File $map8yPacketTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-8Y experimental IGMB writer packet tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-8X Real transition structure result ---"
@@ -2225,6 +2263,8 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-8Y experimental IGMB writer tests'                       = 30
+    'MAP-8Y experimental IGMB writer packet tests'                = 20
     'MAP-8X real transition structure result tests'               = 20
     'MAP-8W IGMB transition structure inspector tests'            = 24
     'MAP-8W IGMB transition structure result tests'               = 20
@@ -2272,14 +2312,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 1721  # = validation_summary.total_expected_assertions in proof-packet v0.73
+$psTotal = 1773  # = validation_summary.total_expected_assertions in proof-packet v0.74
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.73):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.74):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -2287,7 +2327,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.73 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.74 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

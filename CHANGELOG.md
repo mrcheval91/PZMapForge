@@ -8,6 +8,31 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8Y: Experimental IGMB writer skeleton)
+- docs/MAP_8Y_EXPERIMENTAL_IGMB_WRITER_SKELETON.md: MAP-8Y writer doctrine.
+  - Classification: MAP8Y_EXPERIMENTAL_IGMB_WRITER_SKELETON_ADDED.
+  - Operator approved experimental local-only skeleton from MAP-8Q through MAP-8X evidence.
+  - Binary layout: IGMB magic + version 2 + header fields + 12-string pool + FF padding +
+    U32LE triplet 30/26/9 + synthetic U16LE payload + FF pad to 65536 bytes.
+  - EXPERIMENTAL_WRITER_LOCAL_ONLY; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+  - next_branch=map8z_controlled_install_packet_pending_operator_approval.
+- scripts/write-build42-experimental-igmb-worldmap.ps1:
+  - .local/ guard and 7 forbidden path guards.
+  - -TotalBytes range 8192-65536 (default 65536).
+  - Deterministic binary writer producing 65536-byte IGMB candidate from scratch.
+  - Manifest: schema pzmapforge.map8y-experimental-igmb-writer-manifest.v0.1, SHA-256,
+    all safety gates.
+- scripts/test-build42-experimental-igmb-worldmap-writer.ps1: 30 assertions.
+- scripts/prepare-build42-map8y-experimental-igmb-writer-packet.ps1:
+  - .local/ guard on -Output.
+  - Writes map8y-experimental-igmb-writer-packet.json
+    (schema pzmapforge.map8y-experimental-igmb-writer-packet.v0.1),
+    map8y-experimental-igmb-writer-packet.md,
+    MAP_8Y_EXPERIMENTAL_IGMB_WRITER_SKELETON_PACKET.md.
+- scripts/test-build42-map8y-experimental-igmb-writer-packet.ps1: 20 assertions.
+- Proof packet schema: v0.73 -> v0.74.
+- psTotal: 1721 -> 1773.
+
 ### Added (MAP-8X: Record real MAP-8W transition structure inspection result)
 - docs/MAP_8X_REAL_TRANSITION_STRUCTURE_RESULT.md: MAP-8X result doctrine.
   - Classification: MAP8X_REAL_TRANSITION_STRUCTURE_RESULT_RECORDED.

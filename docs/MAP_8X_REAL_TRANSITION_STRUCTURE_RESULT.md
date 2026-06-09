@@ -141,7 +141,13 @@ CONFIDENCE_LEVEL=low
 
 next_branch=igmb_transition_model_hypothesis_review_pending_operator_approval
 
-Operator reviews the observed patterns and decides whether to approve a hypothesis
-refinement pass or a more constrained scan targeting specific structure fields.
-Binary writer gate remains CLOSED.
-No playable claim is allowed.
+The binary writer gate was opened for an experimental local-only skeleton in MAP-8Y
+based on the evidence recorded here.
+
+## MAP-8Y reference
+
+Script: `scripts/write-build42-experimental-igmb-worldmap.ps1`
+Doc: `docs/MAP_8Y_EXPERIMENTAL_IGMB_WRITER_SKELETON.md`
+next_branch=map8z_controlled_install_packet_pending_operator_approval
+
+No playable claim is allowed. Load test has not been performed.
