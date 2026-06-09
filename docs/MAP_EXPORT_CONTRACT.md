@@ -585,6 +585,37 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8W — Bounded IGMB transition structure analysis around offset 6389:**
+Operator approved bounded structure analysis starting at transition_offset=6389, max 65536 bytes.
+Inspector: `scripts\inspect-build42-igmb-transition-structure.ps1`
+Params: -TransitionOffset(default 6389), -MaxBytes(hard cap 65536), -WindowBeforeBytes(hard cap 256), -WindowAfterBytes(hard cap 2048).
+Reads at most min(file_size,MaxBytes,65536) bytes via FileStream read-only.
+Schema: pzmapforge.map8w-igmb-transition-structure-inspection.v0.1.
+Key fields: exact U32LE/U16LE/I16LE/byte values from transition (first 128 bytes),
+candidate_header_u32_triplet(30/26/9, observed_only_unconfirmed), candidate_header_triplet_confidence=low,
+candidate count/offset/coordinate/signed_coordinate/run_length/repeated_pair/small_cluster fields,
+entropy_estimate_transition_window, structure_hypotheses_observed_only, strongest_current_hypothesis.
+Inspector tests: `scripts\test-build42-igmb-transition-structure.ps1` (24 assertions)
+Packet: `scripts\prepare-build42-map8w-transition-structure-result-packet.ps1`
+Packet tests: `scripts\test-build42-map8w-transition-structure-result.ps1` (20 assertions)
+
+Status labels:
+```text
+MAP8W_IGMB_TRANSITION_STRUCTURE_ANALYSIS_APPROVED
+TRANSITION_OFFSET=6389
+MAX_BYTES_ALLOWED=65536
+TRANSITION_STRUCTURE_UNDERSTOOD=false
+FULL_FORMAT_UNDERSTOOD=false
+CELL_INDEX_UNDERSTOOD=false
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_THIRD_PARTY_FILES_COPIED
+CONFIDENCE_LEVEL=low
+```
+
+next_branch=igmb_transition_model_record_pending_operator_review.
+Binary writer gate remains CLOSED.
+
 **MAP-8V — Record real first non-FF transition result and add exact-offset decoding:**
 The operator ran the MAP-8U scanner against Project Russia worldmap.xml.bin.
 first_non_ff_offset=6389, ff_run_length=6256. Offset 6389 is NOT 4-byte or 2-byte aligned.

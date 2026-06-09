@@ -8,6 +8,38 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8W: Bounded IGMB transition structure analysis around offset 6389)
+- docs/MAP_8W_IGMB_TRANSITION_STRUCTURE_ANALYSIS.md: MAP-8W analysis doctrine.
+  - Classification: MAP8W_IGMB_TRANSITION_STRUCTURE_ANALYSIS_APPROVED.
+  - Operator approved bounded structure analysis at transition_offset=6389, max 65536 bytes.
+  - Inspector reads at most min(file_size, MaxBytes, 65536) bytes via FileStream read-only.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+  - next_branch=igmb_transition_model_record_pending_operator_review.
+- scripts/inspect-build42-igmb-transition-structure.ps1: IGMB transition structure inspector.
+  - Schema: pzmapforge.map8w-igmb-transition-structure-inspection.v0.1.
+  - Params: -ReferenceWorldmapBinPath, -Output (.local/ guard), -TransitionOffset (default 6389),
+    -MaxBytes (hard cap 65536), -WindowBeforeBytes (hard cap 256), -WindowAfterBytes (hard cap 2048).
+  - Exact U32LE/U16LE/I16LE/byte values from transition (first 128 bytes).
+  - candidate_header_u32_triplet: first=30, second=26, third=9 (observed_only_unconfirmed).
+  - candidate_header_triplet_confidence=low.
+  - Candidate count, offset, coordinate, signed-coordinate, run-length, repeated-pair,
+    small-cluster, FF/null sentinel, and monotonic sequence fields.
+  - Shannon entropy estimate over first 128 bytes from transition.
+  - structure_hypotheses_observed_only (min 4 entries).
+  - transition_structure_understood=false; full_format_understood=false.
+  - All result arrays use [System.Collections.ArrayList]::new().
+- scripts/test-build42-igmb-transition-structure.ps1: 24 assertions.
+  - Synthetic 300-byte file with triplet at offset 42.
+  - 42 % 4 == 2 → not 4-byte aligned; 42 % 2 == 0 → 2-byte aligned.
+  - full_file_read=true (300 bytes, all read within cap).
+- scripts/prepare-build42-map8w-transition-structure-result-packet.ps1:
+  - .local/ guard on -Output.
+  - Writes map8w-transition-structure-result.json (schema pzmapforge.map8w-result.v0.1),
+    map8w-transition-structure-result.md, MAP_8W_IGMB_TRANSITION_STRUCTURE_ANALYSIS_PACKET.md.
+- scripts/test-build42-map8w-transition-structure-result.ps1: 20 assertions.
+- Proof packet schema: v0.71 -> v0.72.
+- psTotal: 1654 -> 1700.
+
 ### Added (MAP-8V: Record real first non-FF transition result and add exact-offset decoding)
 - docs/MAP_8V_REAL_FIRST_NON_FF_TRANSITION_RESULT.md: MAP-8V result doctrine.
   - Classification: MAP8V_REAL_FIRST_NON_FF_TRANSITION_RESULT_RECORDED.

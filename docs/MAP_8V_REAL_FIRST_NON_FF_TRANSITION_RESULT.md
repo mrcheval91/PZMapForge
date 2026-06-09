@@ -117,3 +117,10 @@ next_branch=igmb_transition_structure_analysis_pending_operator_approval
 Structural analysis of the bytes after the transition requires explicit operator approval.
 Binary writer gate remains CLOSED until IsoMetaGrid logs a parse attempt against
 PZMapForge lotheader/sidecar.
+
+## MAP-8W reference
+
+MAP-8W (igmb_transition_structure_analysis) was approved and implemented.
+Inspector: scripts/inspect-build42-igmb-transition-structure.ps1
+Doc: docs/MAP_8W_IGMB_TRANSITION_STRUCTURE_ANALYSIS.md
+Classification: MAP8W_IGMB_TRANSITION_STRUCTURE_ANALYSIS_APPROVED
