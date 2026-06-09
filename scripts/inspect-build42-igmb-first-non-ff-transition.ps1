@@ -51,6 +51,15 @@ $plausibleCounts  = [System.Collections.ArrayList]::new()
 $plausibleOffsets = [System.Collections.ArrayList]::new()
 $plausibleCoords  = [System.Collections.ArrayList]::new()
 
+$exactU32Around               = $null
+$exactU16Around               = $null
+$exactHex32                   = $null
+$exactHex64                   = $null
+$exactSmallU32                = $null
+$transitionExactDecodingAdded = $false
+$alignedContextOnly           = $null
+$transitionStructureUnderstood = $null
+
 if ($referencePresent) {
     $referenceSizeBytes = (Get-Item -LiteralPath $ReferenceWorldmapBinPath).Length
     $toRead = [int][Math]::Min([long]$referenceSizeBytes, [long]$effectiveMax)
@@ -183,6 +192,46 @@ if ($referencePresent) {
                 }
             }
         }
+
+        # Exact-offset U32LE from transition (not aligned)
+        $exactU32Around = [System.Collections.ArrayList]::new()
+        $exU32End = [Math]::Min($bytesReadCount - 4, $firstNonFfOffset + 32)
+        for ($j = $firstNonFfOffset; $j -le $exU32End; $j += 4) {
+            $vu32e = [BitConverter]::ToUInt32($buf, $j)
+            $vi32e = [BitConverter]::ToInt32($buf, $j)
+            [void]$exactU32Around.Add([ordered]@{ offset=$j; value_u32=$vu32e; value_i32=$vi32e })
+        }
+
+        # Exact-offset U16LE from transition (not aligned)
+        $exactU16Around = [System.Collections.ArrayList]::new()
+        $exU16End = [Math]::Min($bytesReadCount - 2, $firstNonFfOffset + 32)
+        for ($j = $firstNonFfOffset; $j -le $exU16End; $j += 2) {
+            $vu16e = [int][BitConverter]::ToUInt16($buf, $j)
+            [void]$exactU16Around.Add([ordered]@{ offset=$j; value=$vu16e })
+        }
+
+        # Exact hex windows from transition
+        $ex32End = [Math]::Min($bytesReadCount, $firstNonFfOffset + 32)
+        $exactHex32 = if ($ex32End -gt $firstNonFfOffset) {
+            (($buf[$firstNonFfOffset..($ex32End - 1)] | ForEach-Object { $_.ToString('x2') }) -join ' ')
+        } else { '' }
+
+        $ex64End = [Math]::Min($bytesReadCount, $firstNonFfOffset + 64)
+        $exactHex64 = if ($ex64End -gt $firstNonFfOffset) {
+            (($buf[$firstNonFfOffset..($ex64End - 1)] | ForEach-Object { $_.ToString('x2') }) -join ' ')
+        } else { '' }
+
+        # Exact small U32 candidates (1..65535) from unaligned start
+        $exactSmallU32 = [System.Collections.ArrayList]::new()
+        foreach ($entry in $exactU32Around) {
+            if ([long]$entry.value_u32 -ge 1 -and [long]$entry.value_u32 -le 65535) {
+                [void]$exactSmallU32.Add($entry)
+            }
+        }
+
+        $transitionExactDecodingAdded  = $true
+        $alignedContextOnly            = $true
+        $transitionStructureUnderstood = $false
     }
 }
 
@@ -225,6 +274,14 @@ $result = [ordered]@{
     plausible_count_fields_near_transition         = $plausibleCounts
     plausible_offset_candidates_near_transition    = $plausibleOffsets
     plausible_cell_coordinate_candidates_near_transition = $plausibleCoords
+    exact_offset_u32le_values_from_transition              = $exactU32Around
+    exact_offset_u16le_values_from_transition              = $exactU16Around
+    exact_offset_hex_first_32_bytes                        = $exactHex32
+    exact_offset_hex_first_64_bytes                        = $exactHex64
+    exact_offset_small_u32_candidates                      = $exactSmallU32
+    transition_exact_offset_decoding_added                 = $transitionExactDecodingAdded
+    aligned_u32le_values_are_context_only                  = $alignedContextOnly
+    transition_structure_understood                        = $transitionStructureUnderstood
     interpretation                                 = $interpretation
     confidence_level                               = 'low'
     full_format_understood                         = $false

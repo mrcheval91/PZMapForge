@@ -174,6 +174,21 @@ Assert-True ($null -ne $pB -and $pB.first_non_ff_found -eq $false) 'not-found: f
 # === Assertion 23: not-found: interpretation == ff_region_continues_beyond_bounded_scan ===
 Assert-True ($null -ne $pB -and $pB.interpretation -eq 'ff_region_continues_beyond_bounded_scan') "not-found: interpretation == 'ff_region_continues_beyond_bounded_scan'"
 
+# === Assertion 24: transition_exact_offset_decoding_added == true (file A) ===
+Assert-True ($null -ne $pA -and $pA.transition_exact_offset_decoding_added -eq $true) 'transition_exact_offset_decoding_added == true'
+
+# === Assertion 25: aligned_u32le_values_are_context_only == true (file A) ===
+Assert-True ($null -ne $pA -and $pA.aligned_u32le_values_are_context_only -eq $true) 'aligned_u32le_values_are_context_only == true'
+
+# === Assertion 26: transition_structure_understood == false (file A) ===
+Assert-True ($null -ne $pA -and $pA.transition_structure_understood -eq $false) 'transition_structure_understood == false'
+
+# === Assertion 27: exact_offset_u32le_values_from_transition has entries (file A) ===
+$exactCount = if ($null -ne $pA -and $null -ne $pA.exact_offset_u32le_values_from_transition) {
+    ($pA.exact_offset_u32le_values_from_transition | Measure-Object).Count
+} else { 0 }
+Assert-True ($exactCount -gt 0) 'exact_offset_u32le_values_from_transition has entries'
+
 Write-Host ""
 Write-Host "Results: $pass passed, $fail failed, $total total"
 

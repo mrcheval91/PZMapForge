@@ -95,3 +95,12 @@ explicit operator approval.
 
 Binary writer gate remains CLOSED until IsoMetaGrid logs a parse attempt against
 PZMapForge lotheader/sidecar.
+
+## MAP-8V reference
+
+MAP-8V recorded the real MAP-8U run result. The operator ran the scanner against
+Project Russia worldmap.xml.bin and found the first non-FF byte at offset 6389.
+ff_run_length=6256. Offset 6389 is NOT 4-byte or 2-byte aligned.
+Exact U32LE at transition (unaligned): 30, 26, 9. Observed-only.
+Inspector hardened with exact-offset decoding fields (MAP-8V).
+See docs/MAP_8V_REAL_FIRST_NON_FF_TRANSITION_RESULT.md.

@@ -8,6 +8,36 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8V: Record real first non-FF transition result and add exact-offset decoding)
+- docs/MAP_8V_REAL_FIRST_NON_FF_TRANSITION_RESULT.md: MAP-8V result doctrine.
+  - Classification: MAP8V_REAL_FIRST_NON_FF_TRANSITION_RESULT_RECORDED.
+  - Operator ran MAP-8U scanner against Project Russia worldmap.xml.bin (283881 bytes,
+    first 65536 bytes read).
+  - first_non_ff_offset=6389, ff_run_length=6256. Offset NOT 4-byte or 2-byte aligned.
+  - Exact U32LE at transition (unaligned, observed-only): 30, 26, 9.
+  - transition_structure_understood=false; full_format_understood=false.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+  - next_branch=igmb_transition_structure_analysis_pending_operator_approval.
+- scripts/inspect-build42-igmb-first-non-ff-transition.ps1: hardened with exact-offset decoding.
+  - New fields: exact_offset_u32le_values_from_transition, exact_offset_u16le_values_from_transition,
+    exact_offset_hex_first_32_bytes, exact_offset_hex_first_64_bytes,
+    exact_offset_small_u32_candidates, transition_exact_offset_decoding_added=true,
+    aligned_u32le_values_are_context_only=true, transition_structure_understood=false.
+  - Exact reads start at first_non_ff_offset (not aligned to 4-byte boundary).
+- scripts/test-build42-igmb-first-non-ff-transition.ps1: 23 -> 27 assertions.
+  - Tests 24-27: transition_exact_offset_decoding_added==true,
+    aligned_u32le_values_are_context_only==true, transition_structure_understood==false,
+    exact_offset_u32le_values_from_transition has entries.
+- scripts/prepare-build42-map8v-real-first-non-ff-transition-result-packet.ps1:
+  - .local/ guard on -Output.
+  - Hardcoded real run values: first_non_ff_offset=6389, exact_u32le_at_transition_0=30,
+    exact_u32le_at_transition_4=26, exact_u32le_at_transition_8=9.
+  - Writes map8v-real-first-non-ff-transition-result.json (schema pzmapforge.map8v-result.v0.1),
+    map8v-real-first-non-ff-transition-result.md, MAP_8V_REAL_FIRST_NON_FF_TRANSITION_RESULT_PACKET.md.
+- scripts/test-build42-map8v-real-first-non-ff-transition-result.ps1: 20 assertions.
+- Proof packet schema: v0.70 -> v0.71.
+- psTotal: 1629 -> 1654.
+
 ### Added (MAP-8U: Bounded first non-FF transition scan after IGMB string pool)
 - docs/MAP_8U_FIRST_NON_FF_TRANSITION_SCAN.md: MAP-8U first non-FF transition scan doctrine.
   - Classification: MAP8U_FIRST_NON_FF_TRANSITION_SCAN_APPROVED.
@@ -30,7 +60,7 @@ Format: Keep a Changelog.
   - If not found: first_non_ff_found=false, interpretation=ff_region_continues_beyond_bounded_scan.
   - All result arrays use [System.Collections.ArrayList]::new() (PS5.1 null-array fix).
   - max_bytes_allowed in JSON = 65536 (hard cap, regardless of -MaxBytes).
-- scripts/test-build42-igmb-first-non-ff-transition.ps1: 23 assertions.
+- scripts/test-build42-igmb-first-non-ff-transition.ps1: 23 assertions (see MAP-8V for update to 27).
   - Synthetic file A (300 bytes): StringPoolEndOffset=42, MaxBytes=150.
     59 FF bytes then 0x42 at offset 101.
     first_non_ff_offset=101, relative=59, ff_run_length=59, not 4-byte aligned.

@@ -585,6 +585,33 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8V — Record real first non-FF transition result and add exact-offset decoding:**
+The operator ran the MAP-8U scanner against Project Russia worldmap.xml.bin.
+first_non_ff_offset=6389, ff_run_length=6256. Offset 6389 is NOT 4-byte or 2-byte aligned.
+Exact U32LE values at transition (unaligned, observed-only): 30, 26, 9.
+Inspector hardened with exact_offset_u32le_values_from_transition,
+exact_offset_u16le_values_from_transition, exact_offset_hex_first_32_bytes,
+exact_offset_hex_first_64_bytes, exact_offset_small_u32_candidates,
+transition_exact_offset_decoding_added=true, aligned_u32le_values_are_context_only=true,
+transition_structure_understood=false.
+Result packet: `scripts\prepare-build42-map8v-real-first-non-ff-transition-result-packet.ps1`
+Result tests: `scripts\test-build42-map8v-real-first-non-ff-transition-result.ps1` (20 assertions)
+
+Status labels:
+```text
+MAP8V_REAL_FIRST_NON_FF_TRANSITION_RESULT_RECORDED
+FIRST_NON_FF_OFFSET=6389
+FF_RUN_LENGTH=6256
+TRANSITION_OFFSET_IS_4_BYTE_ALIGNED=false
+TRANSITION_STRUCTURE_UNDERSTOOD=false
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_THIRD_PARTY_FILES_COPIED
+```
+
+next_branch=igmb_transition_structure_analysis_pending_operator_approval.
+Binary writer gate remains CLOSED.
+
 **MAP-8U — Bounded first non-FF transition scan after IGMB string pool:**
 The operator approved bounded first non-FF transition scan starting at
 string_pool_end_offset=133, reading at most 65536 bytes (hard cap).
@@ -594,7 +621,7 @@ Inspector: `scripts\inspect-build42-igmb-first-non-ff-transition.ps1`
 If found: records first_non_ff_offset, relative offset, ff_run_length, alignment flags,
 small hex windows, U32LE/U16LE around transition, ASCII runs, heuristic candidates.
 If not found: interpretation=ff_region_continues_beyond_bounded_scan.
-Inspector tests: `scripts\test-build42-igmb-first-non-ff-transition.ps1` (23 assertions)
+Inspector tests: `scripts\test-build42-igmb-first-non-ff-transition.ps1` (27 assertions)
 Packet: `scripts\prepare-build42-map8u-first-non-ff-transition-result-packet.ps1`
 Packet tests: `scripts\test-build42-map8u-first-non-ff-transition-result.ps1` (20 assertions)
 
