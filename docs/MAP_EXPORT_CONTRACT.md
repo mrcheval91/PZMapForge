@@ -585,6 +585,22 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8S — IGMB cell-index boundary research after string pool:**
+Operator approved bounded inspection of bytes after string_pool_end_offset=133, within
+first 4096 bytes only. Inspector: scripts/inspect-build42-igmb-cell-boundary.ps1.
+Reads at most min(file_size, 4096) bytes via FileStream read-only. Output fields:
+post-string-pool hex windows (128 + 256 bytes), U32LE/U16LE/float32LE analysis,
+plausible count/offset/coordinate candidates, zero run detection, repeated pattern
+detection, section boundary hypotheses (identity unknown). confidence_level=low.
+full_format_understood=false. cell_index_understood=false. binary_writer_gate_closed=true.
+No file copy. No binary writer. No PZ run. No Workshop upload.
+next_branch=igmb_cell_index_model_research_pending_operator_approval_if_boundary_evidence_sufficient.
+
+Inspector: `scripts\inspect-build42-igmb-cell-boundary.ps1`
+Inspector tests: `scripts\test-build42-igmb-cell-boundary.ps1` (20 assertions)
+Packet: `scripts\prepare-build42-map8s-cell-boundary-result-packet.ps1`
+Packet tests: `scripts\test-build42-map8s-cell-boundary-result.ps1` (20 assertions)
+
 **MAP-8R — Record real IGMB structure result and identify probable string pool header:**
 The operator ran the MAP-8Q inspector against the actual Project Russia worldmap.xml.bin.
 Result: 12 U16LE LP strings detected; offset-20 U32LE=12 matches string count exactly.

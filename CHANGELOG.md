@@ -8,6 +8,91 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8S: IGMB cell-index boundary research after string pool)
+- docs/MAP_8S_IGMB_CELL_INDEX_BOUNDARY_RESEARCH.md: MAP-8S cell boundary research doctrine.
+  - Classification: MAP8S_IGMB_CELL_BOUNDARY_RESEARCH_DEFINED.
+  - Operator approved bounded inspection of bytes after string_pool_end_offset=133,
+    within first 4096 bytes only.
+  - Scope: read-only, no file copy, no binary writer, no PZ run, no Workshop upload.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+  - CONFIDENCE_LEVEL=low; cell_index_understood=false; full_format_understood=false.
+  - next_branch=igmb_cell_index_model_research_pending_operator_approval_if_boundary_evidence_sufficient.
+- scripts/inspect-build42-igmb-cell-boundary.ps1:
+  - .local/ guard on -Output.
+  - Params: -ReferenceWorldmapBinPath, -CandidateWorldmapBinPath (optional), -Output,
+    -MaxBytes (default 4096, hard cap 4096), -StringPoolEndOffset (default 133).
+  - Reads at most min(file_size, MaxBytes, 4096) bytes via FileStream read-only.
+  - Writes igmb-cell-boundary-inspection.json
+    (schema pzmapforge.map8s-igmb-cell-boundary-inspection.v0.1) + .md.
+  - Fields: post-string-pool hex window (128+256 bytes), u32le_values_after_string_pool_first_128,
+    u32le_aligned_boundary_hypothesis (from next 4-byte aligned offset after postStart),
+    u16le_values_after_string_pool_first_128, float32le_values_after_string_pool_first_128,
+    plausible_count_fields_after_string_pool (U32LE 1..65535),
+    plausible_offset_table_candidates (U32LE 1..<file_size),
+    plausible_cell_coordinate_candidates (U32LE 1..500 heuristic),
+    zero_run_candidates (>= 4 consecutive zero bytes),
+    repeated_pattern_candidates (consecutive identical U32LE pairs),
+    section_boundary_hypotheses, confidence_level=low,
+    binary_writer_gate_closed=true, playable_claim_allowed=false,
+    third_party_files_copied=false.
+  - All result arrays use [System.Collections.ArrayList]::new() (PS5.1 null-array fix).
+- scripts/test-build42-igmb-cell-boundary.ps1: 20 assertions.
+  - Synthetic 300-byte IGMB file: 2 LP strings (Polygon at 24, highway at 33),
+    string pool ends at 42; U32LE=3 at 42, U32LE=200 at 46, 8 zero bytes at 50-57,
+    U32LE=5 at 58, fill 0x41 at 62-299.
+  - Test 1: .local guard exits nonzero.
+  - Test 2: exits 0 with valid .local path.
+  - Tests 3-4: 2 output files exist.
+  - Test 5: schema correct.
+  - Test 6: reference_present == true.
+  - Test 7: bytes_read_count > 0.
+  - Test 8: full_file_read == false.
+  - Test 9: max_bytes_allowed == 4096.
+  - Test 10: string_pool_end_offset == 42.
+  - Test 11: post_string_pool_window_start == 42.
+  - Test 12: post_string_pool_window_bytes_available > 0.
+  - Test 13: u32le_values_after_string_pool_first_128.Count > 0.
+  - Test 14: u32le_aligned_boundary_hypothesis.Count > 0 (nextAligned=44 != 42).
+  - Test 15: u16le_values_after_string_pool_first_128.Count > 0.
+  - Test 16: float32le_values_after_string_pool_first_128.Count > 0.
+  - Test 17: zero_run_candidates.Count > 0.
+  - Test 18: confidence_level == low.
+  - Test 19: binary_writer_gate_closed == true.
+  - Test 20: playable_claim_allowed == false.
+- scripts/prepare-build42-map8s-cell-boundary-result-packet.ps1:
+  - .local/ guard on -Output.
+  - Records approval metadata only (operator has not yet run inspector against real file).
+  - Writes map8s-cell-boundary-result.json (schema pzmapforge.map8s-result.v0.1)
+    + .md + MAP_8S_CELL_BOUNDARY_RESULT_PACKET.md.
+  - Fields: operator_approved_cell_index_boundary_research=true,
+    string_pool_end_offset=133, max_bytes_allowed=4096, full_file_read=false,
+    binary_contents_read_scope=first_4096_bytes_only,
+    focus_region=after_string_pool_offset_133,
+    full_format_understood=false, cell_index_understood=false,
+    geometry_payload_understood=false, writer_implementation_allowed=false,
+    binary_writer_gate_closed=true, playable_claim_allowed=false,
+    third_party_files_copied=false, no_pz_run_by_claude=true,
+    no_workshop_upload_by_claude=true,
+    next_branch=igmb_cell_index_model_research_pending_operator_approval_if_boundary_evidence_sufficient.
+- scripts/test-build42-map8s-cell-boundary-result.ps1: 20 assertions.
+  - Tests 1-2: .local guard / exits 0.
+  - Tests 3-5: 3 output files exist.
+  - Test 6: schema correct.
+  - Tests 7-16: approval metadata and safety flags.
+  - Test 17: next_branch correct.
+  - Tests 18-20: packet doc sentinels (MAP8S_CELL_BOUNDARY_RESEARCH_DEFINED /
+    BINARY_WRITER_GATE_STILL_CLOSED / PUBLIC_PLAYABLE_CLAIM_ALLOWED=false).
+
+### Updated (MAP-8S)
+- docs/MAP_8R_REAL_IGMB_STRUCTURE_RESULT.md: next_branch note updated to reference MAP-8S.
+- docs/IMPLEMENTATION.md: MAP-8S row added.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-8S boundary updated.
+- scripts/validate.ps1: MAP-8S section added; psTotal 1520 -> 1562.
+- scripts/write-proof-packet.ps1: schema v0.67 -> v0.68; MAP-8S entries added;
+  proof_packet 123 -> 125; total_expected_assertions 1520 -> 1562.
+- scripts/test-proof-packet.ps1: schema check updated; MAP-8S assertions added;
+  total_expected_assertions 1520 -> 1562.
+
 ### Added (MAP-8R: Record real IGMB structure result and identify probable string pool header)
 - docs/MAP_8R_REAL_IGMB_STRUCTURE_RESULT.md: MAP-8R real IGMB structure result doctrine.
   - Classification: MAP8R_REAL_IGMB_STRUCTURE_RESULT_RECORDED.

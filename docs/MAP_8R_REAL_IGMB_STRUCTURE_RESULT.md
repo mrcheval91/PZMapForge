@@ -108,10 +108,11 @@ MAX_BYTES_ALLOWED=4096
 ## Next branch
 
 next_branch=igmb_cell_index_boundary_research_pending_operator_approval
+resolved_by=MAP-8S (MAP8S_IGMB_CELL_BOUNDARY_RESEARCH_DEFINED)
 
-The string pool ends at offset 133 (estimated). What follows is the cell index
-or geometry payload — not confirmed from the first 4096 bytes alone. A bounded
-cell index boundary research step requires explicit operator approval.
+The string pool ends at offset 133 (estimated). MAP-8S defines bounded inspection
+of bytes after offset 133. What follows the string pool is not confirmed — MAP-8S
+records the cell index boundary research approval and inspector contract.
 
 Binary writer gate remains CLOSED until IsoMetaGrid logs a parse attempt
 against PZMapForge lotheader/sidecar.
