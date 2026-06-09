@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (1336)
+    Final output reports the complete PowerShell validation lane total (1371)
     and the .NET lane total (556) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.61 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.62 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,60 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-8M Worldmap bin presence investigation plan ---"
+$map8mDoc         = Join-Path $repoRoot 'docs\MAP_8M_WORLDMAP_BIN_INVESTIGATION_PLAN.md'
+$map8mInspector   = Join-Path $repoRoot 'scripts\inspect-build42-worldmap-bin-presence.ps1'
+$map8mTests       = Join-Path $repoRoot 'scripts\test-build42-worldmap-bin-presence.ps1'
+if (-not (Test-Path -LiteralPath $map8mDoc))       { throw "MAP-8M doc missing" }
+Write-Output "OK: docs\MAP_8M_WORLDMAP_BIN_INVESTIGATION_PLAN.md"
+if (-not (Test-Path -LiteralPath $map8mInspector)) { throw "MAP-8M inspector missing" }
+Write-Output "OK: scripts\inspect-build42-worldmap-bin-presence.ps1"
+if (-not (Test-Path -LiteralPath $map8mTests))     { throw "MAP-8M tests missing" }
+Write-Output "OK: scripts\test-build42-worldmap-bin-presence.ps1"
+$map8mDocContent = Get-Content -LiteralPath $map8mDoc -Raw
+if ($map8mDocContent -notmatch 'MAP8M_WORLDMAP_BIN_INVESTIGATION_PLAN_DEFINED') { throw "MAP-8M doc missing MAP8M_WORLDMAP_BIN_INVESTIGATION_PLAN_DEFINED" }
+Write-Output "OK: doc contains MAP8M_WORLDMAP_BIN_INVESTIGATION_PLAN_DEFINED"
+if ($map8mDocContent -notmatch 'BINARY_WRITER_GATE_STILL_CLOSED') { throw "MAP-8M doc missing BINARY_WRITER_GATE_STILL_CLOSED" }
+Write-Output "OK: doc contains BINARY_WRITER_GATE_STILL_CLOSED"
+if ($map8mDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-8M doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+$map8mInspContent = Get-Content -LiteralPath $map8mInspector -Raw
+if ($map8mInspContent -notmatch '\.local') { throw "MAP-8M inspector missing .local refusal" }
+Write-Output "OK: inspector contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-8M worldmap bin presence tests ---"
+& powershell -ExecutionPolicy Bypass -File $map8mTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-8M worldmap bin presence tests failed." }
+
+Write-Output ""
+Write-Output "--- MAP-8L Worldmap XML runtime result ---"
+$map8lRtDoc          = Join-Path $repoRoot 'docs\MAP_8L_RUNTIME_RESULT.md'
+$map8lRtPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map8l-runtime-result-packet.ps1'
+$map8lRtTests        = Join-Path $repoRoot 'scripts\test-build42-map8l-runtime-result.ps1'
+if (-not (Test-Path -LiteralPath $map8lRtDoc))          { throw "MAP-8L runtime result doc missing" }
+Write-Output "OK: docs\MAP_8L_RUNTIME_RESULT.md"
+if (-not (Test-Path -LiteralPath $map8lRtPacketScript)) { throw "MAP-8L runtime result packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map8l-runtime-result-packet.ps1"
+if (-not (Test-Path -LiteralPath $map8lRtTests))        { throw "MAP-8L runtime result tests missing" }
+Write-Output "OK: scripts\test-build42-map8l-runtime-result.ps1"
+$map8lRtDocContent = Get-Content -LiteralPath $map8lRtDoc -Raw
+if ($map8lRtDocContent -notmatch 'MAP8L_WORLDMAP_XML_FAILED_TO_MOUNT') { throw "MAP-8L runtime result doc missing MAP8L_WORLDMAP_XML_FAILED_TO_MOUNT" }
+Write-Output "OK: doc contains MAP8L_WORLDMAP_XML_FAILED_TO_MOUNT"
+if ($map8lRtDocContent -notmatch 'BINARY_WRITER_GATE_STILL_CLOSED') { throw "MAP-8L runtime result doc missing BINARY_WRITER_GATE_STILL_CLOSED" }
+Write-Output "OK: doc contains BINARY_WRITER_GATE_STILL_CLOSED"
+if ($map8lRtDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-8L runtime result doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+$map8lRtPacketContent = Get-Content -LiteralPath $map8lRtPacketScript -Raw
+if ($map8lRtPacketContent -notmatch '\.local') { throw "MAP-8L runtime result packet script missing .local refusal" }
+Write-Output "OK: packet script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-8L worldmap xml runtime result tests ---"
+& powershell -ExecutionPolicy Bypass -File $map8lRtTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-8L worldmap xml runtime result tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-8L Worldmap XML substantial candidate ---"
@@ -1807,7 +1861,7 @@ $psChecks = [ordered]@{
     'Region extraction'                    = 24
     'Primitive classification'             = 22
     'Plan recommendations contract'        = 28
-    'Proof packet'                         = 119
+    'Proof packet'                         = 121
     'Build42 geometry inspector tests'     = 23
     'Build42 format design matrix tests'   = 13
     'Build42 writer contract tests'        = 20
@@ -1828,6 +1882,8 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-8M worldmap bin presence tests'               = 15
+    'MAP-8L worldmap xml runtime result tests'         = 20
     'MAP-8L worldmap xml substantial candidate tests'  = 20
     'MAP-8K parent metadata contract comparator tests' = 20
     'MAP-8I dual spawnpoint runtime result tests'  = 20
@@ -1857,7 +1913,7 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 1336  # = validation_summary.total_expected_assertions in proof-packet v0.61
+$psTotal = 1371  # = validation_summary.total_expected_assertions in proof-packet v0.62
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
@@ -1872,7 +1928,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.61 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.62 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

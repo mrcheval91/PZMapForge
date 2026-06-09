@@ -585,6 +585,54 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8M — Worldmap XML.bin investigation plan:**
+MAP-8L proved that a substantial text `worldmap.xml` alone does not unlock IsoMetaGrid parent
+folder mount. Leading hypothesis: `worldmap.xml.bin` binary sidecar is required.
+MAP-8M defines a staged investigation plan:
+
+- Step 1: Presence/shape inventory — allowed now.
+- Step 2: Format research gate — binary reading requires explicit operator approval.
+- Step 3: Binary writer gate — opens only when IsoMetaGrid logs a parse attempt against
+  PZMapForge lotheader/sidecar.
+
+Script: `scripts\inspect-build42-worldmap-bin-presence.ps1`
+Tests: `scripts\test-build42-worldmap-bin-presence.ps1` (15 assertions)
+
+Status labels:
+```text
+MAP8M_WORLDMAP_BIN_INVESTIGATION_PLAN_DEFINED
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_PZ_RUN_BY_CLAUDE
+NO_WORKSHOP_UPLOAD_BY_CLAUDE
+NO_THIRD_PARTY_FILES_COPIED
+NO_BINARY_CONTENTS_READ
+```
+
+No binary contents read. No third-party files copied. Binary writer gate remains closed.
+
+**MAP-8L — Runtime result (worldmap XML substantial candidate FAILED to mount):**
+MAP-8L deployed the 1,915-byte PZMapForge-owned `worldmap.xml`. Server config was correct.
+Player connected at 10746,8288,0. IsoMetaGrid map folder list still empty.
+`WorldMapDataAssetManager` failed to load both child and parent `worldmap.xml`.
+
+Classification: `MAP8L_WORLDMAP_XML_FAILED_TO_MOUNT`
+
+Script: `scripts\prepare-build42-map8l-runtime-result-packet.ps1`
+Tests: `scripts\test-build42-map8l-runtime-result.ps1` (20 assertions)
+
+Status labels:
+```text
+MAP8L_WORLDMAP_XML_FAILED_TO_MOUNT
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_PZ_RUN_BY_CLAUDE
+NO_WORKSHOP_UPLOAD_BY_CLAUDE
+NO_THIRD_PARTY_FILES_COPIED
+```
+
+No playable export claimed. Binary writer gate remains closed.
+
 **MAP-8L — Worldmap XML substantial candidate:**
 MAP-8K comparator found candidate `worldmap.xml` is skeletal (52 bytes, 2 lines) while
 the Project Russia reference parent has a substantial `worldmap.xml` (888KB, 30,959 lines)

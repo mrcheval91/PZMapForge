@@ -8,6 +8,49 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8M: Record MAP-8L runtime result and prepare worldmap.xml.bin investigation)
+- docs/MAP_8L_RUNTIME_RESULT.md: MAP-8L runtime result doctrine.
+  - Classification: MAP8L_WORLDMAP_XML_FAILED_TO_MOUNT.
+  - MAP-8L deployed substantial PZMapForge-owned worldmap.xml (1915 bytes, 44 lines).
+  - Player connected at 10746,8288,0 (matches worldX=35, worldY=27 coordinate proof).
+  - IsoMetaGrid map folder list still empty. Parent folder not listed.
+  - WorldMapDataAssetManager failed to load both child and parent worldmap.xml.
+  - worldmap_xml_bin_present=false; lotheader_parse_attempt_logged=false.
+  - next_branch=worldmap_xml_bin_binary_format_investigation.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- docs/MAP_8M_WORLDMAP_BIN_INVESTIGATION_PLAN.md: MAP-8M investigation plan.
+  - MAP8M_WORLDMAP_BIN_INVESTIGATION_PLAN_DEFINED.
+  - Staged plan: Step 1 presence/shape inventory (allowed now); Step 2 format
+    research gate (requires operator approval); Step 3 binary writer gate.
+  - Binary writer gate opens only when IsoMetaGrid logs parse attempt against PZMapForge.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/prepare-build42-map8l-runtime-result-packet.ps1:
+  - .local/ guard on -Output.
+  - Writes map8l-result.json (schema pzmapforge.map8l-result.v0.1) + MD + packet doc.
+  - Records all runtime result fields: spawn coordinate, ISO meta grid, worldmap bin presence,
+    lotheader parse attempt, binary writer gate, next branch.
+- scripts/test-build42-map8l-runtime-result.ps1: 20 assertions.
+  - Test 1: .local guard exits nonzero.
+  - Tests 3-5: output files exist.
+  - Tests 6-20: JSON field values including spawn coordinate, ISO meta grid state,
+    worldmap bin presence, gate status, next branch.
+- scripts/inspect-build42-worldmap-bin-presence.ps1:
+  - .local/ guard on -Output.
+  - Presence/size check for worldmap.xml, worldmap.xml.bin, worldmap-forest.xml,
+    worldmap-forest.xml.bin, streets.xml.bin, objects.lua, spawnpoints.lua.
+  - Count-only for lotheader/lotpack/chunkdata files (no content reading).
+  - Schema pzmapforge.map8m-worldmap-bin-presence.v0.1.
+  - binary_contents_read=false; no_project_russia_files_copied=true; playable_claim_allowed=false.
+- scripts/test-build42-worldmap-bin-presence.ps1: 15 assertions.
+  - Test 1: .local guard exits nonzero.
+  - Tests 3-4: output JSON and MD exist.
+  - Tests 5-15: schema, map IDs, binary guards, presence flags.
+- Updated scripts/validate.ps1: MAP-8M section + MAP-8L runtime result section before MAP-8L
+  substantial candidate; psTotal 1336->1371; proof-packet v0.61->v0.62.
+- Updated scripts/write-proof-packet.ps1: map8m/map8l runtime result fields; total 1336->1371;
+  schema v0.61->v0.62.
+- Updated scripts/test-proof-packet.ps1: 2 new assertions; total 1336->1371; schema v0.61->v0.62.
+
 ### Added (MAP-8L: Worldmap XML substantial candidate)
 - docs/MAP_8L_WORLDMAP_XML_SUBSTANTIAL_CANDIDATE.md: MAP-8L doctrine.
   - Source basis: MAP-8K found candidate worldmap.xml skeletal (52 bytes, 2 lines).
