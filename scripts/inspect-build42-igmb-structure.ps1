@@ -134,25 +134,60 @@ foreach ($entry in $lpStrings) {
     }
 }
 
-# Possible header fields (bytes before string pool)
+# Named header fields: bytes 8-23 as explicit U32LE values
+$unknownA = if ($buf.Count -ge 12) {
+    [int]($buf[8]) -bor ([int]($buf[9]) -shl 8) -bor ([int]($buf[10]) -shl 16) -bor ([int]($buf[11]) -shl 24)
+} else { -1 }
+$unknownB = if ($buf.Count -ge 16) {
+    [int]($buf[12]) -bor ([int]($buf[13]) -shl 8) -bor ([int]($buf[14]) -shl 16) -bor ([int]($buf[15]) -shl 24)
+} else { -1 }
+$unknownC = if ($buf.Count -ge 20) {
+    [int]($buf[16]) -bor ([int]($buf[17]) -shl 8) -bor ([int]($buf[18]) -shl 16) -bor ([int]($buf[19]) -shl 24)
+} else { -1 }
+$probableStringPoolCount = if ($buf.Count -ge 24) {
+    [int]($buf[20]) -bor ([int]($buf[21]) -shl 8) -bor ([int]($buf[22]) -shl 16) -bor ([int]($buf[23]) -shl 24)
+} else { -1 }
+
+# String pool values array
+$spValues = [System.Collections.ArrayList]::new()
+foreach ($entry in $lpStrings) {
+    [void]$spValues.Add([string]$entry.value)
+}
+
+# String pool end offset candidate
+$spEndOffset = -1
+if ($lpStrings.Count -gt 0) {
+    $lastEntry = $lpStrings[$lpStrings.Count - 1]
+    $spEndOffset = [int]$lastEntry.offset + 2 + [int]$lastEntry.len_field
+}
+
+# Does detected LP string count match offset-20 header value?
+$spCountMatchesHeader = ($probableStringPoolCount -ge 0) -and ($probableStringPoolCount -eq $lpStrings.Count)
+
+# Probable partial header model (observed, hypothesis confidence=medium when count matches)
+$headerModel = [System.Collections.ArrayList]::new()
+[void]$headerModel.Add('0x00 char[4] magic=IGMB')
+[void]$headerModel.Add("0x04 u32le version=$versionLeU32")
+[void]$headerModel.Add("0x08 u32le unknown_a=$unknownA")
+[void]$headerModel.Add("0x0C u32le unknown_b=$unknownB")
+[void]$headerModel.Add("0x10 u32le unknown_c=$unknownC")
+[void]$headerModel.Add("0x14 u32le probable_string_pool_count=$probableStringPoolCount")
+[void]$headerModel.Add('0x18 string_pool_start offset=24')
+[void]$headerModel.Add('string_format: U16LE_byte_length+ASCII_UTF8_bytes')
+if ($spCountMatchesHeader) {
+    [void]$headerModel.Add('confidence: medium (string count matches header field)')
+} else {
+    [void]$headerModel.Add('confidence: low (string count does not match header field)')
+}
+[void]$headerModel.Add('full_format_not_confirmed_from_4096_bytes')
+
+# Legacy possible_header_fields_observed_only (kept for backward compatibility)
 $headerFields = [System.Collections.ArrayList]::new()
 if ($buf.Count -ge 8)  { [void]$headerFields.Add("bytes_4_7_u32le=$versionLeU32 (possible_version)") }
-if ($buf.Count -ge 12) {
-    $f = [int]($buf[8]) -bor ([int]($buf[9]) -shl 8) -bor ([int]($buf[10]) -shl 16) -bor ([int]($buf[11]) -shl 24)
-    [void]$headerFields.Add("bytes_8_11_u32le=$f (possible_count_or_size)")
-}
-if ($buf.Count -ge 16) {
-    $f = [int]($buf[12]) -bor ([int]($buf[13]) -shl 8) -bor ([int]($buf[14]) -shl 16) -bor ([int]($buf[15]) -shl 24)
-    [void]$headerFields.Add("bytes_12_15_u32le=$f (possible_count_or_offset)")
-}
-if ($buf.Count -ge 20) {
-    $f = [int]($buf[16]) -bor ([int]($buf[17]) -shl 8) -bor ([int]($buf[18]) -shl 16) -bor ([int]($buf[19]) -shl 24)
-    [void]$headerFields.Add("bytes_16_19_u32le=$f (possible_offset_or_size)")
-}
-if ($buf.Count -ge 24) {
-    $f = [int]($buf[20]) -bor ([int]($buf[21]) -shl 8) -bor ([int]($buf[22]) -shl 16) -bor ([int]($buf[23]) -shl 24)
-    [void]$headerFields.Add("bytes_20_23_u32le=$f (possible_count_or_size)")
-}
+if ($buf.Count -ge 12) { [void]$headerFields.Add("bytes_8_11_u32le=$unknownA (possible_count_or_size)") }
+if ($buf.Count -ge 16) { [void]$headerFields.Add("bytes_12_15_u32le=$unknownB (possible_count_or_offset)") }
+if ($buf.Count -ge 20) { [void]$headerFields.Add("bytes_16_19_u32le=$unknownC (possible_offset_or_size)") }
+if ($buf.Count -ge 24) { [void]$headerFields.Add("bytes_20_23_u32le=$probableStringPoolCount (possible_count_or_size)") }
 
 # Unverified hypotheses
 $hypotheses = [System.Collections.ArrayList]::new()
@@ -164,27 +199,39 @@ $hypotheses = [System.Collections.ArrayList]::new()
 [void]$hypotheses.Add('full_format_not_understood_from_4096_bytes_alone')
 
 $result = [ordered]@{
-    schema                                  = $schema
-    reference_present                       = $ref.present
-    reference_size_bytes                    = $ref.size_bytes
-    bytes_read_count                        = $ref.bytes_read_count
-    max_bytes_allowed                       = 4096
-    full_file_read                          = $false
-    magic                                   = 'IGMB'
-    version_le_u32                          = $versionLeU32
-    candidate_u32_values_first_64_le        = $u32List
-    candidate_u16_values_first_64_le        = $u16List
-    printable_ascii_runs_min_length_3       = $asciiRuns
-    possible_length_prefixed_strings        = $lpStrings
-    possible_string_pool_offset_candidates  = $spOffsets
-    possible_string_pool_count_candidates   = [int]$lpStrings.Count
-    possible_header_fields_observed_only    = $headerFields
-    unverified_format_hypotheses            = $hypotheses
-    confidence_level                        = 'low_to_medium'
-    binary_writer_gate_closed               = $true
-    playable_claim_allowed                  = $false
-    third_party_files_copied                = $false
-    next_branch                             = 'igmb_minimal_encoder_design_pending_operator_approval_if_structure_sufficient'
+    schema                                            = $schema
+    reference_present                                 = $ref.present
+    reference_size_bytes                              = $ref.size_bytes
+    bytes_read_count                                  = $ref.bytes_read_count
+    max_bytes_allowed                                 = 4096
+    full_file_read                                    = $false
+    magic                                             = 'IGMB'
+    header_magic_text                                 = 'IGMB'
+    version_le_u32                                    = $versionLeU32
+    header_version_le_u32                             = $versionLeU32
+    header_unknown_a_offset_8_u32le                   = $unknownA
+    header_unknown_b_offset_12_u32le                  = $unknownB
+    header_unknown_c_offset_16_u32le                  = $unknownC
+    header_probable_string_pool_count_offset_20_u32le = $probableStringPoolCount
+    string_pool_start_offset_candidate                = 24
+    string_pool_detected_count                        = [int]$lpStrings.Count
+    string_pool_count_matches_header_offset_20        = $spCountMatchesHeader
+    string_pool_values                                = $spValues
+    string_pool_end_offset_candidate                  = $spEndOffset
+    probable_partial_header_model                     = $headerModel
+    candidate_u32_values_first_64_le                  = $u32List
+    candidate_u16_values_first_64_le                  = $u16List
+    printable_ascii_runs_min_length_3                 = $asciiRuns
+    possible_length_prefixed_strings                  = $lpStrings
+    possible_string_pool_offset_candidates            = $spOffsets
+    possible_string_pool_count_candidates             = [int]$lpStrings.Count
+    possible_header_fields_observed_only              = $headerFields
+    unverified_format_hypotheses                      = $hypotheses
+    confidence_level                                  = 'low_to_medium'
+    binary_writer_gate_closed                         = $true
+    playable_claim_allowed                            = $false
+    third_party_files_copied                          = $false
+    next_branch                                       = 'igmb_minimal_encoder_design_pending_operator_approval_if_structure_sufficient'
 }
 
 $jsonPath = Join-Path $outDir 'igmb-structure-inspection.json'
@@ -202,13 +249,23 @@ $mdLines = [System.Collections.ArrayList]::new()
 [void]$mdLines.Add("Bytes read: $($ref.bytes_read_count) (max_bytes_allowed=4096)")
 [void]$mdLines.Add("Version U32LE: $versionLeU32")
 [void]$mdLines.Add('')
+[void]$mdLines.Add('## Probable partial header model')
+[void]$mdLines.Add('')
+foreach ($h in $headerModel) {
+    [void]$mdLines.Add("  $h")
+}
+[void]$mdLines.Add('')
+[void]$mdLines.Add("string_pool_detected_count: $([int]$lpStrings.Count)")
+[void]$mdLines.Add("string_pool_count_matches_header_offset_20: $spCountMatchesHeader")
+[void]$mdLines.Add("string_pool_end_offset_candidate: $spEndOffset")
+[void]$mdLines.Add('')
 [void]$mdLines.Add('## U32LE values from first 64 bytes')
 [void]$mdLines.Add('')
 for ($i = 0; $i -lt $u32List.Count; $i++) {
     [void]$mdLines.Add("  offset $($i*4): $($u32List[$i])")
 }
 [void]$mdLines.Add('')
-[void]$mdLines.Add('## Possible U16LE length-prefixed strings')
+[void]$mdLines.Add('## String pool values (U16LE LP strings)')
 [void]$mdLines.Add('')
 foreach ($s in $lpStrings) {
     [void]$mdLines.Add("  offset $($s.offset): len=$($s.len_field) value=`"$($s.value)`"")
@@ -218,12 +275,6 @@ foreach ($s in $lpStrings) {
 [void]$mdLines.Add('')
 foreach ($run in $asciiRuns) {
     [void]$mdLines.Add("  offset $($run.offset): len=$($run.length) value=`"$($run.value)`"")
-}
-[void]$mdLines.Add('')
-[void]$mdLines.Add('## Possible header fields (observed, not confirmed)')
-[void]$mdLines.Add('')
-foreach ($hf in $headerFields) {
-    [void]$mdLines.Add("  $hf")
 }
 [void]$mdLines.Add('')
 [void]$mdLines.Add('## Unverified hypotheses')

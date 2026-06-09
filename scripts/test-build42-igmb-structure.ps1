@@ -39,7 +39,7 @@ $igmbBytes[4] = 0x02; $igmbBytes[5] = 0x00; $igmbBytes[6] = 0x00; $igmbBytes[7] 
 $igmbBytes[8] = 0x00; $igmbBytes[9] = 0x01; $igmbBytes[10] = 0x00; $igmbBytes[11] = 0x00
 $igmbBytes[12] = 0x3B; $igmbBytes[13] = 0x00; $igmbBytes[14] = 0x00; $igmbBytes[15] = 0x00
 $igmbBytes[16] = 0x44; $igmbBytes[17] = 0x00; $igmbBytes[18] = 0x00; $igmbBytes[19] = 0x00
-$igmbBytes[20] = 0x0C; $igmbBytes[21] = 0x00; $igmbBytes[22] = 0x00; $igmbBytes[23] = 0x00
+$igmbBytes[20] = 0x02; $igmbBytes[21] = 0x00; $igmbBytes[22] = 0x00; $igmbBytes[23] = 0x00
 # U16LE len=7 + "Polygon"
 $igmbBytes[24] = 0x07; $igmbBytes[25] = 0x00
 $igmbBytes[26] = 0x50; $igmbBytes[27] = 0x6F; $igmbBytes[28] = 0x6C; $igmbBytes[29] = 0x79
@@ -141,6 +141,24 @@ foreach ($item in $lpArr) {
     if ($null -ne $item -and $item.value -eq 'Polygon') { $hasPolygon = $true; break }
 }
 Assert-True $hasPolygon "possible_length_prefixed_strings contains entry with value 'Polygon'"
+
+# Test 21: header_magic_text == 'IGMB'
+Write-Host "`n[21] header_magic_text == IGMB"
+Assert-True ($p.header_magic_text -eq 'IGMB') "header_magic_text == IGMB"
+
+# Test 22: header_probable_string_pool_count_offset_20_u32le == 2 (synthetic file byte 20-23 = 02 00 00 00)
+Write-Host "`n[22] header_probable_string_pool_count_offset_20_u32le == 2"
+Assert-True ([int]$p.header_probable_string_pool_count_offset_20_u32le -eq 2) `
+    "header_probable_string_pool_count_offset_20_u32le == 2 (synthetic file byte 20-23 = 02 00 00 00)"
+
+# Test 23: string_pool_count_matches_header_offset_20 == true (synthetic: 2 LP strings, header offset 20 = 2)
+Write-Host "`n[23] string_pool_count_matches_header_offset_20 == true"
+Assert-True ($p.string_pool_count_matches_header_offset_20 -eq $true) `
+    "string_pool_count_matches_header_offset_20 == true (2 LP strings, offset-20 value = 2)"
+
+# Test 24: string_pool_values not null
+Write-Host "`n[24] string_pool_values not null"
+Assert-True ($null -ne $p.string_pool_values) "string_pool_values not null"
 
 # Cleanup
 if (Test-Path $tmpOut) { Remove-Item -Recurse -Force $tmpOut }

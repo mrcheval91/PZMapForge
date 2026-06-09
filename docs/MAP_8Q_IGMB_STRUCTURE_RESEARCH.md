@@ -82,13 +82,27 @@ NO_THIRD_PARTY_FILES_COPIED
 CONFIDENCE_LEVEL=low_to_medium
 ```
 
+## MAP-8R follow-up
+
+The operator ran this inspector against the actual Project Russia worldmap.xml.bin.
+The real result has been recorded in docs/MAP_8R_REAL_IGMB_STRUCTURE_RESULT.md.
+
+Key findings (MAP-8R):
+- 12 U16LE LP strings detected.
+- offset-20 U32LE value = 12 matches detected count exactly.
+- string_pool_count_matches_header_offset_20=true.
+- string_pool_end_offset_candidate=133.
+- partial_header_model_confidence=medium.
+- full_format_understood=false.
+- Classification: MAP8R_REAL_IGMB_STRUCTURE_RESULT_RECORDED.
+- next_branch=igmb_cell_index_boundary_research_pending_operator_approval.
+
 ## Next branch
 
-next_branch=igmb_minimal_encoder_design_pending_operator_approval_if_structure_sufficient
+next_branch=igmb_cell_index_boundary_research_pending_operator_approval (MAP-8R follow-up)
 
-The 4096-byte window provides structural observations about the string pool layout
-and header field positions. A minimal encoder design step requires explicit operator
-approval and can only proceed if structure research yields sufficient evidence.
+The string pool ends at estimated offset 133. What follows (cell index or geometry
+payload) requires explicit operator approval before investigation.
 
 Binary writer gate remains CLOSED until IsoMetaGrid logs a parse attempt against
 PZMapForge lotheader/sidecar.

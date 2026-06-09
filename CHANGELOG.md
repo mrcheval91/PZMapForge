@@ -8,6 +8,82 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8R: Record real IGMB structure result and identify probable string pool header)
+- docs/MAP_8R_REAL_IGMB_STRUCTURE_RESULT.md: MAP-8R real IGMB structure result doctrine.
+  - Classification: MAP8R_REAL_IGMB_STRUCTURE_RESULT_RECORDED.
+  - Operator ran MAP-8Q inspector against actual Project Russia worldmap.xml.bin.
+  - Observed 12 U16LE LP strings (Polygon/highway/primary/trail/natural/forest/water/river/
+    tertiary/building/Residential/secondary).
+  - Offset-20 U32LE value = 12 matches detected LP string count exactly.
+  - string_pool_count_matches_header_offset_20=true.
+  - Probable partial IGMB header: magic(4)+version u32le(4)+unknown_a(4)+unknown_b(4)+
+    unknown_c(4)+string_pool_count(4)+string_pool at offset 24.
+  - string_pool_end_offset_candidate=133.
+  - partial_header_model_confidence=medium.
+  - full_format_understood=false; geometry_payload_understood=false.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+  - next_branch=igmb_cell_index_boundary_research_pending_operator_approval.
+- scripts/prepare-build42-map8r-real-igmb-structure-result-packet.ps1:
+  - .local/ guard on -Output.
+  - Writes map8r-real-igmb-structure-result.json (schema pzmapforge.map8r-result.v0.1)
+    + .md + MAP_8R_REAL_IGMB_STRUCTURE_RESULT_PACKET.md.
+  - Fields: reference_size_bytes=283881, bytes_read_count=4096, full_file_read=false,
+    magic=IGMB, version_le_u32=2, header_unknown_a_offset_8_u32le=256,
+    header_unknown_b_offset_12_u32le=59, header_unknown_c_offset_16_u32le=68,
+    header_probable_string_pool_count_offset_20_u32le=12,
+    string_pool_start_offset_candidate=24, string_pool_detected_count=12,
+    string_pool_count_matches_header_offset_20=true,
+    string_pool_values=[12 OSM/PZ feature type strings],
+    string_pool_end_offset_candidate=133,
+    partial_header_model_confidence=medium, full_format_understood=false,
+    geometry_payload_understood=false, writer_implementation_allowed=false,
+    binary_writer_gate_closed=true, playable_claim_allowed=false,
+    third_party_files_copied=false,
+    next_branch=igmb_cell_index_boundary_research_pending_operator_approval.
+- scripts/test-build42-map8r-real-igmb-structure-result.ps1: 20 assertions.
+  - Test 1: .local guard exits nonzero.
+  - Test 2: exits 0 with valid .local path.
+  - Tests 3-5: 3 output files exist.
+  - Test 6: schema correct.
+  - Test 7: magic == IGMB.
+  - Test 8: version_le_u32 == 2.
+  - Test 9: string_pool_detected_count == 12.
+  - Test 10: string_pool_count_matches_header_offset_20 == true.
+  - Test 11: string_pool_values contains Polygon.
+  - Test 12: string_pool_values contains secondary.
+  - Test 13: header_probable_string_pool_count_offset_20_u32le == 12.
+  - Test 14: string_pool_end_offset_candidate == 133.
+  - Test 15: partial_header_model_confidence == medium.
+  - Test 16: full_format_understood == false.
+  - Tests 17-19: gate flags.
+  - Test 20: next_branch correct.
+  - Sentinel checks: MAP8R_REAL_IGMB_STRUCTURE_RESULT_RECORDED /
+    BINARY_WRITER_GATE_STILL_CLOSED / PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+
+### Updated (MAP-8R: inspector improvements and MAP-8Q inspector tests)
+- scripts/inspect-build42-igmb-structure.ps1:
+  - Added explicit named header fields: header_magic_text=IGMB,
+    header_version_le_u32, header_unknown_a_offset_8_u32le,
+    header_unknown_b_offset_12_u32le, header_unknown_c_offset_16_u32le,
+    header_probable_string_pool_count_offset_20_u32le.
+  - Added string_pool_start_offset_candidate=24.
+  - Added string_pool_detected_count (count of LP string candidates found).
+  - Added string_pool_count_matches_header_offset_20 (true when detected count
+    equals offset-20 value).
+  - Added string_pool_values (array of LP string values).
+  - Added string_pool_end_offset_candidate (last LP string offset + 2 + len).
+  - Added probable_partial_header_model (list of annotated header field strings).
+  - Preserved all existing output fields unchanged.
+- scripts/test-build42-igmb-structure.ps1: 20 -> 24 assertions.
+  - Synthetic file byte 20-23 changed from 0x0C (12) to 0x02 (2) so that
+    string_pool_count_matches_header_offset_20 is true (2 LP strings, header=2).
+  - Test 21: header_magic_text == IGMB.
+  - Test 22: header_probable_string_pool_count_offset_20_u32le == 2.
+  - Test 23: string_pool_count_matches_header_offset_20 == true.
+  - Test 24: string_pool_values not null.
+- docs/MAP_8Q_IGMB_STRUCTURE_RESEARCH.md: MAP-8R result reference added.
+- psTotal 1494 -> 1520; proof-packet v0.66 -> v0.67.
+
 ### Added (MAP-8Q: IGMB structure research with bounded 4096-byte inspection)
 - docs/MAP_8Q_IGMB_STRUCTURE_RESEARCH.md: MAP-8Q IGMB structure research doctrine.
   - Classification: MAP8Q_IGMB_STRUCTURE_RESEARCH_DEFINED.

@@ -585,19 +585,32 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8R — Record real IGMB structure result and identify probable string pool header:**
+The operator ran the MAP-8Q inspector against the actual Project Russia worldmap.xml.bin.
+Result: 12 U16LE LP strings detected; offset-20 U32LE=12 matches string count exactly.
+Probable partial IGMB header: magic+version+unknown_a/b/c+string_pool_count at offset 20+
+string pool starting at offset 24. string_pool_end_offset_candidate=133.
+partial_header_model_confidence=medium. full_format_understood=false.
+writer_implementation_allowed=false. binary_writer_gate_closed=true.
+
+Packet: `scripts\prepare-build42-map8r-real-igmb-structure-result-packet.ps1`
+Packet tests: `scripts\test-build42-map8r-real-igmb-structure-result.ps1` (20 assertions)
+
 **MAP-8Q — IGMB structure research with bounded 4096-byte inspection:**
 The operator approved bounded IGMB structure research: at most first 4096 bytes,
 read-only, no copying, no full binary read, no binary writer.
 
 Script: `scripts\inspect-build42-igmb-structure.ps1`
-Tests: `scripts\test-build42-igmb-structure.ps1` (20 assertions)
+Tests: `scripts\test-build42-igmb-structure.ps1` (24 assertions)
 Packet: `scripts\prepare-build42-map8q-igmb-structure-result-packet.ps1`
 Packet tests: `scripts\test-build42-map8q-igmb-structure-result.ps1` (20 assertions)
 
 Inspector reads at most min(file_size, MaxBytes, 4096) bytes. Performs:
 - U32LE and U16LE parsing of first 64 bytes.
+- Named header field extraction (version, unknown_a/b/c, probable_string_pool_count at offset 20).
 - Printable ASCII run detection (length >= 3) across full read window.
 - U16LE length-prefixed string scanning.
+- string_pool_count_matches_header_offset_20 detection.
 
 Status labels:
 ```text
