@@ -585,6 +585,34 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8U — Bounded first non-FF transition scan after IGMB string pool:**
+The operator approved bounded first non-FF transition scan starting at
+string_pool_end_offset=133, reading at most 65536 bytes (hard cap).
+Source basis: MAP-8T found all bytes 133-4095 are 0xFF.
+
+Inspector: `scripts\inspect-build42-igmb-first-non-ff-transition.ps1`
+If found: records first_non_ff_offset, relative offset, ff_run_length, alignment flags,
+small hex windows, U32LE/U16LE around transition, ASCII runs, heuristic candidates.
+If not found: interpretation=ff_region_continues_beyond_bounded_scan.
+Inspector tests: `scripts\test-build42-igmb-first-non-ff-transition.ps1` (23 assertions)
+Packet: `scripts\prepare-build42-map8u-first-non-ff-transition-result-packet.ps1`
+Packet tests: `scripts\test-build42-map8u-first-non-ff-transition-result.ps1` (20 assertions)
+
+Status labels:
+```text
+MAP8U_FIRST_NON_FF_TRANSITION_SCAN_APPROVED
+MAX_BYTES_ALLOWED=65536
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_PZ_RUN_BY_CLAUDE
+NO_WORKSHOP_UPLOAD_BY_CLAUDE
+NO_THIRD_PARTY_FILES_COPIED
+CONFIDENCE_LEVEL=low
+```
+
+next_branch=igmb_transition_structure_analysis_pending_operator_approval_if_non_ff_found.
+Binary writer gate remains CLOSED.
+
 **MAP-8T — Record real MAP-8S post-string-pool FF sentinel result:**
 The operator ran the MAP-8S inspector against Project Russia worldmap.xml.bin
 (283881 bytes, first 4096 bytes read). Result: all bytes immediately after

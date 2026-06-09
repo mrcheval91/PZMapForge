@@ -8,6 +8,43 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8U: Bounded first non-FF transition scan after IGMB string pool)
+- docs/MAP_8U_FIRST_NON_FF_TRANSITION_SCAN.md: MAP-8U first non-FF transition scan doctrine.
+  - Classification: MAP8U_FIRST_NON_FF_TRANSITION_SCAN_APPROVED.
+  - Operator approved bounded first non-FF transition scan from offset 133, max 65536 bytes.
+  - Source basis: MAP-8T found all bytes 133-4095 are 0xFF.
+  - Scope: read-only, no file copy, no binary writer, no PZ run, no Workshop upload.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+  - CONFIDENCE_LEVEL=low; full_format_understood=false; cell_index_understood=false.
+  - next_branch=igmb_transition_structure_analysis_pending_operator_approval_if_non_ff_found.
+- scripts/inspect-build42-igmb-first-non-ff-transition.ps1:
+  - .local/ guard on -Output.
+  - Params: -ReferenceWorldmapBinPath, -Output, -StringPoolEndOffset (default 133),
+    -MaxBytes (hard cap 65536), -WindowBytes (hard cap 256).
+  - Reads at most min(file_size, MaxBytes, 65536) bytes via FileStream read-only.
+  - Scans from StringPoolEndOffset for first non-0xFF byte.
+  - Writes igmb-first-non-ff-transition-inspection.json
+    (schema pzmapforge.map8u-igmb-first-non-ff-transition-inspection.v0.1) + .md.
+  - If found: first_non_ff_offset, relative_offset, ff_run_length, alignment,
+    hex windows, U32LE/U16LE around transition, ASCII runs, heuristic candidates.
+  - If not found: first_non_ff_found=false, interpretation=ff_region_continues_beyond_bounded_scan.
+  - All result arrays use [System.Collections.ArrayList]::new() (PS5.1 null-array fix).
+  - max_bytes_allowed in JSON = 65536 (hard cap, regardless of -MaxBytes).
+- scripts/test-build42-igmb-first-non-ff-transition.ps1: 23 assertions.
+  - Synthetic file A (300 bytes): StringPoolEndOffset=42, MaxBytes=150.
+    59 FF bytes then 0x42 at offset 101.
+    first_non_ff_offset=101, relative=59, ff_run_length=59, not 4-byte aligned.
+  - Synthetic file B (200 bytes): StringPoolEndOffset=42, MaxBytes=70.
+    All FF after offset 42. first_non_ff_found=false.
+- scripts/prepare-build42-map8u-first-non-ff-transition-result-packet.ps1:
+  - .local/ guard on -Output.
+  - Records approval metadata only.
+  - Writes map8u-first-non-ff-transition-result.json (schema pzmapforge.map8u-result.v0.1),
+    map8u-first-non-ff-transition-result.md, MAP_8U_FIRST_NON_FF_TRANSITION_RESULT_PACKET.md.
+- scripts/test-build42-map8u-first-non-ff-transition-result.ps1: 20 assertions.
+- Proof packet schema: v0.69 -> v0.70.
+- psTotal: 1584 -> 1629.
+
 ### Added (MAP-8T: Record real MAP-8S post-string-pool FF sentinel result)
 - docs/MAP_8T_REAL_CELL_BOUNDARY_FF_SENTINEL_RESULT.md: MAP-8T result doctrine.
   - Classification: MAP8T_REAL_CELL_BOUNDARY_FF_SENTINEL_RESULT_RECORDED.

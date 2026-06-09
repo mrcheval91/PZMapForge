@@ -106,3 +106,9 @@ because it may require reading beyond the current 4096-byte cap.
 
 Binary writer gate remains CLOSED until IsoMetaGrid logs a parse attempt against
 PZMapForge lotheader/sidecar.
+
+## Next step: MAP-8U
+
+MAP-8U: Bounded first non-FF transition scan after IGMB string pool.
+Operator approved reading at most 65536 bytes to locate the first non-FF byte.
+See docs/MAP_8U_FIRST_NON_FF_TRANSITION_SCAN.md.
