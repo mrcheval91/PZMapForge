@@ -585,13 +585,53 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8P — IGMB worldmap bin header result recorded:**
+The operator ran MAP-8O inspector against the Project Russia reference worldmap.xml.bin.
+Result: magic bytes 49 47 4D 42 = ASCII "IGMB". Custom Project Zomboid binary format.
+
+Inspector updated to detect IGMB signature (check added before sqlite check).
+Tests 21-22 added to test-build42-worldmap-bin-header.ps1 (total 20->22).
+
+Key observations (first 64 bytes only — not a format specification):
+- Magic: 49 47 4D 42 = IGMB.
+- Apparent version (U32LE): bytes 4-7 = 02 00 00 00 = 2.
+- Visible string tokens: Polygon, highway, primary, trail, natu (OSM feature types).
+- Apparent U16LE length-prefixed strings: 07 00 before "Polygon" = 7. Matches.
+- appears_compressed=false; likely_little_endian_fields=true.
+- big_endian_claim_contradicted_by_observed_header=true (community note unverified).
+- community_layout_notes_recorded_as_unverified=true.
+
+Doc: `docs\MAP_8P_IGMB_WORLDMAP_BIN_HEADER_RESULT.md`
+Packet: `scripts\prepare-build42-map8p-igmb-header-result-packet.ps1`
+Packet tests: `scripts\test-build42-map8p-igmb-header-result.ps1` (20 assertions)
+
+Status labels:
+```text
+MAP8P_IGMB_WORLDMAP_BIN_HEADER_RESULT_RECORDED
+IGMB_MAGIC_DETECTED=true
+APPEARS_COMPRESSED=false
+LIKELY_LITTLE_ENDIAN_FIELDS=true
+BIG_ENDIAN_CLAIM_CONTRADICTED_BY_OBSERVED_HEADER=true
+COMMUNITY_LAYOUT_NOTES_RECORDED_AS_UNVERIFIED=true
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_PZ_RUN_BY_CLAUDE
+NO_WORKSHOP_UPLOAD_BY_CLAUDE
+NO_THIRD_PARTY_FILES_COPIED
+NO_BINARY_CONTENTS_FULL_READ
+MAX_BYTES_ALLOWED=64
+```
+
+Binary writer gate remains CLOSED.
+Next: igmb_structure_research_pending_operator_approval.
+
 **MAP-8O — Worldmap XML.bin header-only inspection:**
 The operator approved Step 2 of the MAP-8M investigation plan. Header-only inspection of
 `worldmap.xml.bin` is now permitted: at most 64 bytes per file, read-only, no copying,
 no full binary parsing, no binary writer.
 
 Script: `scripts\inspect-build42-worldmap-bin-header.ps1`
-Tests: `scripts\test-build42-worldmap-bin-header.ps1` (20 assertions)
+Tests: `scripts\test-build42-worldmap-bin-header.ps1` (22 assertions)
 Packet: `scripts\prepare-build42-map8o-header-result-packet.ps1`
 Packet tests: `scripts\test-build42-map8o-header-result.ps1` (20 assertions)
 

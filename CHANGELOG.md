@@ -8,6 +8,69 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8P: Record IGMB worldmap bin header result and update signature detection)
+- docs/MAP_8P_IGMB_WORLDMAP_BIN_HEADER_RESULT.md: MAP-8P IGMB header result doctrine.
+  - Classification: MAP8P_IGMB_WORLDMAP_BIN_HEADER_RESULT_RECORDED.
+  - Operator ran MAP-8O inspector against Project Russia reference worldmap.xml.bin.
+  - Reference detected_signature=igmb (magic bytes 49 47 4D 42 = "IGMB").
+  - reference_first_16_bytes_hex: 49 47 4D 42 02 00 00 00 00 01 00 00 3B 00 00 00.
+  - reference_first_64_bytes_hex contains visible tokens: Polygon, highway, primary, trail, natu.
+  - igmb_magic_detected=true; appears_compressed=false; likely_little_endian_fields=true.
+  - possible_version_value=2 (bytes 4-7 = 02 00 00 00 as little-endian U32).
+  - possible_string_length_prefix_width=16-bit (07 00 before "Polygon" = U16LE 7).
+  - big_endian_claim_contradicted_by_observed_header=true (community note was unverified).
+  - community_layout_notes_recorded_as_unverified=true.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+  - next_branch=igmb_structure_research_pending_operator_approval.
+- Updated scripts/inspect-build42-worldmap-bin-header.ps1:
+  - Added IGMB signature detection: bytes 0-3 == 49 47 4D 42 -> detected_signature='igmb'.
+  - IGMB check inserted before sqlite check in signature detection block.
+- Updated scripts/test-build42-worldmap-bin-header.ps1:
+  - Tests 21-22 added: IGMB dummy reference exits 0; detected_signature == 'igmb'.
+  - Total assertions: 20 -> 22.
+- scripts/prepare-build42-map8p-igmb-header-result-packet.ps1:
+  - .local/ guard on -Output.
+  - Writes map8p-igmb-header-result.json (schema pzmapforge.map8p-result.v0.1) + .md + packet doc.
+  - Records all observed fields from MAP-8O inspector run (hardcoded observed values).
+  - Fields: candidate_present=false, reference_present=true, reference_size_bytes=283881,
+    reference_bytes_read_count=64, reference_first_16_bytes_hex, reference_first_64_bytes_hex,
+    reference_ascii_preview, reference_detected_signature=igmb, igmb_magic_detected=true,
+    appears_compressed=false, appears_custom_binary_worldmap_format=true,
+    likely_little_endian_fields=true, possible_version_value=2,
+    possible_length_prefixed_strings=true, possible_string_length_prefix_width=16-bit,
+    visible_string_tokens=Polygon/highway/primary/trail/natu_prefix,
+    community_layout_notes_recorded_as_unverified=true,
+    big_endian_claim_contradicted_by_observed_header=true,
+    max_bytes_allowed=64, binary_contents_read_scope=first_64_bytes_only,
+    binary_contents_full_read=false, third_party_files_copied=false,
+    playable_claim_allowed=false, binary_writer_gate_closed=true,
+    next_branch=igmb_structure_research_pending_operator_approval.
+- scripts/test-build42-map8p-igmb-header-result.ps1: 20 assertions.
+  - Test 1: .local guard exits nonzero.
+  - Test 2: exits 0 with valid path.
+  - Tests 3-5: output files exist (json + md + packet doc).
+  - Test 6: schema == pzmapforge.map8p-result.v0.1.
+  - Test 7: igmb_magic_detected == true.
+  - Test 8: reference_detected_signature == igmb.
+  - Test 9: appears_compressed == false.
+  - Test 10: appears_custom_binary_worldmap_format == true.
+  - Test 11: likely_little_endian_fields == true.
+  - Test 12: big_endian_claim_contradicted_by_observed_header == true.
+  - Test 13: community_layout_notes_recorded_as_unverified == true.
+  - Test 14: max_bytes_allowed == 64.
+  - Test 15: binary_contents_full_read == false.
+  - Test 16: third_party_files_copied == false.
+  - Test 17: playable_claim_allowed == false.
+  - Test 18: binary_writer_gate_closed == true.
+  - Test 19: next_branch == igmb_structure_research_pending_operator_approval.
+  - Test 20: packet doc contains MAP8P_IGMB_WORLDMAP_BIN_HEADER_RESULT_RECORDED.
+- Updated scripts/validate.ps1: MAP-8P section before MAP-8O; map8o inspector 20->22;
+  psTotal 1432->1454; proof-packet v0.64->v0.65.
+- Updated scripts/write-proof-packet.ps1: map8p=20; map8o inspector 20->22;
+  total 1432->1454; schema v0.64->v0.65.
+- Updated scripts/test-proof-packet.ps1: map8p assertion; map8o inspector 20->22;
+  total 1432->1454; schema v0.64->v0.65.
+
 ### Added (MAP-8O: Header-only worldmap.xml.bin format inspection)
 - docs/MAP_8O_WORLDMAP_BIN_HEADER_INSPECTION.md: MAP-8O header inspection doctrine.
   - Classification: MAP8O_WORLDMAP_XML_BIN_HEADER_INSPECTION_DEFINED.

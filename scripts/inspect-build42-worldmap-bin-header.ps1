@@ -68,6 +68,8 @@ function Read-BinHeader([string]$filePath) {
             $r.detected_signature = 'zlib'
         } elseif ($b0 -eq 0x50 -and $b1 -eq 0x4B) {
             $r.detected_signature = 'zip'
+        } elseif ($buf.Count -ge 4 -and $b0 -eq 0x49 -and $b1 -eq 0x47 -and $buf[2] -eq 0x4D -and $buf[3] -eq 0x42) {
+            $r.detected_signature = 'igmb'
         } elseif ($buf.Count -ge 4 -and $b0 -eq 0x53 -and $b1 -eq 0x51 -and $buf[2] -eq 0x4C -and $buf[3] -eq 0x69) {
             $r.detected_signature = 'sqlite'
         } elseif ($b0 -eq 0x3C) {

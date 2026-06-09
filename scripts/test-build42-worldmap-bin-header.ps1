@@ -121,9 +121,39 @@ Assert-True ($p.playable_claim_allowed -eq $false) "playable_claim_allowed == fa
 Write-Host "`n[20] binary_writer_gate_closed == true"
 Assert-True ($p.binary_writer_gate_closed -eq $true) "binary_writer_gate_closed == true"
 
+# Tests 21-22: IGMB signature detection
+Write-Host "`n[21-22] IGMB signature detection"
+$tmpIgmbRef = Join-Path $tmpLocalDir 'map8o-dummy-igmb.bin'
+$tmpIgmbOut = Join-Path $PSScriptRoot '.local\map8o-igmb-test-tmp'
+$igmbBytes = [byte[]]::new(64)
+$igmbBytes[0] = 0x49  # I
+$igmbBytes[1] = 0x47  # G
+$igmbBytes[2] = 0x4D  # M
+$igmbBytes[3] = 0x42  # B
+for ($i = 4; $i -lt 64; $i++) { $igmbBytes[$i] = [byte]($i -band 0xFF) }
+[System.IO.File]::WriteAllBytes($tmpIgmbRef, $igmbBytes)
+if (Test-Path $tmpIgmbOut) { Remove-Item -Recurse -Force $tmpIgmbOut }
+$savedPrefI = $ErrorActionPreference
+$ErrorActionPreference = 'SilentlyContinue'
+$null = & powershell -ExecutionPolicy Bypass -NonInteractive -Command `
+    "& '$scriptPath' -CandidateWorldmapBinPath 'C:\nonexistent_igmb_candidate.bin' -ReferenceWorldmapBinPath '$tmpIgmbRef' -Output '$tmpIgmbOut'" 2>&1
+$igmbExit = $LASTEXITCODE
+$ErrorActionPreference = $savedPrefI
+Assert-True ($igmbExit -eq 0) "IGMB reference: inspector exits 0"
+$igmbJsonPath = Join-Path $tmpIgmbOut 'worldmap-bin-header-inspection.json'
+if (Test-Path $igmbJsonPath) {
+    $pi = Get-Content $igmbJsonPath -Raw | ConvertFrom-Json
+    Assert-True ($pi.reference_detected_signature -eq 'igmb') "IGMB reference: detected_signature == igmb (49 47 4D 42)"
+} else {
+    $script:fail++
+    Write-Host "  FAIL: IGMB reference: worldmap-bin-header-inspection.json not found"
+}
+
 # Cleanup
-if (Test-Path $tmpOut) { Remove-Item -Recurse -Force $tmpOut }
-if (Test-Path $tmpRef) { Remove-Item -Force $tmpRef }
+if (Test-Path $tmpOut)     { Remove-Item -Recurse -Force $tmpOut }
+if (Test-Path $tmpRef)     { Remove-Item -Force $tmpRef }
+if (Test-Path $tmpIgmbOut) { Remove-Item -Recurse -Force $tmpIgmbOut }
+if (Test-Path $tmpIgmbRef) { Remove-Item -Force $tmpIgmbRef }
 
 Write-Host "`n=========================================="
 Write-Host "PASS: $pass   FAIL: $fail   TOTAL: $($pass + $fail)"
