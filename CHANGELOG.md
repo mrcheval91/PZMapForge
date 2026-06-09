@@ -8,6 +8,77 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8Q: IGMB structure research with bounded 4096-byte inspection)
+- docs/MAP_8Q_IGMB_STRUCTURE_RESEARCH.md: MAP-8Q IGMB structure research doctrine.
+  - Classification: MAP8Q_IGMB_STRUCTURE_RESEARCH_DEFINED.
+  - Operator approved bounded IGMB structure research: max 4096 bytes, read-only, no copying,
+    no full binary read, no binary writer.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+  - next_branch=igmb_minimal_encoder_design_pending_operator_approval_if_structure_sufficient.
+- scripts/inspect-build42-igmb-structure.ps1:
+  - .local/ guard on -Output.
+  - Params: -ReferenceWorldmapBinPath, -CandidateWorldmapBinPath (optional), -Output,
+    -MaxBytes (default 4096, hard cap 4096).
+  - Reads at most min(file_size, MaxBytes, 4096) bytes via FileStream read-only.
+  - Missing candidate handled gracefully as present=false.
+  - Writes igmb-structure-inspection.json (schema
+    pzmapforge.map8q-igmb-structure-inspection.v0.1) + .md.
+  - Fields: reference_present, reference_size_bytes, bytes_read_count,
+    max_bytes_allowed=4096, full_file_read=false, magic=IGMB, version_le_u32,
+    candidate_u32_values_first_64_le, candidate_u16_values_first_64_le,
+    printable_ascii_runs_min_length_3, possible_length_prefixed_strings,
+    possible_string_pool_offset_candidates, possible_string_pool_count_candidates,
+    possible_header_fields_observed_only, unverified_format_hypotheses,
+    confidence_level=low_to_medium, binary_writer_gate_closed=true,
+    playable_claim_allowed=false, third_party_files_copied=false, next_branch.
+  - U32LE and U16LE parsing of first 64 bytes.
+  - Printable ASCII run detection (length >= 3) across full read window.
+  - U16LE length-prefixed string scan: [len_lo len_hi] + len printable ASCII chars.
+- scripts/test-build42-igmb-structure.ps1: 20 assertions.
+  - Test 1: .local guard exits nonzero.
+  - Test 2: exits 0 with synthetic IGMB file.
+  - Tests 3-4: output files exist.
+  - Test 5: schema correct.
+  - Test 6: reference_present == true.
+  - Test 7: bytes_read_count > 0.
+  - Test 8: max_bytes_allowed == 4096.
+  - Test 9: full_file_read == false.
+  - Test 10: version_le_u32 == 2 (from synthetic file).
+  - Tests 11-12: u32/u16 value arrays not null.
+  - Test 13: possible_string_pool_count_candidates >= 2 (Polygon + highway).
+  - Test 14: printable_ascii_runs_min_length_3 not null.
+  - Tests 15-17: gate flags.
+  - Test 18: confidence_level == low_to_medium.
+  - Test 19: next_branch correct.
+  - Test 20: LP strings contain entry with value 'Polygon'.
+- scripts/prepare-build42-map8q-igmb-structure-result-packet.ps1:
+  - .local/ guard on -Output.
+  - Writes map8q-igmb-structure-result.json (schema pzmapforge.map8q-result.v0.1)
+    + .md + MAP_8Q_IGMB_STRUCTURE_RESEARCH_PACKET.md.
+  - Fields: operator_approved_igmb_structure_research=true, max_bytes_allowed=4096,
+    binary_contents_read_scope=first_4096_bytes_only, binary_contents_full_read=false,
+    third_party_files_copied=false, playable_claim_allowed=false,
+    binary_writer_gate_closed=true,
+    next_branch=igmb_minimal_encoder_design_pending_operator_approval_if_structure_sufficient.
+- scripts/test-build42-map8q-igmb-structure-result.ps1: 20 assertions.
+  - Test 1: .local guard exits nonzero.
+  - Test 2: exits 0 with valid path.
+  - Tests 3-5: output files exist.
+  - Test 6: schema == pzmapforge.map8q-result.v0.1.
+  - Test 7: operator_approved_igmb_structure_research == true.
+  - Test 8: max_bytes_allowed == 4096.
+  - Test 9: binary_contents_read_scope == first_4096_bytes_only.
+  - Tests 10-13: gate flags.
+  - Test 14: next_branch correct.
+  - Tests 15-19: packet doc sentinels.
+  - Test 20: md contains expected header.
+- Updated scripts/validate.ps1: MAP-8Q section before MAP-8P; psTotal 1454->1494;
+  proof-packet v0.65->v0.66.
+- Updated scripts/write-proof-packet.ps1: map8q fields (x2); total 1454->1494;
+  schema v0.65->v0.66.
+- Updated scripts/test-proof-packet.ps1: map8q assertions (x2); total 1454->1494;
+  schema v0.65->v0.66.
+
 ### Added (MAP-8P: Record IGMB worldmap bin header result and update signature detection)
 - docs/MAP_8P_IGMB_WORLDMAP_BIN_HEADER_RESULT.md: MAP-8P IGMB header result doctrine.
   - Classification: MAP8P_IGMB_WORLDMAP_BIN_HEADER_RESULT_RECORDED.

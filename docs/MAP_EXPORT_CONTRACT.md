@@ -585,6 +585,37 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8Q — IGMB structure research with bounded 4096-byte inspection:**
+The operator approved bounded IGMB structure research: at most first 4096 bytes,
+read-only, no copying, no full binary read, no binary writer.
+
+Script: `scripts\inspect-build42-igmb-structure.ps1`
+Tests: `scripts\test-build42-igmb-structure.ps1` (20 assertions)
+Packet: `scripts\prepare-build42-map8q-igmb-structure-result-packet.ps1`
+Packet tests: `scripts\test-build42-map8q-igmb-structure-result.ps1` (20 assertions)
+
+Inspector reads at most min(file_size, MaxBytes, 4096) bytes. Performs:
+- U32LE and U16LE parsing of first 64 bytes.
+- Printable ASCII run detection (length >= 3) across full read window.
+- U16LE length-prefixed string scanning.
+
+Status labels:
+```text
+MAP8Q_IGMB_STRUCTURE_RESEARCH_DEFINED
+OPERATOR_APPROVED_IGMB_STRUCTURE_RESEARCH=true
+MAX_BYTES_ALLOWED=4096
+BINARY_CONTENTS_FULL_READ=false
+THIRD_PARTY_FILES_COPIED=false
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_PZ_RUN_BY_CLAUDE
+NO_WORKSHOP_UPLOAD_BY_CLAUDE
+CONFIDENCE_LEVEL=low_to_medium
+```
+
+Binary writer gate remains CLOSED.
+Next: igmb_minimal_encoder_design_pending_operator_approval_if_structure_sufficient.
+
 **MAP-8P — IGMB worldmap bin header result recorded:**
 The operator ran MAP-8O inspector against the Project Russia reference worldmap.xml.bin.
 Result: magic bytes 49 47 4D 42 = ASCII "IGMB". Custom Project Zomboid binary format.

@@ -83,8 +83,8 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.65') `
-    "schema == 'pzmapforge.proof-packet.v0.65' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.66') `
+    "schema == 'pzmapforge.proof-packet.v0.66' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
@@ -140,6 +140,10 @@ Assert-True ([int]$p.validation_summary.map7a_load_test_packet_tests          -e
 Assert-True ([int]$p.validation_summary.map7b_lua_metadata_tests               -eq 21)  "map7b_lua_metadata_tests == 21"
 Assert-True ([int]$p.validation_summary.map7c_metadata_v3_packet_tests         -eq 18)  "map7c_metadata_v3_packet_tests == 18"
 Assert-True ([int]$p.validation_summary.map7d_metadata_v4_packet_tests         -eq 15)  "map7d_metadata_v4_packet_tests == 15"
+Assert-True ($null -ne $p.validation_summary.PSObject.Properties['map8q_igmb_structure_inspector_tests']) "Field 'map8q_igmb_structure_inspector_tests' present"
+Assert-True ([int]$p.validation_summary.map8q_igmb_structure_inspector_tests             -eq 20) "map8q_igmb_structure_inspector_tests == 20"
+Assert-True ($null -ne $p.validation_summary.PSObject.Properties['map8q_igmb_structure_result_tests']) "Field 'map8q_igmb_structure_result_tests' present"
+Assert-True ([int]$p.validation_summary.map8q_igmb_structure_result_tests                -eq 20) "map8q_igmb_structure_result_tests == 20"
 Assert-True ($null -ne $p.validation_summary.PSObject.Properties['map8p_igmb_header_result_tests']) "Field 'map8p_igmb_header_result_tests' present"
 Assert-True ([int]$p.validation_summary.map8p_igmb_header_result_tests                   -eq 20) "map8p_igmb_header_result_tests == 20"
 Assert-True ([int]$p.validation_summary.map8o_worldmap_bin_header_inspector_tests -eq 22) "map8o_worldmap_bin_header_inspector_tests == 22"
@@ -175,7 +179,7 @@ Assert-True ([int]$p.validation_summary.map7h_discovery_path_tests            -e
 Assert-True ([int]$p.validation_summary.map7g_variant_a_failure_tests         -eq 8)   "map7g_variant_a_failure_tests == 8"
 Assert-True ([int]$p.validation_summary.map7f_registration_diagnostic_tests   -eq 11)  "map7f_registration_diagnostic_tests == 11"
 Assert-True ([int]$p.validation_summary.map7e_diagnostics_tests                -eq 11)  "map7e_diagnostics_tests == 11"
-Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 1454) "total_expected_assertions == 1454"
+Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 1494) "total_expected_assertions == 1494"
 
 # ---------------------------------------------------------------------------
 # dotnet_validation_summary (separate lane)
