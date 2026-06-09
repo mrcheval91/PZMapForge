@@ -8,6 +8,30 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8K: Parent map metadata contract comparator)
+- docs/MAP_8K_PARENT_METADATA_CONTRACT_COMPARATOR.md: MAP-8K comparator doctrine.
+  - MAP8K_PARENT_METADATA_CONTRACT_COMPARATOR_DEFINED.
+  - Defines evidence step for parent_metadata_or_binary_cell_mount_contract branch.
+  - Comparator reads map.info fields, binary file counts, text-file summaries (no binary contents).
+  - Reference: Project Russia parent folder (read-only, no files copied).
+  - Includes operator run commands: copy candidate only, then run comparator.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-parent-map-metadata-contract.ps1:
+  - Parameters: -CandidateParentRoot, -ReferenceParentRoot, -Output, -CandidateParentMapId, -ReferenceParentMapId.
+  - -Output must be under .local/. Exits nonzero otherwise.
+  - Does NOT copy any reference files.
+  - Does NOT read binary file contents (*.lotheader, *.lotpack, chunkdata_*.bin, *.bin, *.png, *.bik, *.pack).
+  - Reads map.info key/value; counts lotheader/lotpack/chunkdata files.
+  - Text-file summaries for worldmap.xml, objects.lua, spawnpoints.lua: size, line count, skeletal/substantial.
+  - Outputs build42-parent-map-metadata-contract.json + .md.
+- scripts/test-build42-parent-map-metadata-contract.ps1: 20 assertions.
+  - Test1: refuses output outside .local.
+  - Tests 3-4: output files exist.
+  - Tests 5-20: JSON field values including schema, map IDs, binary guards, lots field, fixed2x, demoVideo, worldmap.xml summary, diffs.
+- Updated scripts/validate.ps1: MAP-8K section before MAP-8I; psTotal 1296→1316; proof-packet v0.59→v0.60.
+- Updated scripts/write-proof-packet.ps1: map8k field; total 1296→1316; schema v0.59→v0.60.
+- Updated scripts/test-proof-packet.ps1: map8k assertion; total 1296→1316; schema v0.59→v0.60.
+
 ### Added (MAP-8I: Record dual spawnpoint keys runtime result)
 - docs/MAP_8I_DUAL_SPAWNPOINT_RUNTIME_RESULT.md: MAP-8I dual spawnpoint runtime result doctrine.
   - Status: MAP8I_SPAWNPOINT_FIXED_BUT_ISOMETAGRID_NOT_MOUNTED.

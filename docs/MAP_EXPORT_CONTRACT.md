@@ -585,6 +585,39 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8K — Parent map metadata contract comparator:**
+MAP-8K defines the evidence step for the `parent_metadata_or_binary_cell_mount_contract` branch.
+MAP-8I proved spawnpoint coordinate placement works. IsoMetaGrid still does not mount the
+PZMapForge parent folder. MAP-8K defines a comparator to inspect parent map metadata fields
+against a known-working Project Russia parent folder.
+
+Script: `scripts\inspect-build42-parent-map-metadata-contract.ps1`
+
+Reads (allowed):
+- `map.info` key/value fields from both roots.
+- Binary file counts (`.lotheader`, `.lotpack`, `chunkdata_*.bin`) — count only.
+- Text-file summaries for `worldmap.xml`, `objects.lua`, `spawnpoints.lua`:
+  byte size, line count, skeletal/substantial classification. No full content copied.
+
+Forbidden reads:
+- Contents of `*.lotheader`, `*.lotpack`, `chunkdata_*.bin`, `*.bin`, `*.png`, `*.bik`, `*.pack`.
+
+Output: `build42-parent-map-metadata-contract.json` + `.md` (under `.local/` only).
+
+Status labels:
+```text
+MAP8K_PARENT_METADATA_CONTRACT_COMPARATOR_DEFINED
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_PZ_RUN_BY_CLAUDE
+NO_WORKSHOP_UPLOAD_BY_CLAUDE
+NO_THIRD_PARTY_FILES_COPIED
+NO_BINARY_CONTENTS_READ
+```
+
+No load test. No binary writer change. No Steam Workshop upload by Claude.
+No Project Russia files copied. No binary contents read. No playable export claimed.
+
 **MAP-8I — Dual spawnpoint keys runtime result:**
 MAP-8I manually patched both `spawnpoints.lua` files in the Workshop source to add dual
 spawnpoint keys (`unemployed` + `Profession_Unemployed`) at `worldX=35, worldY=27`.
