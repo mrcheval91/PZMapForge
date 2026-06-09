@@ -34,8 +34,9 @@ foreach ($d in @($tmpOut, $tmpCand, $tmpRef)) {
     New-Item -ItemType Directory -Force -Path $d | Out-Null
 }
 
-# candidate: worldmap.xml present, no .bin
+# candidate: worldmap.xml present, no .bin, one dummy .lotpack
 Set-Content -Encoding UTF8 -Path (Join-Path $tmpCand 'worldmap.xml') -Value '<worldmap/>'
+[System.IO.File]::WriteAllBytes((Join-Path $tmpCand 'world_35_27.lotpack'), [byte[]]@(0x00, 0x01))
 # reference: worldmap.xml + worldmap.xml.bin (dummy)
 Set-Content -Encoding UTF8 -Path (Join-Path $tmpRef 'worldmap.xml')     -Value '<worldmap/>'
 [System.IO.File]::WriteAllBytes((Join-Path $tmpRef 'worldmap.xml.bin'), [byte[]]@(0xAB, 0xCD, 0xEF))
@@ -103,6 +104,10 @@ Assert-True ($p.candidate_worldmap_xml_present -eq $true) "candidate_worldmap_xm
 # Test 15: reference_worldmap_xml_present == true
 Write-Host "`n[15] reference_worldmap_xml_present"
 Assert-True ($p.reference_worldmap_xml_present -eq $true) "reference_worldmap_xml_present == true"
+
+# Test 16: candidate lotpack_count == 1 (dummy world_35_27.lotpack in temp candidate)
+Write-Host "`n[16] candidate lotpack_count"
+Assert-True ([int]$p.candidate.lotpack_count -eq 1) "candidate.lotpack_count == 1 (*.lotpack pattern fixed)"
 
 foreach ($d in @($tmpOut, $tmpCand, $tmpRef)) {
     if (Test-Path $d) { Remove-Item -Recurse -Force $d }

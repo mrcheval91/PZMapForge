@@ -45,11 +45,11 @@ foreach ($fname in @('worldmap.xml','worldmap.xml.bin','worldmap-forest.xml','wo
 }
 
 $cand['lotheader_count'] = Get-FileCount $CandidateParentRoot '*.lotheader'
-$cand['lotpack_count']   = Get-FileCount $CandidateParentRoot '*.pack'
+$cand['lotpack_count']   = Get-FileCount $CandidateParentRoot '*.lotpack'
 $cand['chunkdata_count'] = Get-FileCount $CandidateParentRoot 'chunkdata_*.bin'
 
 $ref['lotheader_count']  = Get-FileCount $ReferenceParentRoot '*.lotheader'
-$ref['lotpack_count']    = Get-FileCount $ReferenceParentRoot '*.pack'
+$ref['lotpack_count']    = Get-FileCount $ReferenceParentRoot '*.lotpack'
 $ref['chunkdata_count']  = Get-FileCount $ReferenceParentRoot 'chunkdata_*.bin'
 
 $result = [ordered]@{

@@ -8,6 +8,40 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8N: Record worldmap.xml.bin presence discriminator result and fix lotpack count)
+- docs/MAP_8N_WORLDMAP_BIN_PRESENCE_RESULT.md: MAP-8N presence result doctrine.
+  - Classification: MAP8N_WORLDMAP_XML_BIN_PRESENCE_DISCRIMINATOR_CONFIRMED.
+  - Operator ran scripts/inspect-build42-worldmap-bin-presence.ps1 against:
+    - Candidate: PZMapForge parent (Workshop 3740642200).
+    - Reference: Project Russia parent (Workshop 3734334068).
+  - Key result: candidate_worldmap_xml_bin_present=false; reference=true (283881 bytes).
+  - streets.xml.bin absent in BOTH candidate and reference parent (not the blocker).
+  - worldmap.xml text already proved not sufficient (MAP-8L).
+  - worldmap_xml_bin_primary_discriminator=true (leading hypothesis, not proven fact).
+  - Bug found and fixed: inspector used *.pack pattern for lotpack count (should be *.lotpack).
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/prepare-build42-map8n-presence-result-packet.ps1:
+  - .local/ guard on -Output.
+  - Writes map8n-result.json (schema pzmapforge.map8n-result.v0.1) + MD + packet doc.
+  - Records all result fields including size bytes, blocker flags, discriminator, gate status.
+- scripts/test-build42-map8n-presence-result.ps1: 20 assertions.
+  - Test 1: .local guard exits nonzero.
+  - Tests 3-5: output files exist.
+  - Tests 6-20: JSON field values including bin presence, size, blocker flags, discriminator,
+    lotpack fix, binary guards, next branch.
+- Fixed scripts/inspect-build42-worldmap-bin-presence.ps1:
+  - Changed lotpack_count pattern from *.pack to *.lotpack.
+  - PZMapForge candidate has world_35_27.lotpack; old pattern missed it.
+- Updated scripts/test-build42-worldmap-bin-presence.ps1: 15 -> 16 assertions.
+  - Added dummy world_35_27.lotpack to temp candidate dir.
+  - Test 16: candidate.lotpack_count == 1 (*.lotpack pattern fix verified).
+- Updated scripts/validate.ps1: MAP-8N section before MAP-8M; psTotal 1371->1392;
+  proof-packet v0.62->v0.63.
+- Updated scripts/write-proof-packet.ps1: map8n field; map8m count 15->16; total 1371->1392;
+  schema v0.62->v0.63.
+- Updated scripts/test-proof-packet.ps1: map8n assertion; map8m count 15->16; total 1371->1392;
+  schema v0.62->v0.63.
+
 ### Added (MAP-8M: Record MAP-8L runtime result and prepare worldmap.xml.bin investigation)
 - docs/MAP_8L_RUNTIME_RESULT.md: MAP-8L runtime result doctrine.
   - Classification: MAP8L_WORLDMAP_XML_FAILED_TO_MOUNT.

@@ -585,6 +585,43 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8N — Worldmap XML.bin presence discriminator confirmed + lotpack count fix:**
+Operator ran `scripts/inspect-build42-worldmap-bin-presence.ps1` against the PZMapForge candidate
+parent (Workshop 3740642200) and the Project Russia reference parent (Workshop 3734334068).
+
+Key results:
+- `candidate_worldmap_xml_bin_present=false`
+- `reference_worldmap_xml_bin_present=true` (283,881 bytes)
+- `streets.xml.bin` absent in BOTH candidate and reference parent (not the primary blocker)
+- `worldmap.xml` text proven insufficient for IsoMetaGrid mount (MAP-8L)
+- `worldmap_xml_bin_primary_discriminator=true` (leading hypothesis, not proven fact)
+
+Bug fixed: `inspect-build42-worldmap-bin-presence.ps1` used `*.pack` pattern for lotpack count.
+`world_35_27.lotpack` was missed. Fixed to `*.lotpack`.
+
+Classification: `MAP8N_WORLDMAP_XML_BIN_PRESENCE_DISCRIMINATOR_CONFIRMED`
+
+Script: `scripts\prepare-build42-map8n-presence-result-packet.ps1`
+Tests: `scripts\test-build42-map8n-presence-result.ps1` (20 assertions)
+Inspector fix: `scripts\inspect-build42-worldmap-bin-presence.ps1` (*.pack -> *.lotpack)
+Inspector test: `scripts\test-build42-worldmap-bin-presence.ps1` (15 -> 16 assertions)
+
+Status labels:
+```text
+MAP8N_WORLDMAP_XML_BIN_PRESENCE_DISCRIMINATOR_CONFIRMED
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_PZ_RUN_BY_CLAUDE
+NO_WORKSHOP_UPLOAD_BY_CLAUDE
+NO_THIRD_PARTY_FILES_COPIED
+NO_BINARY_CONTENTS_READ
+LOTPACK_COUNT_PATTERN_FIXED
+```
+
+No binary contents read. No third-party files copied. Binary writer gate remains closed.
+worldmap_xml_bin_primary_discriminator=true is a hypothesis. Do not claim it as proven fact.
+Next branch: worldmap_xml_bin_header_format_investigation_pending_operator_approval.
+
 **MAP-8M — Worldmap XML.bin investigation plan:**
 MAP-8L proved that a substantial text `worldmap.xml` alone does not unlock IsoMetaGrid parent
 folder mount. Leading hypothesis: `worldmap.xml.bin` binary sidecar is required.
