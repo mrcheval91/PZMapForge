@@ -8,6 +8,29 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8X: Record real MAP-8W transition structure inspection result)
+- docs/MAP_8X_REAL_TRANSITION_STRUCTURE_RESULT.md: MAP-8X result doctrine.
+  - Classification: MAP8X_REAL_TRANSITION_STRUCTURE_RESULT_RECORDED.
+  - Operator ran MAP-8W inspector against Project Russia worldmap.xml.bin (283881 bytes,
+    first 65536 bytes read).
+  - transition_offset=6389, transition_offset_in_range=true, transition_window_before_all_ff=true.
+  - Candidate header U32 triplet: first=30, second=26, third=9 (observed_only_unconfirmed).
+  - candidate_header_triplet_confidence=low.
+  - post_triplet_payload_resembles_packed_u16le_pairs=true (observed only, not confirmed).
+  - entropy_estimate_transition_window=4.0713. printable_ascii_runs=0.
+  - Small-value clusters, FF/null sentinels, and monotonic sequences observed.
+  - transition_structure_understood=false; full_format_understood=false.
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+  - next_branch=igmb_transition_model_hypothesis_review_pending_operator_approval.
+- scripts/prepare-build42-map8x-real-transition-structure-result-packet.ps1:
+  - .local/ guard on -Output.
+  - Hardcoded real run values from MAP-8W inspector run.
+  - Writes map8x-real-transition-structure-result.json (schema pzmapforge.map8x-result.v0.1),
+    map8x-real-transition-structure-result.md, MAP_8X_REAL_TRANSITION_STRUCTURE_RESULT_PACKET.md.
+- scripts/test-build42-map8x-real-transition-structure-result.ps1: 20 assertions.
+- Proof packet schema: v0.72 -> v0.73.
+- psTotal: 1700 -> 1721.
+
 ### Added (MAP-8W: Bounded IGMB transition structure analysis around offset 6389)
 - docs/MAP_8W_IGMB_TRANSITION_STRUCTURE_ANALYSIS.md: MAP-8W analysis doctrine.
   - Classification: MAP8W_IGMB_TRANSITION_STRUCTURE_ANALYSIS_APPROVED.

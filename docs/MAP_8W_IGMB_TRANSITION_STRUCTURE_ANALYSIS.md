@@ -100,3 +100,10 @@ The operator runs scripts/inspect-build42-igmb-transition-structure.ps1 against 
 worldmap.xml.bin with default parameters (TransitionOffset=6389, MaxBytes=65536).
 Results feed MAP-8W structural model record.
 Binary writer gate remains CLOSED.
+
+## MAP-8X reference
+
+MAP-8X (real_transition_structure_result) recorded the actual run result.
+Doc: docs/MAP_8X_REAL_TRANSITION_STRUCTURE_RESULT.md
+Classification: MAP8X_REAL_TRANSITION_STRUCTURE_RESULT_RECORDED
+next_branch=igmb_transition_model_hypothesis_review_pending_operator_approval

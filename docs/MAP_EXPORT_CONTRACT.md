@@ -585,6 +585,35 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8X — Record real MAP-8W transition structure inspection result:**
+Operator ran scripts/inspect-build42-igmb-transition-structure.ps1 against Project Russia
+worldmap.xml.bin (283881 bytes, first 65536 bytes read). transition_offset=6389, in range.
+Transition window before: 64 bytes of FF confirmed.
+Candidate header U32 triplet: 30/26/9 (observed_only_unconfirmed, confidence=low).
+Post-triplet bytes resemble packed U16LE pairs (observed only, not confirmed).
+entropy_estimate_transition_window=4.0713. No printable ASCII runs.
+Monotonic sequences, small-value clusters, and FF/null sentinels observed.
+No model confirmed. No cell index. No geometry payload.
+Result packet: `scripts\prepare-build42-map8x-real-transition-structure-result-packet.ps1`
+Result tests: `scripts\test-build42-map8x-real-transition-structure-result.ps1` (20 assertions)
+
+Status labels:
+```text
+MAP8X_REAL_TRANSITION_STRUCTURE_RESULT_RECORDED
+OPERATOR_RAN_MAP8W_INSPECTOR=true
+CANDIDATE_HEADER_U32_TRIPLET=30_26_9_OBSERVED_ONLY
+POST_TRIPLET_PAYLOAD_RESEMBLES_PACKED_U16LE_PAIRS=true
+TRANSITION_STRUCTURE_UNDERSTOOD=false
+FULL_FORMAT_UNDERSTOOD=false
+CELL_INDEX_UNDERSTOOD=false
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_THIRD_PARTY_FILES_COPIED
+```
+
+next_branch=igmb_transition_model_hypothesis_review_pending_operator_approval.
+Binary writer gate remains CLOSED.
+
 **MAP-8W — Bounded IGMB transition structure analysis around offset 6389:**
 Operator approved bounded structure analysis starting at transition_offset=6389, max 65536 bytes.
 Inspector: `scripts\inspect-build42-igmb-transition-structure.ps1`
