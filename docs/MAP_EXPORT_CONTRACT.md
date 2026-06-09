@@ -585,6 +585,43 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8O — Worldmap XML.bin header-only inspection:**
+The operator approved Step 2 of the MAP-8M investigation plan. Header-only inspection of
+`worldmap.xml.bin` is now permitted: at most 64 bytes per file, read-only, no copying,
+no full binary parsing, no binary writer.
+
+Script: `scripts\inspect-build42-worldmap-bin-header.ps1`
+Tests: `scripts\test-build42-worldmap-bin-header.ps1` (20 assertions)
+Packet: `scripts\prepare-build42-map8o-header-result-packet.ps1`
+Packet tests: `scripts\test-build42-map8o-header-result.ps1` (20 assertions)
+
+Output fields: candidate/reference presence, size_bytes, bytes_read_count,
+first_16_bytes_hex, first_64_bytes_hex, ascii_preview, detected_signature,
+max_bytes_allowed=64, binary_contents_read_scope=first_64_bytes_only,
+binary_contents_full_read=false, third_party_files_copied=false,
+playable_claim_allowed=false, binary_writer_gate_closed=true.
+
+Signature detection: gzip (1F 8B), zlib (78 01/5E/9C/DA), zip (50 4B),
+sqlite (53 51 4C 69), xml_or_text (leading 3C), unknown otherwise.
+
+Status labels:
+```text
+MAP8O_WORLDMAP_XML_BIN_HEADER_INSPECTION_DEFINED
+OPERATOR_APPROVED_HEADER_ONLY_INSPECTION=true
+BINARY_WRITER_GATE_STILL_CLOSED
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NO_PZ_RUN_BY_CLAUDE
+NO_WORKSHOP_UPLOAD_BY_CLAUDE
+NO_THIRD_PARTY_FILES_COPIED
+NO_BINARY_CONTENTS_FULL_READ
+MAX_BYTES_ALLOWED=64
+```
+
+worldmap.xml.bin is not claimed as a proven Build 42 requirement.
+It is the leading discriminator / strongest hypothesis.
+
+No binary contents full read. No third-party files copied. Binary writer gate remains closed.
+
 **MAP-8N — Worldmap XML.bin presence discriminator confirmed + lotpack count fix:**
 Operator ran `scripts/inspect-build42-worldmap-bin-presence.ps1` against the PZMapForge candidate
 parent (Workshop 3740642200) and the Project Russia reference parent (Workshop 3734334068).

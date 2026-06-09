@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (1392)
+    Final output reports the complete PowerShell validation lane total (1432)
     and the .NET lane total (556) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.63 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.64 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,44 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-8O Worldmap bin header inspection ---"
+$map8oDoc          = Join-Path $repoRoot 'docs\MAP_8O_WORLDMAP_BIN_HEADER_INSPECTION.md'
+$map8oInspector    = Join-Path $repoRoot 'scripts\inspect-build42-worldmap-bin-header.ps1'
+$map8oPacketScript = Join-Path $repoRoot 'scripts\prepare-build42-map8o-header-result-packet.ps1'
+$map8oTests        = Join-Path $repoRoot 'scripts\test-build42-worldmap-bin-header.ps1'
+$map8oResultTests  = Join-Path $repoRoot 'scripts\test-build42-map8o-header-result.ps1'
+if (-not (Test-Path -LiteralPath $map8oDoc))          { throw "MAP-8O doc missing" }
+Write-Output "OK: docs\MAP_8O_WORLDMAP_BIN_HEADER_INSPECTION.md"
+if (-not (Test-Path -LiteralPath $map8oInspector))    { throw "MAP-8O inspector missing" }
+Write-Output "OK: scripts\inspect-build42-worldmap-bin-header.ps1"
+if (-not (Test-Path -LiteralPath $map8oPacketScript)) { throw "MAP-8O packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map8o-header-result-packet.ps1"
+if (-not (Test-Path -LiteralPath $map8oTests))        { throw "MAP-8O inspector tests missing" }
+Write-Output "OK: scripts\test-build42-worldmap-bin-header.ps1"
+if (-not (Test-Path -LiteralPath $map8oResultTests))  { throw "MAP-8O result tests missing" }
+Write-Output "OK: scripts\test-build42-map8o-header-result.ps1"
+$map8oDocContent = Get-Content -LiteralPath $map8oDoc -Raw
+if ($map8oDocContent -notmatch 'MAP8O_WORLDMAP_XML_BIN_HEADER_INSPECTION_DEFINED') { throw "MAP-8O doc missing MAP8O_WORLDMAP_XML_BIN_HEADER_INSPECTION_DEFINED" }
+Write-Output "OK: doc contains MAP8O_WORLDMAP_XML_BIN_HEADER_INSPECTION_DEFINED"
+if ($map8oDocContent -notmatch 'BINARY_WRITER_GATE_STILL_CLOSED') { throw "MAP-8O doc missing BINARY_WRITER_GATE_STILL_CLOSED" }
+Write-Output "OK: doc contains BINARY_WRITER_GATE_STILL_CLOSED"
+if ($map8oDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-8O doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+$map8oInspContent = Get-Content -LiteralPath $map8oInspector -Raw
+if ($map8oInspContent -notmatch '\.local') { throw "MAP-8O inspector missing .local refusal" }
+Write-Output "OK: inspector contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-8O worldmap bin header inspector tests ---"
+& powershell -ExecutionPolicy Bypass -File $map8oTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-8O worldmap bin header inspector tests failed." }
+
+Write-Output ""
+Write-Output "--- MAP-8O worldmap bin header result tests ---"
+& powershell -ExecutionPolicy Bypass -File $map8oResultTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-8O worldmap bin header result tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-8N Worldmap bin presence discriminator result ---"
@@ -1909,6 +1947,8 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-8O worldmap bin header inspector tests'        = 20
+    'MAP-8O worldmap bin header result tests'          = 20
     'MAP-8N worldmap bin presence result tests'        = 20
     'MAP-8M worldmap bin presence tests'               = 16
     'MAP-8L worldmap xml runtime result tests'         = 20
@@ -1941,7 +1981,7 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 1392  # = validation_summary.total_expected_assertions in proof-packet v0.63
+$psTotal = 1432  # = validation_summary.total_expected_assertions in proof-packet v0.64
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
@@ -1956,7 +1996,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.63 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.64 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

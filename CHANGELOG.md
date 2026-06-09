@@ -8,6 +8,57 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8O: Header-only worldmap.xml.bin format inspection)
+- docs/MAP_8O_WORLDMAP_BIN_HEADER_INSPECTION.md: MAP-8O header inspection doctrine.
+  - Classification: MAP8O_WORLDMAP_XML_BIN_HEADER_INSPECTION_DEFINED.
+  - Operator approved Step 2 of MAP-8M investigation plan: header-only inspection,
+    max 64 bytes per file, read-only, no copying, no binary writer.
+  - worldmap.xml.bin remains leading discriminator (hypothesis, not proven fact).
+  - BINARY_WRITER_GATE_STILL_CLOSED; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-worldmap-bin-header.ps1:
+  - .local/ guard on -Output.
+  - Params: -CandidateWorldmapBinPath, -ReferenceWorldmapBinPath, -Output.
+  - Reads at most first 64 bytes from each existing .bin file via FileStream read-only.
+  - Missing candidate handled gracefully as present=false.
+  - Writes worldmap-bin-header-inspection.json (schema
+    pzmapforge.map8o-worldmap-bin-header-inspection.v0.1) + .md.
+  - Fields: candidate/reference present, size_bytes, bytes_read_count,
+    first_16_bytes_hex, first_64_bytes_hex, ascii_preview, detected_signature,
+    max_bytes_allowed=64, binary_contents_read_scope=first_64_bytes_only,
+    binary_contents_full_read=false, third_party_files_copied=false,
+    playable_claim_allowed=false, binary_writer_gate_closed=true, next_branch.
+  - Signature detection: gzip (1F 8B), zlib (78 01/5E/9C/DA), zip (50 4B),
+    sqlite (53 51 4C 69), xml_or_text (leading 3C), unknown otherwise.
+- scripts/test-build42-worldmap-bin-header.ps1: 20 assertions.
+  - Test 1: .local guard exits nonzero.
+  - Test 2: exits 0 with valid path, absent candidate.
+  - Tests 3-4: output files exist.
+  - Test 5: schema correct.
+  - Tests 6-7: candidate absent, bytes_read_count=0.
+  - Tests 8-9: reference present, size_bytes=128.
+  - Test 10: reference_bytes_read_count=64 (not full 128 bytes -- 64-byte cap verified).
+  - Tests 11-14: first_16/64_bytes_hex, gzip signature detected, ascii_preview.
+  - Tests 15-20: max_bytes_allowed=64, read_scope, full_read=false, gate flags.
+- scripts/prepare-build42-map8o-header-result-packet.ps1:
+  - .local/ guard on -Output.
+  - Writes map8o-header-result.json (schema pzmapforge.map8o-result.v0.1) + MD + packet doc.
+  - Records operator_approved_header_only_inspection=true, max_bytes_allowed=64,
+    binary_contents_read_scope=first_64_bytes_only, binary_contents_full_read=false,
+    no_project_russia_files_copied=true, playable_claim_allowed=false,
+    binary_writer_gate_closed=true, worldmap_xml_bin_primary_discriminator=true,
+    next_branch=run_header_inspector_then_evaluate_signature.
+- scripts/test-build42-map8o-header-result.ps1: 20 assertions.
+  - Test 1: .local guard exits nonzero.
+  - Tests 3-5: output files exist.
+  - Tests 6-16: JSON field values.
+  - Tests 17-20: packet doc content (MAP8O label, gate sentinels, operator_approved).
+- Updated scripts/validate.ps1: MAP-8O section before MAP-8N; psTotal 1392->1432;
+  proof-packet v0.63->v0.64.
+- Updated scripts/write-proof-packet.ps1: map8o fields (x2); total 1392->1432;
+  schema v0.63->v0.64.
+- Updated scripts/test-proof-packet.ps1: map8o assertions (x2); total 1392->1432;
+  schema v0.63->v0.64.
+
 ### Added (MAP-8N: Record worldmap.xml.bin presence discriminator result and fix lotpack count)
 - docs/MAP_8N_WORLDMAP_BIN_PRESENCE_RESULT.md: MAP-8N presence result doctrine.
   - Classification: MAP8N_WORLDMAP_XML_BIN_PRESENCE_DISCRIMINATOR_CONFIRMED.
