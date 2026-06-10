@@ -585,6 +585,27 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-8Z — Controlled install packet for experimental IGMB worldmap bin:**
+Operator confirmed MAP-8Y generated worldmap.xml.bin
+(sha256=b5204f805f0fd29c54a56ce0f80e964830ec2f7864f80bbd4956ed0cbe668f6f, size=65536 bytes).
+Packet: `scripts\prepare-build42-map8z-controlled-igmb-install-packet.ps1`
+Stages generated file to .local/ and writes MAP_8Z_HUMAN_INSTALL_STEPS.md for human-only install.
+Claude does NOT copy to Steam, Workshop, or PZ. Human manual copy to candidate Workshop path.
+Packet tests: `scripts\test-build42-map8z-controlled-igmb-install-packet.ps1` (24 assertions)
+
+Status labels:
+```text
+MAP8Z_CONTROLLED_IGMB_INSTALL_PACKET_DEFINED
+HUMAN_MANUAL_COPY_REQUIRED=true
+CLAUDE_COPIED_TO_WORKSHOP=false
+CLAUDE_RAN_PZ=false
+PLAYABLE_CLAIM_ALLOWED=false
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+GENERATED_FILE_ONLY=true
+```
+
+next_branch=human_runtime_test_pending.
+
 **MAP-8Y — Experimental IGMB writer skeleton:**
 Operator approved experimental local-only writer skeleton based on MAP-8Q through MAP-8X evidence.
 Writer: `scripts\write-build42-experimental-igmb-worldmap.ps1`

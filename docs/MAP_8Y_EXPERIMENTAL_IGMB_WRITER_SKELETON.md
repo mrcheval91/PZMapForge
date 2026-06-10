@@ -93,3 +93,11 @@ next_branch=map8z_controlled_install_packet_pending_operator_approval
 Operator reviews the generated worldmap.xml.bin candidate and decides whether to
 approve a controlled install packet (MAP-8Z) for local game-load testing.
 Playable claim remains not allowed until a real load test is performed.
+
+## MAP-8Z reference
+
+MAP-8Z controlled install packet created (operator-approved, sha256 confirmed):
+- Doc: `docs/MAP_8Z_CONTROLLED_IGMB_INSTALL_PACKET.md`
+- Script: `scripts/prepare-build42-map8z-controlled-igmb-install-packet.ps1`
+- Tests: `scripts/test-build42-map8z-controlled-igmb-install-packet.ps1` (24 assertions)
+- next_branch=human_runtime_test_pending

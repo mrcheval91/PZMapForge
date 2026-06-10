@@ -8,6 +8,28 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-8Z: Controlled IGMB install packet)
+- docs/MAP_8Z_CONTROLLED_IGMB_INSTALL_PACKET.md: MAP-8Z controlled install packet doctrine.
+  - Classification: MAP8Z_CONTROLLED_IGMB_INSTALL_PACKET_DEFINED.
+  - Operator confirmed MAP-8Y generated worldmap.xml.bin
+    (sha256=b5204f805f0fd29c54a56ce0f80e964830ec2f7864f80bbd4956ed0cbe668f6f, size=65536 bytes).
+  - HUMAN_MANUAL_COPY_REQUIRED=true; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+  - next_branch=human_runtime_test_pending.
+- scripts/prepare-build42-map8z-controlled-igmb-install-packet.ps1:
+  - .local/ guard on -Output and -GeneratedWorldmapBinPath.
+  - GeneratedWorldmapBinPath must exist and be under .local/.
+  - Reads MAP-8Y generated 65536-byte file from .local/, stages a copy.
+  - Verifies SHA-256 match after staging.
+  - Writes map8z-controlled-igmb-install-packet.json
+    (schema pzmapforge.map8z-controlled-igmb-install-packet.v0.1),
+    map8z-controlled-igmb-install-packet.md, MAP_8Z_HUMAN_INSTALL_STEPS.md.
+  - claude_copied_to_workshop=false; claude_ran_pz=false; generated_file_only=true.
+- scripts/test-build42-map8z-controlled-igmb-install-packet.ps1: 24 assertions.
+- psTotal 1773 -> 1798. Proof-packet v0.74 -> v0.75.
+- docs/MAP_8Y_EXPERIMENTAL_IGMB_WRITER_SKELETON.md: MAP-8Z reference section appended.
+- docs/IMPLEMENTATION.md: MAP-8Z row inserted.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-8Z section inserted.
+
 ### Added (MAP-8Y: Experimental IGMB writer skeleton)
 - docs/MAP_8Y_EXPERIMENTAL_IGMB_WRITER_SKELETON.md: MAP-8Y writer doctrine.
   - Classification: MAP8Y_EXPERIMENTAL_IGMB_WRITER_SKELETON_ADDED.
