@@ -8,6 +8,52 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-9A: Muldraugh bootstrap canary overlay packet)
+- docs/MAP_8Z_RUNTIME_FALLBACK_RESULT.md: MAP-8Z runtime fallback result doctrine.
+  - Classification: MAP8Z_RUNTIME_FALLBACK_MULDRAUGH_CONFIRMED.
+  - Operator confirmed MAP-8Y generated worldmap.xml.bin was installed (SHA-256 verified).
+  - Visible world: Muldraugh / vanilla fallback. Custom-map mount not observed.
+  - generated_worldmap_xml_bin_produced_custom_map_mount=false.
+  - Hard-fail no-Muldraugh test: Map=...candidate;PZMapForge (without Muldraugh) still showed
+    vanilla fallback. Build 42 silently bootstraps to vanilla world behavior.
+  - NO_MULDRAUGH_STRATEGY_REJECTED=true.
+  - Muldraugh must remain as bottom/bootstrap/fallback in the Map line.
+  - NO_PLAYABLE_CLAIM; PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+  - NEXT_BRANCH=map9a_muldraugh_bootstrap_canary_overlay.
+- docs/MAP_9A_MULDRAUGH_BOOTSTRAP_CANARY_OVERLAY.md: MAP-9A doctrine.
+  - Classification: MAP9A_MULDRAUGH_BOOTSTRAP_CANARY_OVERLAY_DEFINED.
+  - Controlled server Map line: Map=pzmapforge_build42_candidate_v4_001;PZMapForge;Muldraugh, KY
+  - fresh_world_required=true; canary_required=true.
+  - canary_writer_available=false; canary_writer_blocked=true.
+  - Blocked reason: current cell writer produces empty_grass only; not visually distinguishable
+    from Muldraugh fallback terrain; IGMB cell index model not confirmed.
+  - success_signal=visible_unmistakable_canary_cell_and_logs_support_PZMapForge_mount.
+  - failure_signal=vanilla_muldraugh_or_isometagrid_does_not_list_PZMapForge.
+  - next_branch=map9a_human_runtime_test_pending.
+- scripts/prepare-build42-map9a-bootstrap-canary-packet.ps1:
+  - .local/ guard on -Output.
+  - 6 forbidden path guards (media/maps, Steam, workshop, ProjectZomboid, C:\Program Files,
+    D:\Program Files).
+  - Writes map9a-bootstrap-canary-packet.json
+    (schema pzmapforge.map9a-bootstrap-canary-packet.v0.1),
+    map9a-bootstrap-canary-packet.md,
+    MAP_9A_MULDRAUGH_BOOTSTRAP_CANARY_OVERLAY_PACKET.md.
+  - map8z_result_recorded=true; no_muldraugh_strategy_rejected=true;
+    muldraugh_bootstrap_required=true; server_map_line=Map=...;Muldraugh, KY;
+    fresh_world_required=true; canary_required=true; canary_writer_available=false;
+    canary_writer_blocked=true; staged_output_local_only=true; steam_write_performed=false;
+    workshop_upload_performed=false; pz_run_performed=false; third_party_files_copied=false;
+    playable_claim_allowed=false.
+- scripts/test-build42-map9a-bootstrap-canary-packet.ps1: 26 assertions.
+  - .local guard/.local output/JSON+MD+overlay doc/MAP-8Z+MAP-9A docs exist/
+    schema/map8z_result_recorded/no_muldraugh_strategy_rejected/muldraugh_bootstrap_required/
+    server_map_line Muldraugh present/Muldraugh last/fresh_world_required/canary_required/
+    canary_writer_available+blocked explicit/playable+pz+workshop+steam+third_party false/
+    staged_output_local_only/success_signal/failure_signal/next_branch.
+- psTotal 1798 -> 1824. Proof-packet v0.75 -> v0.76.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-8Z runtime fallback result + MAP-9A sections inserted.
+- docs/IMPLEMENTATION.md: MAP-9A row inserted.
+
 ### Added (MAP-8Z: Controlled IGMB install packet)
 - docs/MAP_8Z_CONTROLLED_IGMB_INSTALL_PACKET.md: MAP-8Z controlled install packet doctrine.
   - Classification: MAP8Z_CONTROLLED_IGMB_INSTALL_PACKET_DEFINED.

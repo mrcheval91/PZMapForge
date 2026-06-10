@@ -585,6 +585,40 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-9A — Muldraugh bootstrap canary overlay packet:**
+Records MAP-8Z runtime fallback and defines the MAP-9A controlled test strategy.
+MAP-8Z runtime result: generated worldmap.xml.bin installed (SHA-256 verified); visible world
+still Muldraugh/vanilla fallback; custom-map mount not observed.
+Hard-fail no-Muldraugh test: removing Muldraugh from Map line still shows vanilla fallback.
+No-Muldraugh strategy: REJECTED. Build 42 silently bootstraps to vanilla world behavior.
+Muldraugh must remain as bottom/fallback/bootstrap in the Map line.
+Controlled server Map line: Map=pzmapforge_build42_candidate_v4_001;PZMapForge;Muldraugh, KY
+Packet: `scripts\prepare-build42-map9a-bootstrap-canary-packet.ps1`
+Canary writer state: BLOCKED. Current cell writer produces empty_grass only, which is
+visually indistinguishable from Muldraugh fallback terrain. IGMB cell index model not confirmed.
+Packet tests: `scripts\test-build42-map9a-bootstrap-canary-packet.ps1` (26 assertions)
+
+Status labels:
+```text
+MAP9A_MULDRAUGH_BOOTSTRAP_CANARY_OVERLAY_DEFINED
+MAP8Z_RUNTIME_FALLBACK_MULDRAUGH_CONFIRMED
+MAP8Z_NO_MULDRAUGH_STILL_VANILLA_FALLBACK
+NO_MULDRAUGH_STRATEGY_REJECTED=true
+MULDRAUGH_BOOTSTRAP_REQUIRED=true
+FRESH_WORLD_REQUIRED=true
+CANARY_REQUIRED=true
+CANARY_WRITER_AVAILABLE=false
+CANARY_WRITER_BLOCKED=true
+STAGED_OUTPUT_LOCAL_ONLY=true
+STEAM_WRITE_PERFORMED=false
+WORKSHOP_UPLOAD_PERFORMED=false
+PZ_RUN_PERFORMED=false
+THIRD_PARTY_FILES_COPIED=false
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+next_branch=map9a_human_runtime_test_pending.
+
 **MAP-8Z — Controlled install packet for experimental IGMB worldmap bin:**
 Operator confirmed MAP-8Y generated worldmap.xml.bin
 (sha256=b5204f805f0fd29c54a56ce0f80e964830ec2f7864f80bbd4956ed0cbe668f6f, size=65536 bytes).
