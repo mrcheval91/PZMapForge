@@ -8,6 +8,51 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-9C: IsoMetaGrid map folder registration research)
+- docs/MAP_9C_ISOMETAGRID_MAP_FOLDER_REGISTRATION.md: MAP-9C research doctrine.
+  - Classification: MAP9C_ISOMETAGRID_MAP_FOLDER_REGISTRATION_RESEARCH_PACKET_DEFINED.
+  - Carries MAP-9B debug blocker: ISOMETAGRID_MAP_FOLDER_LIST_EMPTY=true.
+  - 5 layout variants (A-E) to probe IsoMetaGrid registration.
+  - 7 registration hypotheses (H1-H7).
+  - Human manual runtime test steps.
+  - success_signal: PZMapForge or candidate folder appears in IsoMetaGrid map folder list.
+  - failure_signal: IsoMetaGrid map folder list empty or only vanilla.
+  - human_manual_runtime_test_required=true; test_one_variant_at_a_time=true.
+  - PLAYABLE_CLAIM_ALLOWED=false; CLAUDE_RAN_PZ=false; CLAUDE_WROTE_STEAM=false.
+  - next_research_branch: map9c_isometagrid_registration_probe_human_runtime_test_pending.
+- scripts/inspect-build42-map-folder-registration.ps1: repo-only registration inspector.
+  - schema: pzmapforge.map9c-map-folder-registration-inspector.v0.1.
+  - Scans scripts/docs for registration-related content.
+  - Outputs candidate_layouts_considered (5), registration_hypotheses (7), recommended_probe_order.
+  - .local/ guard; inspected_repo_only=true; pz_assets_read=false.
+- scripts/test-build42-map-folder-registration.ps1: 25 assertions.
+  - .local guard / script+doc existence / exits 0 / JSON+MD output / safety fields / MAP-9B
+    blocker fields / probe content fields.
+- scripts/inspect-build42-runtime-workshop-map-folder.ps1: live Workshop item inventory.
+  - schema: pzmapforge.map9c-runtime-workshop-map-folder-inventory.v0.1.
+  - Requires -WorkshopItemPath containing '3740642200'; refuses other paths.
+  - READ-ONLY; does not copy files; does not dump binary contents.
+  - Reads text content of mod.info, map.info, spawnregions.lua, spawnpoints.lua, objects.lua.
+  - Records SHA-256 + metadata for .bin/.lotheader/.lotpack/.png files.
+  - Detects common/media/maps, 42/media/maps, media/maps layout presence.
+- scripts/test-build42-runtime-workshop-map-folder.ps1: 25 assertions.
+  - .local guard / 3740642200 path guard / synthetic fixture run / exits 0 / JSON+MD /
+    safety fields / inventory content fields / fixture-specific values.
+- scripts/prepare-build42-map9c-isometagrid-registration-packet.ps1: packet writer.
+  - schema: pzmapforge.map9c-isometagrid-registration-packet.v0.1.
+  - Writes JSON, MD, overlay doc (MAP_9C_ISOMETAGRID_REGISTRATION_PACKET.md),
+    human steps (MAP_9C_HUMAN_RUNTIME_STEPS.md).
+  - Writes 5 variant manifests under variants/<variant-id>/variant-manifest.json.
+  - All variants: status=probe_pending_human_runtime_test; playable_claim_allowed=false.
+- scripts/test-build42-map9c-isometagrid-registration-packet.ps1: 30 assertions.
+  - .local guard / scripts+doc existence / exits 0 / output files / variant dirs /
+    packet JSON safety fields / canary+Muldraugh state / probe goal+signals / hard safety gates.
+- psTotal 1890 -> 1976. Proof-packet v0.78 -> v0.79.
+- scripts/validate.ps1: MAP-9C section added.
+- scripts/write-proof-packet.ps1: map9c entries added (25+25+30), proof_packet 136->142,
+  total_expected_assertions 1890->1976, schema v0.78->v0.79.
+- scripts/test-proof-packet.ps1: 6 new MAP-9C field assertions, total 1890->1976, schema v0.79.
+
 ### Added (MAP-9B follow-up: debug runtime evidence and worldmap triage)
 - docs/MAP_9B_CANARY_WRITER_UNBLOCK.md: added two new sections.
   - "worldmap.xml.bin community claims triage": community/public claims recorded as

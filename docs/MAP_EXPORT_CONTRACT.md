@@ -585,6 +585,38 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-9C — IsoMetaGrid map folder registration research:**
+Carries MAP-9B debug blocker: IsoMetaGrid map folder list empty — PZMapForge not listed.
+Goal: make PZMapForge appear in IsoMetaGrid map folder scan.
+5 layout variants (A-E) to probe. 7 registration hypotheses (H1-H7).
+Human manual runtime test required. One variant per run.
+Inspector: `scripts/inspect-build42-map-folder-registration.ps1`
+Runtime inventory: `scripts/inspect-build42-runtime-workshop-map-folder.ps1`
+Packet: `scripts/prepare-build42-map9c-isometagrid-registration-packet.ps1`
+Registration inspector tests: `scripts/test-build42-map-folder-registration.ps1` (25 assertions)
+Runtime workshop tests: `scripts/test-build42-runtime-workshop-map-folder.ps1` (25 assertions)
+Packet tests: `scripts/test-build42-map9c-isometagrid-registration-packet.ps1` (30 assertions)
+
+Status labels:
+```text
+MAP9C_ISOMETAGRID_MAP_FOLDER_REGISTRATION_RESEARCH_PACKET_DEFINED
+ISOMETAGRID_MAP_FOLDER_LIST_EMPTY=true
+MAP_FOLDER_REGISTRATION_UNPROVEN=true
+PLAYABLE_TERRAIN_MOUNT_PROVEN=false
+CANARY_WRITER_AVAILABLE=false
+CANARY_WRITER_BLOCKED=true
+MULDRAUGH_BOOTSTRAP_REQUIRED=true
+NO_MULDRAUGH_STRATEGY_REJECTED=true
+HUMAN_MANUAL_RUNTIME_TEST_REQUIRED=true
+TEST_ONE_VARIANT_AT_A_TIME=true
+CLAUDE_RAN_PZ=false
+CLAUDE_WROTE_STEAM=false
+CLAUDE_UPLOADED_WORKSHOP=false
+THIRD_PARTY_FILES_COPIED=false
+LOCAL_ONLY=true
+PLAYABLE_CLAIM_ALLOWED=false
+```
+
 **MAP-9B — Canary writer unblock research + debug runtime evidence + community claims triage:**
 Repo-only inspection of `Build42CandidateWriterCommand` (Program.cs lines 1625-2041).
 Outcome B: canary impossible with current writer.

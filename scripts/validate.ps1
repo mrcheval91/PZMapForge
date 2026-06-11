@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (1889)
+    Final output reports the complete PowerShell validation lane total (1976)
     and the .NET lane total (556) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.78 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.79 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,55 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-9C IsoMetaGrid map folder registration research ---"
+$map9cDoc             = Join-Path $repoRoot 'docs\MAP_9C_ISOMETAGRID_MAP_FOLDER_REGISTRATION.md'
+$map9cRegInspScript   = Join-Path $repoRoot 'scripts\inspect-build42-map-folder-registration.ps1'
+$map9cRegInspTests    = Join-Path $repoRoot 'scripts\test-build42-map-folder-registration.ps1'
+$map9cWsInspScript    = Join-Path $repoRoot 'scripts\inspect-build42-runtime-workshop-map-folder.ps1'
+$map9cWsInspTests     = Join-Path $repoRoot 'scripts\test-build42-runtime-workshop-map-folder.ps1'
+$map9cPacketScript    = Join-Path $repoRoot 'scripts\prepare-build42-map9c-isometagrid-registration-packet.ps1'
+$map9cPacketTests     = Join-Path $repoRoot 'scripts\test-build42-map9c-isometagrid-registration-packet.ps1'
+if (-not (Test-Path -LiteralPath $map9cDoc))           { throw "MAP-9C doc missing" }
+Write-Output "OK: docs\MAP_9C_ISOMETAGRID_MAP_FOLDER_REGISTRATION.md"
+if (-not (Test-Path -LiteralPath $map9cRegInspScript)) { throw "MAP-9C registration inspector script missing" }
+Write-Output "OK: scripts\inspect-build42-map-folder-registration.ps1"
+if (-not (Test-Path -LiteralPath $map9cRegInspTests))  { throw "MAP-9C registration inspector tests missing" }
+Write-Output "OK: scripts\test-build42-map-folder-registration.ps1"
+if (-not (Test-Path -LiteralPath $map9cWsInspScript))  { throw "MAP-9C runtime workshop inspector script missing" }
+Write-Output "OK: scripts\inspect-build42-runtime-workshop-map-folder.ps1"
+if (-not (Test-Path -LiteralPath $map9cWsInspTests))   { throw "MAP-9C runtime workshop inspector tests missing" }
+Write-Output "OK: scripts\test-build42-runtime-workshop-map-folder.ps1"
+if (-not (Test-Path -LiteralPath $map9cPacketScript))  { throw "MAP-9C packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map9c-isometagrid-registration-packet.ps1"
+if (-not (Test-Path -LiteralPath $map9cPacketTests))   { throw "MAP-9C packet tests missing" }
+Write-Output "OK: scripts\test-build42-map9c-isometagrid-registration-packet.ps1"
+$map9cDocContent = Get-Content -LiteralPath $map9cDoc -Raw
+if ($map9cDocContent -notmatch 'MAP9C_ISOMETAGRID_MAP_FOLDER_REGISTRATION_RESEARCH_PACKET_DEFINED') { throw "MAP-9C doc missing MAP9C_ISOMETAGRID_MAP_FOLDER_REGISTRATION_RESEARCH_PACKET_DEFINED" }
+Write-Output "OK: doc contains MAP9C_ISOMETAGRID_MAP_FOLDER_REGISTRATION_RESEARCH_PACKET_DEFINED"
+if ($map9cDocContent -notmatch 'ISOMETAGRID_MAP_FOLDER_LIST_EMPTY=true') { throw "MAP-9C doc missing ISOMETAGRID_MAP_FOLDER_LIST_EMPTY=true" }
+Write-Output "OK: doc contains ISOMETAGRID_MAP_FOLDER_LIST_EMPTY=true"
+if ($map9cDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-9C doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: MAP-9C doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+$map9cPacketContent = Get-Content -LiteralPath $map9cPacketScript -Raw
+if ($map9cPacketContent -notmatch '\.local') { throw "MAP-9C packet script missing .local refusal" }
+Write-Output "OK: MAP-9C packet script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-9C map folder registration inspector tests ---"
+& powershell -ExecutionPolicy Bypass -File $map9cRegInspTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-9C map folder registration inspector tests failed." }
+
+Write-Output ""
+Write-Output "--- MAP-9C runtime workshop map folder tests ---"
+& powershell -ExecutionPolicy Bypass -File $map9cWsInspTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-9C runtime workshop map folder tests failed." }
+
+Write-Output ""
+Write-Output "--- MAP-9C isometagrid registration packet tests ---"
+& powershell -ExecutionPolicy Bypass -File $map9cPacketTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-9C isometagrid registration packet tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-9B Canary writer unblock research ---"
@@ -2350,7 +2399,7 @@ $psChecks = [ordered]@{
     'Region extraction'                    = 24
     'Primitive classification'             = 22
     'Plan recommendations contract'        = 28
-    'Proof packet'                         = 136
+    'Proof packet'                         = 142
     'Build42 geometry inspector tests'     = 23
     'Build42 format design matrix tests'   = 13
     'Build42 writer contract tests'        = 20
@@ -2371,6 +2420,9 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-9C map folder registration inspector tests'              = 25
+    'MAP-9C runtime workshop map folder tests'                    = 25
+    'MAP-9C isometagrid registration packet tests'                = 30
     'MAP-9B canary writer capability tests'                        = 29
     'MAP-9B canary writer unblock packet tests'                   = 37
     'MAP-9A bootstrap canary packet tests'                         = 26
@@ -2424,14 +2476,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 1890  # = validation_summary.total_expected_assertions in proof-packet v0.78
+$psTotal = 1976  # = validation_summary.total_expected_assertions in proof-packet v0.79
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.78):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.79):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -2439,7 +2491,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.78 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.79 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"
