@@ -61,13 +61,6 @@ Dru_map produced lotheader load evidence in the same runtime family:
 IsoMetaGrid$MetaGridLoaderThread.loadCell
 filename=42_31.lotheader
 
-and additional loaded lotheaders such as:
-
-43_31.lotheader
-43_30.lotheader
-41_32.lotheader
-42_32.lotheader
-
 Therefore Build 42 logs do show lotheader loading when terrain is actually being loaded.
 
 ## Result classification
