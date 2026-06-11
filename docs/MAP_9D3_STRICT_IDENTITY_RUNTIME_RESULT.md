@@ -66,6 +66,31 @@ Root mod.info had no map= field.
 
 42/mod.info had no map= field.
 
+## Terrain file inventory proof
+
+The D3 map folder contained the required terrain files at the map-folder level:
+
+35_27.lotheader
+chunkdata_35_27.bin
+world_35_27.lotpack
+map.info
+spawnpoints.lua
+objects.lua
+worldmap.xml
+worldmap.xml.bin
+thumb.png
+
+Required terrain file counts:
+
+.lotheader count: 1
+.lotpack count: 1
+chunkdata count: 1
+map.info count: 1
+spawnpoints count: 1
+objects count: 1
+
+Therefore this was not a missing-.lotheader failure.
+
 ## Active server configuration
 
 Active server:
@@ -123,8 +148,9 @@ The blocker is no longer explained by:
 - mod.info map= field
 - absence of mod.info map= field
 - non-identical map folder naming
+- missing .lotheader / .lotpack / chunkdata files
 
-The mod loads, but IsoMetaGrid receives zero registered map folders.
+The mod loads, required terrain files exist, but IsoMetaGrid receives zero registered map folders.
 
 ## Next branch
 
@@ -139,10 +165,6 @@ Required discriminator:
 If Dru_map produces a non-empty "Looking in these map folders" list, then PZMapForge is missing a registration/cache/workshop contract detail.
 
 If Dru_map also produces an empty "Looking in these map folders" list but still works, then the current MAP-9 signal assumption is wrong and IsoMetaGrid folder-list logging is not a reliable success discriminator in this Build 42 path.
-
-Recommended next active server:
-
-PZMF_B42_DRUMAP_BASELINE_001
 
 Known comparator configuration:
 
