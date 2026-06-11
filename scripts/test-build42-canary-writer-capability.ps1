@@ -14,6 +14,7 @@ $scriptDir     = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot      = Split-Path -Parent $scriptDir
 $inspectScript = Join-Path $repoRoot 'scripts\inspect-build42-canary-writer-capability.ps1'
 $map9bDoc      = Join-Path $repoRoot 'docs\MAP_9B_CANARY_WRITER_UNBLOCK.md'
+$map9bDocContent = if (Test-Path $map9bDoc -PathType Leaf) { Get-Content $map9bDoc -Raw } else { '' }
 
 $pass = 0
 $fail = 0
@@ -110,6 +111,27 @@ Assert-True ($p.outcome -eq 'B') "outcome == 'B'"
 Assert-True (-not [string]::IsNullOrWhiteSpace($p.outcome_label)) "outcome_label is present and non-empty"
 Assert-True ($p.writer_command_found -eq $true) "writer_command_found == true"
 Assert-True (-not [string]::IsNullOrWhiteSpace($p.next_research_branch)) "next_research_branch is present and non-empty"
+
+# ---------------------------------------------------------------------------
+# Tests 23-29: Community claims triage and debug runtime evidence
+# ---------------------------------------------------------------------------
+
+Write-Output ""
+Write-Output "--- Tests 23-29: Community claims triage and debug runtime evidence ---"
+Assert-True ($p.community_claim_wmxm_magic_status -eq 'contradicted_by_measured_b42_igmb_sample') `
+    "community_claim_wmxm_magic_status == contradicted_by_measured_b42_igmb_sample"
+Assert-True ($p.measured_igmb_magic_status -eq 'measured_in_project_russia_b42_sample') `
+    "measured_igmb_magic_status == measured_in_project_russia_b42_sample"
+Assert-True ($p.worldmap_bin_playable_terrain_canary_supported -eq $false) `
+    "worldmap_bin_playable_terrain_canary_supported == false"
+Assert-True ($p.playable_world_canary_separate_from_map_ui_canary -eq $true) `
+    "playable_world_canary_separate_from_map_ui_canary == true"
+Assert-True ($p.debug_runtime_mod_loaded -eq $true) `
+    "debug_runtime_mod_loaded == true"
+Assert-True ($p.debug_runtime_isometagrid_map_folder_list_empty -eq $true) `
+    "debug_runtime_isometagrid_map_folder_list_empty == true"
+Assert-True ($p.debug_runtime_server_console_ignored_stale_b41 -eq $true) `
+    "debug_runtime_server_console_ignored_stale_b41 == true"
 
 # ---------------------------------------------------------------------------
 # Summary

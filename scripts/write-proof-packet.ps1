@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.77) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.78) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
     planning recommendation artifacts, plan-recommendations contract (incl. thresholds_used),
     and a separate dotnet_validation_summary section tracking .NET xUnit test counts.
@@ -147,7 +147,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.77'
+    schema                  = 'pzmapforge.proof-packet.v0.78'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -202,8 +202,8 @@ $packet = [ordered]@{
         map7b_lua_metadata_tests          = 21
         map7c_metadata_v3_packet_tests    = 18
         map7d_metadata_v4_packet_tests    = 15
-        map9b_canary_writer_capability_tests                       = 22
-        map9b_canary_writer_unblock_packet_tests                   = 22
+        map9b_canary_writer_capability_tests                       = 29
+        map9b_canary_writer_unblock_packet_tests                   = 37
         map9a_bootstrap_canary_packet_tests                        = 26
         map8z_controlled_igmb_install_packet_tests                = 24
         map8y_experimental_igmb_writer_tests                      = 30
@@ -254,7 +254,7 @@ $packet = [ordered]@{
         map7g_variant_a_failure_tests     = 8
         map7f_registration_diagnostic_tests = 11
         map7e_diagnostics_tests           = 11
-        total_expected_assertions         = 1868
+        total_expected_assertions         = 1890
     }
     dotnet_validation_summary = [ordered]@{
         test_total                          = 556
@@ -334,7 +334,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.77
+Schema: pzmapforge.proof-packet.v0.78
 
 ## Claim boundary
 
@@ -433,8 +433,8 @@ planning_artifact_only_not_pz_load_tested
 | MAP-7W runtime registration tests | 20 |
 | MAP-7X actual contract result tests | 20 |
 | MAP-7Y sidecar stub probe tests | 24 |
-| MAP-9B canary writer capability tests | 22 |
-| MAP-9B canary writer unblock packet tests | 22 |
+| MAP-9B canary writer capability tests | 29 |
+| MAP-9B canary writer unblock packet tests | 37 |
 | MAP-9A bootstrap canary packet tests | 26 |
 | MAP-8Z controlled IGMB install packet tests | 24 |
 | MAP-8Y experimental IGMB writer tests | 30 |
@@ -464,7 +464,7 @@ planning_artifact_only_not_pz_load_tested
 | MAP-8F lots=self runtime result tests | 20 |
 | MAP-8D no invalid worldmap bin probe tests | 20 |
 | MAP-8B version media runtime result tests | 20 |
-| Total | 1868 |
+| Total | 1890 |
 
 ## .NET validation summary (separate lane)
 

@@ -8,6 +8,63 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-9B follow-up: debug runtime evidence and worldmap triage)
+- docs/MAP_9B_CANARY_WRITER_UNBLOCK.md: added two new sections.
+  - "worldmap.xml.bin community claims triage": community/public claims recorded as
+    unverified research leads only; not adopted as doctrine.
+    - measured IGMB magic (B42 Project Russia sample) contradicts WMXM claim.
+    - measured little-endian header and U16LE string pool contradicts big-endian claim.
+    - measured string pool (Polygon/highway/etc.) partially supports vector property strings.
+    - worldmap_bin_creates_playable_terrain=false_or_irrelevant_to_playable_terrain_canary.
+    - playable_world_canary_separate_from_map_ui_canary=true.
+  - "Debug runtime evidence (Build 42.19.0 operator run)":
+    - Mod loaded: pzmapforge_build42_candidate_v4_001 / Workshop 3740642200.
+    - IsoMetaGrid map folder list: EMPTY. PZMapForge not listed.
+    - Spawn metadata works: position 10746,8288,0.
+    - No lotheader/lotpack/chunkdata parse evidence in logs.
+    - Stale Build 41 server-console.txt ignored.
+    - Classification: MAP9B_DEBUG_RUNTIME_EVIDENCE_CONFIRMS_MOD_LOAD_BUT_NO_ISOMETAGRID_MAP_FOLDER.
+  - Updated classification labels with community claims + debug runtime fields.
+- scripts/inspect-build42-canary-writer-capability.ps1: added fields:
+  - community_claims_integrated_as_unverified_research_leads=true,
+    community_claims_not_adopted_as_doctrine=true,
+    measured_igmb_header_takes_precedence=true,
+    measured_igmb_magic='IGMB', measured_igmb_magic_status,
+    community_claim_wmxm_magic_status, community_claim_big_endian_status,
+    worldmap_bin_role, worldmap_bin_playable_terrain_canary_supported=false,
+    playable_world_canary_separate_from_map_ui_canary=true,
+    debug_runtime_logs_reviewed=true, debug_runtime_build=42.19.0,
+    debug_runtime_workshop_runtime_cache_confirmed=true,
+    debug_runtime_mod_loaded=true,
+    debug_runtime_isometagrid_map_folder_list_empty=true,
+    debug_runtime_spawn_position=10746,8288,0,
+    debug_runtime_spawn_metadata_works=true,
+    debug_runtime_pzmapforge_lotheader_parse_evidence=false,
+    debug_runtime_pzmapforge_lotpack_parse_evidence=false,
+    debug_runtime_pzmapforge_chunkdata_parse_evidence=false,
+    debug_runtime_server_console_ignored_stale_b41=true.
+- scripts/test-build42-canary-writer-capability.ps1: 22 -> 29 assertions.
+  - Added Tests 23-29: community_claim_wmxm_magic_status contradicted/
+    measured_igmb_magic_status/worldmap_bin_playable_terrain_canary_supported=false/
+    playable_world_canary_separate_from_map_ui_canary=true/
+    debug_runtime_mod_loaded/debug_runtime_isometagrid_map_folder_list_empty/
+    debug_runtime_server_console_ignored_stale_b41.
+- scripts/prepare-build42-map9b-canary-writer-unblock-packet.ps1: added all new fields.
+  - community_claims_integrated_as_unverified_research_leads,
+    community_claims_not_adopted_as_doctrine, measured_igmb_header_takes_precedence,
+    community_claim_wmxm_magic_status, community_claim_big_endian_status,
+    measured_igmb_magic_status, measured_string_pool_status,
+    worldmap_bin_playable_terrain_canary_supported=false,
+    playable_world_canary_separate_from_map_ui_canary=true,
+    debug_runtime_* fields (14 fields).
+- scripts/test-build42-map9b-canary-writer-unblock-packet.ps1: 22 -> 37 assertions.
+  - Added Tests 23-37: full community claims + debug runtime field assertions (15 new).
+- psTotal 1868 -> 1890. Proof-packet v0.77 -> v0.78.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-9B section updated with community triage and debug evidence.
+- docs/IMPLEMENTATION.md: MAP-9B row updated.
+- scripts/validate.ps1: inline checks added for community_claims_not_adopted_as_doctrine,
+  worldmap_bin_playable_terrain_canary_supported=false, DEBUG_RUNTIME_LOGS_REVIEWED=true.
+
 ### Added (MAP-9B: Canary writer unblock research)
 - docs/MAP_9B_CANARY_WRITER_UNBLOCK.md: MAP-9B canary writer unblock research doctrine.
   - Classification: MAP9B_CANARY_WRITER_UNBLOCK_OUTCOME_B.

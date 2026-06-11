@@ -585,13 +585,24 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
-**MAP-9B — Canary writer unblock research:**
+**MAP-9B — Canary writer unblock research + debug runtime evidence + community claims triage:**
 Repo-only inspection of `Build42CandidateWriterCommand` (Program.cs lines 1625-2041).
 Outcome B: canary impossible with current writer.
 Inspector: `scripts/inspect-build42-canary-writer-capability.ps1`
 Packet: `scripts/prepare-build42-map9b-canary-writer-unblock-packet.ps1`
-Packet tests: `scripts/test-build42-map9b-canary-writer-unblock-packet.ps1` (22 assertions)
-Capability tests: `scripts/test-build42-canary-writer-capability.ps1` (22 assertions)
+Packet tests: `scripts/test-build42-map9b-canary-writer-unblock-packet.ps1` (36 assertions)
+Capability tests: `scripts/test-build42-canary-writer-capability.ps1` (29 assertions)
+
+worldmap.xml.bin community claims triage: WMXM magic claim contradicted by measured IGMB B42
+Project Russia sample. Big-endian claim contradicted or unproven by measured little-endian
+header and U16LE string pool. String pool partially supports vector property strings.
+Community claims are unverified research leads only — not adopted as doctrine.
+worldmap.xml.bin is map UI / vector metadata unless terrain role is proven.
+Playable-world canary (IsoMetaGrid mounting) is separate from any map UI canary.
+
+Debug runtime evidence (Build 42.19.0): mod loaded (Workshop 3740642200). IsoMetaGrid map
+folder list empty — PZMapForge not listed. Spawn metadata works (10746,8288,0). No lotheader/
+lotpack/chunkdata parse evidence. Stale Build 41 server-console ignored.
 
 Status labels:
 ```text
@@ -609,6 +620,14 @@ STEAM_WRITE_PERFORMED=false
 THIRD_PARTY_FILES_COPIED=false
 PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 NEXT_RESEARCH_BRANCH=map9b_lotp_chunk_payload_format_research
+COMMUNITY_CLAIMS_NOT_ADOPTED_AS_DOCTRINE=true
+MEASURED_IGMB_HEADER_TAKES_PRECEDENCE=true
+COMMUNITY_CLAIM_WMXM_MAGIC_STATUS=contradicted_by_measured_b42_igmb_sample
+WORLDMAP_BIN_PLAYABLE_TERRAIN_CANARY_SUPPORTED=false
+PLAYABLE_WORLD_CANARY_SEPARATE_FROM_MAP_UI_CANARY=true
+MAP9B_DEBUG_RUNTIME_EVIDENCE_CONFIRMS_MOD_LOAD_BUT_NO_ISOMETAGRID_MAP_FOLDER
+DEBUG_RUNTIME_MOD_LOADED=true
+DEBUG_RUNTIME_ISOMETAGRID_MAP_FOLDER_LIST_EMPTY=true
 ```
 
 Blockers:

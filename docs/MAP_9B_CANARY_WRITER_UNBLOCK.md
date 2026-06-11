@@ -119,6 +119,115 @@ To unblock the canary writer, the following research is required:
 
 ---
 
+## worldmap.xml.bin community claims triage
+
+Community and public sources contain claims about the worldmap.xml.bin format and role.
+These are recorded as unverified research leads only. They are not adopted as doctrine.
+Measured evidence from our own Build 42 Project Russia sample takes precedence.
+
+### Measured evidence (Build 42 Project Russia sample)
+
+```text
+measured_igmb_magic=IGMB (49 47 4D 42)
+measured_igmb_magic_status=measured_in_project_russia_b42_sample
+measured_header_little_endian=true
+measured_string_pool_length_prefix=U16LE
+measured_string_pool_contents=Polygon,highway,primary,trail,natural,forest,water,river,tertiary,building,Residential,secondary
+```
+
+### Community claim classifications
+
+```text
+community_claim_wmxm_magic_status=contradicted_by_our_measured_B42_Project_Russia_IGMB_sample
+community_claim_big_endian_status=contradicted_or_unproven_by_measured_little_endian_header_and_u16le_string_pool
+community_claim_string_property_table_status=partially_supported_by_measured_string_pool
+worldmap_bin_creates_playable_terrain=false_or_irrelevant_to_playable_terrain_canary
+both_xml_and_bin_required_for_map_ui=unverified_research_lead
+missing_bin_causes_silent_map_ui_failure=unverified_research_lead
+b42_cell_size_256=unverified_research_lead_unless_repo_evidence_proves_it
+worlded_write_features_xml_generates_both=unverified_research_lead_unless_source_evidence_added
+polygonalmap2_worldmap_xml_reader=unverified_research_lead_unless_source_evidence_added
+```
+
+### worldmap.xml.bin role
+
+worldmap.xml.bin is classified as map UI / vector metadata unless a terrain role is explicitly proven.
+It is not the playable-terrain canary gate.
+The playable-world canary (IsoMetaGrid mounting PZMapForge cells) is separate from any map UI canary.
+
+```text
+worldmap_bin_role=map_ui_vector_metadata_unless_terrain_role_proven
+worldmap_bin_playable_terrain_canary_supported=false
+playable_world_canary_separate_from_map_ui_canary=true
+community_claims_integrated_as_unverified_research_leads=true
+community_claims_not_adopted_as_doctrine=true
+measured_igmb_header_takes_precedence=true
+```
+
+---
+
+## Debug runtime evidence (Build 42.19.0 operator run)
+
+Operator collected debug runtime logs by launching PZ with -debug.
+Server-console.txt from the dedicated server folder was identified as stale (Build 41.78.19 / servertest)
+and ignored for this runtime analysis.
+
+```text
+debug_runtime_logs_reviewed=true
+debug_runtime_build=42.19.0
+debug_runtime_workshop_runtime_cache_confirmed=true
+debug_runtime_mod_loaded=true
+debug_runtime_mod_id=pzmapforge_build42_candidate_v4_001
+debug_runtime_workshop_item=3740642200
+debug_runtime_workshop_path=D:\Program Files (x86)\Steam\steamapps\common\ProjectZomboid\steamapps\workshop\content\108600\3740642200
+```
+
+IsoMetaGrid result: map folder list was empty. PZMapForge was NOT listed in the IsoMetaGrid
+map folder scan. This is the primary blocker for playable terrain mount.
+
+```text
+debug_runtime_isometagrid_map_folder_list_empty=true
+```
+
+Spawn target metadata was accepted. Player position packet was delivered.
+
+```text
+debug_runtime_spawn_position=10746,8288,0
+debug_runtime_spawn_metadata_works=true
+```
+
+No lotheader, lotpack, or chunkdata parse evidence appeared in the debug logs.
+PZMapForge cells were not parsed or loaded.
+
+```text
+debug_runtime_pzmapforge_lotheader_parse_evidence=false
+debug_runtime_pzmapforge_lotpack_parse_evidence=false
+debug_runtime_pzmapforge_chunkdata_parse_evidence=false
+debug_runtime_playable_terrain_mount_proven=false
+```
+
+Fresh world signal was observed (expected for new world; not a failure).
+
+```text
+debug_runtime_server_console_ignored_stale_b41=true
+```
+
+### Debug runtime classification
+
+```text
+MAP9B_DEBUG_RUNTIME_EVIDENCE_CONFIRMS_MOD_LOAD_BUT_NO_ISOMETAGRID_MAP_FOLDER
+SPAWN_METADATA_WORKS=true
+WORKSHOP_RUNTIME_CACHE_CONFIRMED=true
+ISOMETAGRID_MAP_FOLDER_LIST_EMPTY=true
+PZMAPFORGE_LOTHEADER_PARSE_EVIDENCE=false
+PZMAPFORGE_LOTPACK_PARSE_EVIDENCE=false
+PZMAPFORGE_CHUNKDATA_PARSE_EVIDENCE=false
+PLAYABLE_TERRAIN_MOUNT_PROVEN=false
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+```
+
+---
+
 ## Classification labels
 
 ```text
@@ -136,4 +245,16 @@ STEAM_WRITE_PERFORMED=false
 THIRD_PARTY_FILES_COPIED=false
 PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 NEXT_RESEARCH_BRANCH=map9b_lotp_chunk_payload_format_research
+COMMUNITY_CLAIMS_INTEGRATED_AS_UNVERIFIED_RESEARCH_LEADS=true
+COMMUNITY_CLAIMS_NOT_ADOPTED_AS_DOCTRINE=true
+MEASURED_IGMB_HEADER_TAKES_PRECEDENCE=true
+COMMUNITY_CLAIM_WMXM_MAGIC_STATUS=contradicted_by_measured_b42_igmb_sample
+MEASURED_IGMB_MAGIC_STATUS=measured_in_project_russia_b42_sample
+WORLDMAP_BIN_PLAYABLE_TERRAIN_CANARY_SUPPORTED=false
+PLAYABLE_WORLD_CANARY_SEPARATE_FROM_MAP_UI_CANARY=true
+DEBUG_RUNTIME_LOGS_REVIEWED=true
+DEBUG_RUNTIME_MOD_LOADED=true
+DEBUG_RUNTIME_ISOMETAGRID_MAP_FOLDER_LIST_EMPTY=true
+DEBUG_RUNTIME_SPAWN_METADATA_WORKS=true
+DEBUG_RUNTIME_SERVER_CONSOLE_IGNORED_STALE_B41=true
 ```

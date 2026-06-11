@@ -3,7 +3,7 @@
 .SYNOPSIS
     Tests the MAP-9B canary writer unblock packet.
     Runs prepare-build42-map9b-canary-writer-unblock-packet.ps1 against a temp .local/ path
-    and asserts 22 contract requirements.
+    and asserts 37 contract requirements.
     Exits 0 if all pass, exits 1 if any fail.
 #>
 
@@ -119,6 +119,43 @@ Assert-True ($p.staged_output_local_only -eq $true) `
 
 Assert-True (-not [string]::IsNullOrWhiteSpace($p.next_research_branch)) `
     "next_research_branch is present and non-empty"
+
+# ---------------------------------------------------------------------------
+# Tests 23-36: Community claims triage and debug runtime evidence
+# ---------------------------------------------------------------------------
+
+Write-Output ""
+Write-Output "--- Tests 23-37: Community claims triage and debug runtime evidence ---"
+Assert-True ($p.community_claims_integrated_as_unverified_research_leads -eq $true) `
+    "community_claims_integrated_as_unverified_research_leads == true"
+Assert-True ($p.community_claims_not_adopted_as_doctrine -eq $true) `
+    "community_claims_not_adopted_as_doctrine == true"
+Assert-True ($p.measured_igmb_header_takes_precedence -eq $true) `
+    "measured_igmb_header_takes_precedence == true"
+Assert-True ($null -ne $p.PSObject.Properties['community_claim_wmxm_magic_status']) `
+    "community_claim_wmxm_magic_status field is explicit"
+Assert-True ($p.community_claim_wmxm_magic_status -eq 'contradicted_by_measured_b42_igmb_sample') `
+    "community_claim_wmxm_magic_status == contradicted_by_measured_b42_igmb_sample"
+Assert-True ($p.measured_igmb_magic_status -eq 'measured_in_project_russia_b42_sample') `
+    "measured_igmb_magic_status == measured_in_project_russia_b42_sample"
+Assert-True ($p.worldmap_bin_playable_terrain_canary_supported -eq $false) `
+    "worldmap_bin_playable_terrain_canary_supported == false"
+Assert-True ($p.playable_world_canary_separate_from_map_ui_canary -eq $true) `
+    "playable_world_canary_separate_from_map_ui_canary == true"
+Assert-True ($p.debug_runtime_logs_reviewed -eq $true) `
+    "debug_runtime_logs_reviewed == true"
+Assert-True ($p.debug_runtime_workshop_runtime_cache_confirmed -eq $true) `
+    "debug_runtime_workshop_runtime_cache_confirmed == true"
+Assert-True ($p.debug_runtime_mod_loaded -eq $true) `
+    "debug_runtime_mod_loaded == true"
+Assert-True ($p.debug_runtime_isometagrid_map_folder_list_empty -eq $true) `
+    "debug_runtime_isometagrid_map_folder_list_empty == true"
+Assert-True ($p.debug_runtime_spawn_metadata_works -eq $true) `
+    "debug_runtime_spawn_metadata_works == true"
+Assert-True ($p.debug_runtime_pzmapforge_lotheader_parse_evidence -eq $false) `
+    "debug_runtime_pzmapforge_lotheader_parse_evidence == false"
+Assert-True ($p.debug_runtime_server_console_ignored_stale_b41 -eq $true) `
+    "debug_runtime_server_console_ignored_stale_b41 == true"
 
 # ---------------------------------------------------------------------------
 # Summary

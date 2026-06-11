@@ -77,6 +77,26 @@ $packet = [ordered]@{
     third_party_files_copied                   = $false
     staged_output_local_only                   = $true
     next_research_branch                       = 'map9b_lotp_chunk_payload_format_research'
+    community_claims_integrated_as_unverified_research_leads = $true
+    community_claims_not_adopted_as_doctrine                 = $true
+    measured_igmb_header_takes_precedence                    = $true
+    community_claim_wmxm_magic_status                        = 'contradicted_by_measured_b42_igmb_sample'
+    community_claim_big_endian_status                        = 'contradicted_or_unproven'
+    measured_igmb_magic_status                               = 'measured_in_project_russia_b42_sample'
+    measured_string_pool_status                              = 'partially_supports_vector_property_string_pool'
+    worldmap_bin_playable_terrain_canary_supported           = $false
+    playable_world_canary_separate_from_map_ui_canary        = $true
+    debug_runtime_logs_reviewed                              = $true
+    debug_runtime_build                                      = '42.19.0'
+    debug_runtime_workshop_runtime_cache_confirmed           = $true
+    debug_runtime_mod_loaded                                 = $true
+    debug_runtime_isometagrid_map_folder_list_empty          = $true
+    debug_runtime_spawn_position                             = '10746,8288,0'
+    debug_runtime_spawn_metadata_works                       = $true
+    debug_runtime_pzmapforge_lotheader_parse_evidence        = $false
+    debug_runtime_pzmapforge_lotpack_parse_evidence          = $false
+    debug_runtime_pzmapforge_chunkdata_parse_evidence        = $false
+    debug_runtime_server_console_ignored_stale_b41           = $true
 }
 
 $jsonPath   = Join-Path $Output 'map9b-canary-writer-unblock-packet.json'
@@ -124,6 +144,27 @@ staged_output_local_only=true
 ## Next research branch
 
 next_research_branch=map9b_lotp_chunk_payload_format_research
+
+## Community claims triage
+
+community_claims_integrated_as_unverified_research_leads=true
+community_claims_not_adopted_as_doctrine=true
+measured_igmb_header_takes_precedence=true
+community_claim_wmxm_magic_status=contradicted_by_measured_b42_igmb_sample
+measured_igmb_magic_status=measured_in_project_russia_b42_sample
+worldmap_bin_playable_terrain_canary_supported=false
+playable_world_canary_separate_from_map_ui_canary=true
+
+## Debug runtime evidence
+
+debug_runtime_logs_reviewed=true
+debug_runtime_build=42.19.0
+debug_runtime_workshop_runtime_cache_confirmed=true
+debug_runtime_mod_loaded=true
+debug_runtime_isometagrid_map_folder_list_empty=true
+debug_runtime_spawn_metadata_works=true
+debug_runtime_pzmapforge_lotheader_parse_evidence=false
+debug_runtime_server_console_ignored_stale_b41=true
 "@
 
 Set-Content -Path $mdPath -Value $md -Encoding UTF8
@@ -150,6 +191,18 @@ STEAM_WRITE_PERFORMED=false
 THIRD_PARTY_FILES_COPIED=false
 PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 NEXT_RESEARCH_BRANCH=map9b_lotp_chunk_payload_format_research
+COMMUNITY_CLAIMS_INTEGRATED_AS_UNVERIFIED_RESEARCH_LEADS=true
+COMMUNITY_CLAIMS_NOT_ADOPTED_AS_DOCTRINE=true
+MEASURED_IGMB_HEADER_TAKES_PRECEDENCE=true
+COMMUNITY_CLAIM_WMXM_MAGIC_STATUS=contradicted_by_measured_b42_igmb_sample
+MEASURED_IGMB_MAGIC_STATUS=measured_in_project_russia_b42_sample
+WORLDMAP_BIN_PLAYABLE_TERRAIN_CANARY_SUPPORTED=false
+PLAYABLE_WORLD_CANARY_SEPARATE_FROM_MAP_UI_CANARY=true
+DEBUG_RUNTIME_LOGS_REVIEWED=true
+DEBUG_RUNTIME_MOD_LOADED=true
+DEBUG_RUNTIME_ISOMETAGRID_MAP_FOLDER_LIST_EMPTY=true
+DEBUG_RUNTIME_SPAWN_METADATA_WORKS=true
+DEBUG_RUNTIME_SERVER_CONSOLE_IGNORED_STALE_B41=true
 
 ## Blockers
 

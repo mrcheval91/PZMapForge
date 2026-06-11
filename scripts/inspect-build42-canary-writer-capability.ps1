@@ -118,6 +118,27 @@ $report = [ordered]@{
     playable_claim_allowed                    = $false
     staged_output_local_only                  = $true
     next_research_branch                      = 'map9b_lotp_chunk_payload_format_research'
+    community_claims_integrated_as_unverified_research_leads = $true
+    community_claims_not_adopted_as_doctrine                 = $true
+    measured_igmb_header_takes_precedence                    = $true
+    measured_igmb_magic                                      = 'IGMB'
+    measured_igmb_magic_status                               = 'measured_in_project_russia_b42_sample'
+    community_claim_wmxm_magic_status                        = 'contradicted_by_measured_b42_igmb_sample'
+    community_claim_big_endian_status                        = 'contradicted_or_unproven'
+    worldmap_bin_role                                        = 'map_ui_vector_metadata_unless_terrain_role_proven'
+    worldmap_bin_playable_terrain_canary_supported           = $false
+    playable_world_canary_separate_from_map_ui_canary        = $true
+    debug_runtime_logs_reviewed                              = $true
+    debug_runtime_build                                      = '42.19.0'
+    debug_runtime_workshop_runtime_cache_confirmed           = $true
+    debug_runtime_mod_loaded                                 = $true
+    debug_runtime_isometagrid_map_folder_list_empty          = $true
+    debug_runtime_spawn_position                             = '10746,8288,0'
+    debug_runtime_spawn_metadata_works                       = $true
+    debug_runtime_pzmapforge_lotheader_parse_evidence        = $false
+    debug_runtime_pzmapforge_lotpack_parse_evidence          = $false
+    debug_runtime_pzmapforge_chunkdata_parse_evidence        = $false
+    debug_runtime_server_console_ignored_stale_b41           = $true
 }
 
 $jsonPath = Join-Path $Output 'build42-canary-writer-capability.json'
