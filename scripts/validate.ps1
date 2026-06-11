@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (1824)
+    Final output reports the complete PowerShell validation lane total (1868)
     and the .NET lane total (556) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.76 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.77 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,44 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-9B Canary writer unblock research ---"
+$map9bDoc             = Join-Path $repoRoot 'docs\MAP_9B_CANARY_WRITER_UNBLOCK.md'
+$map9bInspectScript   = Join-Path $repoRoot 'scripts\inspect-build42-canary-writer-capability.ps1'
+$map9bInspectTests    = Join-Path $repoRoot 'scripts\test-build42-canary-writer-capability.ps1'
+$map9bPacketScript    = Join-Path $repoRoot 'scripts\prepare-build42-map9b-canary-writer-unblock-packet.ps1'
+$map9bPacketTests     = Join-Path $repoRoot 'scripts\test-build42-map9b-canary-writer-unblock-packet.ps1'
+if (-not (Test-Path -LiteralPath $map9bDoc))           { throw "MAP-9B doc missing" }
+Write-Output "OK: docs\MAP_9B_CANARY_WRITER_UNBLOCK.md"
+if (-not (Test-Path -LiteralPath $map9bInspectScript)) { throw "MAP-9B inspect script missing" }
+Write-Output "OK: scripts\inspect-build42-canary-writer-capability.ps1"
+if (-not (Test-Path -LiteralPath $map9bInspectTests))  { throw "MAP-9B inspect tests missing" }
+Write-Output "OK: scripts\test-build42-canary-writer-capability.ps1"
+if (-not (Test-Path -LiteralPath $map9bPacketScript))  { throw "MAP-9B packet script missing" }
+Write-Output "OK: scripts\prepare-build42-map9b-canary-writer-unblock-packet.ps1"
+if (-not (Test-Path -LiteralPath $map9bPacketTests))   { throw "MAP-9B packet tests missing" }
+Write-Output "OK: scripts\test-build42-map9b-canary-writer-unblock-packet.ps1"
+$map9bDocContent = Get-Content -LiteralPath $map9bDoc -Raw
+if ($map9bDocContent -notmatch 'MAP9B_CANARY_WRITER_UNBLOCK_OUTCOME_B') { throw "MAP-9B doc missing MAP9B_CANARY_WRITER_UNBLOCK_OUTCOME_B" }
+Write-Output "OK: doc contains MAP9B_CANARY_WRITER_UNBLOCK_OUTCOME_B"
+if ($map9bDocContent -notmatch 'canary_writer_blocked') { throw "MAP-9B doc missing canary_writer_blocked" }
+Write-Output "OK: doc contains canary_writer_blocked"
+if ($map9bDocContent -notmatch 'PUBLIC_PLAYABLE_CLAIM_ALLOWED=false') { throw "MAP-9B doc missing PUBLIC_PLAYABLE_CLAIM_ALLOWED=false" }
+Write-Output "OK: MAP-9B doc contains PUBLIC_PLAYABLE_CLAIM_ALLOWED=false"
+$map9bPacketContent = Get-Content -LiteralPath $map9bPacketScript -Raw
+if ($map9bPacketContent -notmatch '\.local') { throw "MAP-9B packet script missing .local refusal" }
+Write-Output "OK: MAP-9B packet script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-9B canary writer capability tests ---"
+& powershell -ExecutionPolicy Bypass -File $map9bInspectTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-9B canary writer capability tests failed." }
+
+Write-Output ""
+Write-Output "--- MAP-9B canary writer unblock packet tests ---"
+& powershell -ExecutionPolicy Bypass -File $map9bPacketTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-9B canary writer unblock packet tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-9A Muldraugh bootstrap canary overlay packet ---"
@@ -2327,6 +2365,8 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-9B canary writer capability tests'                        = 22
+    'MAP-9B canary writer unblock packet tests'                   = 22
     'MAP-9A bootstrap canary packet tests'                         = 26
     'MAP-8Z controlled IGMB install packet tests'                 = 24
     'MAP-8Y experimental IGMB writer tests'                       = 30
@@ -2378,14 +2418,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 1824  # = validation_summary.total_expected_assertions in proof-packet v0.76
+$psTotal = 1868  # = validation_summary.total_expected_assertions in proof-packet v0.77
 
 $dnCoreTests = 190   # PZMapForge.Core.Tests
 $dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
 $dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.76):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.77):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -2393,7 +2433,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.76 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.77 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

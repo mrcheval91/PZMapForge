@@ -585,6 +585,38 @@ PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 No load test. No binary writer change. No Steam Workshop upload.
 No third-party (Dru_map) files copied. No forbidden writes.
 
+**MAP-9B — Canary writer unblock research:**
+Repo-only inspection of `Build42CandidateWriterCommand` (Program.cs lines 1625-2041).
+Outcome B: canary impossible with current writer.
+Inspector: `scripts/inspect-build42-canary-writer-capability.ps1`
+Packet: `scripts/prepare-build42-map9b-canary-writer-unblock-packet.ps1`
+Packet tests: `scripts/test-build42-map9b-canary-writer-unblock-packet.ps1` (22 assertions)
+Capability tests: `scripts/test-build42-canary-writer-capability.ps1` (22 assertions)
+
+Status labels:
+```text
+MAP9B_CANARY_WRITER_UNBLOCK_OUTCOME_B
+OUTCOME=B
+CANARY_WRITER_AVAILABLE=false
+CANARY_WRITER_BLOCKED=true
+VISIBLE_TILE_ENCODING_SUPPORTED=false
+CANARY_STRATEGY_AVAILABLE=false
+INSPECTED_REPO_ONLY=true
+PZ_ASSETS_READ=false
+PZ_RUN_PERFORMED=false
+WORKSHOP_UPLOAD_PERFORMED=false
+STEAM_WRITE_PERFORMED=false
+THIRD_PARTY_FILES_COPIED=false
+PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
+NEXT_RESEARCH_BRANCH=map9b_lotp_chunk_payload_format_research
+```
+
+Blockers:
+- lotp_chunk_payload_format_not_understood
+- lotheader_tile_table_visual_mapping_not_understood
+- chunkdata_format_not_understood
+- no_tile_placement_record_model
+
 **MAP-9A — Muldraugh bootstrap canary overlay packet:**
 Records MAP-8Z runtime fallback and defines the MAP-9A controlled test strategy.
 MAP-8Z runtime result: generated worldmap.xml.bin installed (SHA-256 verified); visible world

@@ -8,6 +8,67 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-9B: Canary writer unblock research)
+- docs/MAP_9B_CANARY_WRITER_UNBLOCK.md: MAP-9B canary writer unblock research doctrine.
+  - Classification: MAP9B_CANARY_WRITER_UNBLOCK_OUTCOME_B.
+  - Repo-only inspection of Build42CandidateWriterCommand (Program.cs lines 1625-2041).
+  - Outcome B: canary impossible with current writer.
+  - canary_writer_available=false; canary_writer_blocked=true.
+  - visible_tile_encoding_supported=false; canary_strategy_available=false.
+  - Exact blockers:
+      1. lotp_chunk_payload_format_not_understood
+      2. lotheader_tile_table_visual_mapping_not_understood
+      3. chunkdata_format_not_understood
+      4. no_tile_placement_record_model
+  - All five profiles (empty_grass_v0 through v4) produce the same tile data
+    (LOTP all-zero payload, chunkdata all-zero body). No tile placement records.
+  - next_research_branch=map9b_lotp_chunk_payload_format_research.
+  - inspected_repo_only=true; pz_assets_read=false; pz_run_performed=false.
+  - PUBLIC_PLAYABLE_CLAIM_ALLOWED=false.
+- scripts/inspect-build42-canary-writer-capability.ps1:
+  - .local/ guard on -Output.
+  - 6 forbidden path guards.
+  - Produces build42-canary-writer-capability.json
+    (schema pzmapforge.build42-canary-writer-capability.v0.1).
+  - Fields: inspected_repo_only=true; pz_assets_read=false; canary_writer_available=false;
+    canary_writer_blocked=true; visible_tile_encoding_supported=false;
+    lotp_chunk_payload_format_understood=false; tile_placement_record_model_exists=false;
+    outcome='B'; outcome_label; writer_command_found; profiles_inspected; blockers array;
+    next_research_branch; all safety gates false/true.
+- scripts/test-build42-canary-writer-capability.ps1: 22 assertions.
+  - .local guard/inspector exists/MAP-9B doc exists/exits 0/JSON exists/schema/
+    inspected_repo_only/pz_assets_read/pz_run_performed/playable_claim_allowed/
+    canary_writer_available+blocked explicit/canary_writer_available false/blocked true/
+    visible_tile_encoding_supported/canary_strategy_available/
+    lotp_chunk_payload_format_understood/tile_placement_record_model_exists/
+    outcome=='B'/outcome_label/writer_command_found/next_research_branch.
+- scripts/prepare-build42-map9b-canary-writer-unblock-packet.ps1:
+  - .local/ guard on -Output.
+  - 6 forbidden path guards.
+  - Writes map9b-canary-writer-unblock-packet.json
+    (schema pzmapforge.map9b-canary-writer-unblock-packet.v0.1),
+    map9b-canary-writer-unblock-packet.md,
+    MAP_9B_CANARY_WRITER_UNBLOCK_PACKET.md.
+  - outcome='B'; canary_writer_available=false; canary_writer_blocked=true;
+    visible_tile_encoding_supported=false; canary_strategy_available=false;
+    inspected_repo_only=true; pz_assets_read=false;
+    lotp_chunk_payload_format_understood=false;
+    lotheader_tile_position_mapping_understood=false;
+    chunkdata_format_understood=false; tile_placement_record_model_exists=false;
+    playable_claim_allowed=false; pz_run_performed=false;
+    workshop_upload_performed=false; steam_write_performed=false;
+    third_party_files_copied=false; staged_output_local_only=true.
+- scripts/test-build42-map9b-canary-writer-unblock-packet.ps1: 22 assertions.
+  - .local guard/exits 0/JSON+MD+overlay doc/MAP-9B doc/schema/outcome=='B'/
+    canary_writer_available+blocked explicit/canary_writer_available false/blocked true/
+    visible_tile_encoding_supported/canary_strategy_available/inspected_repo_only/
+    pz_assets_read/lotp_chunk_payload_format_understood/playable_claim_allowed/
+    pz_run_performed/workshop_upload_performed/staged_output_local_only/next_research_branch.
+- psTotal 1824 -> 1868. Proof-packet v0.76 -> v0.77.
+- docs/MAP_EXPORT_CONTRACT.md: MAP-9B section inserted.
+- docs/IMPLEMENTATION.md: MAP-9B row inserted.
+- docs/MAP_9A_MULDRAUGH_BOOTSTRAP_CANARY_OVERLAY.md: MAP-9B reference added.
+
 ### Added (MAP-9A: Muldraugh bootstrap canary overlay packet)
 - docs/MAP_8Z_RUNTIME_FALLBACK_RESULT.md: MAP-8Z runtime fallback result doctrine.
   - Classification: MAP8Z_RUNTIME_FALLBACK_MULDRAUGH_CONFIRMED.

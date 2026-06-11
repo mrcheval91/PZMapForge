@@ -133,3 +133,20 @@ next_branch=map9a_human_runtime_test_pending
 The canary writer must be unblocked before a meaningful runtime test can yield a positive signal.
 Unblocking requires: a Build 42 cell writer capable of producing visually distinctive content,
 and a confirmed IGMB cell index model that correctly references PZMapForge cells.
+
+---
+
+## MAP-9B reference
+
+MAP-9B canary writer unblock research has been completed (Outcome B confirmed).
+See: docs/MAP_9B_CANARY_WRITER_UNBLOCK.md
+
+MAP-9B result:
+- canary_writer_available=false (confirmed by repo-only inspection)
+- canary_writer_blocked=true
+- visible_tile_encoding_supported=false
+- next_research_branch=map9b_lotp_chunk_payload_format_research
+
+The MAP-9A human runtime test remains pending. The positive signal (visible unmistakable
+canary cell) cannot be achieved until the LOTP chunk payload format is understood and a
+canary-capable writer is implemented (MAP-9B+ research).
