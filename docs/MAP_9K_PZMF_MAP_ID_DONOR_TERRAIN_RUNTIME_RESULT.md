@@ -87,9 +87,7 @@ The remaining blocker is the PZMapForge-generated binary terrain payload:
 
 ## Next Work
 
-MAP-9L should compare the generated PZMapForge binary terrain against donor Dru binary terrain using visual runtime results as the proof standard.
-
-The next branch should not continue testing registration. It should focus on making the generated writer emit renderable terrain.
+MAP-9L should restore generated PZMapForge terrain and use visual runtime rendering as the proof standard.
 
 Suggested next classification target:
 
