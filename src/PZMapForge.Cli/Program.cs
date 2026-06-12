@@ -1632,10 +1632,11 @@ static int Build42CandidateWriterCommand(
     // Not load-tested. Not a playable export. Candidate only.
 
     if (profile != "empty_grass_v0" && profile != "empty_grass_v1" &&
-        profile != "empty_grass_v2" && profile != "empty_grass_v3" && profile != "empty_grass_v4")
+        profile != "empty_grass_v2" && profile != "empty_grass_v3" &&
+        profile != "empty_grass_v4" && profile != "empty_grass_v5")
     {
         Console.Error.WriteLine(
-            $"build42-candidate-writer: unknown profile '{profile}'. Supported profiles: empty_grass_v0, empty_grass_v1, empty_grass_v2, empty_grass_v3, empty_grass_v4.");
+            $"build42-candidate-writer: unknown profile '{profile}'. Supported profiles: empty_grass_v0, empty_grass_v1, empty_grass_v2, empty_grass_v3, empty_grass_v4, empty_grass_v5.");
         return 1;
     }
 
@@ -1654,7 +1655,7 @@ static int Build42CandidateWriterCommand(
     // producing LexState.token2str ArrayIndexOutOfBoundsException index 65022 (BOM-derived).
     // For v0-v3: Encoding.UTF8 (existing behavior, unchanged).
     // For v4: new UTF8Encoding(false) — no BOM on all game-read text files.
-    var gameReadEnc = profile == "empty_grass_v4"
+    var gameReadEnc = profile is "empty_grass_v4" or "empty_grass_v5"
         ? new System.Text.UTF8Encoding(false)
         : Encoding.UTF8;
 
@@ -1687,7 +1688,7 @@ fixed2x=true
     // Profile empty_grass_v3 (MAP-7C): uses unemployed key and explicit PZ spawn fields.
     //   MAP-7A retest showed spawn NullPointerException in getSpawnRegionsAux.
     //   The 'all' key used in v0-v2 may not be valid; 'unemployed' is a known PZ profession key.
-    if (profile == "empty_grass_v4")
+    if (profile is "empty_grass_v4" or "empty_grass_v5")
     {
         // MAP-7D: same unemployed key format as v3 but with no-BOM encoding.
         // No BOM applied via gameReadEnc = new UTF8Encoding(false).
@@ -1740,6 +1741,7 @@ end
     // v3 used comment-only with BOM (UTF8) — BOM caused same LexState error as return {}.
     var objectsLuaContent = profile switch
     {
+        "empty_grass_v5" => "-- PZMapForge MAP-9Q: minimal valid empty lotheader profile. No objects or zones. No BOM encoding applied. Not load-tested.\n",
         "empty_grass_v4" => "-- PZMapForge MAP-7D: no objects or zones for this experimental empty cell.\n-- objects.lua placeholder. No BOM encoding applied (MAP-7D fix). Not load-tested.\n",
         "empty_grass_v3" => "-- PZMapForge MAP-7C: no objects or zones for this experimental empty cell.\n-- objects.lua is a placeholder. Not load-tested. Not a playable Project Zomboid map.\n",
         _                => "return {}\n",
@@ -1795,15 +1797,19 @@ BINARY CANDIDATE FORMATS ({profile}):
     // Profile empty_grass_v2 (MAP-6Z): same 1024 entries as v1 + canonical 1048-byte trailer.
     //   Trailer is the MAP-6Y stable literal block (80 Dru_map simple cells, all identical).
     //   loth_known_risk: stable_reference_block_may_not_match_generated_tile_table_or_cell_payload
-    var lothEntries = (profile is "empty_grass_v1" or "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4")
-        ? Enumerable.Range(0, 1024).Select(i => $"blends_grassoverlays_01_{i}").ToArray()
-        : new[] { "blends_grassoverlays_01_0" }; // MAP-4E committed evidence
+    var lothEntries = profile switch
+    {
+        "empty_grass_v5" => BuildMap9qDruEmptyLothEntries(),
+        "empty_grass_v1" or "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4"
+            => Enumerable.Range(0, 1024).Select(i => $"blends_grassoverlays_01_{i}").ToArray(),
+        _ => new[] { "blends_grassoverlays_01_0" }, // MAP-4E committed evidence
+    };
     var lothEntryData = Encoding.ASCII.GetBytes(string.Join("\n", lothEntries) + "\n");
     // MAP-6Z: canonical 1048-byte simple-cell trailer from MAP-6Y reference research.
     // Source: 80 Dru_map simple cells (all_1048_blocks_identical=true). First two U32LE=8, rest zero.
     // SHA-256: 93a8f3ccf2cafdc2fb7cd4f3836c29d87076f244f5ba685f92659fbdaf778ec7
     // Not copied from PZ game assets. Derived from MAP-6Y analysis. Candidate only.
-    var lothTrailer = (profile is "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4") ? BuildMap6yCanonicalTrailer() : Array.Empty<byte>();
+    var lothTrailer = (profile is "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4" or "empty_grass_v5") ? BuildMap6yCanonicalTrailer() : Array.Empty<byte>();
     var lothBytes   = new byte[12 + lothEntryData.Length + lothTrailer.Length];
     lothBytes[0] = 0x4C; lothBytes[1] = 0x4F; lothBytes[2] = 0x54; lothBytes[3] = 0x48; // LOTH
     lothBytes[4] = 0x01; // version = 1 (LE)
@@ -1896,6 +1902,7 @@ BINARY CANDIDATE FORMATS ({profile}):
             : "committed_evidence_only_map4e",
         loth_entry_strategy          = profile switch
         {
+            "empty_grass_v5" => "map9q_dru_empty_style_94_entry_registry_with_1048_byte_empty_tail_no_bom_encoding",
             "empty_grass_v4" => "generated_contiguous_grass_overlay_range_with_map6y_stable_trailer_no_bom_encoding",
             "empty_grass_v3" => "generated_contiguous_grass_overlay_range_with_map6y_stable_trailer_and_fixed_lua_metadata",
             "empty_grass_v2" => "generated_contiguous_grass_overlay_range_with_map6y_stable_trailer",
@@ -1904,6 +1911,7 @@ BINARY CANDIDATE FORMATS ({profile}):
         },
         loth_known_risk              = profile switch
         {
+            "empty_grass_v5" => "diagnostic_profile_uses_dru_empty_style_registry_shape_but_zero_lotpack_payload_may_still_render_fallback",
             "empty_grass_v4" or "empty_grass_v3" or "empty_grass_v2" => "stable_reference_block_may_not_match_generated_tile_table_or_cell_payload",
             "empty_grass_v1" => "generated_entries_may_not_match_loaded_tile_definitions",
             _                => "single_entry_insufficient_per_map6r_evidence",
@@ -1911,11 +1919,11 @@ BINARY CANDIDATE FORMATS ({profile}):
         loth_status                  = "generated_not_load_tested",
         loth_size_bytes              = lothBytes.Length,
         loth_sha256                  = lothSha256,
-        loth_trailer_strategy        = (profile is "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4")
+        loth_trailer_strategy        = (profile is "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4" or "empty_grass_v5")
             ? "map6y_stable_literal_1048_block"
             : "none_no_trailer",
         loth_trailer_size            = lothTrailer.Length,
-        loth_trailer_status          = (profile is "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4")
+        loth_trailer_status          = (profile is "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4" or "empty_grass_v5")
             ? "generated_not_load_tested"
             : "not_applicable",
         loth_trailer_sha256          = lothTrailer.Length > 0
@@ -2093,6 +2101,111 @@ static void WritePlaceholderPng(string path, string line1, string line2)
 // SHA-256: 93a8f3ccf2cafdc2fb7cd4f3836c29d87076f244f5ba685f92659fbdaf778ec7
 // Not copied from PZ game assets. Derived from MAP-6Y analysis of reference data.
 // Applies only to the experimental simple-cell candidate profile empty_grass_v2.
+static string[] BuildMap9qDruEmptyLothEntries()
+{
+    // MAP-9Q diagnostic profile.
+    // Tile registry shape copied from structural analysis of known-good Dru_map empty/light 35_27.lotheader.
+    // Purpose: replace the invalid 1024 fake contiguous grass-overlay registry with a minimal valid empty-cell registry.
+    // Runtime claim boundary: diagnostic only, not a playable map claim.
+    return new[]
+    {
+        "blends_grassoverlays_01_0",
+        "blends_grassoverlays_01_1",
+        "blends_grassoverlays_01_2",
+        "blends_grassoverlays_01_25",
+        "blends_grassoverlays_01_3",
+        "blends_grassoverlays_01_32",
+        "blends_grassoverlays_01_4",
+        "blends_grassoverlays_01_5",
+        "blends_natural_01_0",
+        "blends_natural_01_1",
+        "blends_natural_01_10",
+        "blends_natural_01_11",
+        "blends_natural_01_12",
+        "blends_natural_01_13",
+        "blends_natural_01_15",
+        "blends_natural_01_16",
+        "blends_natural_01_17",
+        "blends_natural_01_18",
+        "blends_natural_01_19",
+        "blends_natural_01_2",
+        "blends_natural_01_20",
+        "blends_natural_01_21",
+        "blends_natural_01_22",
+        "blends_natural_01_23",
+        "blends_natural_01_24",
+        "blends_natural_01_25",
+        "blends_natural_01_26",
+        "blends_natural_01_27",
+        "blends_natural_01_28",
+        "blends_natural_01_29",
+        "blends_natural_01_3",
+        "blends_natural_01_30",
+        "blends_natural_01_31",
+        "blends_natural_01_32",
+        "blends_natural_01_33",
+        "blends_natural_01_34",
+        "blends_natural_01_35",
+        "blends_natural_01_36",
+        "blends_natural_01_37",
+        "blends_natural_01_38",
+        "blends_natural_01_39",
+        "blends_natural_01_40",
+        "blends_natural_01_41",
+        "blends_natural_01_42",
+        "blends_natural_01_43",
+        "blends_natural_01_44",
+        "blends_natural_01_45",
+        "blends_natural_01_46",
+        "blends_natural_01_47",
+        "blends_natural_01_5",
+        "blends_natural_01_6",
+        "blends_natural_01_64",
+        "blends_natural_01_65",
+        "blends_natural_01_66",
+        "blends_natural_01_67",
+        "blends_natural_01_69",
+        "blends_natural_01_7",
+        "blends_natural_01_70",
+        "blends_natural_01_71",
+        "blends_natural_01_73",
+        "blends_natural_01_74",
+        "blends_natural_01_8",
+        "blends_natural_01_80",
+        "blends_natural_01_81",
+        "blends_natural_01_84",
+        "blends_natural_01_85",
+        "blends_natural_01_86",
+        "blends_natural_01_87",
+        "blends_natural_01_88",
+        "blends_natural_01_89",
+        "blends_natural_01_90",
+        "blends_natural_01_91",
+        "blends_street_01_48",
+        "blends_street_01_53",
+        "blends_street_01_54",
+        "blends_street_01_55",
+        "blends_street_01_64",
+        "blends_street_01_69",
+        "blends_street_01_70",
+        "blends_street_01_71",
+        "blends_street_01_80",
+        "blends_street_01_85",
+        "blends_street_01_86",
+        "blends_street_01_87",
+        "unofficial_fork_map_0",
+        "vegetation_foliage_01_8",
+        "vegetation_groundcover_01_18",
+        "vegetation_groundcover_01_23",
+        "vegetation_trees_01_0",
+        "vegetation_trees_01_1",
+        "vegetation_trees_01_13",
+        "vegetation_trees_01_14",
+        "vegetation_trees_01_17",
+        "vegetation_trees_01_9",
+    };
+}
+
 static byte[] BuildMap6yCanonicalTrailer()
 {
     var t = new byte[1048];
