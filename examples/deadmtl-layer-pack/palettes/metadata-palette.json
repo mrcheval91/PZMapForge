@@ -1,0 +1,12 @@
+{
+  "_note": "PLACEHOLDER — System 4 runtime society layer not yet implemented. Format is not ratified.",
+  "_system": "System 4 / Runtime Society Layer",
+  "_status": "FUTURE",
+  "format": "pzmapforge.worldgen.metadata-palette.v1",
+  "entries": [
+    { "color": "#FF00FF", "tag": "npc_spawn_zone" },
+    { "color": "#AA00AA", "tag": "faction_territory" },
+    { "color": "#550055", "tag": "ownership_boundary" },
+    { "color": "#00FFFF", "tag": "rent_district" }
+  ]
+}

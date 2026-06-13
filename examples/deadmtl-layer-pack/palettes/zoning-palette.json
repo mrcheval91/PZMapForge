@@ -1,0 +1,15 @@
+{
+  "_note": "PLACEHOLDER — System 3 zoning compiler not yet implemented. Format is not ratified.",
+  "_system": "System 3 / Zoning Generator",
+  "_status": "FUTURE",
+  "format": "pzmapforge.worldgen.zoning-palette.v1",
+  "entries": [
+    { "color": "#FFD700", "zone": "residential_low" },
+    { "color": "#FF9900", "zone": "residential_medium" },
+    { "color": "#FF3300", "zone": "residential_high" },
+    { "color": "#3399FF", "zone": "commercial_strip" },
+    { "color": "#0055AA", "zone": "commercial_dense" },
+    { "color": "#999999", "zone": "industrial_light" },
+    { "color": "#555555", "zone": "industrial_heavy" }
+  ]
+}

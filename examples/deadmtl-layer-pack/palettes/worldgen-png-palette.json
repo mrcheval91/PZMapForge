@@ -1,0 +1,10 @@
+{
+  "format": "pzmapforge.worldgen.png-palette.v1",
+  "entries": [
+    { "color": "#0000FF", "type": "biome",  "key": "water" },
+    { "color": "#D8C080", "type": "biome",  "key": "sand_bank" },
+    { "color": "#207020", "type": "biome",  "key": "birch_forest" },
+    { "color": "#FF6600", "type": "prefab", "key": "normal_road_WE_00" },
+    { "color": "#CC3300", "type": "prefab", "key": "highway_NS_00" }
+  ]
+}
