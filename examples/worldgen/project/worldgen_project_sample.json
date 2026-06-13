@@ -1,0 +1,28 @@
+{
+  "format": "pzmapforge.worldgen.project.v1",
+  "map_id": "pzmapforge_build42_candidate_v4_001",
+  "origin_x": 10580,
+  "origin_y": 8200,
+  "width": 190,
+  "height": 140,
+  "layers": [
+    {
+      "id": "water",
+      "path": "layers/water.png",
+      "palette": "../worldgen-png-palette.json",
+      "priority": 10
+    },
+    {
+      "id": "sand",
+      "path": "layers/sand.png",
+      "palette": "../worldgen-png-palette.json",
+      "priority": 20
+    },
+    {
+      "id": "roads",
+      "path": "layers/roads.png",
+      "palette": "../worldgen-png-palette.json",
+      "priority": 50
+    }
+  ]
+}
