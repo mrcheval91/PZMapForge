@@ -14,3 +14,6 @@ tests/fixtures/layers/example-2b/generated/
 
 # Local proof/debug dumps
 artifacts/
+
+# Local proof/debug dumps
+artifacts/
