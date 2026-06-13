@@ -110,6 +110,65 @@ powershell -ExecutionPolicy Bypass -File scripts\validate-layer-pack.ps1
 
 ---
 
+## Spawn-centered runtime proof
+
+A pre-built workflow that places all painted features within 50 tiles of the
+spawn tile (10650, 8250) so they are visible immediately on first spawn
+without walking or searching.
+
+### Features painted (world tile coordinates)
+
+| Layer        | Key                 | World X          | World Y          |
+|--------------|---------------------|------------------|------------------|
+| roads_major  | normal_road_WE_00   | 10618..10682     | 8248..8252       |
+| shore        | sand_bank           | 10632..10668     | 8238..8265       |
+| parks_forest | birch_forest        | 10608..10630     | 8238..8272       |
+| water        | (base fill)         | entire canvas    | entire canvas    |
+
+Road strip y=8248..8252 passes immediately under the player at spawn tile
+10650, 8250, making the WorldGen road visible without any movement.
+
+### Run proof build (no install)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-spawn-centered-proof-build.ps1
+```
+
+Generates the pack to `.local/deadmtl-authoring/spawn-centered-proof-pack/`,
+runs `deadmtl-authoring-build`, and prints the Lua preview and expected
+runtime markers. Does NOT write to any PZ game folder.
+
+### Run proof build with install
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-spawn-centered-proof-build.ps1 -Install
+```
+
+Same as above, then:
+- Backs up existing `WorldGenOverride.lua`
+- Installs new `WorldGenOverride.lua` to the PZ game map folder
+- Clears the save folder so PZ regenerates the world
+- Byte-checks the installed file (BOM=false, non-ASCII=false)
+- Prints VERDICT
+
+### Expected runtime markers
+
+```
+PZMAPFORGE_WORLDGENOVERRIDE_MAP_ID=deadmtl_spawn_centered_proof_v1
+PZMAPFORGE_WORLDGENOVERRIDE_LOADED
+PZMAPFORGE_WORLDGENOVERRIDE_MODULE_COUNT=<N>
+```
+
+### Claim boundary
+
+The spawn-centered proof pack is an authoring artifact only.
+No public mod packaging is claimed.
+No Project Zomboid load test has been performed by any automated tool.
+Output must not be treated as a playable map without explicit runtime
+verification documented as a human proof step.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.
