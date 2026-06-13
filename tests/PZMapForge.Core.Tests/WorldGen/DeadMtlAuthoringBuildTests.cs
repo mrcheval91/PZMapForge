@@ -1,0 +1,276 @@
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.Versioning;
+using System.Text;
+using Xunit;
+
+namespace PZMapForge.Core.Tests.WorldGen;
+
+[SupportedOSPlatform("windows")]
+public sealed class DeadMtlAuthoringBuildTests : IDisposable
+{
+    private readonly string _tempDir =
+        Path.Combine(Path.GetTempPath(), "pzmapforge-deadmtl-builder-tests", Path.GetRandomFileName());
+
+    public DeadMtlAuthoringBuildTests() => Directory.CreateDirectory(_tempDir);
+
+    public void Dispose()
+    {
+        try { if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, recursive: true); }
+        catch { /* best effort */ }
+    }
+
+    private static string RepoRoot =>
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+
+    private static string RealPackRoot =>
+        Path.Combine(RepoRoot, "examples", "deadmtl-layer-pack");
+
+    private string LocalOutputDir => Path.Combine(_tempDir, ".local", "authoring-build");
+
+    // -----------------------------------------------------------------------
+    // Minimal pack builder (duplicated from validator tests for isolation)
+    // -----------------------------------------------------------------------
+
+    private static readonly Color KnownWater  = Color.FromArgb(255,   0,   0, 255);
+    private static readonly Color KnownShore  = Color.FromArgb(255, 216, 192, 128);
+    private static readonly Color KnownForest = Color.FromArgb(255,  32, 112,  32);
+    private static readonly Color KnownRoad   = Color.FromArgb(255, 255, 102,   0);
+    private static readonly Color Transparent = Color.FromArgb(0,    0,   0,   0);
+
+    private static readonly string[] System1Ids     = ["water", "shore", "parks_forest", "roads_major"];
+    private static readonly string[] PlaceholderIds =
+    [
+        "roads_local", "zones_residential", "zones_commercial", "zones_industrial",
+        "placed_buildings", "props", "npc_zones", "ownership",
+    ];
+
+    private string CreateMinimalValidPack(int width = 4, int height = 3)
+    {
+        var pack = Path.Combine(_tempDir, Path.GetRandomFileName());
+        Directory.CreateDirectory(pack);
+        Directory.CreateDirectory(Path.Combine(pack, "palettes"));
+        Directory.CreateDirectory(Path.Combine(pack, "layers"));
+        Directory.CreateDirectory(Path.Combine(pack, "scripts"));
+
+        File.WriteAllText(Path.Combine(pack, "deadmtl_worldgen_project.json"), $$"""
+            {
+              "format": "pzmapforge.worldgen.project.v1",
+              "map_id": "test_pack",
+              "origin_x": 10580,
+              "origin_y": 8200,
+              "width": {{width}},
+              "height": {{height}},
+              "layers": [
+                {"id":"water",       "path":"layers/water.png",       "palette":"palettes/worldgen-png-palette.json","priority":10},
+                {"id":"shore",       "path":"layers/shore.png",       "palette":"palettes/worldgen-png-palette.json","priority":20},
+                {"id":"parks_forest","path":"layers/parks_forest.png","palette":"palettes/worldgen-png-palette.json","priority":30},
+                {"id":"roads_major", "path":"layers/roads_major.png", "palette":"palettes/worldgen-png-palette.json","priority":50}
+              ]
+            }
+            """, Encoding.UTF8);
+
+        File.WriteAllText(Path.Combine(pack, "README.md"), "# Test Pack\n");
+        File.WriteAllText(Path.Combine(pack, "palettes", "worldgen-png-palette.json"), """
+            {
+              "format": "pzmapforge.worldgen.png-palette.v1",
+              "entries": [
+                {"color":"#0000FF","type":"biome", "key":"water"},
+                {"color":"#D8C080","type":"biome", "key":"sand_bank"},
+                {"color":"#207020","type":"biome", "key":"birch_forest"},
+                {"color":"#FF6600","type":"prefab","key":"normal_road_WE_00"},
+                {"color":"#CC3300","type":"prefab","key":"highway_NS_00"}
+              ]
+            }
+            """, Encoding.UTF8);
+
+        File.WriteAllText(Path.Combine(pack, "palettes", "zoning-palette.json"),   "{\"_note\":\"FUTURE\"}\n");
+        File.WriteAllText(Path.Combine(pack, "palettes", "metadata-palette.json"), "{\"_note\":\"FUTURE\"}\n");
+        File.WriteAllText(Path.Combine(pack, "scripts", "generate-empty-layer-pack.ps1"), "# stub\n");
+        File.WriteAllText(Path.Combine(pack, "scripts", "validate-layer-pack.ps1"),        "# stub\n");
+
+        var s1Colors = new[] { KnownWater, KnownShore, KnownForest, KnownRoad };
+        for (var i = 0; i < System1Ids.Length; i++)
+        {
+            using var bmp = new Bitmap(width, height);
+            using var g   = Graphics.FromImage(bmp);
+            g.Clear(Transparent);
+            bmp.SetPixel(0, 0, s1Colors[i]);
+            bmp.Save(Path.Combine(pack, "layers", $"{System1Ids[i]}.png"), ImageFormat.Png);
+        }
+
+        foreach (var id in PlaceholderIds)
+        {
+            using var bmp = new Bitmap(width, height);
+            using var g   = Graphics.FromImage(bmp);
+            g.Clear(Transparent);
+            bmp.Save(Path.Combine(pack, "layers", $"{id}.png"), ImageFormat.Png);
+        }
+
+        return pack;
+    }
+
+    // -----------------------------------------------------------------------
+    // Happy path — real pack
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Build_ValidRealPack_IsValid()
+    {
+        var result = PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(RealPackRoot, LocalOutputDir);
+        Assert.True(result.IsValid,
+            "Real pack build failed:\n" + string.Join("\n", result.Errors));
+    }
+
+    [Fact]
+    public void Build_ValidRealPack_WritesThreeOutputFiles()
+    {
+        PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(RealPackRoot, LocalOutputDir);
+
+        Assert.True(File.Exists(Path.Combine(LocalOutputDir, "worldgen_layers.json")));
+        Assert.True(File.Exists(Path.Combine(LocalOutputDir, "WorldGenOverride.lua")));
+        Assert.True(File.Exists(Path.Combine(LocalOutputDir, "proof-summary.txt")));
+    }
+
+    [Fact]
+    public void Build_ValidRealPack_HasExpectedMapId()
+    {
+        var result = PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(RealPackRoot, LocalOutputDir);
+        Assert.Equal("deadmtl_build42_worldgen_v1", result.MapId);
+    }
+
+    [Fact]
+    public void Build_ValidRealPack_HasNonZeroModuleCount()
+    {
+        var result = PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(RealPackRoot, LocalOutputDir);
+        Assert.True(result.ModuleCount > 0);
+    }
+
+    [Fact]
+    public void Build_ValidRealPack_LuaIsAsciiNoBom()
+    {
+        var result = PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(RealPackRoot, LocalOutputDir);
+
+        Assert.False(result.LuaHasBom,        "Lua must not have BOM");
+        Assert.False(result.LuaHasNonAscii,   "Lua must be ASCII-only");
+    }
+
+    [Fact]
+    public void Build_ValidRealPack_LuaHasProvenSyntax()
+    {
+        PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(RealPackRoot, LocalOutputDir);
+
+        var lua = File.ReadAllText(Path.Combine(LocalOutputDir, "WorldGenOverride.lua"));
+        Assert.Contains("PZMAPFORGE_WORLDGENOVERRIDE_LOADED",  lua, StringComparison.Ordinal);
+        Assert.Contains("worldgen[\"static_modules\"] = {",   lua, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_ValidRealPack_ProofSummaryContainsMapId()
+    {
+        PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(RealPackRoot, LocalOutputDir);
+
+        var proof = File.ReadAllText(Path.Combine(LocalOutputDir, "proof-summary.txt"));
+        Assert.Contains("deadmtl_build42_worldgen_v1", proof, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_ValidRealPack_ProofSummaryContainsModuleCount()
+    {
+        var result = PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(RealPackRoot, LocalOutputDir);
+
+        var proof = File.ReadAllText(Path.Combine(LocalOutputDir, "proof-summary.txt"));
+        Assert.Contains($"Module count:       {result.ModuleCount}", proof, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_ValidRealPack_ProofSummaryContainsClaimBoundary()
+    {
+        PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(RealPackRoot, LocalOutputDir);
+
+        var proof = File.ReadAllText(Path.Combine(LocalOutputDir, "proof-summary.txt"));
+        Assert.Contains("authoring artifact only", proof, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("No public mod packaging is claimed", proof, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_ValidRealPack_ProofSummaryContainsByteCheck()
+    {
+        PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(RealPackRoot, LocalOutputDir);
+
+        var proof = File.ReadAllText(Path.Combine(LocalOutputDir, "proof-summary.txt"));
+        Assert.Contains("BOM:                false", proof, StringComparison.Ordinal);
+        Assert.Contains("Non-ASCII bytes:    false", proof, StringComparison.Ordinal);
+    }
+
+    // -----------------------------------------------------------------------
+    // Validation failure → no output files
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Build_ValidationErrors_ReturnsInvalid()
+    {
+        var brokenPack = CreateMinimalValidPack();
+        File.Delete(Path.Combine(brokenPack, "deadmtl_worldgen_project.json"));
+
+        var result = PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(brokenPack, LocalOutputDir);
+
+        Assert.False(result.IsValid);
+        Assert.NotEmpty(result.Errors);
+    }
+
+    [Fact]
+    public void Build_ValidationErrors_DoesNotWriteLua()
+    {
+        var brokenPack = CreateMinimalValidPack();
+        File.Delete(Path.Combine(brokenPack, "deadmtl_worldgen_project.json"));
+
+        PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(brokenPack, LocalOutputDir);
+
+        Assert.False(File.Exists(Path.Combine(LocalOutputDir, "WorldGenOverride.lua")));
+    }
+
+    // -----------------------------------------------------------------------
+    // Warning-only pack still builds successfully
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Build_WarningOnlyPack_IsValid()
+    {
+        var pack = CreateMinimalValidPack(width: 4, height: 3);
+
+        // Paint a pixel in a placeholder layer (warning, not error)
+        using (var bmp = new Bitmap(4, 3))
+        using (var g   = Graphics.FromImage(bmp))
+        {
+            g.Clear(Transparent);
+            bmp.SetPixel(1, 1, Color.FromArgb(255, 10, 20, 30));
+            bmp.Save(Path.Combine(pack, "layers", "roads_local.png"), ImageFormat.Png);
+        }
+
+        var result = PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(pack, LocalOutputDir);
+
+        Assert.True(result.IsValid, "Warning-only pack should build successfully");
+        Assert.NotEmpty(result.Warnings);
+    }
+
+    [Fact]
+    public void Build_WarningOnlyPack_WritesAllThreeFiles()
+    {
+        var pack = CreateMinimalValidPack(width: 4, height: 3);
+
+        using (var bmp = new Bitmap(4, 3))
+        using (var g   = Graphics.FromImage(bmp))
+        {
+            g.Clear(Transparent);
+            bmp.SetPixel(0, 0, Color.FromArgb(255, 99, 88, 77));
+            bmp.Save(Path.Combine(pack, "layers", "props.png"), ImageFormat.Png);
+        }
+
+        PZMapForge.Core.WorldGen.DeadMtlAuthoringBuilder.Build(pack, LocalOutputDir);
+
+        Assert.True(File.Exists(Path.Combine(LocalOutputDir, "worldgen_layers.json")));
+        Assert.True(File.Exists(Path.Combine(LocalOutputDir, "WorldGenOverride.lua")));
+        Assert.True(File.Exists(Path.Combine(LocalOutputDir, "proof-summary.txt")));
+    }
+}

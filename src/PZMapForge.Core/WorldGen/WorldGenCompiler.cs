@@ -37,13 +37,25 @@ public static class WorldGenCompiler
             return result;
         }
 
+        CompileCore(manifest, result);
+        return result;
+    }
+
+    public static WorldGenCompileResult CompileManifest(WorldGenManifest manifest)
+    {
+        var result = new WorldGenCompileResult();
+        CompileCore(manifest, result);
+        return result;
+    }
+
+    private static void CompileCore(WorldGenManifest manifest, WorldGenCompileResult result)
+    {
         Validate(manifest, result.Errors);
-        if (!result.IsValid) return result;
+        if (!result.IsValid) return;
 
         result.MapId       = manifest.MapId;
         result.ModuleCount = manifest.StaticModules.Count;
         result.Lua         = EmitLua(manifest);
-        return result;
     }
 
     private static void Validate(WorldGenManifest manifest, List<string> errors)

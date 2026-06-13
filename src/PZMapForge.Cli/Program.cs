@@ -44,6 +44,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  compile-worldgen-png  --input <png> --palette <json> --map-id <id> --origin-x <x> --origin-y <y> --output <json> [--ignore-unknown]");
     Console.Error.WriteLine("  compile-worldgen-project  --input <project.json> --output <manifest.json> [--ignore-unknown]");
     Console.Error.WriteLine("  validate-deadmtl-layer-pack  --input <pack-dir>");
+    Console.Error.WriteLine("  deadmtl-authoring-build  --input <pack-dir> --output <dir>");
     return 1;
 }
 
@@ -70,6 +71,7 @@ return args[0] switch
     "compile-worldgen-png"                  => CompileWorldGenPngCommand(args[1..]),
     "compile-worldgen-project"              => CompileWorldGenProjectCommand(args[1..]),
     "validate-deadmtl-layer-pack"           => ValidateDeadMtlLayerPackCommand(args[1..]),
+    "deadmtl-authoring-build"              => DeadMtlAuthoringBuildCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -3857,13 +3859,76 @@ static int ValidateDeadMtlLayerPackCommand(string[] args)
     return 1;
 }
 
+static int DeadMtlAuthoringBuildCommand(string[] args)
+{
+    var inputPath  = string.Empty;
+    var outputPath = string.Empty;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if      (args[i] is "--input"  or "-i" && i + 1 < args.Length) inputPath  = args[++i];
+        else if (args[i] is "--output" or "-o"  && i + 1 < args.Length) outputPath = args[++i];
+    }
+
+    if (string.IsNullOrWhiteSpace(inputPath))
+    {
+        Console.Error.WriteLine("deadmtl-authoring-build requires --input <pack-dir>");
+        return 1;
+    }
+    if (string.IsNullOrWhiteSpace(outputPath))
+    {
+        Console.Error.WriteLine("deadmtl-authoring-build requires --output <dir>");
+        return 1;
+    }
+
+    // Safety: output must be under .local to prevent accidental writes to game folders.
+    var fullOutput  = Path.GetFullPath(outputPath);
+    var localMarker = Path.DirectorySeparatorChar + ".local" + Path.DirectorySeparatorChar;
+    if (!fullOutput.Contains(localMarker, StringComparison.OrdinalIgnoreCase) &&
+        !fullOutput.EndsWith(Path.DirectorySeparatorChar + ".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine("deadmtl-authoring-build: output path must be under a .local/ directory.");
+        Console.Error.WriteLine($"  Got: {outputPath}");
+        return 1;
+    }
+
+    var result = DeadMtlAuthoringBuilder.Build(inputPath, outputPath);
+
+    Console.WriteLine($"Pack:          {inputPath}");
+    Console.WriteLine($"Output:        {outputPath}");
+    Console.WriteLine($"Validation:    {result.ValidationChecks} checks, {result.Errors.Count} errors, {result.Warnings.Count} warnings");
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors) Console.Error.WriteLine($"  error: {e}");
+        Console.Error.WriteLine("Status:        INVALID");
+        return 1;
+    }
+
+    Console.WriteLine($"Map ID:        {result.MapId}");
+    Console.WriteLine($"Module count:  {result.ModuleCount}");
+    Console.WriteLine($"Lua BOM:       {result.LuaHasBom.ToString().ToLowerInvariant()}");
+    Console.WriteLine($"Lua non-ASCII: {result.LuaHasNonAscii.ToString().ToLowerInvariant()}");
+
+    foreach (var w in result.Warnings)
+        Console.WriteLine($"  warning: {w}");
+
+    Console.WriteLine("Files:");
+    Console.WriteLine($"  {Path.GetFileName(result.ManifestJsonPath)}");
+    Console.WriteLine($"  {Path.GetFileName(result.LuaPath)}");
+    Console.WriteLine($"  {Path.GetFileName(result.ProofSummaryPath)}");
+    Console.WriteLine("Status:        OK");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
     Console.Error.WriteLine("Available commands: image-check, image-export, full-pipeline, " +
         "palette-check, parsed-cell-check, region-check, primitive-check, " +
         "plan-check, plan-export, layer-pipeline, layer-validate, local-tile-survey, app-export, " +
-        "compile-worldgen, compile-worldgen-png, compile-worldgen-project, validate-deadmtl-layer-pack");
+        "compile-worldgen, compile-worldgen-png, compile-worldgen-project, " +
+        "validate-deadmtl-layer-pack, deadmtl-authoring-build");
     return 1;
 }
 
