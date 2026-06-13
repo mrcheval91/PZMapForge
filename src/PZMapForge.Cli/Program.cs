@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Xml;
@@ -11,6 +11,7 @@ using PZMapForge.Core.ParsedCell;
 using PZMapForge.Core.Planning;
 using PZMapForge.Core.Primitives;
 using PZMapForge.Core.Regions;
+using PZMapForge.Core.WorldGen;
 
 // Claim boundary: PZMapForge CLI is a planning tool only.
 // It does not produce a playable Project Zomboid export.
@@ -39,6 +40,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  map-scaffold      --source <path> --output <dir>");
     Console.Error.WriteLine("  map-export-experimental  --map-id <id> --output <dir> [--cell-x <int>] [--cell-y <int>] [--build42-package]");
     Console.Error.WriteLine("  inspect-build42-experimental-package  --package <dir> --output <dir>");
+    Console.Error.WriteLine("  compile-worldgen  --input <json> --output <lua>");
     return 1;
 }
 
@@ -61,6 +63,7 @@ return args[0] switch
     "map-scaffold"           => MapScaffoldCommand(args[1..]),
     "map-export-experimental"                => MapExportExperimentalCommand(args[1..]),
     "inspect-build42-experimental-package"  => InspectBuild42ExperimentalPackageCommand(args[1..]),
+    "compile-worldgen"                      => CompileWorldGenCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -3616,12 +3619,67 @@ static string SanitizeRunName(string raw)
 static string HtmlEncode(string s) =>
     s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
 
+static int CompileWorldGenCommand(string[] args)
+{
+    var inputPath  = string.Empty;
+    var outputPath = string.Empty;
+
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        if (args[i] is "--input"  or "-i") { inputPath  = args[i + 1]; }
+        if (args[i] is "--output" or "-o") { outputPath = args[i + 1]; }
+    }
+
+    if (string.IsNullOrWhiteSpace(inputPath))
+    {
+        Console.Error.WriteLine("compile-worldgen requires --input <path>");
+        return 1;
+    }
+
+    if (string.IsNullOrWhiteSpace(outputPath))
+    {
+        Console.Error.WriteLine("compile-worldgen requires --output <path>");
+        return 1;
+    }
+
+    // Safety: output must be under .local to prevent accidental writes to game folders.
+    var normalizedOutput = outputPath.Replace('\\', '/');
+    if (!normalizedOutput.Contains("/.local/") && !normalizedOutput.StartsWith(".local/", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine("compile-worldgen: output path must be under a .local/ directory.");
+        Console.Error.WriteLine($"  Got: {outputPath}");
+        return 1;
+    }
+
+    var result = WorldGenCompiler.Compile(inputPath);
+
+    if (!result.IsValid)
+    {
+        Console.Error.WriteLine("compile-worldgen: manifest validation failed.");
+        foreach (var e in result.Errors) Console.Error.WriteLine($"  error: {e}");
+        return 1;
+    }
+
+    var outDir = Path.GetDirectoryName(outputPath);
+    if (!string.IsNullOrWhiteSpace(outDir))
+        Directory.CreateDirectory(outDir);
+
+    File.WriteAllText(outputPath, result.Lua!, Encoding.ASCII);
+
+    Console.WriteLine($"Map ID:        {result.MapId}");
+    Console.WriteLine($"Module count:  {result.ModuleCount}");
+    Console.WriteLine($"Output:        {outputPath}");
+    Console.WriteLine("Status:        OK");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
     Console.Error.WriteLine("Available commands: image-check, image-export, full-pipeline, " +
         "palette-check, parsed-cell-check, region-check, primitive-check, " +
-        "plan-check, plan-export, layer-pipeline, layer-validate, local-tile-survey, app-export");
+        "plan-check, plan-export, layer-pipeline, layer-validate, local-tile-survey, app-export, " +
+        "compile-worldgen");
     return 1;
 }
 

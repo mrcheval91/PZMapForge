@@ -1,0 +1,34 @@
+{
+  "map_id": "pzmapforge_build42_candidate_v4_001",
+  "format": "pzmapforge.worldgen.layers.v1",
+  "origin_note": "World tile coordinates, not local cell coordinates.",
+  "static_modules": [
+    {
+      "id": "water_l_horizontal",
+      "type": "biome",
+      "key": "water",
+      "x1": 10682,
+      "y1": 8240,
+      "x2": 10722,
+      "y2": 8252
+    },
+    {
+      "id": "shore_grass_north",
+      "type": "biome",
+      "key": "grass_plain",
+      "x1": 10682,
+      "y1": 8253,
+      "x2": 10722,
+      "y2": 8270
+    },
+    {
+      "id": "road_we_south",
+      "type": "prefab",
+      "key": "normal_road_WE_00",
+      "x1": 10600,
+      "y1": 8288,
+      "x2": 10720,
+      "y2": 8300
+    }
+  ]
+}
