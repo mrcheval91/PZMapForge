@@ -3,7 +3,14 @@
   "entries": [
     { "color": "#0000FF", "type": "biome",  "key": "water" },
     { "color": "#D8C080", "type": "biome",  "key": "sand_bank" },
+    { "color": "#00AA00", "type": "biome",  "key": "grass_plain" },
+    { "color": "#55CC55", "type": "biome",  "key": "flower_plain" },
     { "color": "#207020", "type": "biome",  "key": "birch_forest" },
+    { "color": "#145C14", "type": "biome",  "key": "oak_forest" },
+    { "color": "#0B4418", "type": "biome",  "key": "pine_forest" },
+    { "color": "#60A060", "type": "biome",  "key": "light_birch_forest" },
+    { "color": "#4F8F4F", "type": "biome",  "key": "light_oak_forest" },
+    { "color": "#3F7F50", "type": "biome",  "key": "light_pine_forest" },
     { "color": "#FF6600", "type": "prefab", "key": "normal_road_WE_00" },
     { "color": "#CC3300", "type": "prefab", "key": "highway_NS_00" }
   ]

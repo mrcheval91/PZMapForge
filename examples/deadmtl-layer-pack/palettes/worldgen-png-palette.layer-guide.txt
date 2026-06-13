@@ -1,0 +1,56 @@
+﻿# worldgen-png-palette layer authoring guide
+# Generated: 2026-06-13 18:47:36
+
+== Overview ==
+
+One pixel in a layer PNG = one world tile in Project Zomboid Build 42.
+Pixels are mapped to WorldGen keys via this palette file.
+Transparent pixels (alpha < 128) are skipped â€” they produce no worldgen output.
+Opaque pixels with an unknown color cause a compilation error.
+Charts in this directory are documentation; they are not compiler input.
+
+== Proof chain ==
+
+A color is not proven just because it exists in the palette.
+Full proof chain:
+
+  hex color
+    -> palette JSON (color must exist with valid type/key)
+    -> WorldGen key (must be in WorldGenRegistry)
+    -> compiler (must emit without errors)
+    -> Lua loads in PZ (no Lua errors on map load)
+    -> human sees patch in-game (visual confirmation)
+
+Proof statuses:
+  VISUAL_CONFIRMED  = all steps proven, human saw it in-game
+  KNOWN_IN_CODE     = compiler accepts; no human visual proof yet
+  UNPROVEN_VISUAL   = no compiler or visual proof
+
+== Priority composition ==
+
+Lower priority number = painted first (base layer).
+Higher priority overrides lower where both have opaque pixels.
+Transparent pixels are always skip â€” they never override.
+
+== Usage ==
+
+1. Paint pixels with hex colors from this palette.
+2. Run compile-worldgen-project to extract WorldGen modules.
+3. Run compile-worldgen to emit WorldGenOverride.lua.
+4. Use the proof swatch pack (generate-worldgen-palette-proof-pack.ps1)
+   to test new colors in-game before marking VISUAL_CONFIRMED.
+
+== Current palette ==
+  #0000FF  biome : water  [VISUAL_CONFIRMED]
+  #D8C080  biome : sand_bank  [VISUAL_CONFIRMED]
+  #00AA00  biome : grass_plain  [KNOWN_IN_CODE]
+  #55CC55  biome : flower_plain  [KNOWN_IN_CODE]
+  #207020  biome : birch_forest  [VISUAL_CONFIRMED]
+  #145C14  biome : oak_forest  [KNOWN_IN_CODE]
+  #0B4418  biome : pine_forest  [KNOWN_IN_CODE]
+  #60A060  biome : light_birch_forest  [KNOWN_IN_CODE]
+  #4F8F4F  biome : light_oak_forest  [KNOWN_IN_CODE]
+  #3F7F50  biome : light_pine_forest  [KNOWN_IN_CODE]
+  #FF6600  prefab : normal_road_WE_00  [VISUAL_CONFIRMED]
+  #CC3300  prefab : highway_NS_00  [VISUAL_CONFIRMED]
+

@@ -110,6 +110,37 @@ powershell -ExecutionPolicy Bypass -File scripts\validate-layer-pack.ps1
 
 ---
 
+## Palette charts and color proof
+
+Generate visual chart sidecars for all palette colors, with proof status
+(VISUAL_CONFIRMED / KNOWN_IN_CODE):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\generate-palette-color-charts.ps1
+```
+
+Writes to `palettes/`:
+- `worldgen-png-palette.chart.png` — visual swatches with hex / type / key / proof status
+- `worldgen-png-palette.swatches.txt` — text table with proof status column
+- `worldgen-png-palette.layer-guide.txt` — authoring rules and pixel conventions
+
+Run the WorldGen palette proof build (no install):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-worldgen-palette-proof-build.ps1
+```
+
+With install (-Install installs Lua and clears save folder):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-worldgen-palette-proof-build.ps1 -Install
+```
+
+See `docs/authoring/DEADMTL_WORLDGEN_PALETTE_PROOF.md` for the full proof chain
+and rules for updating proof statuses.
+
+---
+
 ## Spawn-centered runtime proof
 
 A pre-built workflow that places all painted features within 50 tiles of the
