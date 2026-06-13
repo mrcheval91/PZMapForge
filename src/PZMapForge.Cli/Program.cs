@@ -43,6 +43,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  compile-worldgen  --input <json> --output <lua>");
     Console.Error.WriteLine("  compile-worldgen-png  --input <png> --palette <json> --map-id <id> --origin-x <x> --origin-y <y> --output <json> [--ignore-unknown]");
     Console.Error.WriteLine("  compile-worldgen-project  --input <project.json> --output <manifest.json> [--ignore-unknown]");
+    Console.Error.WriteLine("  validate-deadmtl-layer-pack  --input <pack-dir>");
     return 1;
 }
 
@@ -68,6 +69,7 @@ return args[0] switch
     "compile-worldgen"                      => CompileWorldGenCommand(args[1..]),
     "compile-worldgen-png"                  => CompileWorldGenPngCommand(args[1..]),
     "compile-worldgen-project"              => CompileWorldGenProjectCommand(args[1..]),
+    "validate-deadmtl-layer-pack"           => ValidateDeadMtlLayerPackCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -3813,13 +3815,55 @@ static int CompileWorldGenProjectCommand(string[] args)
     return 0;
 }
 
+static int ValidateDeadMtlLayerPackCommand(string[] args)
+{
+    var inputPath = string.Empty;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if (args[i] is "--input" or "-i" && i + 1 < args.Length)
+            inputPath = args[++i];
+    }
+
+    if (string.IsNullOrWhiteSpace(inputPath))
+    {
+        Console.Error.WriteLine("validate-deadmtl-layer-pack requires --input <pack-dir>");
+        return 1;
+    }
+
+    var result = DeadMtlLayerPackValidator.Validate(inputPath);
+
+    Console.WriteLine($"Pack:          {inputPath}");
+    Console.WriteLine($"Checks:        {result.ChecksRun}");
+    Console.WriteLine($"Errors:        {result.Errors.Count}");
+    Console.WriteLine($"Warnings:      {result.Warnings.Count}");
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors) Console.Error.WriteLine($"  error: {e}");
+    }
+    if (result.Warnings.Count > 0)
+    {
+        foreach (var w in result.Warnings) Console.WriteLine($"  warning: {w}");
+    }
+
+    if (result.IsValid)
+    {
+        Console.WriteLine("Status:        OK");
+        return 0;
+    }
+
+    Console.Error.WriteLine("Status:        INVALID");
+    return 1;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
     Console.Error.WriteLine("Available commands: image-check, image-export, full-pipeline, " +
         "palette-check, parsed-cell-check, region-check, primitive-check, " +
         "plan-check, plan-export, layer-pipeline, layer-validate, local-tile-survey, app-export, " +
-        "compile-worldgen, compile-worldgen-png, compile-worldgen-project");
+        "compile-worldgen, compile-worldgen-png, compile-worldgen-project, validate-deadmtl-layer-pack");
     return 1;
 }
 
