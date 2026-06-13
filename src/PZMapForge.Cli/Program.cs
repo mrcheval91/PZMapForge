@@ -41,6 +41,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  map-export-experimental  --map-id <id> --output <dir> [--cell-x <int>] [--cell-y <int>] [--build42-package]");
     Console.Error.WriteLine("  inspect-build42-experimental-package  --package <dir> --output <dir>");
     Console.Error.WriteLine("  compile-worldgen  --input <json> --output <lua>");
+    Console.Error.WriteLine("  compile-worldgen-png  --input <png> --palette <json> --map-id <id> --origin-x <x> --origin-y <y> --output <json> [--ignore-unknown]");
     return 1;
 }
 
@@ -64,6 +65,7 @@ return args[0] switch
     "map-export-experimental"                => MapExportExperimentalCommand(args[1..]),
     "inspect-build42-experimental-package"  => InspectBuild42ExperimentalPackageCommand(args[1..]),
     "compile-worldgen"                      => CompileWorldGenCommand(args[1..]),
+    "compile-worldgen-png"                  => CompileWorldGenPngCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -3673,13 +3675,90 @@ static int CompileWorldGenCommand(string[] args)
     return 0;
 }
 
+static int CompileWorldGenPngCommand(string[] args)
+{
+    var pngPath       = string.Empty;
+    var palettePath   = string.Empty;
+    var mapId         = string.Empty;
+    var outputPath    = string.Empty;
+    var originX       = 0;
+    var originY       = 0;
+    var ignoreUnknown = false;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if      (args[i] is "--input"    or "-i" && i + 1 < args.Length) pngPath     = args[++i];
+        else if (args[i] is "--palette"           && i + 1 < args.Length) palettePath = args[++i];
+        else if (args[i] is "--map-id"            && i + 1 < args.Length) mapId       = args[++i];
+        else if (args[i] is "--output"   or "-o"  && i + 1 < args.Length) outputPath  = args[++i];
+        else if (args[i] is "--origin-x"          && i + 1 < args.Length && int.TryParse(args[i + 1], out var ox)) { originX = ox; i++; }
+        else if (args[i] is "--origin-y"          && i + 1 < args.Length && int.TryParse(args[i + 1], out var oy)) { originY = oy; i++; }
+        else if (args[i] is "--ignore-unknown") ignoreUnknown = true;
+    }
+
+    if (string.IsNullOrWhiteSpace(pngPath))
+    {
+        Console.Error.WriteLine("compile-worldgen-png requires --input <png>");
+        return 1;
+    }
+    if (string.IsNullOrWhiteSpace(palettePath))
+    {
+        Console.Error.WriteLine("compile-worldgen-png requires --palette <json>");
+        return 1;
+    }
+    if (string.IsNullOrWhiteSpace(mapId))
+    {
+        Console.Error.WriteLine("compile-worldgen-png requires --map-id <id>");
+        return 1;
+    }
+    if (string.IsNullOrWhiteSpace(outputPath))
+    {
+        Console.Error.WriteLine("compile-worldgen-png requires --output <json>");
+        return 1;
+    }
+
+    // Safety: output must be under .local to prevent accidental writes to game folders.
+    var fullOutput  = Path.GetFullPath(outputPath);
+    var localMarker = Path.DirectorySeparatorChar + ".local" + Path.DirectorySeparatorChar;
+    if (!fullOutput.Contains(localMarker, StringComparison.OrdinalIgnoreCase) &&
+        !fullOutput.EndsWith(Path.DirectorySeparatorChar + ".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine("compile-worldgen-png: output path must be under a .local/ directory.");
+        Console.Error.WriteLine($"  Got: {outputPath}");
+        return 1;
+    }
+
+    var opts   = new WorldGenPngCompileOptions { IgnoreUnknown = ignoreUnknown };
+    var result = WorldGenPngCompiler.Compile(pngPath, palettePath, mapId, originX, originY, opts);
+
+    if (!result.IsValid)
+    {
+        Console.Error.WriteLine("compile-worldgen-png: compilation failed.");
+        foreach (var e in result.Errors) Console.Error.WriteLine($"  error: {e}");
+        return 1;
+    }
+
+    var outDir = Path.GetDirectoryName(outputPath);
+    if (!string.IsNullOrWhiteSpace(outDir))
+        Directory.CreateDirectory(outDir);
+
+    var json = WorldGenPngCompiler.SerializeManifest(result.Manifest!);
+    File.WriteAllText(outputPath, json, Encoding.UTF8);
+
+    Console.WriteLine($"Map ID:        {mapId}");
+    Console.WriteLine($"Module count:  {result.ModuleCount}");
+    Console.WriteLine($"Output:        {outputPath}");
+    Console.WriteLine("Status:        OK");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
     Console.Error.WriteLine("Available commands: image-check, image-export, full-pipeline, " +
         "palette-check, parsed-cell-check, region-check, primitive-check, " +
         "plan-check, plan-export, layer-pipeline, layer-validate, local-tile-survey, app-export, " +
-        "compile-worldgen");
+        "compile-worldgen, compile-worldgen-png");
     return 1;
 }
 
