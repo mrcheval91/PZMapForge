@@ -563,6 +563,33 @@ CSV format, matching rules, and claim boundary.
 
 ---
 
+## System 2 static road human-approved tile candidates
+
+MAP-22N reads the MAP-22M applied review JSON and produces a clean manifest split into three buckets:
+approved, rejected, and still-pending candidates. This is an audit and selection layer only.
+
+Human approval is NOT runtime validation. Human approval is NOT writer readiness.
+Default run (unedited CSV): approved=0, rejected=0, pending=113.
+
+Does NOT write lotpack files. Does NOT write WorldGenOverride.lua. No runtime proof claimed.
+
+Generate human-approved candidate manifest:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-system2-static-road-human-approved-tile-candidates.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\system2-static-road-human-approved-tile-candidates\system2_static_road_human_approved_tile_candidates.json`
+- `.local\deadmtl-authoring\system2-static-road-human-approved-tile-candidates\system2_static_road_human_approved_tile_candidates.md`
+- `.local\deadmtl-authoring\system2-static-road-human-approved-tile-candidates\system2_static_road_human_approved_tile_candidates.csv`
+- `.local\deadmtl-authoring\system2-static-road-human-approved-tile-candidates\system2_static_road_human_approved_tile_candidates.summary.txt`
+
+See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_HUMAN_APPROVED_TILE_CANDIDATES.md` for bucket
+definitions, CSV format, and claim boundary.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.
