@@ -321,6 +321,41 @@ See `palettes/system2-static-road-intent-palette.json` for intent color definiti
 
 ---
 
+## System 2 road intent extraction
+
+MAP-22E adds an extractor that reads the System 2 PNG layers and emits structured JSON
+describing each opaque pixel as a typed road-intent record.
+
+The extractor does NOT write `.lotpack`. It does NOT write `WorldGenOverride.lua`.
+It does NOT claim runtime proof. Output is an inspectable JSON artifact only.
+
+Extract System 2 road intent from authored PNG layers:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-system2-static-road-extract.ps1
+```
+
+Output (under `.local/`):
+- `system2-road-extract.json` -- structured layer summary with pixel runs and node records
+- `system2-road-extract-summary.txt` -- human-readable summary with totals and claim boundary
+
+CLI command directly:
+
+```powershell
+dotnet run --project src\PZMapForge.Cli --configuration Release -- `
+  system2-extract-static-roads `
+  --input   examples\deadmtl-layer-pack\system2-static-road-overlay-contract.json `
+  --palette examples\deadmtl-layer-pack\palettes\system2-static-road-intent-palette.json `
+  --root    examples\deadmtl-layer-pack `
+  --output  .local\deadmtl-authoring\system2-road-extract\system2-road-extract.json `
+  --summary .local\deadmtl-authoring\system2-road-extract\system2-road-extract-summary.txt
+```
+
+See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_INTENT_EXTRACT.md` for full JSON shape,
+coordinate conventions, and claim boundary.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.

@@ -45,6 +45,9 @@ if (args.Length < 1)
     Console.Error.WriteLine("  compile-worldgen-project  --input <project.json> --output <manifest.json> [--ignore-unknown]");
     Console.Error.WriteLine("  validate-deadmtl-layer-pack  --input <pack-dir>");
     Console.Error.WriteLine("  deadmtl-authoring-build  --input <pack-dir> --output <dir>");
+    Console.Error.WriteLine("  system2-extract-static-roads  --input <contract.json> --palette <intent-palette.json>");
+    Console.Error.WriteLine("                                --root <pack-root> --output <extract.json> --summary <summary.txt>");
+    Console.Error.WriteLine("                                [--origin-x <int>] [--origin-y <int>]");
     return 1;
 }
 
@@ -72,6 +75,7 @@ return args[0] switch
     "compile-worldgen-project"              => CompileWorldGenProjectCommand(args[1..]),
     "validate-deadmtl-layer-pack"           => ValidateDeadMtlLayerPackCommand(args[1..]),
     "deadmtl-authoring-build"              => DeadMtlAuthoringBuildCommand(args[1..]),
+    "system2-extract-static-roads"         => System2ExtractStaticRoadsCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -3921,6 +3925,111 @@ static int DeadMtlAuthoringBuildCommand(string[] args)
     return 0;
 }
 
+static int System2ExtractStaticRoadsCommand(string[] args)
+{
+    var contractPath = "";
+    var palettePath  = "";
+    var packRoot     = "";
+    var outputPath   = "";
+    var summaryPath  = "";
+    var originX      = 10580;
+    var originY      = 8200;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if (args[i] == "--input"    && i + 1 < args.Length) { contractPath = args[++i]; continue; }
+        if (args[i] == "--palette"  && i + 1 < args.Length) { palettePath  = args[++i]; continue; }
+        if (args[i] == "--root"     && i + 1 < args.Length) { packRoot     = args[++i]; continue; }
+        if (args[i] == "--output"   && i + 1 < args.Length) { outputPath   = args[++i]; continue; }
+        if (args[i] == "--summary"  && i + 1 < args.Length) { summaryPath  = args[++i]; continue; }
+        if (args[i] == "--origin-x" && i + 1 < args.Length) { originX      = int.Parse(args[++i]); continue; }
+        if (args[i] == "--origin-y" && i + 1 < args.Length) { originY      = int.Parse(args[++i]); continue; }
+    }
+
+    if (string.IsNullOrEmpty(contractPath) || string.IsNullOrEmpty(palettePath) ||
+        string.IsNullOrEmpty(packRoot)     || string.IsNullOrEmpty(outputPath)   ||
+        string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("system2-extract-static-roads: --input, --palette, --root, --output, and --summary are required.");
+        return 1;
+    }
+
+    if (!outputPath.Contains(".local"))
+    {
+        Console.Error.WriteLine($"system2-extract-static-roads: output path must be under .local/. Got: {outputPath}");
+        return 1;
+    }
+    if (!summaryPath.Contains(".local"))
+    {
+        Console.Error.WriteLine($"system2-extract-static-roads: summary path must be under .local/. Got: {summaryPath}");
+        return 1;
+    }
+
+    var result = PZMapForge.Core.WorldGen.System2StaticRoadExtractor.Extract(
+        contractPath, palettePath, packRoot, originX, originY, failOnUnknownOpaque: true);
+
+    if (!result.IsValid || result.Extract == null)
+    {
+        Console.Error.WriteLine("system2-extract-static-roads: extraction failed.");
+        foreach (var err in result.Errors)
+            Console.Error.WriteLine($"  ERROR: {err}");
+        return 1;
+    }
+
+    var outDir = Path.GetDirectoryName(outputPath);
+    if (!string.IsNullOrEmpty(outDir))
+        Directory.CreateDirectory(outDir);
+
+    var sumDir = Path.GetDirectoryName(summaryPath);
+    if (!string.IsNullOrEmpty(sumDir))
+        Directory.CreateDirectory(sumDir);
+
+    var jsonOpts = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+    var json     = System.Text.Json.JsonSerializer.Serialize(result.Extract, jsonOpts);
+    File.WriteAllText(outputPath, json, System.Text.Encoding.UTF8);
+
+    var ext = result.Extract;
+    var sb  = new System.Text.StringBuilder();
+    sb.AppendLine("SYSTEM2 STATIC ROAD INTENT EXTRACT SUMMARY");
+    sb.AppendLine("============================================");
+    sb.AppendLine($"contract:        {ext.SourceContract}");
+    sb.AppendLine($"origin:          ({ext.OriginX}, {ext.OriginY})");
+    sb.AppendLine($"image_size:      {ext.Width}x{ext.Height}");
+    sb.AppendLine($"status:          {ext.Status}");
+    sb.AppendLine($"runtime_status:  {ext.RuntimeStatus}");
+    sb.AppendLine($"writer_status:   {ext.WriterStatus}");
+    sb.AppendLine();
+    sb.AppendLine($"layer_count:          {ext.Totals.LayerCount}");
+    sb.AppendLine($"non_empty_pixels:     {ext.Totals.NonEmptyPixels}");
+    sb.AppendLine($"unknown_opaque:       {ext.Totals.UnknownOpaquePixels}");
+    sb.AppendLine();
+    foreach (var layer in ext.Layers)
+    {
+        sb.AppendLine($"[{layer.Id}]");
+        sb.AppendLine($"  class:           {layer.LayerClass}");
+        sb.AppendLine($"  non_empty_px:    {layer.NonEmptyPixels}");
+        sb.AppendLine($"  intents:         {string.Join(", ", layer.Intents)}");
+        sb.AppendLine($"  runs:            {layer.Runs.Count}");
+        sb.AppendLine($"  nodes:           {layer.Nodes.Count}");
+    }
+    sb.AppendLine();
+    sb.AppendLine("CLAIM BOUNDARY");
+    sb.AppendLine($"  writes_lotpack:         {ext.ClaimBoundary.WritesLotpack}");
+    sb.AppendLine($"  writes_worldgen_lua:    {ext.ClaimBoundary.WritesWorldgenLua}");
+    sb.AppendLine($"  runtime_proven:         {ext.ClaimBoundary.RuntimeProven}");
+    sb.AppendLine($"  public_playable_claim:  {ext.ClaimBoundary.PublicPlayableClaim}");
+    sb.AppendLine();
+    sb.AppendLine("VERDICT: MAP22E_SYSTEM2_STATIC_ROAD_INTENT_EXTRACT_COMPLETE");
+    File.WriteAllText(summaryPath, sb.ToString(), System.Text.Encoding.UTF8);
+
+    Console.WriteLine($"extract: {outputPath}");
+    Console.WriteLine($"summary: {summaryPath}");
+    Console.WriteLine($"layers:  {ext.Totals.LayerCount}");
+    Console.WriteLine($"pixels:  {ext.Totals.NonEmptyPixels}");
+    Console.WriteLine("VERDICT: MAP22E_SYSTEM2_STATIC_ROAD_INTENT_EXTRACT_COMPLETE");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
@@ -3928,7 +4037,7 @@ static int UnknownCommand(string cmd)
         "palette-check, parsed-cell-check, region-check, primitive-check, " +
         "plan-check, plan-export, layer-pipeline, layer-validate, local-tile-survey, app-export, " +
         "compile-worldgen, compile-worldgen-png, compile-worldgen-project, " +
-        "validate-deadmtl-layer-pack, deadmtl-authoring-build");
+        "validate-deadmtl-layer-pack, deadmtl-authoring-build, system2-extract-static-roads");
     return 1;
 }
 
