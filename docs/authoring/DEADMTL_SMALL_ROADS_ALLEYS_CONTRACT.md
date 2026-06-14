@@ -172,3 +172,22 @@ proof tasks.
 - Local streets and alleys are SYSTEM_2_REQUIRED until further prefab discovery.
 - This document is a planning contract only. No runtime verification is claimed.
 - No public mod packaging is claimed.
+
+---
+
+## MAP-22B result
+
+MAP-22B runtime harvest performed: 2026-06-14.
+See `docs/authoring/MAP22B_PREFAB_DUMP_RESULT.txt` for the full result sidecar.
+
+`worldgen.prefabs` in PZ Build 42 contains exactly two keys:
+- `highway_NS_00` (already VISUAL_CONFIRMED)
+- `normal_road_WE_00` (already VISUAL_CONFIRMED)
+
+No local street, alley, ruelle, turn, or intersection prefab key was found.
+
+All SYSTEM_2_REQUIRED road layers remain SYSTEM_2_REQUIRED.
+MAP-22C proof board is not required: no new prefab keys were discovered.
+MAP-22D (System 2 static tile overlay) is the path forward for alleys and local streets.
+
+Do not claim any WorldGen road coverage beyond the two VISUAL_CONFIRMED keys.

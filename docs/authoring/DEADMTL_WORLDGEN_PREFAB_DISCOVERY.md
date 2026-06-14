@@ -117,3 +117,42 @@ the PZ log for `Error found in LUA file` or `LuaManager.RunLuaInternal` errors.
   confirmation before being added to WorldGenRegistry as VISUAL_CONFIRMED.
 - If no alley or local road keys are found, alleys remain SYSTEM_2_REQUIRED.
 - No public mod packaging is claimed.
+
+---
+
+## MAP-22B runtime result
+
+Runtime harvest performed: 2026-06-14
+Result sidecar: `docs/authoring/MAP22B_PREFAB_DUMP_RESULT.txt`
+
+### Harvested markers
+
+```
+PZMAPFORGE_PREFAB_DUMP_LOADED
+PZMAPFORGE_PREFAB_KEY=highway_NS_00
+PZMAPFORGE_PREFAB_KEY=normal_road_WE_00
+PZMAPFORGE_ROADLIKE_PREFAB_KEY=highway_NS_00
+PZMAPFORGE_ROADLIKE_PREFAB_KEY=normal_road_WE_00
+PZMAPFORGE_PREFAB_COUNT=2
+PZMAPFORGE_ROADLIKE_PREFAB_COUNT=2
+```
+
+### Finding
+
+PZ Build 42 `worldgen.prefabs` contains exactly two keys in this environment:
+- `highway_NS_00`
+- `normal_road_WE_00`
+
+No additional road, alley, local street, turn, or intersection prefab keys were found.
+
+### Consequence
+
+The condition described above ("If no alley or local road keys are found") applies.
+
+- MAP-22C proof board is not needed: no new keys were discovered to prove.
+- WorldGenRegistry remains at two keys: `highway_NS_00` and `normal_road_WE_00`.
+- Small roads, alleys, and ruelles remain SYSTEM_2_REQUIRED.
+- MAP-22D (System 2 static tile overlay) is the next path for local streets and alleys.
+- Do not claim WorldGen alley or local street support.
+
+VERDICT: MAP22C_WORLDGEN_SMALL_ROAD_PATH_CLOSED_ONLY_TWO_PREFABS

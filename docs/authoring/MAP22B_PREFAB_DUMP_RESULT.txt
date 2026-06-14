@@ -1,0 +1,39 @@
+MAP-22B WorldGen Prefab Dump - Runtime Result
+==============================================
+Date: 2026-06-14
+
+Runtime markers captured from PZ Build 42 console.txt:
+
+PZMAPFORGE_PREFAB_DUMP_LOADED
+PZMAPFORGE_PREFAB_KEY=highway_NS_00
+PZMAPFORGE_PREFAB_KEY=normal_road_WE_00
+PZMAPFORGE_ROADLIKE_PREFAB_KEY=highway_NS_00
+PZMAPFORGE_ROADLIKE_PREFAB_KEY=normal_road_WE_00
+PZMAPFORGE_PREFAB_COUNT=2
+PZMAPFORGE_ROADLIKE_PREFAB_COUNT=2
+
+Human visual note:
+Player saw fallback grass/birch/forest terrain during probe run. Expected: probe sets
+worldgen["static_modules"] = {} so no terrain is altered. Terrain appearance reflects
+PZ default generation without any WorldGen module active.
+
+Conclusion:
+WorldGen Build 42 exposes only two prefab keys in this environment:
+  - highway_NS_00
+  - normal_road_WE_00
+
+Not discovered:
+  - normal_road_NS_00
+  - highway_WE_00
+  - road turns or intersections
+  - local street prefab keys
+  - alley or ruelle prefab keys
+  - service lane prefab keys
+
+WorldGen does not expose enough prefab coverage for Montreal small roads,
+alleys, local streets, turns, or intersections.
+
+Small roads and alleys remain SYSTEM_2_REQUIRED.
+Next path is System 2 static tile overlay (MAP-22D).
+
+VERDICT: MAP22B_WORLDGEN_PREFAB_DISCOVERY_RUNTIME_CONFIRMED_ONLY_TWO_PREFABS

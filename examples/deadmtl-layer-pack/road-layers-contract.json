@@ -11,35 +11,35 @@
       "file": "layers/roads_highway.png",
       "status": "WORLDGEN_LIMITED",
       "width_px": "10-14",
-      "notes": "Currently only highway_NS_00 is VISUAL_CONFIRMED. Need WE/turn/intersection support before full highway network."
+      "notes": "MAP-22B runtime dump (2026-06-14) confirmed only highway_NS_00 and normal_road_WE_00 exist in worldgen.prefabs. No WE highway, turn, or intersection prefab was found."
     },
     {
       "id": "roads_major",
       "file": "layers/roads_major.png",
       "status": "WORLDGEN_LIMITED",
       "width_px": "8-10",
-      "notes": "Currently only normal_road_WE_00 is VISUAL_CONFIRMED. Need NS/turn/intersection support."
+      "notes": "MAP-22B runtime dump (2026-06-14) confirmed only highway_NS_00 and normal_road_WE_00 exist in worldgen.prefabs. No NS normal road, turn, or intersection prefab was found."
     },
     {
       "id": "roads_local",
       "file": "layers/roads_local.png",
       "status": "SYSTEM_2_REQUIRED",
       "width_px": "5-7",
-      "notes": "Local streets require static tile overlay or additional prefab discovery."
+      "notes": "MAP-22B runtime dump (2026-06-14) found no local street prefab keys in worldgen.prefabs. SYSTEM_2_REQUIRED confirmed. Next path: MAP-22D System 2 static tile overlay."
     },
     {
       "id": "roads_alleys",
       "file": "layers/roads_alleys.png",
       "status": "SYSTEM_2_REQUIRED",
       "width_px": "3-4",
-      "notes": "Montreal ruelles require static tile overlay or specific alley prefabs."
+      "notes": "MAP-22B runtime dump (2026-06-14) found no alley or ruelle prefab keys in worldgen.prefabs. SYSTEM_2_REQUIRED confirmed. Montreal ruelles require MAP-22D System 2 static tile overlay."
     },
     {
       "id": "roads_service",
       "file": "layers/roads_service.png",
       "status": "SYSTEM_2_REQUIRED",
       "width_px": "2-5",
-      "notes": "Service lanes and parking access should not be represented as terrain biomes."
+      "notes": "MAP-22B runtime dump (2026-06-14) found no service lane prefab keys in worldgen.prefabs. SYSTEM_2_REQUIRED confirmed. Service lanes should not be represented as terrain biomes."
     }
   ]
 }
