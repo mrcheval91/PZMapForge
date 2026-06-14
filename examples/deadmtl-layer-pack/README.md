@@ -356,6 +356,38 @@ coordinate conventions, and claim boundary.
 
 ---
 
+## System 2 road sample extraction
+
+MAP-22F proves that authored non-empty PNG masks produce the expected run and node records
+in the extract JSON. This is still extract-only, not runtime proof.
+
+The sample pack contains painted pixels at Montreal ruelle authoring scale (1 px = 1 m):
+- local street strip, alley strip, service lane, parking access, pedestrian cut
+- three road nodes: intersection_node, road_turn_node, dead_end_node
+
+Does NOT write `.lotpack`. Does NOT write `WorldGenOverride.lua`. No runtime proof claimed.
+
+Generate sample and extract:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-system2-static-road-sample-extract.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\system2-static-road-sample-extract\system2_static_road_sample_extract.json`
+- `.local\deadmtl-authoring\system2-static-road-sample-extract\system2_static_road_sample_extract.summary.txt`
+
+Generate sample pack only (no extraction):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\generate-system2-static-road-sample.ps1
+```
+
+See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_SAMPLE_EXTRACT.md` for expected layer content,
+intent types, node coordinates, and claim boundary.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.
