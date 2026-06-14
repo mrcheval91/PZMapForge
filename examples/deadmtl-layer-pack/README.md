@@ -411,6 +411,30 @@ intent-to-role mapping, duplicate handling, and claim boundary.
 
 ---
 
+## System 2 static road tile-family plan
+
+MAP-22H maps each placement record to a candidate tile family. This is metadata only.
+No PZ tile IDs are selected. No binary writes are performed. No runtime proof is claimed.
+
+Each record carries confidence: LOW_METADATA_ONLY.
+
+Does NOT write lotpack files. Does NOT write WorldGenOverride.lua. No runtime proof claimed.
+
+Generate tile-family plan from MAP-22G placement plan:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-system2-static-road-tile-family-plan.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\system2-static-road-tile-family-plan\system2_static_road_tile_family_plan.json`
+- `.local\deadmtl-authoring\system2-static-road-tile-family-plan\system2_static_road_tile_family_plan.summary.txt`
+
+See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_TILE_FAMILY_PLAN.md` for the intent-to-family
+mapping table, confidence semantics, JSON shape, and claim boundary.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.

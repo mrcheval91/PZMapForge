@@ -49,6 +49,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                --root <pack-root> --output <extract.json> --summary <summary.txt>");
     Console.Error.WriteLine("                                [--origin-x <int>] [--origin-y <int>]");
     Console.Error.WriteLine("  system2-build-static-road-placement-plan  --input <extract.json> --output <plan.json> --summary <summary.txt>");
+    Console.Error.WriteLine("  system2-build-static-road-tile-family-plan  --input <placement_plan.json> --output <tile_family_plan.json> --summary <summary.txt>");
     return 1;
 }
 
@@ -77,7 +78,8 @@ return args[0] switch
     "validate-deadmtl-layer-pack"           => ValidateDeadMtlLayerPackCommand(args[1..]),
     "deadmtl-authoring-build"              => DeadMtlAuthoringBuildCommand(args[1..]),
     "system2-extract-static-roads"              => System2ExtractStaticRoadsCommand(args[1..]),
-    "system2-build-static-road-placement-plan"  => System2BuildStaticRoadPlacementPlanCommand(args[1..]),
+    "system2-build-static-road-placement-plan"      => System2BuildStaticRoadPlacementPlanCommand(args[1..]),
+    "system2-build-static-road-tile-family-plan"    => System2BuildStaticRoadTileFamilyPlanCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -4124,6 +4126,96 @@ static int System2BuildStaticRoadPlacementPlanCommand(string[] args)
     return 0;
 }
 
+static int System2BuildStaticRoadTileFamilyPlanCommand(string[] args)
+{
+    var inputPath   = "";
+    var outputPath  = "";
+    var summaryPath = "";
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if (args[i] == "--input"   && i + 1 < args.Length) { inputPath   = args[++i]; continue; }
+        if (args[i] == "--output"  && i + 1 < args.Length) { outputPath  = args[++i]; continue; }
+        if (args[i] == "--summary" && i + 1 < args.Length) { summaryPath = args[++i]; continue; }
+    }
+
+    if (string.IsNullOrEmpty(inputPath) || string.IsNullOrEmpty(outputPath) || string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("system2-build-static-road-tile-family-plan: --input, --output, and --summary are required.");
+        return 1;
+    }
+
+    if (!outputPath.Contains(".local"))
+    {
+        Console.Error.WriteLine($"system2-build-static-road-tile-family-plan: output path must be under .local/. Got: {outputPath}");
+        return 1;
+    }
+    if (!summaryPath.Contains(".local"))
+    {
+        Console.Error.WriteLine($"system2-build-static-road-tile-family-plan: summary path must be under .local/. Got: {summaryPath}");
+        return 1;
+    }
+
+    var result = PZMapForge.Core.WorldGen.System2StaticRoadTileFamilyPlanBuilder.Build(inputPath);
+
+    if (!result.IsValid || result.Plan == null)
+    {
+        Console.Error.WriteLine("system2-build-static-road-tile-family-plan: build failed.");
+        foreach (var err in result.Errors)
+            Console.Error.WriteLine($"  ERROR: {err}");
+        return 1;
+    }
+
+    var outDir = Path.GetDirectoryName(outputPath);
+    if (!string.IsNullOrEmpty(outDir)) Directory.CreateDirectory(outDir);
+    var sumDir = Path.GetDirectoryName(summaryPath);
+    if (!string.IsNullOrEmpty(sumDir)) Directory.CreateDirectory(sumDir);
+
+    var jsonOpts = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+    var json     = System.Text.Json.JsonSerializer.Serialize(result.Plan, jsonOpts);
+    File.WriteAllText(outputPath, json, System.Text.Encoding.UTF8);
+
+    var plan = result.Plan;
+    var sb   = new System.Text.StringBuilder();
+    sb.AppendLine("SYSTEM2 STATIC ROAD TILE FAMILY PLAN SUMMARY");
+    sb.AppendLine("=============================================");
+    sb.AppendLine($"source_placement_plan:    {plan.SourcePlacementPlan}");
+    sb.AppendLine($"status:                   {plan.Status}");
+    sb.AppendLine($"runtime_status:           {plan.RuntimeStatus}");
+    sb.AppendLine($"writer_status:            {plan.WriterStatus}");
+    sb.AppendLine();
+    sb.AppendLine($"record_count:             {plan.Totals.RecordCount}");
+    sb.AppendLine($"unmapped_count:           {plan.Totals.UnmappedCount}");
+    sb.AppendLine();
+    sb.AppendLine("BY CANDIDATE FAMILY:");
+    foreach (var kv in plan.Totals.ByCandidateFamily.OrderBy(x => x.Key))
+        sb.AppendLine($"  {kv.Key}: {kv.Value}");
+    sb.AppendLine();
+    sb.AppendLine("BY ROLE:");
+    foreach (var kv in plan.Totals.ByRole.OrderBy(x => x.Key))
+        sb.AppendLine($"  {kv.Key}: {kv.Value}");
+    sb.AppendLine();
+    sb.AppendLine("BY INTENT:");
+    foreach (var kv in plan.Totals.ByIntent.OrderBy(x => x.Key))
+        sb.AppendLine($"  {kv.Key}: {kv.Value}");
+    sb.AppendLine();
+    sb.AppendLine("CLAIM BOUNDARY");
+    sb.AppendLine($"  writes_lotpack:         {plan.ClaimBoundary.WritesLotpack}");
+    sb.AppendLine($"  writes_worldgen_lua:    {plan.ClaimBoundary.WritesWorldgenLua}");
+    sb.AppendLine($"  runtime_proven:         {plan.ClaimBoundary.RuntimeProven}");
+    sb.AppendLine($"  public_playable_claim:  {plan.ClaimBoundary.PublicPlayableClaim}");
+    sb.AppendLine();
+    sb.AppendLine("VERDICT: MAP22H_SYSTEM2_STATIC_ROAD_TILE_FAMILY_PLAN_COMPLETE");
+    File.WriteAllText(summaryPath, sb.ToString(), System.Text.Encoding.UTF8);
+
+    Console.WriteLine($"plan:     {outputPath}");
+    Console.WriteLine($"summary:  {summaryPath}");
+    Console.WriteLine($"records:  {plan.Totals.RecordCount}");
+    Console.WriteLine($"unmapped: {plan.Totals.UnmappedCount}");
+    Console.WriteLine("VERDICT: MAP22H_SYSTEM2_STATIC_ROAD_TILE_FAMILY_PLAN_COMPLETE");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
@@ -4132,7 +4224,7 @@ static int UnknownCommand(string cmd)
         "plan-check, plan-export, layer-pipeline, layer-validate, local-tile-survey, app-export, " +
         "compile-worldgen, compile-worldgen-png, compile-worldgen-project, " +
         "validate-deadmtl-layer-pack, deadmtl-authoring-build, system2-extract-static-roads, " +
-        "system2-build-static-road-placement-plan");
+        "system2-build-static-road-placement-plan, system2-build-static-road-tile-family-plan");
     return 1;
 }
 
