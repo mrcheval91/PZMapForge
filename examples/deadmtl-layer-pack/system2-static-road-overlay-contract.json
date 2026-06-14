@@ -1,0 +1,55 @@
+{
+  "format": "pzmapforge.deadmtl.system2.static-road-overlay-contract.v1",
+  "scale": {
+    "pixels_per_meter": 1,
+    "meters_per_pixel": 1,
+    "pz_tiles_per_pixel": 1
+  },
+  "status": "CONTRACT_ONLY",
+  "runtime_status": "NOT_RUNTIME_PROVEN",
+  "writer_status": "NOT_IMPLEMENTED",
+  "source_reason": "MAP-22B found only highway_NS_00 and normal_road_WE_00 in worldgen.prefabs.",
+  "layers": [
+    {
+      "id": "static_roads_local",
+      "file": "layers/static_roads_local.png",
+      "class": "local_street",
+      "width_px": "5-7",
+      "status": "SYSTEM_2_REQUIRED"
+    },
+    {
+      "id": "static_roads_alleys",
+      "file": "layers/static_roads_alleys.png",
+      "class": "alley_ruelle",
+      "width_px": "3-4",
+      "status": "SYSTEM_2_REQUIRED"
+    },
+    {
+      "id": "static_roads_service",
+      "file": "layers/static_roads_service.png",
+      "class": "service_lane",
+      "width_px": "2-3",
+      "status": "SYSTEM_2_REQUIRED"
+    },
+    {
+      "id": "static_roads_parking_access",
+      "file": "layers/static_roads_parking_access.png",
+      "class": "parking_access",
+      "width_px": "3-5",
+      "status": "SYSTEM_2_REQUIRED"
+    },
+    {
+      "id": "static_pedestrian_cuts",
+      "file": "layers/static_pedestrian_cuts.png",
+      "class": "pedestrian_cut",
+      "width_px": "1-2",
+      "status": "SYSTEM_2_REQUIRED"
+    },
+    {
+      "id": "static_road_nodes",
+      "file": "layers/static_road_nodes.png",
+      "class": "intersection_turn_deadend_nodes",
+      "status": "SYSTEM_2_REQUIRED"
+    }
+  ]
+}

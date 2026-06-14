@@ -1,0 +1,17 @@
+{
+  "format": "pzmapforge.deadmtl.system2.static-road-intent-palette.v1",
+  "status": "CONTRACT_ONLY",
+  "notes": "Intent colors for System 2 static road overlay layers. Not accepted by the WorldGen compiler. Not runtime-proven. Planning identifiers for future static tile overlay authoring.",
+  "entries": [
+    { "hex": "#404040", "intent": "local_street_asphalt",         "status": "CONTRACT_ONLY" },
+    { "hex": "#303030", "intent": "alley_ruelle_asphalt",         "status": "CONTRACT_ONLY" },
+    { "hex": "#505050", "intent": "service_lane",                  "status": "CONTRACT_ONLY" },
+    { "hex": "#606060", "intent": "parking_access",                "status": "CONTRACT_ONLY" },
+    { "hex": "#B0B0B0", "intent": "sidewalk_or_pedestrian_cut",   "status": "CONTRACT_ONLY" },
+    { "hex": "#FFFF00", "intent": "centerline_or_lane_marking",   "status": "CONTRACT_ONLY" },
+    { "hex": "#FFFFFF", "intent": "crosswalk_or_stop_marking",    "status": "CONTRACT_ONLY" },
+    { "hex": "#FF00FF", "intent": "intersection_node",             "status": "CONTRACT_ONLY" },
+    { "hex": "#00FFFF", "intent": "road_turn_node",                "status": "CONTRACT_ONLY" },
+    { "hex": "#FF9900", "intent": "dead_end_node",                 "status": "CONTRACT_ONLY" }
+  ]
+}

@@ -250,14 +250,20 @@ See `road-layers-contract.json` for the machine-readable layer status contract.
 
 ## WorldGen prefab discovery
 
-MAP-22B: runtime discovery probe that enumerates all keys in `worldgen.prefabs`
-to find road-like prefab keys beyond the two currently proven (`normal_road_WE_00`,
-`highway_NS_00`). Results are used to determine whether local streets, alleys, or
-ruelle-like prefabs exist in the engine.
+MAP-22B runtime harvest performed: 2026-06-14.
+Result: `worldgen.prefabs` in PZ Build 42 contains exactly two keys:
+- `highway_NS_00` (VISUAL_CONFIRMED)
+- `normal_road_WE_00` (VISUAL_CONFIRMED)
 
-This is a discovery step only. No prefab discovered by this probe is considered
-VISUAL_CONFIRMED until a dedicated proof board (MAP-22C) is run and a human
-visually confirms the result.
+No additional road, alley, local street, turn, or intersection prefab keys were found.
+MAP-22C proof board is not needed. Small roads and alleys remain SYSTEM_2_REQUIRED.
+Next path is MAP-22D (System 2 static tile overlay).
+
+Full result sidecar: `docs/authoring/MAP22B_PREFAB_DUMP_RESULT.txt`
+
+See `docs/authoring/DEADMTL_WORLDGEN_PREFAB_DISCOVERY.md` for the full discovery chain.
+
+The commands below are preserved for reference (probe already run):
 
 Generate and preview probe Lua (no install):
 
@@ -281,6 +287,37 @@ Results written to: `.local/deadmtl-authoring/worldgen-prefab-dump/prefab-dump-h
 
 See `docs/authoring/DEADMTL_WORLDGEN_PREFAB_DISCOVERY.md` for the full discovery-to-proof
 chain and claim boundary.
+
+---
+
+## System 2 static roads and alleys overlay
+
+MAP-22C closed the WorldGen small-road path. `worldgen.prefabs` in PZ Build 42 exposes
+only `highway_NS_00` and `normal_road_WE_00`. No alley, ruelle, local street, service
+lane, turn, or intersection prefab key exists.
+
+System 2 (static tile overlay) is now the path for:
+- local streets (5-7 px)
+- Montreal ruelles and alleys (3-4 px)
+- service lanes (2-3 px)
+- parking access (3-5 px)
+- pedestrian cuts (1-2 px)
+- intersections, turns, and dead ends
+
+This is contract-only for now. No .lotpack writer is implemented. No runtime proof is claimed.
+
+Generate System 2 placeholder layers (no compile, no install):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\generate-system2-static-road-placeholders.ps1
+```
+
+See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROADS_ALLEYS_OVERLAY.md` for the full contract,
+road classes, authoring widths, and claim boundary.
+
+See `system2-static-road-overlay-contract.json` for the machine-readable layer contract.
+
+See `palettes/system2-static-road-intent-palette.json` for intent color definitions.
 
 ---
 
