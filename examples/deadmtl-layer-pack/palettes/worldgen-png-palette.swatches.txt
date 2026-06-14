@@ -1,5 +1,5 @@
 ﻿# worldgen-png-palette swatches
-# Generated: 2026-06-13 20:03:46
+# Generated: 2026-06-13 20:20:33
 # Proof chain: hex -> palette -> WorldGen key -> compiler -> Lua loads -> human visual
 # Statuses:
 #   VISUAL_CONFIRMED  - human confirmed in-game (documented MAP)
