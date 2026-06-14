@@ -52,6 +52,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  system2-build-static-road-tile-family-plan  --input <placement_plan.json> --output <tile_family_plan.json> --summary <summary.txt>");
     Console.Error.WriteLine("  system2-build-static-road-tile-family-survey  --input <tile_family_plan.json> --output <survey.json> --summary <summary.txt>");
     Console.Error.WriteLine("  system2-build-static-road-local-tile-survey  --input <survey.json> --pz-root <path> --output <local_survey.json> --summary <summary.txt>");
+    Console.Error.WriteLine("  system2-build-static-road-tile-candidate-shortlist  --input <local_survey.json> --output <shortlist.json> --summary <summary.txt> [--top <int>]");
     return 1;
 }
 
@@ -83,7 +84,8 @@ return args[0] switch
     "system2-build-static-road-placement-plan"      => System2BuildStaticRoadPlacementPlanCommand(args[1..]),
     "system2-build-static-road-tile-family-plan"    => System2BuildStaticRoadTileFamilyPlanCommand(args[1..]),
     "system2-build-static-road-tile-family-survey"   => System2BuildStaticRoadTileFamilySurveyCommand(args[1..]),
-    "system2-build-static-road-local-tile-survey"    => System2BuildStaticRoadLocalTileSurveyCommand(args[1..]),
+    "system2-build-static-road-local-tile-survey"          => System2BuildStaticRoadLocalTileSurveyCommand(args[1..]),
+    "system2-build-static-road-tile-candidate-shortlist"   => System2BuildStaticRoadTileCandidateShortlistCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -4408,6 +4410,105 @@ static int System2BuildStaticRoadLocalTileSurveyCommand(string[] args)
     return 0;
 }
 
+static int System2BuildStaticRoadTileCandidateShortlistCommand(string[] args)
+{
+    var inputPath   = "";
+    var outputPath  = "";
+    var summaryPath = "";
+    var topN        = 25;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if (args[i] == "--input"   && i + 1 < args.Length) { inputPath   = args[++i]; continue; }
+        if (args[i] == "--output"  && i + 1 < args.Length) { outputPath  = args[++i]; continue; }
+        if (args[i] == "--summary" && i + 1 < args.Length) { summaryPath = args[++i]; continue; }
+        if (args[i] == "--top"     && i + 1 < args.Length)
+        {
+            if (int.TryParse(args[++i], out var n) && n > 0) topN = n;
+            continue;
+        }
+    }
+
+    if (string.IsNullOrEmpty(inputPath) || string.IsNullOrEmpty(outputPath) || string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("system2-build-static-road-tile-candidate-shortlist: --input, --output, and --summary are required.");
+        return 1;
+    }
+
+    if (!outputPath.Contains(".local"))
+    {
+        Console.Error.WriteLine($"system2-build-static-road-tile-candidate-shortlist: output path must be under .local/. Got: {outputPath}");
+        return 1;
+    }
+    if (!summaryPath.Contains(".local"))
+    {
+        Console.Error.WriteLine($"system2-build-static-road-tile-candidate-shortlist: summary path must be under .local/. Got: {summaryPath}");
+        return 1;
+    }
+
+    var result = PZMapForge.Core.WorldGen.System2StaticRoadTileCandidateShortlistBuilder.Build(inputPath, topN);
+
+    if (!result.IsValid || result.Shortlist == null)
+    {
+        Console.Error.WriteLine("system2-build-static-road-tile-candidate-shortlist: build failed.");
+        foreach (var err in result.Errors)
+            Console.Error.WriteLine($"  ERROR: {err}");
+        return 1;
+    }
+
+    var outDir = Path.GetDirectoryName(outputPath);
+    if (!string.IsNullOrEmpty(outDir)) Directory.CreateDirectory(outDir);
+    var sumDir = Path.GetDirectoryName(summaryPath);
+    if (!string.IsNullOrEmpty(sumDir)) Directory.CreateDirectory(sumDir);
+
+    var jsonOpts = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+    var json     = System.Text.Json.JsonSerializer.Serialize(result.Shortlist, jsonOpts);
+    File.WriteAllText(outputPath, json, System.Text.Encoding.UTF8);
+
+    var sl = result.Shortlist;
+    var sb = new System.Text.StringBuilder();
+    sb.AppendLine("SYSTEM2 STATIC ROAD TILE CANDIDATE SHORTLIST SUMMARY");
+    sb.AppendLine("=====================================================");
+    sb.AppendLine($"source_local_tile_survey:   {sl.SourceLocalTileSurvey}");
+    sb.AppendLine($"top_per_family:             {sl.TopPerFamily}");
+    sb.AppendLine($"status:                     {sl.Status}");
+    sb.AppendLine($"runtime_status:             {sl.RuntimeStatus}");
+    sb.AppendLine($"writer_status:              {sl.WriterStatus}");
+    sb.AppendLine();
+    sb.AppendLine($"family_count:               {sl.Totals.FamilyCount}");
+    sb.AppendLine($"input_candidate_count:      {sl.Totals.InputCandidateCount}");
+    sb.AppendLine($"shortlisted_candidate_count:{sl.Totals.ShortlistedCandidateCount}");
+    sb.AppendLine($"families_with_shortlist:    {sl.Totals.FamiliesWithShortlist}");
+    sb.AppendLine();
+    sb.AppendLine("FAMILIES:");
+    foreach (var f in sl.Families)
+    {
+        sb.AppendLine($"  {f.CandidateFamily}");
+        sb.AppendLine($"    resolution_status:  {f.ResolutionStatus}");
+        sb.AppendLine($"    input_candidates:   {f.InputCandidateCount}");
+        sb.AppendLine($"    shortlisted:        {f.ShortlistedCandidateCount}");
+        if (f.Candidates.Count > 0)
+            sb.AppendLine($"    top_candidate:      {f.Candidates[0].TileName} (score={f.Candidates[0].Score})");
+    }
+    sb.AppendLine();
+    sb.AppendLine("CLAIM BOUNDARY");
+    sb.AppendLine($"  writes_lotpack:         {sl.ClaimBoundary.WritesLotpack}");
+    sb.AppendLine($"  writes_worldgen_lua:    {sl.ClaimBoundary.WritesWorldgenLua}");
+    sb.AppendLine($"  runtime_proven:         {sl.ClaimBoundary.RuntimeProven}");
+    sb.AppendLine($"  public_playable_claim:  {sl.ClaimBoundary.PublicPlayableClaim}");
+    sb.AppendLine();
+    sb.AppendLine("VERDICT: MAP22K_SYSTEM2_STATIC_ROAD_TILE_CANDIDATE_SHORTLIST_COMPLETE");
+    File.WriteAllText(summaryPath, sb.ToString(), System.Text.Encoding.UTF8);
+
+    Console.WriteLine($"shortlist:  {outputPath}");
+    Console.WriteLine($"summary:    {summaryPath}");
+    Console.WriteLine($"families:   {sl.Totals.FamilyCount}");
+    Console.WriteLine($"input:      {sl.Totals.InputCandidateCount}");
+    Console.WriteLine($"shortlisted:{sl.Totals.ShortlistedCandidateCount}");
+    Console.WriteLine("VERDICT: MAP22K_SYSTEM2_STATIC_ROAD_TILE_CANDIDATE_SHORTLIST_COMPLETE");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
@@ -4417,7 +4518,8 @@ static int UnknownCommand(string cmd)
         "compile-worldgen, compile-worldgen-png, compile-worldgen-project, " +
         "validate-deadmtl-layer-pack, deadmtl-authoring-build, system2-extract-static-roads, " +
         "system2-build-static-road-placement-plan, system2-build-static-road-tile-family-plan, " +
-        "system2-build-static-road-tile-family-survey, system2-build-static-road-local-tile-survey");
+        "system2-build-static-road-tile-family-survey, system2-build-static-road-local-tile-survey, " +
+        "system2-build-static-road-tile-candidate-shortlist");
     return 1;
 }
 

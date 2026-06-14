@@ -487,6 +487,29 @@ table, resolution statuses, confidence semantics, and claim boundary.
 
 ---
 
+## System 2 static road tile candidate shortlist
+
+MAP-22K reduces MAP-22J's text-match candidates into a ranked shortlist per candidate
+family using deterministic string scoring. Default: top 25 per family.
+Confidence: LOCAL_TEXT_MATCH_RANKED_ONLY. Candidates are not final writer choices.
+
+Does NOT write lotpack files. Does NOT write WorldGenOverride.lua. No runtime proof claimed.
+
+Generate shortlist from MAP-22J local tile survey:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-system2-static-road-tile-candidate-shortlist.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\system2-static-road-tile-candidate-shortlist\system2_static_road_tile_candidate_shortlist.json`
+- `.local\deadmtl-authoring\system2-static-road-tile-candidate-shortlist\system2_static_road_tile_candidate_shortlist.summary.txt`
+
+See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_TILE_CANDIDATE_SHORTLIST.md` for the scoring
+table, resolution statuses, confidence semantics, and claim boundary.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.
