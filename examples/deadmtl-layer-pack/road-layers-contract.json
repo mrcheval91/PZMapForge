@@ -1,0 +1,45 @@
+{
+  "format": "pzmapforge.deadmtl.road-layers-contract.v1",
+  "scale": {
+    "pixels_per_meter": 1,
+    "meters_per_pixel": 1,
+    "pz_tiles_per_pixel": 1
+  },
+  "layers": [
+    {
+      "id": "roads_highway",
+      "file": "layers/roads_highway.png",
+      "status": "WORLDGEN_LIMITED",
+      "width_px": "10-14",
+      "notes": "Currently only highway_NS_00 is VISUAL_CONFIRMED. Need WE/turn/intersection support before full highway network."
+    },
+    {
+      "id": "roads_major",
+      "file": "layers/roads_major.png",
+      "status": "WORLDGEN_LIMITED",
+      "width_px": "8-10",
+      "notes": "Currently only normal_road_WE_00 is VISUAL_CONFIRMED. Need NS/turn/intersection support."
+    },
+    {
+      "id": "roads_local",
+      "file": "layers/roads_local.png",
+      "status": "SYSTEM_2_REQUIRED",
+      "width_px": "5-7",
+      "notes": "Local streets require static tile overlay or additional prefab discovery."
+    },
+    {
+      "id": "roads_alleys",
+      "file": "layers/roads_alleys.png",
+      "status": "SYSTEM_2_REQUIRED",
+      "width_px": "3-4",
+      "notes": "Montreal ruelles require static tile overlay or specific alley prefabs."
+    },
+    {
+      "id": "roads_service",
+      "file": "layers/roads_service.png",
+      "status": "SYSTEM_2_REQUIRED",
+      "width_px": "2-5",
+      "notes": "Service lanes and parking access should not be represented as terrain biomes."
+    }
+  ]
+}

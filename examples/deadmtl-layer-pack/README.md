@@ -223,6 +223,31 @@ isolated-water anomaly note, and commands.
 
 ---
 
+## Small roads and alleys
+
+At 1 px = 1 m authoring scale, Montreal ruelles (3-4 m wide) are directly paintable
+as raster features. Wider arterials and collectors are also viable.
+
+**Current WorldGen road support is limited.** Only two prefab keys are runtime-proven:
+- `normal_road_WE_00` (west-east strip)
+- `highway_NS_00` (north-south strip)
+
+Local streets and ruelles/alleys are currently marked **SYSTEM_2_REQUIRED** unless
+additional road prefab keys are discovered at runtime (see MAP-22B planning task).
+
+Generate transparent road layer placeholders (authoring scaffold, no compile):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\generate-road-layer-placeholders.ps1
+```
+
+See `docs/authoring/DEADMTL_SMALL_ROADS_ALLEYS_CONTRACT.md` for the full road hierarchy,
+authoring widths, layer contract, and future proof task plan (MAP-22B through MAP-22D).
+
+See `road-layers-contract.json` for the machine-readable layer status contract.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.
