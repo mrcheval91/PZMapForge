@@ -435,6 +435,29 @@ mapping table, confidence semantics, JSON shape, and claim boundary.
 
 ---
 
+## System 2 static road tile-family survey
+
+MAP-22I defines the survey contract for resolving candidate families to actual PZ tile
+candidates. All 6 families default to UNRESOLVED_NEEDS_TILE_SURVEY. No tile IDs are
+selected in this task.
+
+Does NOT write lotpack files. Does NOT write WorldGenOverride.lua. No runtime proof claimed.
+
+Generate survey contract from MAP-22H tile-family plan:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-system2-static-road-tile-family-survey.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\system2-static-road-tile-family-survey\system2_static_road_tile_family_survey.json`
+- `.local\deadmtl-authoring\system2-static-road-tile-family-survey\system2_static_road_tile_family_survey.summary.txt`
+
+See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_TILE_FAMILY_SURVEY.md` for the resolution
+status table, JSON shape, and claim boundary.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.
