@@ -510,6 +510,31 @@ table, resolution statuses, confidence semantics, and claim boundary.
 
 ---
 
+## System 2 static road tile candidate review packet
+
+MAP-22L turns the MAP-22K shortlist into a human-readable review packet: Markdown table,
+CSV, and JSON. Every item starts as NEEDS_MANUAL_REVIEW. No candidate is approved
+automatically. Confidence: LOCAL_TEXT_MATCH_RANKED_ONLY.
+
+Does NOT write lotpack files. Does NOT write WorldGenOverride.lua. No runtime proof claimed.
+
+Generate review packet from MAP-22K shortlist:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-system2-static-road-tile-candidate-review.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\system2-static-road-tile-candidate-review\system2_static_road_tile_candidate_review.json`
+- `.local\deadmtl-authoring\system2-static-road-tile-candidate-review\system2_static_road_tile_candidate_review.md`
+- `.local\deadmtl-authoring\system2-static-road-tile-candidate-review\system2_static_road_tile_candidate_review.csv`
+- `.local\deadmtl-authoring\system2-static-road-tile-candidate-review\system2_static_road_tile_candidate_review.summary.txt`
+
+See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_TILE_CANDIDATE_REVIEW.md` for review statuses,
+output format, and claim boundary.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.
