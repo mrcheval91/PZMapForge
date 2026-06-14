@@ -200,6 +200,29 @@ verification documented as a human proof step.
 
 ---
 
+## Readable terrain proof board
+
+MAP-21B improves on the MAP-21A tiny swatch grid with large terrain patches (25x25+)
+and a shaped shoreline for water/sand proof. Avoids isolated water swatches, which
+produced a black/unwalkable display anomaly in MAP-21A.
+
+Run readable terrain proof build (no install):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-readable-terrain-proof-build.ps1
+```
+
+With install (-Install installs Lua and clears save folder):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-readable-terrain-proof-build.ps1 -Install
+```
+
+See `docs/authoring/DEADMTL_READABLE_TERRAIN_PROOF.md` for the full layout, the
+isolated-water anomaly note, and commands.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.
