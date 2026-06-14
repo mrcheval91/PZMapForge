@@ -124,7 +124,36 @@ public sealed class DeadMtlPaletteProofProcessTests : IDisposable
 
         var text = File.ReadAllText(path);
         Assert.Contains("VISUAL_CONFIRMED", text, StringComparison.Ordinal);
-        Assert.Contains("KNOWN_IN_CODE",    text, StringComparison.Ordinal);
+        // KNOWN_IN_CODE still appears in the header legend (expected after promotion)
+        Assert.Contains("KNOWN_IN_CODE", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ChartScript_Swatches_GrassPlainIsVisualConfirmed()
+    {
+        var realPalettesDir = Path.Combine(RepoRoot, "examples", "deadmtl-layer-pack", "palettes");
+        RunPowerShell(ChartScript, "-PalettesDir", realPalettesDir);
+
+        var text = File.ReadAllText(Path.Combine(realPalettesDir, "worldgen-png-palette.swatches.txt"));
+        var grassLine = text.Split('\n')
+            .FirstOrDefault(l => l.Contains("grass_plain", StringComparison.Ordinal)
+                              && l.Contains("VISUAL_CONFIRMED", StringComparison.Ordinal));
+        Assert.NotNull(grassLine);
+    }
+
+    [Fact]
+    public void ChartScript_Swatches_PineForestIsVisualConfirmed()
+    {
+        var realPalettesDir = Path.Combine(RepoRoot, "examples", "deadmtl-layer-pack", "palettes");
+        RunPowerShell(ChartScript, "-PalettesDir", realPalettesDir);
+
+        var text = File.ReadAllText(Path.Combine(realPalettesDir, "worldgen-png-palette.swatches.txt"));
+        // "pine_forest" but not "light_pine_forest" — filter via VISUAL_CONFIRMED data line
+        var pineLine = text.Split('\n')
+            .FirstOrDefault(l => l.Contains("pine_forest", StringComparison.Ordinal)
+                              && !l.Contains("light_pine_forest", StringComparison.Ordinal)
+                              && l.Contains("VISUAL_CONFIRMED", StringComparison.Ordinal));
+        Assert.NotNull(pineLine);
     }
 
     [Fact]

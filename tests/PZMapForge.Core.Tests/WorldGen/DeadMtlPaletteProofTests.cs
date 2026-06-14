@@ -257,4 +257,41 @@ public sealed class DeadMtlPaletteProofTests
             RepoRoot, "examples", "deadmtl-layer-pack", "README.md"));
         Assert.Contains("run-worldgen-palette-proof-build.ps1", readme, StringComparison.Ordinal);
     }
+
+    // -----------------------------------------------------------------------
+    // MAP-21A: status promotion — docs record anomaly and design warning
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void PaletteProofDoc_MentionsWaterAnomaly()
+    {
+        var text = File.ReadAllText(Path.Combine(DocsDir, "DEADMTL_WORLDGEN_PALETTE_PROOF.md"));
+        // MAP-21A isolated water swatch produced a black/unwalkable display anomaly
+        Assert.Contains("anomaly", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void PaletteProofDoc_MentionsShorelineProofWarning()
+    {
+        var text = File.ReadAllText(Path.Combine(DocsDir, "DEADMTL_WORLDGEN_PALETTE_PROOF.md"));
+        // Proof-design warning: use shaped shoreline, not tiny isolated swatches
+        Assert.Contains("shoreline", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void PaletteProofDoc_AllTwelveEntriesVisualConfirmed()
+    {
+        var text = File.ReadAllText(Path.Combine(DocsDir, "DEADMTL_WORLDGEN_PALETTE_PROOF.md"));
+        // Status table header
+        Assert.Contains("All 12 colors are VISUAL_CONFIRMED", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ChartScript_AllEntriesNowVisualConfirmed()
+    {
+        var text = File.ReadAllText(ChartScript);
+        // All 12 entries should be VISUAL_CONFIRMED — none remain KNOWN_IN_CODE as a value
+        // KNOWN_IN_CODE still appears in documentation comments, which is expected
+        Assert.DoesNotContain("= \"KNOWN_IN_CODE\"", text, StringComparison.Ordinal);
+    }
 }

@@ -43,22 +43,44 @@ A passing test suite does not constitute visual confirmation.
 
 ## Current palette colors
 
-| Hex | Type | Key | Status |
-|---|---|---|---|
-| `#0000FF` | biome | water | VISUAL_CONFIRMED (MAP-20A) |
-| `#D8C080` | biome | sand_bank | VISUAL_CONFIRMED (MAP-20A) |
-| `#00AA00` | biome | grass_plain | KNOWN_IN_CODE |
-| `#55CC55` | biome | flower_plain | KNOWN_IN_CODE |
-| `#207020` | biome | birch_forest | VISUAL_CONFIRMED (MAP-20A) |
-| `#145C14` | biome | oak_forest | KNOWN_IN_CODE |
-| `#0B4418` | biome | pine_forest | KNOWN_IN_CODE |
-| `#60A060` | biome | light_birch_forest | KNOWN_IN_CODE |
-| `#4F8F4F` | biome | light_oak_forest | KNOWN_IN_CODE |
-| `#3F7F50` | biome | light_pine_forest | KNOWN_IN_CODE |
-| `#FF6600` | prefab | normal_road_WE_00 | VISUAL_CONFIRMED (MAP-20A) |
-| `#CC3300` | prefab | highway_NS_00 | VISUAL_CONFIRMED (MAP-13C/15C/16B) |
+All 12 colors are VISUAL_CONFIRMED as of MAP-21A.
+
+| Hex | Type | Key | Status | MAP ref |
+|---|---|---|---|---|
+| `#0000FF` | biome | water | VISUAL_CONFIRMED | MAP-20A |
+| `#D8C080` | biome | sand_bank | VISUAL_CONFIRMED | MAP-20A |
+| `#00AA00` | biome | grass_plain | VISUAL_CONFIRMED | MAP-21A |
+| `#55CC55` | biome | flower_plain | VISUAL_CONFIRMED | MAP-21A |
+| `#207020` | biome | birch_forest | VISUAL_CONFIRMED | MAP-20A + MAP-21A |
+| `#145C14` | biome | oak_forest | VISUAL_CONFIRMED | MAP-21A |
+| `#0B4418` | biome | pine_forest | VISUAL_CONFIRMED | MAP-21A |
+| `#60A060` | biome | light_birch_forest | VISUAL_CONFIRMED | MAP-21A |
+| `#4F8F4F` | biome | light_oak_forest | VISUAL_CONFIRMED | MAP-21A |
+| `#3F7F50` | biome | light_pine_forest | VISUAL_CONFIRMED | MAP-21A |
+| `#FF6600` | prefab | normal_road_WE_00 | VISUAL_CONFIRMED | MAP-20A + MAP-21A |
+| `#CC3300` | prefab | highway_NS_00 | VISUAL_CONFIRMED | MAP-13C/15C/16B + MAP-21A |
 
 All keys are registered in `WorldGenRegistry.cs`.
+
+### MAP-21A confirmation record
+
+MAP-21A palette proof pack loaded in PZ and visually confirmed:
+grass_plain, flower_plain, oak_forest, pine_forest, light_birch_forest,
+light_oak_forest, light_pine_forest, normal_road_WE_00, highway_NS_00.
+
+MAP-21A did not produce readable isolated water or sand_bank swatches.
+The isolated water swatch appeared as a black/unwalkable anomaly.
+water and sand_bank remain VISUAL_CONFIRMED from MAP-20A (full-canvas water base
+and shoreline patch, not isolated tiny swatches).
+
+### Proof-design warning: isolated water and shore swatches
+
+Do not use tiny isolated water/sand_bank swatches as a final visual proof for
+these biomes. Isolated small water rectangles in a non-water context produce
+display anomalies (black/unwalkable tiles) rather than readable terrain.
+
+Use a larger shaped shoreline patch with water as the canvas base
+(as in MAP-20A) when testing water and sand_bank visually.
 
 ---
 

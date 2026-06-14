@@ -38,20 +38,24 @@ $entries  = $palette.entries
 # ---------------------------------------------------------------------------
 # Proof status registry
 # Locked by MAP history. Do not update without human visual confirmation.
+# Statuses:
+#   VISUAL_CONFIRMED  = human saw the terrain patch in-game (documented MAP)
+#   KNOWN_IN_CODE     = compiler accepts; no human visual proof yet
+#   UNPROVEN_VISUAL   = no compiler or visual proof
 # ---------------------------------------------------------------------------
 $proofStatus = @{
-    "#0000FF" = "VISUAL_CONFIRMED"   # water — MAP-20A
-    "#D8C080" = "VISUAL_CONFIRMED"   # sand_bank — MAP-20A
-    "#207020" = "VISUAL_CONFIRMED"   # birch_forest — MAP-20A
-    "#FF6600" = "VISUAL_CONFIRMED"   # normal_road_WE_00 — MAP-20A
-    "#CC3300" = "VISUAL_CONFIRMED"   # highway_NS_00 — MAP-13C/MAP-15C/MAP-16B
-    "#00AA00" = "KNOWN_IN_CODE"
-    "#55CC55" = "KNOWN_IN_CODE"
-    "#145C14" = "KNOWN_IN_CODE"
-    "#0B4418" = "KNOWN_IN_CODE"
-    "#60A060" = "KNOWN_IN_CODE"
-    "#4F8F4F" = "KNOWN_IN_CODE"
-    "#3F7F50" = "KNOWN_IN_CODE"
+    "#0000FF" = "VISUAL_CONFIRMED"   # water        MAP-20A (note: MAP-21A isolated swatch showed black/unwalkable anomaly; MAP-20A full-canvas proof stands)
+    "#D8C080" = "VISUAL_CONFIRMED"   # sand_bank     MAP-20A (sand_bank isolated swatch not readable in MAP-21A; MAP-20A shoreline proof stands)
+    "#207020" = "VISUAL_CONFIRMED"   # birch_forest  MAP-20A + MAP-21A
+    "#FF6600" = "VISUAL_CONFIRMED"   # normal_road_WE_00  MAP-20A + MAP-21A
+    "#CC3300" = "VISUAL_CONFIRMED"   # highway_NS_00  MAP-13C/MAP-15C/MAP-16B + MAP-21A
+    "#00AA00" = "VISUAL_CONFIRMED"   # grass_plain        MAP-21A
+    "#55CC55" = "VISUAL_CONFIRMED"   # flower_plain        MAP-21A
+    "#145C14" = "VISUAL_CONFIRMED"   # oak_forest          MAP-21A
+    "#0B4418" = "VISUAL_CONFIRMED"   # pine_forest          MAP-21A
+    "#60A060" = "VISUAL_CONFIRMED"   # light_birch_forest   MAP-21A
+    "#4F8F4F" = "VISUAL_CONFIRMED"   # light_oak_forest     MAP-21A
+    "#3F7F50" = "VISUAL_CONFIRMED"   # light_pine_forest    MAP-21A
 }
 
 # ---------------------------------------------------------------------------

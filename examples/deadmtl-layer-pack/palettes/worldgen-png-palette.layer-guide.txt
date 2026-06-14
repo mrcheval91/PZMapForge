@@ -1,5 +1,5 @@
 ﻿# worldgen-png-palette layer authoring guide
-# Generated: 2026-06-13 18:47:36
+# Generated: 2026-06-13 20:03:46
 
 == Overview ==
 
@@ -43,14 +43,14 @@ Transparent pixels are always skip â€” they never override.
 == Current palette ==
   #0000FF  biome : water  [VISUAL_CONFIRMED]
   #D8C080  biome : sand_bank  [VISUAL_CONFIRMED]
-  #00AA00  biome : grass_plain  [KNOWN_IN_CODE]
-  #55CC55  biome : flower_plain  [KNOWN_IN_CODE]
+  #00AA00  biome : grass_plain  [VISUAL_CONFIRMED]
+  #55CC55  biome : flower_plain  [VISUAL_CONFIRMED]
   #207020  biome : birch_forest  [VISUAL_CONFIRMED]
-  #145C14  biome : oak_forest  [KNOWN_IN_CODE]
-  #0B4418  biome : pine_forest  [KNOWN_IN_CODE]
-  #60A060  biome : light_birch_forest  [KNOWN_IN_CODE]
-  #4F8F4F  biome : light_oak_forest  [KNOWN_IN_CODE]
-  #3F7F50  biome : light_pine_forest  [KNOWN_IN_CODE]
+  #145C14  biome : oak_forest  [VISUAL_CONFIRMED]
+  #0B4418  biome : pine_forest  [VISUAL_CONFIRMED]
+  #60A060  biome : light_birch_forest  [VISUAL_CONFIRMED]
+  #4F8F4F  biome : light_oak_forest  [VISUAL_CONFIRMED]
+  #3F7F50  biome : light_pine_forest  [VISUAL_CONFIRMED]
   #FF6600  prefab : normal_road_WE_00  [VISUAL_CONFIRMED]
   #CC3300  prefab : highway_NS_00  [VISUAL_CONFIRMED]
 
