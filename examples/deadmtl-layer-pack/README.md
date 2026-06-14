@@ -248,6 +248,42 @@ See `road-layers-contract.json` for the machine-readable layer status contract.
 
 ---
 
+## WorldGen prefab discovery
+
+MAP-22B: runtime discovery probe that enumerates all keys in `worldgen.prefabs`
+to find road-like prefab keys beyond the two currently proven (`normal_road_WE_00`,
+`highway_NS_00`). Results are used to determine whether local streets, alleys, or
+ruelle-like prefabs exist in the engine.
+
+This is a discovery step only. No prefab discovered by this probe is considered
+VISUAL_CONFIRMED until a dedicated proof board (MAP-22C) is run and a human
+visually confirms the result.
+
+Generate and preview probe Lua (no install):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-worldgen-prefab-dump.ps1
+```
+
+Install probe to PZ game folder and clear save:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-worldgen-prefab-dump.ps1 -Install
+```
+
+After launching PZ and exiting, harvest results from PZ logs:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\harvest-worldgen-prefab-dump-logs.ps1
+```
+
+Results written to: `.local/deadmtl-authoring/worldgen-prefab-dump/prefab-dump-harvest.txt`
+
+See `docs/authoring/DEADMTL_WORLDGEN_PREFAB_DISCOVERY.md` for the full discovery-to-proof
+chain and claim boundary.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.
