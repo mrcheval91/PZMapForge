@@ -388,6 +388,29 @@ intent types, node coordinates, and claim boundary.
 
 ---
 
+## System 2 static road placement plan
+
+MAP-22G converts the System 2 extract JSON into a placement plan: one record per intended
+world tile with abstract roles (road_surface, pedestrian_cut, road_node).
+
+This is plan-only. No runtime proof is claimed. No lotpack files are written.
+No WorldGenOverride.lua is written.
+
+Generate placement plan from MAP-22F sample extract:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-system2-static-road-placement-plan.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\system2-static-road-placement-plan\system2_static_road_placement_plan.json`
+- `.local\deadmtl-authoring\system2-static-road-placement-plan\system2_static_road_placement_plan.summary.txt`
+
+See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_PLACEMENT_PLAN.md` for JSON shape,
+intent-to-role mapping, duplicate handling, and claim boundary.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.
