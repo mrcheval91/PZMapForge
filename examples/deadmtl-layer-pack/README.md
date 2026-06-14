@@ -458,6 +458,35 @@ status table, JSON shape, and claim boundary.
 
 ---
 
+## System 2 static road local tile survey
+
+MAP-22J scans the local PZ install root for text-based tile definition files and
+produces a candidate list (confidence: LOCAL_TEXT_MATCH_ONLY) for each candidate
+family. Candidates are not runtime-proven and are not final writer choices.
+
+Does NOT write lotpack files. Does NOT write WorldGenOverride.lua. No runtime proof claimed.
+
+Generate local tile survey from MAP-22I survey contract:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-system2-static-road-local-tile-survey.ps1
+```
+
+If the PZ install root is not at the default path, pass it explicitly:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-system2-static-road-local-tile-survey.ps1 -PzRoot "D:\path\to\ProjectZomboid"
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\system2-static-road-local-tile-survey\system2_static_road_local_tile_survey.json`
+- `.local\deadmtl-authoring\system2-static-road-local-tile-survey\system2_static_road_local_tile_survey.summary.txt`
+
+See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_LOCAL_TILE_SURVEY.md` for the search term
+table, resolution statuses, confidence semantics, and claim boundary.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.
