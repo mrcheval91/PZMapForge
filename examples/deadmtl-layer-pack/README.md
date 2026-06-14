@@ -535,6 +535,34 @@ output format, and claim boundary.
 
 ---
 
+## System 2 static road tile candidate review apply
+
+MAP-22M applies a human-edited decisions CSV back into a structured reviewed-candidates file.
+Each item may be set to APPROVED_BY_HUMAN_REVIEW, REJECTED_BY_HUMAN_REVIEW, or left as
+NEEDS_MANUAL_REVIEW. Human approval is NOT runtime validation. Human approval is NOT writer readiness.
+
+Default run uses the unedited MAP-22L CSV as decisions input, so all 113 items remain NEEDS_MANUAL_REVIEW
+until a human edits the CSV to change statuses.
+
+Does NOT write lotpack files. Does NOT write WorldGenOverride.lua. No runtime proof claimed.
+
+Generate applied review packet:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-system2-static-road-tile-candidate-review-apply.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\system2-static-road-tile-candidate-review-applied\system2_static_road_tile_candidate_review_applied.json`
+- `.local\deadmtl-authoring\system2-static-road-tile-candidate-review-applied\system2_static_road_tile_candidate_review_applied.md`
+- `.local\deadmtl-authoring\system2-static-road-tile-candidate-review-applied\system2_static_road_tile_candidate_review_applied.csv`
+- `.local\deadmtl-authoring\system2-static-road-tile-candidate-review-applied\system2_static_road_tile_candidate_review_applied.summary.txt`
+
+See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_TILE_CANDIDATE_REVIEW_APPLY.md` for review statuses,
+CSV format, matching rules, and claim boundary.
+
+---
+
 ## Claim boundary
 
 This skeleton does not constitute a playable Project Zomboid map.
