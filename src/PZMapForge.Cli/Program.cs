@@ -58,6 +58,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                   --output-json <applied.json> --output-md <applied.md> --output-csv <applied.csv> --summary <summary.txt>");
     Console.Error.WriteLine("  system2-build-static-road-human-approved-tile-candidates  --input <applied_review.json> --output-json <manifest.json>");
     Console.Error.WriteLine("                                                             --output-md <manifest.md> --output-csv <manifest.csv> --summary <summary.txt>");
+    Console.Error.WriteLine("  system2-build-static-road-local-tile-survey-filtered  --input <survey.json> --pz-root <path>");
+    Console.Error.WriteLine("                                                         --output-json <filtered.json> --output-md <filtered.md> --output-csv <filtered.csv> --summary <summary.txt>");
     return 1;
 }
 
@@ -94,6 +96,7 @@ return args[0] switch
     "system2-build-static-road-tile-candidate-review"     => System2BuildStaticRoadTileCandidateReviewCommand(args[1..]),
     "system2-apply-static-road-tile-candidate-review"                 => System2ApplyStaticRoadTileCandidateReviewCommand(args[1..]),
     "system2-build-static-road-human-approved-tile-candidates"       => System2BuildStaticRoadHumanApprovedTileCandidatesCommand(args[1..]),
+    "system2-build-static-road-local-tile-survey-filtered"          => System2BuildStaticRoadLocalTileSurveyFilteredCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -4861,6 +4864,123 @@ static int System2BuildStaticRoadHumanApprovedTileCandidatesCommand(string[] arg
     return 0;
 }
 
+static int System2BuildStaticRoadLocalTileSurveyFilteredCommand(string[] args)
+{
+    var inputPath   = "";
+    var pzRoot      = "";
+    var outputJson  = "";
+    var outputMd    = "";
+    var outputCsv   = "";
+    var summaryPath = "";
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if (args[i] == "--input"       && i + 1 < args.Length) { inputPath   = args[++i]; continue; }
+        if (args[i] == "--pz-root"     && i + 1 < args.Length) { pzRoot      = args[++i]; continue; }
+        if (args[i] == "--output-json" && i + 1 < args.Length) { outputJson  = args[++i]; continue; }
+        if (args[i] == "--output-md"   && i + 1 < args.Length) { outputMd    = args[++i]; continue; }
+        if (args[i] == "--output-csv"  && i + 1 < args.Length) { outputCsv   = args[++i]; continue; }
+        if (args[i] == "--summary"     && i + 1 < args.Length) { summaryPath = args[++i]; continue; }
+    }
+
+    if (string.IsNullOrEmpty(inputPath) || string.IsNullOrEmpty(pzRoot) ||
+        string.IsNullOrEmpty(outputJson) || string.IsNullOrEmpty(outputMd) ||
+        string.IsNullOrEmpty(outputCsv)  || string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine(
+            "system2-build-static-road-local-tile-survey-filtered: " +
+            "--input, --pz-root, --output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    foreach (var (label, path) in new[] {
+        ("--output-json", outputJson), ("--output-md", outputMd),
+        ("--output-csv",  outputCsv),  ("--summary",   summaryPath) })
+    {
+        if (!path.Contains(".local"))
+        {
+            Console.Error.WriteLine(
+                $"system2-build-static-road-local-tile-survey-filtered: {label} path must be under .local/. Got: {path}");
+            return 1;
+        }
+    }
+
+    var result = PZMapForge.Core.WorldGen.System2StaticRoadFilteredLocalTileSurveyBuilder
+        .Build(inputPath, pzRoot);
+
+    if (!result.IsValid || result.Survey == null)
+    {
+        Console.Error.WriteLine("system2-build-static-road-local-tile-survey-filtered: build failed.");
+        foreach (var err in result.Errors)
+            Console.Error.WriteLine($"  ERROR: {err}");
+        return 1;
+    }
+
+    foreach (var path in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        var dir = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var jsonOpts = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+    File.WriteAllText(outputJson,
+        System.Text.Json.JsonSerializer.Serialize(result.Survey, jsonOpts),
+        System.Text.Encoding.UTF8);
+
+    File.WriteAllText(outputMd,
+        PZMapForge.Core.WorldGen.System2StaticRoadFilteredLocalTileSurveyBuilder
+            .RenderMarkdown(result.Survey),
+        System.Text.Encoding.UTF8);
+
+    File.WriteAllText(outputCsv,
+        PZMapForge.Core.WorldGen.System2StaticRoadFilteredLocalTileSurveyBuilder
+            .RenderCsv(result.Survey),
+        System.Text.Encoding.UTF8);
+
+    var s  = result.Survey;
+    var sb = new System.Text.StringBuilder();
+    sb.AppendLine("SYSTEM2 STATIC ROAD LOCAL TILE SURVEY FILTERED SUMMARY");
+    sb.AppendLine("========================================================");
+    sb.AppendLine($"source_survey:               {s.SourceSurvey}");
+    sb.AppendLine($"pz_root:                     {s.PzRoot}");
+    sb.AppendLine($"status:                      {s.Status}");
+    sb.AppendLine($"runtime_status:              {s.RuntimeStatus}");
+    sb.AppendLine($"writer_status:               {s.WriterStatus}");
+    sb.AppendLine();
+    sb.AppendLine($"family_count:                {s.Totals.FamilyCount}");
+    sb.AppendLine($"candidate_tile_count:        {s.Totals.CandidateTileCount}");
+    sb.AppendLine($"scanned_source_file_count:   {s.Totals.ScannedSourceFileCount}");
+    sb.AppendLine($"excluded_source_file_count:  {s.Totals.ExcludedSourceFileCount}");
+    sb.AppendLine($"families_with_candidates:    {s.Totals.FamiliesWithCandidates}");
+    sb.AppendLine($"families_without_candidates: {s.Totals.FamiliesWithoutCandidates}");
+    sb.AppendLine();
+    sb.AppendLine("OUTPUT FILES:");
+    sb.AppendLine($"  JSON:    {outputJson}");
+    sb.AppendLine($"  MD:      {outputMd}");
+    sb.AppendLine($"  CSV:     {outputCsv}");
+    sb.AppendLine();
+    sb.AppendLine("CLAIM BOUNDARY");
+    sb.AppendLine($"  writes_lotpack:         {s.ClaimBoundary.WritesLotpack}");
+    sb.AppendLine($"  writes_worldgen_lua:    {s.ClaimBoundary.WritesWorldgenLua}");
+    sb.AppendLine($"  runtime_proven:         {s.ClaimBoundary.RuntimeProven}");
+    sb.AppendLine($"  public_playable_claim:  {s.ClaimBoundary.PublicPlayableClaim}");
+    sb.AppendLine($"  writer_ready_claim:     {s.ClaimBoundary.WriterReadyClaim}");
+    sb.AppendLine();
+    sb.AppendLine("VERDICT: MAP22O_SYSTEM2_STATIC_ROAD_LOCAL_TILE_SURVEY_FILTERED_COMPLETE");
+    File.WriteAllText(summaryPath, sb.ToString(), System.Text.Encoding.UTF8);
+
+    Console.WriteLine($"survey-json:   {outputJson}");
+    Console.WriteLine($"survey-md:     {outputMd}");
+    Console.WriteLine($"survey-csv:    {outputCsv}");
+    Console.WriteLine($"summary:       {summaryPath}");
+    Console.WriteLine($"families:      {s.Totals.FamilyCount}");
+    Console.WriteLine($"candidates:    {s.Totals.CandidateTileCount}");
+    Console.WriteLine($"scanned:       {s.Totals.ScannedSourceFileCount}");
+    Console.WriteLine($"excluded:      {s.Totals.ExcludedSourceFileCount}");
+    Console.WriteLine("VERDICT: MAP22O_SYSTEM2_STATIC_ROAD_LOCAL_TILE_SURVEY_FILTERED_COMPLETE");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
@@ -4872,7 +4992,8 @@ static int UnknownCommand(string cmd)
         "system2-build-static-road-placement-plan, system2-build-static-road-tile-family-plan, " +
         "system2-build-static-road-tile-family-survey, system2-build-static-road-local-tile-survey, " +
         "system2-build-static-road-tile-candidate-shortlist, system2-build-static-road-tile-candidate-review, " +
-        "system2-apply-static-road-tile-candidate-review, system2-build-static-road-human-approved-tile-candidates");
+        "system2-apply-static-road-tile-candidate-review, system2-build-static-road-human-approved-tile-candidates, " +
+        "system2-build-static-road-local-tile-survey-filtered");
     return 1;
 }
 

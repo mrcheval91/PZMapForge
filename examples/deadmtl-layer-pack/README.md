@@ -588,6 +588,30 @@ Output (under `.local/`):
 See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_HUMAN_APPROVED_TILE_CANDIDATES.md` for bucket
 definitions, CSV format, and claim boundary.
 
+## System 2 static road local tile survey (filtered)
+
+MAP-22O produces a filtered local tile survey that excludes known non-tile text sources.
+MAP-22J scanned too broadly (e.g. `tile_name: "asphalt"` from `media\profanity\Dictionary.txt`).
+MAP-22O excludes path fragments like `media/profanity`, `media/lua`, `media/scripts/items`, etc.
+Confidence: LOCAL_FILTERED_TEXT_MATCH_ONLY. No runtime proof claimed.
+
+Does NOT write lotpack files. Does NOT write WorldGenOverride.lua. No writer-ready claim.
+
+Generate filtered local tile survey:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-system2-static-road-local-tile-survey-filtered.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\system2-static-road-local-tile-survey-filtered\system2_static_road_local_tile_survey_filtered.json`
+- `.local\deadmtl-authoring\system2-static-road-local-tile-survey-filtered\system2_static_road_local_tile_survey_filtered.md`
+- `.local\deadmtl-authoring\system2-static-road-local-tile-survey-filtered\system2_static_road_local_tile_survey_filtered.csv`
+- `.local\deadmtl-authoring\system2-static-road-local-tile-survey-filtered\system2_static_road_local_tile_survey_filtered.summary.txt`
+
+See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_LOCAL_TILE_SURVEY_FILTERED.md` for excluded
+fragments, CSV format, and claim boundary.
+
 ---
 
 ## Claim boundary
