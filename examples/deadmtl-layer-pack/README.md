@@ -913,6 +913,34 @@ type definitions, coordinate contract, validation rules, and claim boundary.
 
 ---
 
+## WorldBuilder source mask region extraction contract
+
+MAP-25J reads the raw `map_00.png` color map, counts pixels by color, computes pixel-space
+bounding boxes, and binds each color region to its zone metadata entry. Source mask regions
+only — no concrete lot/road/sidewalk/building geometry is created from these masks.
+
+All 7 colors: MASK_REGION primitive, SOURCE_MASK_ONLY_NO_GEOMETRY_CREATED status.
+No terrain generation, no lot subdivision, no lotpack writing, no worldgen override file,
+no concrete geometry created, layout not materialized, no runtime proof. Not writer-ready.
+
+Generate the source mask region extraction:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-source-mask-region-extraction.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-source-mask-region-extraction\map_00\map_00.source_mask_region_extraction.json`
+- `.local\deadmtl-authoring\worldbuilder-source-mask-region-extraction\map_00\map_00.source_mask_region_extraction.md`
+- `.local\deadmtl-authoring\worldbuilder-source-mask-region-extraction\map_00\map_00.source_mask_region_extraction.csv`
+- `.local\deadmtl-authoring\worldbuilder-source-mask-region-extraction\map_00\map_00.source_mask_region_extraction.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_SOURCE_MASK_REGION_EXTRACTION_CONTRACT.md` for mask
+region fields, pixel count totals, future geometry requirement mapping, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
