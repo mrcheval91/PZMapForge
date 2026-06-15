@@ -84,6 +84,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                              --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-future-world-layout-plan  --profile <profile.json> --metadata <zone_metadata.json> --lot-plan <lot_plan.json> --sidewalk-plan <sidewalk_plan.json> --building-selection-plan <building_selection_plan.json> --dependency-manifest <dep_manifest.json>");
     Console.Error.WriteLine("                                                        --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-concrete-geometry-preflight  --profile <profile.json> --metadata <zone_metadata.json> --lot-plan <lot_plan.json> --sidewalk-plan <sidewalk_plan.json> --building-selection-plan <building_selection_plan.json> --dependency-manifest <dep_manifest.json> --future-layout-plan <future_world_layout_plan.json>");
+    Console.Error.WriteLine("                                                            --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     return 1;
 }
 
@@ -132,6 +134,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-building-selection-policy-plan"   => DeadMtlBuildWorldBuilderBuildingSelectionPolicyPlanCommand(args[1..]),
     "deadmtl-build-worldbuilder-generation-dependency-manifest"  => DeadMtlBuildWorldBuilderGenerationDependencyManifestCommand(args[1..]),
     "deadmtl-build-worldbuilder-future-world-layout-plan"        => DeadMtlBuildWorldBuilderFutureWorldLayoutPlanCommand(args[1..]),
+    "deadmtl-build-worldbuilder-concrete-geometry-preflight"     => DeadMtlBuildWorldBuilderConcreteGeometryPreflightCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5548,7 +5551,8 @@ static int UnknownCommand(string cmd)
         "deadmtl-build-worldbuilder-sidewalk-generation-plan, " +
         "deadmtl-build-worldbuilder-building-selection-policy-plan, " +
         "deadmtl-build-worldbuilder-generation-dependency-manifest, " +
-        "deadmtl-build-worldbuilder-future-world-layout-plan");
+        "deadmtl-build-worldbuilder-future-world-layout-plan, " +
+        "deadmtl-build-worldbuilder-concrete-geometry-preflight");
     return 1;
 }
 
@@ -6035,6 +6039,98 @@ static int DeadMtlBuildWorldBuilderFutureWorldLayoutPlanCommand(string[] args)
     Console.WriteLine($"layout_status:                             {plan.LayoutStatus}");
     Console.WriteLine($"geometry_status:                           {plan.GeometryStatus}");
     Console.WriteLine("VERDICT: MAP25G_WORLDBUILDER_FUTURE_WORLD_LAYOUT_PLAN_CONTRACT_COMPLETE");
+
+    return result.IsValid ? 0 : 1;
+}
+
+static int DeadMtlBuildWorldBuilderConcreteGeometryPreflightCommand(string[] args)
+{
+    var profilePath           = string.Empty;
+    var metadataPath          = string.Empty;
+    var lotPlanPath           = string.Empty;
+    var sidewalkPlanPath      = string.Empty;
+    var buildingSelectPath    = string.Empty;
+    var dependencyManifest    = string.Empty;
+    var futureLayoutPlanPath  = string.Empty;
+    var outputJson            = string.Empty;
+    var outputMd              = string.Empty;
+    var outputCsv             = string.Empty;
+    var summaryPath           = string.Empty;
+
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--profile":                  profilePath          = args[++i]; break;
+            case "--metadata":                 metadataPath         = args[++i]; break;
+            case "--lot-plan":                 lotPlanPath          = args[++i]; break;
+            case "--sidewalk-plan":            sidewalkPlanPath     = args[++i]; break;
+            case "--building-selection-plan":  buildingSelectPath   = args[++i]; break;
+            case "--dependency-manifest":      dependencyManifest   = args[++i]; break;
+            case "--future-layout-plan":       futureLayoutPlanPath = args[++i]; break;
+            case "--output-json":              outputJson           = args[++i]; break;
+            case "--output-md":                outputMd             = args[++i]; break;
+            case "--output-csv":               outputCsv            = args[++i]; break;
+            case "--summary":                  summaryPath          = args[++i]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(profilePath)        || string.IsNullOrEmpty(metadataPath)      ||
+        string.IsNullOrEmpty(lotPlanPath)        || string.IsNullOrEmpty(sidewalkPlanPath)  ||
+        string.IsNullOrEmpty(buildingSelectPath) || string.IsNullOrEmpty(dependencyManifest) ||
+        string.IsNullOrEmpty(futureLayoutPlanPath) ||
+        string.IsNullOrEmpty(outputJson)         || string.IsNullOrEmpty(outputMd)          ||
+        string.IsNullOrEmpty(outputCsv)          || string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-concrete-geometry-preflight: " +
+            "--profile, --metadata, --lot-plan, --sidewalk-plan, --building-selection-plan, " +
+            "--dependency-manifest, --future-layout-plan, --output-json, --output-md, " +
+            "--output-csv, and --summary are required.");
+        return 1;
+    }
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        if (!p.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"Output path must contain .local: {p}");
+            return 1;
+        }
+    }
+
+    var result = DeadMtlWorldBuilderConcreteGeometryPreflightBuilder.Build(
+        profilePath, metadataPath, lotPlanPath, sidewalkPlanPath,
+        buildingSelectPath, dependencyManifest, futureLayoutPlanPath);
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var preflight = result.Preflight;
+    var jsonOpts  = new JsonSerializerOptions { WriteIndented = true };
+    File.WriteAllText(outputJson,  JsonSerializer.Serialize(preflight, jsonOpts), Encoding.UTF8);
+    File.WriteAllText(outputMd,    DeadMtlWorldBuilderConcreteGeometryPreflightBuilder.RenderMarkdown(preflight), Encoding.UTF8);
+    File.WriteAllText(outputCsv,   DeadMtlWorldBuilderConcreteGeometryPreflightBuilder.RenderCsv(preflight),      Encoding.UTF8);
+    File.WriteAllText(summaryPath, DeadMtlWorldBuilderConcreteGeometryPreflightBuilder.RenderSummary(result),     Encoding.UTF8);
+
+    Console.WriteLine($"output-json:                          {outputJson}");
+    Console.WriteLine($"output-md:                            {outputMd}");
+    Console.WriteLine($"output-csv:                           {outputCsv}");
+    Console.WriteLine($"summary:                              {summaryPath}");
+    Console.WriteLine($"tile_id:                              {preflight.TileId}");
+    Console.WriteLine($"is_valid:                             {result.IsValid}");
+    Console.WriteLine($"requirement_count:                    {preflight.Totals.RequirementCount}");
+    Console.WriteLine($"blocked_requirement_count:            {preflight.Totals.BlockedRequirementCount}");
+    Console.WriteLine($"can_execute_now_count:                {preflight.Totals.CanExecuteNowCount}");
+    Console.WriteLine($"geometry_requirement_count:           {preflight.Totals.GeometryRequirementCount}");
+    Console.WriteLine($"writer_requirement_count:             {preflight.Totals.WriterRequirementCount}");
+    Console.WriteLine($"runtime_requirement_count:            {preflight.Totals.RuntimeRequirementCount}");
+    Console.WriteLine($"concrete_geometry_created_now_count:  {preflight.Totals.ConcreteGeometryCreatedNowCount}");
+    Console.WriteLine($"layout_materialized_now_count:        {preflight.Totals.LayoutMaterializedNowCount}");
+    Console.WriteLine($"preflight_status:                     {preflight.PreflightStatus}");
+    Console.WriteLine("VERDICT: MAP25H_WORLDBUILDER_CONCRETE_GEOMETRY_PREFLIGHT_CONTRACT_COMPLETE");
 
     return result.IsValid ? 0 : 1;
 }

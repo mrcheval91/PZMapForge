@@ -856,6 +856,34 @@ components, future execution requirements, totals, and claim boundary.
 
 ---
 
+## WorldBuilder concrete geometry preflight contract
+
+MAP-25H inspects the MAP-25G future world layout plan and produces a checklist of all concrete
+geometry that must exist before the world layout can be materialized. Contract only — no terrain
+generation, no lot subdivision, no sidewalk geometry, no road geometry, no building placement,
+no fences, no lotpack writing, no worldgen override file, no concrete geometry created, layout
+not materialized, no runtime proof. Not writer-ready.
+
+9 preflight requirements: 7 geometry, 1 writer, 1 runtime. All blocked. can_execute_now: 0.
+
+Generate the concrete geometry preflight:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-concrete-geometry-preflight.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-concrete-geometry-preflight\map_00\map_00.concrete_geometry_preflight.json`
+- `.local\deadmtl-authoring\worldbuilder-concrete-geometry-preflight\map_00\map_00.concrete_geometry_preflight.md`
+- `.local\deadmtl-authoring\worldbuilder-concrete-geometry-preflight\map_00\map_00.concrete_geometry_preflight.csv`
+- `.local\deadmtl-authoring\worldbuilder-concrete-geometry-preflight\map_00\map_00.concrete_geometry_preflight.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_CONCRETE_GEOMETRY_PREFLIGHT_CONTRACT.md` for preflight
+requirements, totals, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
