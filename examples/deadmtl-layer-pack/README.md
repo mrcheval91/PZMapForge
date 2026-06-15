@@ -713,6 +713,31 @@ See `docs/authoring/DEADMTL_WORLDBUILDER_RAW_TILE_ZONE_METADATA_CONTRACT.md` for
 
 ---
 
+## WorldBuilder lot subdivision plan contract
+
+MAP-25C derives a future subdivision plan from the MAP-25B zone metadata.
+Contract only — no terrain generation, no lot subdivision executed, no building placement,
+no sidewalk generation, no fence placement, no lotpack writing, no worldgen override file,
+no runtime proof. Not writer-ready.
+
+Run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-lot-subdivision-plan.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-lot-subdivision-plan\map_00\map_00.lot_subdivision_plan.json`
+- `.local\deadmtl-authoring\worldbuilder-lot-subdivision-plan\map_00\map_00.lot_subdivision_plan.md`
+- `.local\deadmtl-authoring\worldbuilder-lot-subdivision-plan\map_00\map_00.lot_subdivision_plan.csv`
+- `.local\deadmtl-authoring\worldbuilder-lot-subdivision-plan\map_00\map_00.lot_subdivision_plan.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_LOT_SUBDIVISION_PLAN_CONTRACT.md` for plan item fields,
+subdivision actions by color, frontage/back-alley/sidewalk policies, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.

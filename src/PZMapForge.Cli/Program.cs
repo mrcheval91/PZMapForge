@@ -74,6 +74,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                       --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     Console.Error.WriteLine("  deadmtl-validate-worldbuilder-zone-metadata  --metadata <zone_metadata.json> --inspection <inspection.json> --profile <profile.json>");
     Console.Error.WriteLine("                                                --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-lot-subdivision-plan  --metadata <zone_metadata.json> --profile <profile.json> [--inspection <inspection.json>]");
+    Console.Error.WriteLine("                                                    --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     return 1;
 }
 
@@ -117,6 +119,7 @@ return args[0] switch
     "deadmtl-discover-vanilla-building-sources"                    => DeadMtlDiscoverVanillaBuildingSourcesCommand(args[1..]),
     "deadmtl-validate-worldbuilder-neighborhood-profile"           => DeadMtlValidateWorldBuilderNeighborhoodProfileCommand(args[1..]),
     "deadmtl-validate-worldbuilder-zone-metadata"                  => DeadMtlValidateWorldBuilderZoneMetadataCommand(args[1..]),
+    "deadmtl-build-worldbuilder-lot-subdivision-plan"              => DeadMtlBuildWorldBuilderLotSubdivisionPlanCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5529,7 +5532,7 @@ static int UnknownCommand(string cmd)
         "system2-build-static-road-local-tile-survey-filtered, system2-build-static-road-filtered-tile-candidate-shortlist, " +
         "deadmtl-inspect-raw-map-tile, deadmtl-build-raw-map-tile-palette-mapping, " +
         "deadmtl-discover-vanilla-building-sources, deadmtl-validate-worldbuilder-neighborhood-profile, " +
-        "deadmtl-validate-worldbuilder-zone-metadata");
+        "deadmtl-validate-worldbuilder-zone-metadata, deadmtl-build-worldbuilder-lot-subdivision-plan");
     return 1;
 }
 
@@ -5602,6 +5605,82 @@ static int DeadMtlValidateWorldBuilderZoneMetadataCommand(string[] args)
     Console.WriteLine($"passed:        {v.Totals.Passed}");
     Console.WriteLine($"failed:        {v.Totals.Failed}");
     Console.WriteLine("VERDICT: MAP25B_WORLDBUILDER_RAW_TILE_ZONE_METADATA_CONTRACT_COMPLETE");
+
+    return result.IsValid ? 0 : 1;
+}
+
+static int DeadMtlBuildWorldBuilderLotSubdivisionPlanCommand(string[] args)
+{
+    var metadataPath   = string.Empty;
+    var profilePath    = string.Empty;
+    var inspectionPath = string.Empty;
+    var outputJson     = string.Empty;
+    var outputMd       = string.Empty;
+    var outputCsv      = string.Empty;
+    var summaryPath    = string.Empty;
+
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--metadata":    metadataPath   = args[i + 1]; break;
+            case "--profile":     profilePath    = args[i + 1]; break;
+            case "--inspection":  inspectionPath = args[i + 1]; break;
+            case "--output-json": outputJson     = args[i + 1]; break;
+            case "--output-md":   outputMd       = args[i + 1]; break;
+            case "--output-csv":  outputCsv      = args[i + 1]; break;
+            case "--summary":     summaryPath    = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(metadataPath) || string.IsNullOrEmpty(profilePath) ||
+        string.IsNullOrEmpty(outputJson)   || string.IsNullOrEmpty(outputMd)    ||
+        string.IsNullOrEmpty(outputCsv)    || string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-lot-subdivision-plan: " +
+            "--metadata, --profile, --output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        if (!p.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"Output path must contain .local: {p}");
+            return 1;
+        }
+    }
+
+    var result = DeadMtlWorldBuilderLotSubdivisionPlanBuilder.Build(
+        metadataPath, profilePath, inspectionPath);
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var plan     = result.Plan;
+    var jsonOpts = new JsonSerializerOptions { WriteIndented = true };
+    File.WriteAllText(outputJson,  JsonSerializer.Serialize(plan, jsonOpts), Encoding.UTF8);
+    File.WriteAllText(outputMd,    DeadMtlWorldBuilderLotSubdivisionPlanBuilder.RenderMarkdown(plan), Encoding.UTF8);
+    File.WriteAllText(outputCsv,   DeadMtlWorldBuilderLotSubdivisionPlanBuilder.RenderCsv(plan),      Encoding.UTF8);
+    File.WriteAllText(summaryPath, DeadMtlWorldBuilderLotSubdivisionPlanBuilder.RenderSummary(result), Encoding.UTF8);
+
+    Console.WriteLine($"output-json:                          {outputJson}");
+    Console.WriteLine($"output-md:                            {outputMd}");
+    Console.WriteLine($"output-csv:                           {outputCsv}");
+    Console.WriteLine($"summary:                              {summaryPath}");
+    Console.WriteLine($"tile_id:                              {plan.TileId}");
+    Console.WriteLine($"is_valid:                             {result.IsValid}");
+    Console.WriteLine($"plan_item_count:                      {plan.Totals.PlanItemCount}");
+    Console.WriteLine($"residential_subdivide_later_count:    {plan.Totals.ResidentialSubdivideLaterCount}");
+    Console.WriteLine($"commercial_subdivide_later_count:     {plan.Totals.CommercialSubdivideLaterCount}");
+    Console.WriteLine($"street_no_subdivision_count:          {plan.Totals.StreetNoSubdivisionCount}");
+    Console.WriteLine($"greenspace_no_subdivision_count:      {plan.Totals.GreenspaceNoSubdivisionCount}");
+    Console.WriteLine($"unique_placeholder_count:             {plan.Totals.UniquePlaceholderNoSubdivisionCount}");
+    Console.WriteLine($"ignore_count:                         {plan.Totals.IgnoreCount}");
+    Console.WriteLine("VERDICT: MAP25C_WORLDBUILDER_LOT_SUBDIVISION_PLAN_CONTRACT_COMPLETE");
 
     return result.IsValid ? 0 : 1;
 }
