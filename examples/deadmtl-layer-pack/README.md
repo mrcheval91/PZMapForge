@@ -738,6 +738,37 @@ subdivision actions by color, frontage/back-alley/sidewalk policies, and claim b
 
 ---
 
+## WorldBuilder sidewalk generation plan contract
+
+MAP-25D derives a future sidewalk generation plan from the neighborhood profile, zone metadata,
+and lot subdivision plan. Contract only — no sidewalk generation, no terrain mutation, no PNG
+changes, no lotpack writing, no worldgen override file, no runtime proof. Not writer-ready.
+
+Only `MAIN_ROAD` (`#FF6600`) corridors with `sidewalk_eligible = true` plan sidewalks.
+`BACK_ALLEY` (`#F000FF`) corridors always plan `PLAN_NO_SIDEWALKS`.
+Sidewalk dimensions come from the active neighborhood profile (`deadmtl_baseline`):
+left_width_tiles=2, right_width_tiles=2, sidewalk_source=INSIDE_STREET_ZONE.
+
+Requires MAP-25C lot subdivision plan to be present first.
+
+Run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-sidewalk-generation-plan.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-sidewalk-generation-plan\map_00\map_00.sidewalk_generation_plan.json`
+- `.local\deadmtl-authoring\worldbuilder-sidewalk-generation-plan\map_00\map_00.sidewalk_generation_plan.md`
+- `.local\deadmtl-authoring\worldbuilder-sidewalk-generation-plan\map_00\map_00.sidewalk_generation_plan.csv`
+- `.local\deadmtl-authoring\worldbuilder-sidewalk-generation-plan\map_00\map_00.sidewalk_generation_plan.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_SIDEWALK_GENERATION_PLAN_CONTRACT.md` for eligibility rules,
+back-alley rule, sidewalk source semantics, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
