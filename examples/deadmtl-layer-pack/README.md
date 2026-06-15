@@ -829,6 +829,33 @@ definitions, dependency edges, totals, and claim boundary.
 
 ---
 
+## WorldBuilder future world layout plan contract
+
+MAP-25G combines MAP-25A through MAP-25F into one auditable future layout planning object.
+It records what each zone, street corridor, and unique placeholder will eventually produce,
+without executing any of it. Contract only — no terrain generation, no lot subdivision,
+no sidewalk generation, no building placement, no fences, no lotpack writing, no worldgen
+override file, no concrete geometry created, layout not materialized, no runtime proof.
+Not writer-ready.
+
+Generate the future world layout plan:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-future-world-layout-plan.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-future-world-layout-plan\map_00\map_00.future_world_layout_plan.json`
+- `.local\deadmtl-authoring\worldbuilder-future-world-layout-plan\map_00\map_00.future_world_layout_plan.md`
+- `.local\deadmtl-authoring\worldbuilder-future-world-layout-plan\map_00\map_00.future_world_layout_plan.csv`
+- `.local\deadmtl-authoring\worldbuilder-future-world-layout-plan\map_00\map_00.future_world_layout_plan.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_FUTURE_WORLD_LAYOUT_PLAN_CONTRACT.md` for layout
+components, future execution requirements, totals, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
