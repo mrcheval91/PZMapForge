@@ -613,6 +613,31 @@ See `docs/authoring/DEADMTL_RAW_256_MAP_TILE_INSPECTION.md` for field definition
 
 ---
 
+## Raw tile palette mapping contract
+
+MAP-23B classifies each source color from the MAP-23A inspection as either exactly matched
+to an existing palette entry (worldgen or System 2 static road) or unmapped and requiring
+a human decision. Near-match suggestions are provided where RGB distance ≤ 32.
+Mapping contract only. No compilation. No runtime proof. No writer readiness.
+
+Does NOT write lotpack files. Does NOT write WorldGenOverride.lua.
+
+Requires MAP-23A output to be present first. Then run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-raw-map-tile-palette-mapping.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\raw-map-tile-palette-mapping\map_00\map_00.raw_tile_palette_mapping.json`
+- `.local\deadmtl-authoring\raw-map-tile-palette-mapping\map_00\map_00.raw_tile_palette_mapping.md`
+- `.local\deadmtl-authoring\raw-map-tile-palette-mapping\map_00\map_00.raw_tile_palette_mapping.csv`
+- `.local\deadmtl-authoring\raw-map-tile-palette-mapping\map_00\map_00.raw_tile_palette_mapping.summary.txt`
+
+See `docs/authoring/DEADMTL_RAW_TILE_PALETTE_MAPPING_CONTRACT.md` for field definitions and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.

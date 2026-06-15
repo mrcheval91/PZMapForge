@@ -65,6 +65,9 @@ if (args.Length < 1)
     Console.Error.WriteLine("  deadmtl-inspect-raw-map-tile  --input <png> --output-json <out.json> --output-md <out.md> --output-csv <out.csv> --summary <summary.txt>");
     Console.Error.WriteLine("                                [--worldgen-palette <path>] [--system2-palette <path>]");
     Console.Error.WriteLine("                                [--expected-width <int>] [--expected-height <int>] [--top-colors <int>]");
+    Console.Error.WriteLine("  deadmtl-build-raw-map-tile-palette-mapping  --inspection <inspection.json>");
+    Console.Error.WriteLine("                                               --worldgen-palette <path> --system2-palette <path>");
+    Console.Error.WriteLine("                                               --output-json <out.json> --output-md <out.md> --output-csv <out.csv> --summary <summary.txt>");
     return 1;
 }
 
@@ -104,6 +107,7 @@ return args[0] switch
     "system2-build-static-road-local-tile-survey-filtered"          => System2BuildStaticRoadLocalTileSurveyFilteredCommand(args[1..]),
     "system2-build-static-road-filtered-tile-candidate-shortlist"   => System2BuildStaticRoadFilteredTileCandidateShortlistCommand(args[1..]),
     "deadmtl-inspect-raw-map-tile"                                  => DeadMtlInspectRawMapTileCommand(args[1..]),
+    "deadmtl-build-raw-map-tile-palette-mapping"                   => DeadMtlBuildRawMapTilePaletteMappingCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5235,6 +5239,117 @@ static int DeadMtlInspectRawMapTileCommand(string[] args)
     return 0;
 }
 
+static int DeadMtlBuildRawMapTilePaletteMappingCommand(string[] args)
+{
+    var inspectionPath  = string.Empty;
+    var worldgenPalette = string.Empty;
+    var system2Palette  = string.Empty;
+    var outputJson      = string.Empty;
+    var outputMd        = string.Empty;
+    var outputCsv       = string.Empty;
+    var summaryPath     = string.Empty;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if      (args[i] is "--inspection"       && i + 1 < args.Length) inspectionPath  = args[++i];
+        else if (args[i] is "--worldgen-palette"  && i + 1 < args.Length) worldgenPalette = args[++i];
+        else if (args[i] is "--system2-palette"   && i + 1 < args.Length) system2Palette  = args[++i];
+        else if (args[i] is "--output-json"       && i + 1 < args.Length) outputJson      = args[++i];
+        else if (args[i] is "--output-md"         && i + 1 < args.Length) outputMd        = args[++i];
+        else if (args[i] is "--output-csv"        && i + 1 < args.Length) outputCsv       = args[++i];
+        else if (args[i] is "--summary"           && i + 1 < args.Length) summaryPath     = args[++i];
+    }
+
+    if (string.IsNullOrWhiteSpace(inspectionPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-raw-map-tile-palette-mapping requires --inspection <inspection.json>");
+        Console.Error.WriteLine("  --output-json --output-md --output-csv --summary are also required");
+        return 1;
+    }
+    if (string.IsNullOrWhiteSpace(outputJson) || string.IsNullOrWhiteSpace(outputMd) ||
+        string.IsNullOrWhiteSpace(outputCsv)  || string.IsNullOrWhiteSpace(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-raw-map-tile-palette-mapping requires --output-json --output-md --output-csv --summary");
+        return 1;
+    }
+
+    foreach (var (label, path) in new[] {
+        ("--output-json", outputJson), ("--output-md", outputMd),
+        ("--output-csv",  outputCsv),  ("--summary",   summaryPath) })
+    {
+        var full        = Path.GetFullPath(path);
+        var localMarker = Path.DirectorySeparatorChar + ".local" + Path.DirectorySeparatorChar;
+        if (!full.Contains(localMarker, StringComparison.OrdinalIgnoreCase) &&
+            !full.EndsWith(Path.DirectorySeparatorChar + ".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine(
+                $"deadmtl-build-raw-map-tile-palette-mapping: {label} must be under a .local/ directory: {full}");
+            return 1;
+        }
+    }
+
+    var result = DeadMtlRawMapTilePaletteMappingBuilder.Build(
+        inspectionPath, worldgenPalette, system2Palette);
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors) Console.Error.WriteLine($"error: {e}");
+        return 1;
+    }
+
+    var mapping  = result.Mapping!;
+    var jsonOpts = new JsonSerializerOptions { WriteIndented = true };
+
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputJson))!);
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputMd))!);
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputCsv))!);
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(summaryPath))!);
+
+    File.WriteAllText(outputJson, JsonSerializer.Serialize(mapping,  jsonOpts), Encoding.UTF8);
+    File.WriteAllText(outputMd,   DeadMtlRawMapTilePaletteMappingBuilder.RenderMarkdown(mapping), Encoding.UTF8);
+    File.WriteAllText(outputCsv,  DeadMtlRawMapTilePaletteMappingBuilder.RenderCsv(mapping),     Encoding.UTF8);
+
+    var sb = new StringBuilder();
+    sb.AppendLine("MAP-23B: DeadMTL Raw Tile Palette Mapping Contract");
+    sb.AppendLine();
+    sb.AppendLine($"SOURCE IMAGE:            {mapping.SourceImage}");
+    sb.AppendLine($"source_sha256:           {mapping.SourceSha256}");
+    sb.AppendLine($"source_inspection_json:  {mapping.SourceInspectionJson}");
+    sb.AppendLine($"width:                   {mapping.Width}");
+    sb.AppendLine($"height:                  {mapping.Height}");
+    sb.AppendLine();
+    sb.AppendLine($"mapping_count:             {mapping.Totals.MappingCount}");
+    sb.AppendLine($"auto_matched_count:        {mapping.Totals.AutoMatchedCount}");
+    sb.AppendLine($"unmapped_count:            {mapping.Totals.UnmappedCount}");
+    sb.AppendLine($"near_match_suggestion_count: {mapping.Totals.NearMatchSuggestionCount}");
+    sb.AppendLine($"pixel_count_total:         {mapping.Totals.PixelCountTotal}");
+    sb.AppendLine();
+    sb.AppendLine("OUTPUT FILES:");
+    sb.AppendLine($"  JSON:    {outputJson}");
+    sb.AppendLine($"  MD:      {outputMd}");
+    sb.AppendLine($"  CSV:     {outputCsv}");
+    sb.AppendLine();
+    sb.AppendLine("CLAIM BOUNDARY");
+    sb.AppendLine($"  writes_lotpack:         {mapping.ClaimBoundary.WritesLotpack}");
+    sb.AppendLine($"  writes_worldgen_lua:    {mapping.ClaimBoundary.WritesWorldgenLua}");
+    sb.AppendLine($"  runtime_proven:         {mapping.ClaimBoundary.RuntimeProven}");
+    sb.AppendLine($"  public_playable_claim:  {mapping.ClaimBoundary.PublicPlayableClaim}");
+    sb.AppendLine($"  writer_ready_claim:     {mapping.ClaimBoundary.WriterReadyClaim}");
+    sb.AppendLine();
+    sb.AppendLine("VERDICT: MAP23B_RAW_TILE_PALETTE_MAPPING_CONTRACT_COMPLETE");
+    File.WriteAllText(summaryPath, sb.ToString(), Encoding.UTF8);
+
+    Console.WriteLine($"mapping-json:  {outputJson}");
+    Console.WriteLine($"mapping-md:    {outputMd}");
+    Console.WriteLine($"mapping-csv:   {outputCsv}");
+    Console.WriteLine($"summary:       {summaryPath}");
+    Console.WriteLine($"mapping_count: {mapping.Totals.MappingCount}");
+    Console.WriteLine($"auto_matched:  {mapping.Totals.AutoMatchedCount}");
+    Console.WriteLine($"unmapped:      {mapping.Totals.UnmappedCount}");
+    Console.WriteLine("VERDICT: MAP23B_RAW_TILE_PALETTE_MAPPING_CONTRACT_COMPLETE");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
@@ -5248,7 +5363,7 @@ static int UnknownCommand(string cmd)
         "system2-build-static-road-tile-candidate-shortlist, system2-build-static-road-tile-candidate-review, " +
         "system2-apply-static-road-tile-candidate-review, system2-build-static-road-human-approved-tile-candidates, " +
         "system2-build-static-road-local-tile-survey-filtered, system2-build-static-road-filtered-tile-candidate-shortlist, " +
-        "deadmtl-inspect-raw-map-tile");
+        "deadmtl-inspect-raw-map-tile, deadmtl-build-raw-map-tile-palette-mapping");
     return 1;
 }
 
