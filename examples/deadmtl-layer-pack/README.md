@@ -684,6 +684,35 @@ See `docs/authoring/DEADMTL_WORLDBUILDER_NEIGHBORHOOD_PROFILE_CONTRACT.md` for f
 
 ---
 
+## WorldBuilder raw tile zone metadata contract
+
+MAP-25B maps raw PNG colors from map_00.png to WorldBuilder semantic intents.
+Metadata only — no terrain generation, no sidewalk generation, no lot subdivision,
+no building placement, no fence placement, no lotpack writing, no runtime proof.
+
+Metadata: `examples/deadmtl-layer-pack/worldbuilder/tiles/map_00.zone_metadata.json`
+
+Colors: `#7200FF` RESIDENTIAL, `#FF6600` MAIN_ROAD (sidewalk_eligible), `#F000FF` BACK_ALLEY
+(no sidewalks), `#42CCFF` COMMERCIAL, `#00AA10` GREENSPACE, `#B2BD87` CIVIC_SPECIAL_BUILDING,
+`#000000` IGNORE.
+
+Run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-zone-metadata-validation.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-zone-metadata\map_00\map_00.zone_metadata.validation.json`
+- `.local\deadmtl-authoring\worldbuilder-zone-metadata\map_00\map_00.zone_metadata.validation.md`
+- `.local\deadmtl-authoring\worldbuilder-zone-metadata\map_00\map_00.zone_metadata.validation.csv`
+- `.local\deadmtl-authoring\worldbuilder-zone-metadata\map_00\map_00.zone_metadata.validation.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_RAW_TILE_ZONE_METADATA_CONTRACT.md` for full field definitions and validation rules.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.

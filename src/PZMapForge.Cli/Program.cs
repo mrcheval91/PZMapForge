@@ -72,6 +72,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                             [--pz-root <path>] [--tools-root <path>] [--user-zomboid-root <path>] [--workspace-root <path>]");
     Console.Error.WriteLine("  deadmtl-validate-worldbuilder-neighborhood-profile  --profile <profile.json>");
     Console.Error.WriteLine("                                                       --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
+    Console.Error.WriteLine("  deadmtl-validate-worldbuilder-zone-metadata  --metadata <zone_metadata.json> --inspection <inspection.json> --profile <profile.json>");
+    Console.Error.WriteLine("                                                --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     return 1;
 }
 
@@ -114,6 +116,7 @@ return args[0] switch
     "deadmtl-build-raw-map-tile-palette-mapping"                   => DeadMtlBuildRawMapTilePaletteMappingCommand(args[1..]),
     "deadmtl-discover-vanilla-building-sources"                    => DeadMtlDiscoverVanillaBuildingSourcesCommand(args[1..]),
     "deadmtl-validate-worldbuilder-neighborhood-profile"           => DeadMtlValidateWorldBuilderNeighborhoodProfileCommand(args[1..]),
+    "deadmtl-validate-worldbuilder-zone-metadata"                  => DeadMtlValidateWorldBuilderZoneMetadataCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5525,8 +5528,82 @@ static int UnknownCommand(string cmd)
         "system2-apply-static-road-tile-candidate-review, system2-build-static-road-human-approved-tile-candidates, " +
         "system2-build-static-road-local-tile-survey-filtered, system2-build-static-road-filtered-tile-candidate-shortlist, " +
         "deadmtl-inspect-raw-map-tile, deadmtl-build-raw-map-tile-palette-mapping, " +
-        "deadmtl-discover-vanilla-building-sources, deadmtl-validate-worldbuilder-neighborhood-profile");
+        "deadmtl-discover-vanilla-building-sources, deadmtl-validate-worldbuilder-neighborhood-profile, " +
+        "deadmtl-validate-worldbuilder-zone-metadata");
     return 1;
+}
+
+static int DeadMtlValidateWorldBuilderZoneMetadataCommand(string[] args)
+{
+    var metadataPath   = string.Empty;
+    var inspectionPath = string.Empty;
+    var profilePath    = string.Empty;
+    var outputJson     = string.Empty;
+    var outputMd       = string.Empty;
+    var outputCsv      = string.Empty;
+    var summaryPath    = string.Empty;
+
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--metadata":    metadataPath   = args[i + 1]; break;
+            case "--inspection":  inspectionPath = args[i + 1]; break;
+            case "--profile":     profilePath    = args[i + 1]; break;
+            case "--output-json": outputJson     = args[i + 1]; break;
+            case "--output-md":   outputMd       = args[i + 1]; break;
+            case "--output-csv":  outputCsv      = args[i + 1]; break;
+            case "--summary":     summaryPath    = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(metadataPath)   || string.IsNullOrEmpty(inspectionPath) ||
+        string.IsNullOrEmpty(profilePath)    || string.IsNullOrEmpty(outputJson)     ||
+        string.IsNullOrEmpty(outputMd)       || string.IsNullOrEmpty(outputCsv)      ||
+        string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-validate-worldbuilder-zone-metadata: " +
+            "--metadata, --inspection, --profile, --output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        if (!p.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"Output path must contain .local: {p}");
+            return 1;
+        }
+    }
+
+    var result = DeadMtlWorldBuilderRawTileZoneMetadataValidator.Validate(
+        metadataPath, inspectionPath, profilePath);
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var v        = result.Validation!;
+    var jsonOpts = new JsonSerializerOptions { WriteIndented = true };
+    File.WriteAllText(outputJson,  JsonSerializer.Serialize(v, jsonOpts), Encoding.UTF8);
+    File.WriteAllText(outputMd,    DeadMtlWorldBuilderRawTileZoneMetadataValidator.RenderMarkdown(v), Encoding.UTF8);
+    File.WriteAllText(outputCsv,   DeadMtlWorldBuilderRawTileZoneMetadataValidator.RenderCsv(v),      Encoding.UTF8);
+    File.WriteAllText(summaryPath, DeadMtlWorldBuilderRawTileZoneMetadataValidator.RenderSummary(v),  Encoding.UTF8);
+
+    Console.WriteLine($"output-json:   {outputJson}");
+    Console.WriteLine($"output-md:     {outputMd}");
+    Console.WriteLine($"output-csv:    {outputCsv}");
+    Console.WriteLine($"summary:       {summaryPath}");
+    Console.WriteLine($"tile_id:       {v.TileId}");
+    Console.WriteLine($"is_valid:      {v.IsValid}");
+    Console.WriteLine($"checks_run:    {v.Totals.ChecksRun}");
+    Console.WriteLine($"passed:        {v.Totals.Passed}");
+    Console.WriteLine($"failed:        {v.Totals.Failed}");
+    Console.WriteLine("VERDICT: MAP25B_WORLDBUILDER_RAW_TILE_ZONE_METADATA_CONTRACT_COMPLETE");
+
+    return result.IsValid ? 0 : 1;
 }
 
 static bool MatchesAny(string s, string[] keywords) =>
