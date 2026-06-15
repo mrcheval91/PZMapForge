@@ -884,6 +884,35 @@ requirements, totals, and claim boundary.
 
 ---
 
+## WorldBuilder geometry primitive schema contract
+
+MAP-25I defines the geometry primitive types, coordinate space, units, geometry sources,
+validation rules, and future consumers that the WorldBuilder will eventually use when creating
+concrete geometry. Schema definition only — no terrain generation, no lot subdivision, no
+sidewalk geometry, no road geometry, no building placement, no fences, no lotpack writing,
+no worldgen override file, no concrete geometry created, layout not materialized, no runtime
+proof. Not writer-ready.
+
+10 primitive types defined. All creation_status: NOT_CREATED. created_geometry_count: 0.
+
+Generate the geometry primitive schema:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-geometry-primitive-schema.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-geometry-primitive-schema\map_00\map_00.geometry_primitive_schema.json`
+- `.local\deadmtl-authoring\worldbuilder-geometry-primitive-schema\map_00\map_00.geometry_primitive_schema.md`
+- `.local\deadmtl-authoring\worldbuilder-geometry-primitive-schema\map_00\map_00.geometry_primitive_schema.csv`
+- `.local\deadmtl-authoring\worldbuilder-geometry-primitive-schema\map_00\map_00.geometry_primitive_schema.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_GEOMETRY_PRIMITIVE_SCHEMA_CONTRACT.md` for primitive
+type definitions, coordinate contract, validation rules, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.

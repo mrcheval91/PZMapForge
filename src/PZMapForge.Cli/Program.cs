@@ -86,6 +86,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                        --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-concrete-geometry-preflight  --profile <profile.json> --metadata <zone_metadata.json> --lot-plan <lot_plan.json> --sidewalk-plan <sidewalk_plan.json> --building-selection-plan <building_selection_plan.json> --dependency-manifest <dep_manifest.json> --future-layout-plan <future_world_layout_plan.json>");
     Console.Error.WriteLine("                                                            --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-geometry-primitive-schema  --profile <profile.json> --metadata <zone_metadata.json> --future-layout-plan <future_world_layout_plan.json> --geometry-preflight <concrete_geometry_preflight.json>");
+    Console.Error.WriteLine("                                                          --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     return 1;
 }
 
@@ -135,6 +137,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-generation-dependency-manifest"  => DeadMtlBuildWorldBuilderGenerationDependencyManifestCommand(args[1..]),
     "deadmtl-build-worldbuilder-future-world-layout-plan"        => DeadMtlBuildWorldBuilderFutureWorldLayoutPlanCommand(args[1..]),
     "deadmtl-build-worldbuilder-concrete-geometry-preflight"     => DeadMtlBuildWorldBuilderConcreteGeometryPreflightCommand(args[1..]),
+    "deadmtl-build-worldbuilder-geometry-primitive-schema"       => DeadMtlBuildWorldBuilderGeometryPrimitiveSchemaCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5552,7 +5555,8 @@ static int UnknownCommand(string cmd)
         "deadmtl-build-worldbuilder-building-selection-policy-plan, " +
         "deadmtl-build-worldbuilder-generation-dependency-manifest, " +
         "deadmtl-build-worldbuilder-future-world-layout-plan, " +
-        "deadmtl-build-worldbuilder-concrete-geometry-preflight");
+        "deadmtl-build-worldbuilder-concrete-geometry-preflight, " +
+        "deadmtl-build-worldbuilder-geometry-primitive-schema");
     return 1;
 }
 
@@ -6131,6 +6135,91 @@ static int DeadMtlBuildWorldBuilderConcreteGeometryPreflightCommand(string[] arg
     Console.WriteLine($"layout_materialized_now_count:        {preflight.Totals.LayoutMaterializedNowCount}");
     Console.WriteLine($"preflight_status:                     {preflight.PreflightStatus}");
     Console.WriteLine("VERDICT: MAP25H_WORLDBUILDER_CONCRETE_GEOMETRY_PREFLIGHT_CONTRACT_COMPLETE");
+
+    return result.IsValid ? 0 : 1;
+}
+
+static int DeadMtlBuildWorldBuilderGeometryPrimitiveSchemaCommand(string[] args)
+{
+    var profilePath         = string.Empty;
+    var metadataPath        = string.Empty;
+    var futureLayoutPlanPath = string.Empty;
+    var geometryPreflightPath = string.Empty;
+    var outputJson          = string.Empty;
+    var outputMd            = string.Empty;
+    var outputCsv           = string.Empty;
+    var summaryPath         = string.Empty;
+
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--profile":            profilePath           = args[++i]; break;
+            case "--metadata":           metadataPath          = args[++i]; break;
+            case "--future-layout-plan": futureLayoutPlanPath  = args[++i]; break;
+            case "--geometry-preflight": geometryPreflightPath = args[++i]; break;
+            case "--output-json":        outputJson            = args[++i]; break;
+            case "--output-md":          outputMd              = args[++i]; break;
+            case "--output-csv":         outputCsv             = args[++i]; break;
+            case "--summary":            summaryPath           = args[++i]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(profilePath)          || string.IsNullOrEmpty(metadataPath)        ||
+        string.IsNullOrEmpty(futureLayoutPlanPath)  || string.IsNullOrEmpty(geometryPreflightPath) ||
+        string.IsNullOrEmpty(outputJson)            || string.IsNullOrEmpty(outputMd)           ||
+        string.IsNullOrEmpty(outputCsv)             || string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-geometry-primitive-schema: " +
+            "--profile, --metadata, --future-layout-plan, --geometry-preflight, " +
+            "--output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        if (!p.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"Output path must contain .local: {p}");
+            return 1;
+        }
+    }
+
+    var result = DeadMtlWorldBuilderGeometryPrimitiveSchemaBuilder.Build(
+        profilePath, metadataPath, futureLayoutPlanPath, geometryPreflightPath);
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var schema   = result.Schema;
+    var jsonOpts = new JsonSerializerOptions { WriteIndented = true };
+    File.WriteAllText(outputJson,  JsonSerializer.Serialize(schema, jsonOpts), Encoding.UTF8);
+    File.WriteAllText(outputMd,    DeadMtlWorldBuilderGeometryPrimitiveSchemaBuilder.RenderMarkdown(schema), Encoding.UTF8);
+    File.WriteAllText(outputCsv,   DeadMtlWorldBuilderGeometryPrimitiveSchemaBuilder.RenderCsv(schema),     Encoding.UTF8);
+    File.WriteAllText(summaryPath, DeadMtlWorldBuilderGeometryPrimitiveSchemaBuilder.RenderSummary(result),  Encoding.UTF8);
+
+    Console.WriteLine($"output-json:                          {outputJson}");
+    Console.WriteLine($"output-md:                            {outputMd}");
+    Console.WriteLine($"output-csv:                           {outputCsv}");
+    Console.WriteLine($"summary:                              {summaryPath}");
+    Console.WriteLine($"tile_id:                              {schema.TileId}");
+    Console.WriteLine($"is_valid:                             {result.IsValid}");
+    Console.WriteLine($"primitive_type_count:                 {schema.Totals.PrimitiveTypeCount}");
+    Console.WriteLine($"coordinate_primitive_count:           {schema.Totals.CoordinatePrimitiveCount}");
+    Console.WriteLine($"linear_primitive_count:               {schema.Totals.LinearPrimitiveCount}");
+    Console.WriteLine($"area_primitive_count:                 {schema.Totals.AreaPrimitiveCount}");
+    Console.WriteLine($"derived_area_primitive_count:         {schema.Totals.DerivedAreaPrimitiveCount}");
+    Console.WriteLine($"placement_primitive_count:            {schema.Totals.PlacementPrimitiveCount}");
+    Console.WriteLine($"source_region_primitive_count:        {schema.Totals.SourceRegionPrimitiveCount}");
+    Console.WriteLine($"created_geometry_count:               {schema.Totals.CreatedGeometryCount}");
+    Console.WriteLine($"writer_ready_primitive_count:         {schema.Totals.WriterReadyPrimitiveCount}");
+    Console.WriteLine($"runtime_validated_primitive_count:    {schema.Totals.RuntimeValidatedPrimitiveCount}");
+    Console.WriteLine($"schema_status:                        {schema.SchemaStatus}");
+    Console.WriteLine($"geometry_status:                      {schema.GeometryStatus}");
+    Console.WriteLine("VERDICT: MAP25I_WORLDBUILDER_GEOMETRY_PRIMITIVE_SCHEMA_CONTRACT_COMPLETE");
 
     return result.IsValid ? 0 : 1;
 }
