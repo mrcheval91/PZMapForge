@@ -78,6 +78,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                    --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-sidewalk-generation-plan  --profile <neighborhood_profile.json> --metadata <zone_metadata.json> --lot-plan <lot_subdivision_plan.json>");
     Console.Error.WriteLine("                                                        --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-building-selection-policy-plan  --profile <profile.json> --metadata <zone_metadata.json> --lot-plan <lot_plan.json> --sidewalk-plan <sidewalk_plan.json>");
+    Console.Error.WriteLine("                                                              --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     return 1;
 }
 
@@ -123,6 +125,7 @@ return args[0] switch
     "deadmtl-validate-worldbuilder-zone-metadata"                  => DeadMtlValidateWorldBuilderZoneMetadataCommand(args[1..]),
     "deadmtl-build-worldbuilder-lot-subdivision-plan"              => DeadMtlBuildWorldBuilderLotSubdivisionPlanCommand(args[1..]),
     "deadmtl-build-worldbuilder-sidewalk-generation-plan"         => DeadMtlBuildWorldBuilderSidewalkGenerationPlanCommand(args[1..]),
+    "deadmtl-build-worldbuilder-building-selection-policy-plan"   => DeadMtlBuildWorldBuilderBuildingSelectionPolicyPlanCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5536,7 +5539,8 @@ static int UnknownCommand(string cmd)
         "deadmtl-inspect-raw-map-tile, deadmtl-build-raw-map-tile-palette-mapping, " +
         "deadmtl-discover-vanilla-building-sources, deadmtl-validate-worldbuilder-neighborhood-profile, " +
         "deadmtl-validate-worldbuilder-zone-metadata, deadmtl-build-worldbuilder-lot-subdivision-plan, " +
-        "deadmtl-build-worldbuilder-sidewalk-generation-plan");
+        "deadmtl-build-worldbuilder-sidewalk-generation-plan, " +
+        "deadmtl-build-worldbuilder-building-selection-policy-plan");
     return 1;
 }
 
@@ -5762,6 +5766,87 @@ static int DeadMtlBuildWorldBuilderSidewalkGenerationPlanCommand(string[] args)
     Console.WriteLine($"sidewalk_source:               {plan.Totals.SidewalkSource}");
     Console.WriteLine($"generation_status:             {plan.GenerationStatus}");
     Console.WriteLine("VERDICT: MAP25D_WORLDBUILDER_SIDEWALK_GENERATION_PLAN_CONTRACT_COMPLETE");
+
+    return result.IsValid ? 0 : 1;
+}
+
+static int DeadMtlBuildWorldBuilderBuildingSelectionPolicyPlanCommand(string[] args)
+{
+    var profilePath      = string.Empty;
+    var metadataPath     = string.Empty;
+    var lotPlanPath      = string.Empty;
+    var sidewalkPlanPath = string.Empty;
+    var outputJson       = string.Empty;
+    var outputMd         = string.Empty;
+    var outputCsv        = string.Empty;
+    var summaryPath      = string.Empty;
+
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--profile":       profilePath      = args[i + 1]; break;
+            case "--metadata":      metadataPath     = args[i + 1]; break;
+            case "--lot-plan":      lotPlanPath      = args[i + 1]; break;
+            case "--sidewalk-plan": sidewalkPlanPath = args[i + 1]; break;
+            case "--output-json":   outputJson       = args[i + 1]; break;
+            case "--output-md":     outputMd         = args[i + 1]; break;
+            case "--output-csv":    outputCsv        = args[i + 1]; break;
+            case "--summary":       summaryPath      = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(profilePath)      || string.IsNullOrEmpty(metadataPath)  ||
+        string.IsNullOrEmpty(lotPlanPath)       || string.IsNullOrEmpty(sidewalkPlanPath) ||
+        string.IsNullOrEmpty(outputJson)        || string.IsNullOrEmpty(outputMd)     ||
+        string.IsNullOrEmpty(outputCsv)         || string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-building-selection-policy-plan: " +
+            "--profile, --metadata, --lot-plan, --sidewalk-plan, --output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        if (!p.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"Output path must contain .local: {p}");
+            return 1;
+        }
+    }
+
+    var result = DeadMtlWorldBuilderBuildingSelectionPolicyPlanBuilder.Build(
+        profilePath, metadataPath, lotPlanPath, sidewalkPlanPath);
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var plan     = result.Plan;
+    var jsonOpts = new JsonSerializerOptions { WriteIndented = true };
+    File.WriteAllText(outputJson,  JsonSerializer.Serialize(plan, jsonOpts), Encoding.UTF8);
+    File.WriteAllText(outputMd,    DeadMtlWorldBuilderBuildingSelectionPolicyPlanBuilder.RenderMarkdown(plan), Encoding.UTF8);
+    File.WriteAllText(outputCsv,   DeadMtlWorldBuilderBuildingSelectionPolicyPlanBuilder.RenderCsv(plan),      Encoding.UTF8);
+    File.WriteAllText(summaryPath, DeadMtlWorldBuilderBuildingSelectionPolicyPlanBuilder.RenderSummary(result), Encoding.UTF8);
+
+    Console.WriteLine($"output-json:                          {outputJson}");
+    Console.WriteLine($"output-md:                            {outputMd}");
+    Console.WriteLine($"output-csv:                           {outputCsv}");
+    Console.WriteLine($"summary:                              {summaryPath}");
+    Console.WriteLine($"tile_id:                              {plan.TileId}");
+    Console.WriteLine($"is_valid:                             {result.IsValid}");
+    Console.WriteLine($"plan_item_count:                      {plan.Totals.PlanItemCount}");
+    Console.WriteLine($"residential_selection_later_count:    {plan.Totals.ResidentialSelectionLaterCount}");
+    Console.WriteLine($"commercial_selection_later_count:     {plan.Totals.CommercialSelectionLaterCount}");
+    Console.WriteLine($"unique_building_required_later_count: {plan.Totals.UniqueBuildingRequiredLaterCount}");
+    Console.WriteLine($"greenspace_no_selection_count:        {plan.Totals.GreenspaceNoSelectionCount}");
+    Console.WriteLine($"street_no_selection_count:            {plan.Totals.StreetNoSelectionCount}");
+    Console.WriteLine($"ignore_count:                         {plan.Totals.IgnoreCount}");
+    Console.WriteLine($"concrete_building_ids_selected_now_count: {plan.Totals.ConcreteBuildingIdsSelectedNowCount}");
+    Console.WriteLine($"placement_status:                     {plan.PlacementStatus}");
+    Console.WriteLine("VERDICT: MAP25E_WORLDBUILDER_BUILDING_SELECTION_POLICY_PLAN_CONTRACT_COMPLETE");
 
     return result.IsValid ? 0 : 1;
 }

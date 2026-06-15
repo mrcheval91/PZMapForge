@@ -769,6 +769,40 @@ back-alley rule, sidewalk source semantics, and claim boundary.
 
 ---
 
+## WorldBuilder building selection policy plan contract
+
+MAP-25E derives a future building selection policy from the neighborhood profile, zone metadata,
+lot subdivision plan, and sidewalk generation plan. Contract only — no building generation, no
+building placement, no lot subdivision, no sidewalk generation, no fence placement, no lotpack
+writing, no worldgen override file, no runtime proof. Not writer-ready.
+
+No concrete building id is selected now. `concrete_building_ids_selected_now_count: 0`.
+
+Allowed families per zone:
+- RESIDENTIAL: duplex, triplex, plex_block, apartment_lowrise
+- COMMERCIAL: depanneur, pharmacy, restaurant, main_street_storefront, office_small
+- CIVIC_SPECIAL_BUILDING: government, library, community_center, institutional, special_building
+
+Requires MAP-25C lot subdivision plan and MAP-25D sidewalk generation plan to be present first.
+
+Run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-building-selection-policy-plan.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-building-selection-policy-plan\map_00\map_00.building_selection_policy_plan.json`
+- `.local\deadmtl-authoring\worldbuilder-building-selection-policy-plan\map_00\map_00.building_selection_policy_plan.md`
+- `.local\deadmtl-authoring\worldbuilder-building-selection-policy-plan\map_00\map_00.building_selection_policy_plan.csv`
+- `.local\deadmtl-authoring\worldbuilder-building-selection-policy-plan\map_00\map_00.building_selection_policy_plan.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_BUILDING_SELECTION_POLICY_PLAN_CONTRACT.md` for selection
+actions by color, allowed families, fit policy, frontage/facade rules, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
