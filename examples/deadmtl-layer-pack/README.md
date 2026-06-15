@@ -803,6 +803,32 @@ actions by color, allowed families, fit policy, frontage/facade rules, and claim
 
 ---
 
+## WorldBuilder generation dependency manifest contract
+
+MAP-25F ties MAP-25A through MAP-25E into one ordered, auditable pipeline record. It reads each
+input file, verifies the format field, records all 5 steps in dependency order, and produces
+10 dependency edges between them. Contract only — no terrain generation, no lot subdivision,
+no sidewalk generation, no building placement, no fences, no lotpack writing, no worldgen
+override file, no runtime proof. Not writer-ready.
+
+Generate the generation dependency manifest:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-generation-dependency-manifest.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-generation-dependency-manifest\map_00\map_00.generation_dependency_manifest.json`
+- `.local\deadmtl-authoring\worldbuilder-generation-dependency-manifest\map_00\map_00.generation_dependency_manifest.md`
+- `.local\deadmtl-authoring\worldbuilder-generation-dependency-manifest\map_00\map_00.generation_dependency_manifest.csv`
+- `.local\deadmtl-authoring\worldbuilder-generation-dependency-manifest\map_00\map_00.generation_dependency_manifest.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_GENERATION_DEPENDENCY_MANIFEST_CONTRACT.md` for step
+definitions, dependency edges, totals, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
