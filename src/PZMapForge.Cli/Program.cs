@@ -68,6 +68,10 @@ if (args.Length < 1)
     Console.Error.WriteLine("  deadmtl-build-raw-map-tile-palette-mapping  --inspection <inspection.json>");
     Console.Error.WriteLine("                                               --worldgen-palette <path> --system2-palette <path>");
     Console.Error.WriteLine("                                               --output-json <out.json> --output-md <out.md> --output-csv <out.csv> --summary <summary.txt>");
+    Console.Error.WriteLine("  deadmtl-discover-vanilla-building-sources  --output-json <out.json> --output-md <out.md> --output-csv <out.csv> --summary <summary.txt>");
+    Console.Error.WriteLine("                                             [--pz-root <path>] [--tools-root <path>] [--user-zomboid-root <path>] [--workspace-root <path>]");
+    Console.Error.WriteLine("  deadmtl-validate-worldbuilder-neighborhood-profile  --profile <profile.json>");
+    Console.Error.WriteLine("                                                       --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     return 1;
 }
 
@@ -108,6 +112,8 @@ return args[0] switch
     "system2-build-static-road-filtered-tile-candidate-shortlist"   => System2BuildStaticRoadFilteredTileCandidateShortlistCommand(args[1..]),
     "deadmtl-inspect-raw-map-tile"                                  => DeadMtlInspectRawMapTileCommand(args[1..]),
     "deadmtl-build-raw-map-tile-palette-mapping"                   => DeadMtlBuildRawMapTilePaletteMappingCommand(args[1..]),
+    "deadmtl-discover-vanilla-building-sources"                    => DeadMtlDiscoverVanillaBuildingSourcesCommand(args[1..]),
+    "deadmtl-validate-worldbuilder-neighborhood-profile"           => DeadMtlValidateWorldBuilderNeighborhoodProfileCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5350,6 +5356,161 @@ static int DeadMtlBuildRawMapTilePaletteMappingCommand(string[] args)
     return 0;
 }
 
+static int DeadMtlDiscoverVanillaBuildingSourcesCommand(string[] args)
+{
+    var outputJson      = string.Empty;
+    var outputMd        = string.Empty;
+    var outputCsv       = string.Empty;
+    var summaryPath     = string.Empty;
+    var pzRoot          = string.Empty;
+    var toolsRoot       = string.Empty;
+    var userZomboidRoot = string.Empty;
+    var workspaceRoot   = string.Empty;
+
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--output-json":       outputJson      = args[i + 1]; break;
+            case "--output-md":         outputMd        = args[i + 1]; break;
+            case "--output-csv":        outputCsv       = args[i + 1]; break;
+            case "--summary":           summaryPath     = args[i + 1]; break;
+            case "--pz-root":           pzRoot          = args[i + 1]; break;
+            case "--tools-root":        toolsRoot       = args[i + 1]; break;
+            case "--user-zomboid-root": userZomboidRoot = args[i + 1]; break;
+            case "--workspace-root":    workspaceRoot   = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(outputJson) || string.IsNullOrEmpty(outputMd) ||
+        string.IsNullOrEmpty(outputCsv)  || string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-discover-vanilla-building-sources: --output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        if (!p.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"Output path must contain .local: {p}");
+            return 1;
+        }
+    }
+
+    bool anyRootProvided = !string.IsNullOrEmpty(pzRoot)          ||
+                           !string.IsNullOrEmpty(toolsRoot)        ||
+                           !string.IsNullOrEmpty(userZomboidRoot)  ||
+                           !string.IsNullOrEmpty(workspaceRoot);
+
+    (string Label, string Path, string Kind)[]? customRoots = null;
+    if (anyRootProvided)
+    {
+        var rootList = new List<(string Label, string Path, string Kind)>();
+        if (!string.IsNullOrEmpty(pzRoot))          rootList.Add(("pz_install",    pzRoot,          "VANILLA_COMPILED_MAP"));
+        if (!string.IsNullOrEmpty(toolsRoot))        rootList.Add(("modding_tools", toolsRoot,       "MODDING_TOOL_EXAMPLE"));
+        if (!string.IsNullOrEmpty(userZomboidRoot))  rootList.Add(("user_zomboid",  userZomboidRoot, "USER_MOD_COMPILED_MAP"));
+        if (!string.IsNullOrEmpty(workspaceRoot))    rootList.Add(("workspace",     workspaceRoot,   "WORKSPACE_COMPILED_MAP"));
+        customRoots = rootList.ToArray();
+    }
+
+    var result = DeadMtlVanillaBuildingSourceDiscoveryBuilder.Build(customRoots);
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors) Console.Error.WriteLine(e);
+        return 1;
+    }
+
+    var discovery = result.Discovery!;
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var jsonOpts = new JsonSerializerOptions { WriteIndented = true };
+    File.WriteAllText(outputJson,  JsonSerializer.Serialize(discovery, jsonOpts), Encoding.UTF8);
+    File.WriteAllText(outputMd,    DeadMtlVanillaBuildingSourceDiscoveryBuilder.RenderMarkdown(discovery), Encoding.UTF8);
+    File.WriteAllText(outputCsv,   DeadMtlVanillaBuildingSourceDiscoveryBuilder.RenderCsv(discovery),     Encoding.UTF8);
+    File.WriteAllText(summaryPath, DeadMtlVanillaBuildingSourceDiscoveryBuilder.RenderSummary(discovery),  Encoding.UTF8);
+
+    Console.WriteLine($"output-json:   {outputJson}");
+    Console.WriteLine($"output-md:     {outputMd}");
+    Console.WriteLine($"output-csv:    {outputCsv}");
+    Console.WriteLine($"summary:       {summaryPath}");
+    Console.WriteLine($"group_count:   {discovery.Totals.MapFolderGroupCount}");
+    Console.WriteLine($"recommendation: {discovery.Recommendation}");
+    Console.WriteLine("VERDICT: MAP24A_VANILLA_BUILDING_SOURCE_DISCOVERY_COMPLETE");
+    return 0;
+}
+
+static int DeadMtlValidateWorldBuilderNeighborhoodProfileCommand(string[] args)
+{
+    var profilePath = string.Empty;
+    var outputJson  = string.Empty;
+    var outputMd    = string.Empty;
+    var outputCsv   = string.Empty;
+    var summaryPath = string.Empty;
+
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--profile":     profilePath = args[i + 1]; break;
+            case "--output-json": outputJson  = args[i + 1]; break;
+            case "--output-md":   outputMd    = args[i + 1]; break;
+            case "--output-csv":  outputCsv   = args[i + 1]; break;
+            case "--summary":     summaryPath = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(profilePath) || string.IsNullOrEmpty(outputJson) ||
+        string.IsNullOrEmpty(outputMd)    || string.IsNullOrEmpty(outputCsv)  ||
+        string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-validate-worldbuilder-neighborhood-profile: --profile, --output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        if (!p.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"Output path must contain .local: {p}");
+            return 1;
+        }
+    }
+
+    var result = DeadMtlWorldBuilderNeighborhoodProfileValidator.Validate(profilePath);
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var v        = result.Validation!;
+    var jsonOpts = new JsonSerializerOptions { WriteIndented = true };
+    File.WriteAllText(outputJson,  JsonSerializer.Serialize(v, jsonOpts), Encoding.UTF8);
+    File.WriteAllText(outputMd,    DeadMtlWorldBuilderNeighborhoodProfileValidator.RenderMarkdown(v), Encoding.UTF8);
+    File.WriteAllText(outputCsv,   DeadMtlWorldBuilderNeighborhoodProfileValidator.RenderCsv(v),      Encoding.UTF8);
+    File.WriteAllText(summaryPath, DeadMtlWorldBuilderNeighborhoodProfileValidator.RenderSummary(v),  Encoding.UTF8);
+
+    Console.WriteLine($"output-json:  {outputJson}");
+    Console.WriteLine($"output-md:    {outputMd}");
+    Console.WriteLine($"output-csv:   {outputCsv}");
+    Console.WriteLine($"summary:      {summaryPath}");
+    Console.WriteLine($"profile_id:   {v.ProfileId}");
+    Console.WriteLine($"is_valid:     {v.IsValid}");
+    Console.WriteLine($"checks_run:   {v.Totals.ChecksRun}");
+    Console.WriteLine($"passed:       {v.Totals.Passed}");
+    Console.WriteLine($"failed:       {v.Totals.Failed}");
+    Console.WriteLine("VERDICT: MAP25A_WORLDBUILDER_NEIGHBORHOOD_PROFILE_CONTRACT_COMPLETE");
+
+    return result.IsValid ? 0 : 1;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
@@ -5363,7 +5524,8 @@ static int UnknownCommand(string cmd)
         "system2-build-static-road-tile-candidate-shortlist, system2-build-static-road-tile-candidate-review, " +
         "system2-apply-static-road-tile-candidate-review, system2-build-static-road-human-approved-tile-candidates, " +
         "system2-build-static-road-local-tile-survey-filtered, system2-build-static-road-filtered-tile-candidate-shortlist, " +
-        "deadmtl-inspect-raw-map-tile, deadmtl-build-raw-map-tile-palette-mapping");
+        "deadmtl-inspect-raw-map-tile, deadmtl-build-raw-map-tile-palette-mapping, " +
+        "deadmtl-discover-vanilla-building-sources, deadmtl-validate-worldbuilder-neighborhood-profile");
     return 1;
 }
 

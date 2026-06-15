@@ -638,6 +638,52 @@ See `docs/authoring/DEADMTL_RAW_TILE_PALETTE_MAPPING_CONTRACT.md` for field defi
 
 ---
 
+## Vanilla building source discovery
+
+MAP-24A scans all known PZ install, modding-tools, user Zomboid, and workspace roots.
+Discovery only — no building extraction claimed, no editable catalogue claimed, no runtime proof.
+
+Does NOT write lotpack files. Does NOT write WorldGenOverride.lua.
+
+Run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-vanilla-building-source-discovery.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\vanilla-building-source-discovery\vanilla_building_source_discovery.json`
+- `.local\deadmtl-authoring\vanilla-building-source-discovery\vanilla_building_source_discovery.md`
+- `.local\deadmtl-authoring\vanilla-building-source-discovery\vanilla_building_source_discovery.csv`
+- `.local\deadmtl-authoring\vanilla-building-source-discovery\vanilla_building_source_discovery.summary.txt`
+
+See `docs/authoring/DEADMTL_VANILLA_BUILDING_SOURCE_DISCOVERY.md` for field definitions and claim boundary.
+
+---
+
+## WorldBuilder neighborhood profile contract
+
+MAP-25A introduces the neighborhood profile schema. Contract only — no terrain generation, no
+building placement, no lotpack writing, no WorldGenOverride.lua, no runtime proof.
+
+Profile: `examples/deadmtl-layer-pack/worldbuilder/neighborhoods/deadmtl_baseline_neighborhood_profile.json`
+
+Run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-neighborhood-profile-validation.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\worldbuilder-neighborhood-profile\deadmtl_baseline\deadmtl_baseline.neighborhood_profile.validation.json`
+- `.local\deadmtl-authoring\worldbuilder-neighborhood-profile\deadmtl_baseline\deadmtl_baseline.neighborhood_profile.validation.md`
+- `.local\deadmtl-authoring\worldbuilder-neighborhood-profile\deadmtl_baseline\deadmtl_baseline.neighborhood_profile.validation.csv`
+- `.local\deadmtl-authoring\worldbuilder-neighborhood-profile\deadmtl_baseline\deadmtl_baseline.neighborhood_profile.validation.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_NEIGHBORHOOD_PROFILE_CONTRACT.md` for full field definitions and validation rules.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.

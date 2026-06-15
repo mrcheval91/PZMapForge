@@ -1,0 +1,68 @@
+{
+  "format": "pzmapforge.deadmtl.worldbuilder.neighborhood-profile.v1",
+  "profile_id": "deadmtl_baseline",
+  "display_name": "DeadMTL Baseline Neighborhood",
+  "era": "1993",
+  "city": "Montreal",
+  "profile_status": "AUTHORING_PROFILE_ONLY",
+  "sidewalk_policy": {
+    "default_has_sidewalks": true,
+    "sidewalk_source": "INSIDE_STREET_ZONE",
+    "default_left_width_tiles": 2,
+    "default_right_width_tiles": 2,
+    "allow_asymmetric_sidewalks": true,
+    "allow_street_override": true
+  },
+  "street_policy": {
+    "default_corridor_width_tiles": 12,
+    "default_lane_width_tiles": 3,
+    "default_lane_count": 2,
+    "parking_lane_left": true,
+    "parking_lane_right": true,
+    "tree_strip_width_tiles": 0,
+    "snowbank_reserved_width_tiles": 1,
+    "curb_style": "MONTREAL_CONCRETE",
+    "street_light_policy": "MONTREAL_ORANGE_SODIUM"
+  },
+  "zoning_policy": {
+    "residential": {
+      "default_intensity": "MEDIUM",
+      "allowed_intensities": ["LIGHT", "MEDIUM", "DENSE", "CONDENSED", "CROWDED"],
+      "building_families": ["duplex", "triplex", "plex_block", "apartment_lowrise", "mixed_residential_commercial"],
+      "procedural_fill": true
+    },
+    "commercial": {
+      "default_intensity": "MEDIUM",
+      "allowed_intensities": ["LIGHT", "MEDIUM", "DENSE", "CONDENSED"],
+      "building_families": ["depanneur", "pharmacy", "restaurant", "bar", "main_street_storefront", "office_small"],
+      "procedural_fill": true
+    },
+    "industrial": {
+      "default_intensity": "LIGHT",
+      "allowed_intensities": ["EMPTY", "LIGHT", "MEDIUM", "DENSE"],
+      "building_families": ["warehouse", "light_industrial", "food_logistics", "yard", "depot"],
+      "procedural_fill": true
+    }
+  },
+  "procedural_fill_policy": {
+    "enabled": true,
+    "fill_missing_until_unique_override": true,
+    "unique_override_priority": "UNIQUE_OVERRIDES_WIN",
+    "deterministic_seed_policy": "PROFILE_PLUS_TILE_COORDINATE"
+  },
+  "png_metadata_policy": {
+    "supports_color_metadata_file": true,
+    "zone_color_metadata_status": "FUTURE_MAP25B",
+    "building_color_metadata_status": "FUTURE_MAP25C",
+    "chunk_layer_capture_status": "FUTURE"
+  },
+  "claim_boundary": {
+    "writes_lotpack": false,
+    "writes_worldgen_lua": false,
+    "runtime_proven": false,
+    "public_playable_claim": false,
+    "writer_ready_claim": false,
+    "generates_buildings_now": false,
+    "captures_chunk_layers_now": false
+  }
+}
