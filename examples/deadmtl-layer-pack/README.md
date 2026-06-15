@@ -588,6 +588,33 @@ Output (under `.local/`):
 See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_HUMAN_APPROVED_TILE_CANDIDATES.md` for bucket
 definitions, CSV format, and claim boundary.
 
+## System 2 static road filtered tile candidate shortlist
+
+MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
+Applies deterministic scoring (primary terms +20, surface bonus +10, source file bonuses,
+negative terms). Default: top 25 per surface family. road_node_metadata_candidate stays
+UNRESOLVED_METADATA_ONLY. Confidence: LOCAL_FILTERED_TEXT_MATCH_RANKED_ONLY.
+
+Filtered shortlist is NOT runtime proof and NOT writer-ready.
+Does NOT write lotpack files. Does NOT write WorldGenOverride.lua.
+
+Generate filtered tile candidate shortlist:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-system2-static-road-filtered-tile-candidate-shortlist.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\system2-static-road-filtered-tile-candidate-shortlist\system2_static_road_filtered_tile_candidate_shortlist.json`
+- `.local\deadmtl-authoring\system2-static-road-filtered-tile-candidate-shortlist\system2_static_road_filtered_tile_candidate_shortlist.md`
+- `.local\deadmtl-authoring\system2-static-road-filtered-tile-candidate-shortlist\system2_static_road_filtered_tile_candidate_shortlist.csv`
+- `.local\deadmtl-authoring\system2-static-road-filtered-tile-candidate-shortlist\system2_static_road_filtered_tile_candidate_shortlist.summary.txt`
+
+See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_FILTERED_TILE_CANDIDATE_SHORTLIST.md` for scoring,
+CSV format, and claim boundary.
+
+---
+
 ## System 2 static road local tile survey (filtered)
 
 MAP-22O produces a filtered local tile survey that excludes known non-tile text sources.
