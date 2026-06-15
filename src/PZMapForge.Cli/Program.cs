@@ -62,6 +62,9 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                         --output-json <filtered.json> --output-md <filtered.md> --output-csv <filtered.csv> --summary <summary.txt>");
     Console.Error.WriteLine("  system2-build-static-road-filtered-tile-candidate-shortlist  --input <filtered_survey.json>");
     Console.Error.WriteLine("                                                               --output-json <shortlist.json> --output-md <shortlist.md> --output-csv <shortlist.csv> --summary <summary.txt> [--top <int>]");
+    Console.Error.WriteLine("  deadmtl-inspect-raw-map-tile  --input <png> --output-json <out.json> --output-md <out.md> --output-csv <out.csv> --summary <summary.txt>");
+    Console.Error.WriteLine("                                [--worldgen-palette <path>] [--system2-palette <path>]");
+    Console.Error.WriteLine("                                [--expected-width <int>] [--expected-height <int>] [--top-colors <int>]");
     return 1;
 }
 
@@ -100,6 +103,7 @@ return args[0] switch
     "system2-build-static-road-human-approved-tile-candidates"       => System2BuildStaticRoadHumanApprovedTileCandidatesCommand(args[1..]),
     "system2-build-static-road-local-tile-survey-filtered"          => System2BuildStaticRoadLocalTileSurveyFilteredCommand(args[1..]),
     "system2-build-static-road-filtered-tile-candidate-shortlist"   => System2BuildStaticRoadFilteredTileCandidateShortlistCommand(args[1..]),
+    "deadmtl-inspect-raw-map-tile"                                  => DeadMtlInspectRawMapTileCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5103,6 +5107,134 @@ static int System2BuildStaticRoadFilteredTileCandidateShortlistCommand(string[] 
     return 0;
 }
 
+static int DeadMtlInspectRawMapTileCommand(string[] args)
+{
+    var inputPath       = string.Empty;
+    var outputJson      = string.Empty;
+    var outputMd        = string.Empty;
+    var outputCsv       = string.Empty;
+    var summaryPath     = string.Empty;
+    var worldgenPalette = string.Empty;
+    var system2Palette  = string.Empty;
+    var expectedWidth   = 256;
+    var expectedHeight  = 256;
+    var topColors       = 32;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        if      (args[i] is "--input"            && i + 1 < args.Length) inputPath       = args[++i];
+        else if (args[i] is "--output-json"       && i + 1 < args.Length) outputJson      = args[++i];
+        else if (args[i] is "--output-md"         && i + 1 < args.Length) outputMd        = args[++i];
+        else if (args[i] is "--output-csv"        && i + 1 < args.Length) outputCsv       = args[++i];
+        else if (args[i] is "--summary"           && i + 1 < args.Length) summaryPath     = args[++i];
+        else if (args[i] is "--worldgen-palette"  && i + 1 < args.Length) worldgenPalette = args[++i];
+        else if (args[i] is "--system2-palette"   && i + 1 < args.Length) system2Palette  = args[++i];
+        else if (args[i] is "--expected-width"    && i + 1 < args.Length)
+        { if (int.TryParse(args[++i], out var ew)) expectedWidth  = ew; }
+        else if (args[i] is "--expected-height"   && i + 1 < args.Length)
+        { if (int.TryParse(args[++i], out var eh)) expectedHeight = eh; }
+        else if (args[i] is "--top-colors"        && i + 1 < args.Length)
+        { if (int.TryParse(args[++i], out var tc)) topColors      = tc; }
+    }
+
+    if (string.IsNullOrWhiteSpace(inputPath))
+    {
+        Console.Error.WriteLine("deadmtl-inspect-raw-map-tile requires --input <png>");
+        Console.Error.WriteLine("  --output-json --output-md --output-csv --summary are also required");
+        return 1;
+    }
+    if (string.IsNullOrWhiteSpace(outputJson) || string.IsNullOrWhiteSpace(outputMd) ||
+        string.IsNullOrWhiteSpace(outputCsv)  || string.IsNullOrWhiteSpace(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-inspect-raw-map-tile requires --output-json --output-md --output-csv --summary");
+        return 1;
+    }
+
+    // Require .local in all output paths
+    foreach (var (label, path) in new[] {
+        ("--output-json", outputJson), ("--output-md", outputMd),
+        ("--output-csv",  outputCsv),  ("--summary",   summaryPath) })
+    {
+        var full = Path.GetFullPath(path);
+        var localMarker = Path.DirectorySeparatorChar + ".local" + Path.DirectorySeparatorChar;
+        if (!full.Contains(localMarker, StringComparison.OrdinalIgnoreCase) &&
+            !full.EndsWith(Path.DirectorySeparatorChar + ".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine(
+                $"deadmtl-inspect-raw-map-tile: {label} must be under a .local/ directory: {full}");
+            return 1;
+        }
+    }
+
+    var result = DeadMtlRawMapTileInspector.Inspect(
+        inputPath, worldgenPalette, system2Palette,
+        expectedWidth, expectedHeight, topColors);
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors) Console.Error.WriteLine($"error: {e}");
+        return 1;
+    }
+
+    var insp     = result.Inspection!;
+    var jsonOpts = new JsonSerializerOptions { WriteIndented = true };
+
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputJson))!);
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputMd))!);
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputCsv))!);
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(summaryPath))!);
+
+    File.WriteAllText(outputJson, JsonSerializer.Serialize(insp, jsonOpts), Encoding.UTF8);
+    File.WriteAllText(outputMd,   DeadMtlRawMapTileInspector.RenderMarkdown(insp), Encoding.UTF8);
+    File.WriteAllText(outputCsv,  DeadMtlRawMapTileInspector.RenderCsv(insp, result.WorldgenColors, result.System2Colors), Encoding.UTF8);
+
+    var sb = new StringBuilder();
+    sb.AppendLine("MAP-23A: DeadMTL Raw 256x256 Map Tile Inspection");
+    sb.AppendLine();
+    sb.AppendLine($"SOURCE IMAGE:  {insp.SourceImage}");
+    sb.AppendLine($"sha256:        {insp.Sha256}");
+    sb.AppendLine($"width:         {insp.Width}");
+    sb.AppendLine($"height:        {insp.Height}");
+    sb.AppendLine($"size_valid:    {insp.SizeValid}");
+    sb.AppendLine($"has_alpha:     {insp.HasAlpha}");
+    sb.AppendLine($"opaque_pixels: {insp.OpaquePixelCount}");
+    sb.AppendLine($"transparent:   {insp.TransparentPixelCount}");
+    sb.AppendLine($"unique_colors: {insp.UniqueColorCount}");
+    sb.AppendLine();
+    sb.AppendLine("PALETTE MATCHES:");
+    sb.AppendLine($"  worldgen:              {insp.PaletteMatches.WorldgenPaletteMatchCount}");
+    sb.AppendLine($"  system2_static_road:   {insp.PaletteMatches.System2StaticRoadPaletteMatchCount}");
+    sb.AppendLine($"  unknown_colors:        {insp.PaletteMatches.UnknownColorCount}");
+    sb.AppendLine();
+    sb.AppendLine("OUTPUT FILES:");
+    sb.AppendLine($"  JSON:    {outputJson}");
+    sb.AppendLine($"  MD:      {outputMd}");
+    sb.AppendLine($"  CSV:     {outputCsv}");
+    sb.AppendLine();
+    sb.AppendLine("CLAIM BOUNDARY");
+    sb.AppendLine($"  writes_lotpack:         {insp.ClaimBoundary.WritesLotpack}");
+    sb.AppendLine($"  writes_worldgen_lua:    {insp.ClaimBoundary.WritesWorldgenLua}");
+    sb.AppendLine($"  runtime_proven:         {insp.ClaimBoundary.RuntimeProven}");
+    sb.AppendLine($"  public_playable_claim:  {insp.ClaimBoundary.PublicPlayableClaim}");
+    sb.AppendLine($"  writer_ready_claim:     {insp.ClaimBoundary.WriterReadyClaim}");
+    sb.AppendLine();
+    sb.AppendLine("VERDICT: MAP23A_RAW_256_MAP_TILE_INSPECTION_COMPLETE");
+    File.WriteAllText(summaryPath, sb.ToString(), Encoding.UTF8);
+
+    Console.WriteLine($"inspection-json: {outputJson}");
+    Console.WriteLine($"inspection-md:   {outputMd}");
+    Console.WriteLine($"inspection-csv:  {outputCsv}");
+    Console.WriteLine($"summary:         {summaryPath}");
+    Console.WriteLine($"sha256:          {insp.Sha256}");
+    Console.WriteLine($"width:           {insp.Width}");
+    Console.WriteLine($"height:          {insp.Height}");
+    Console.WriteLine($"size_valid:      {insp.SizeValid}");
+    Console.WriteLine($"unique_colors:   {insp.UniqueColorCount}");
+    Console.WriteLine($"unknown_colors:  {insp.PaletteMatches.UnknownColorCount}");
+    Console.WriteLine("VERDICT: MAP23A_RAW_256_MAP_TILE_INSPECTION_COMPLETE");
+    return 0;
+}
+
 static int UnknownCommand(string cmd)
 {
     Console.Error.WriteLine($"Unknown command: {cmd}");
@@ -5115,7 +5247,8 @@ static int UnknownCommand(string cmd)
         "system2-build-static-road-tile-family-survey, system2-build-static-road-local-tile-survey, " +
         "system2-build-static-road-tile-candidate-shortlist, system2-build-static-road-tile-candidate-review, " +
         "system2-apply-static-road-tile-candidate-review, system2-build-static-road-human-approved-tile-candidates, " +
-        "system2-build-static-road-local-tile-survey-filtered, system2-build-static-road-filtered-tile-candidate-shortlist");
+        "system2-build-static-road-local-tile-survey-filtered, system2-build-static-road-filtered-tile-candidate-shortlist, " +
+        "deadmtl-inspect-raw-map-tile");
     return 1;
 }
 

@@ -588,6 +588,31 @@ Output (under `.local/`):
 See `docs/authoring/DEADMTL_SYSTEM2_STATIC_ROAD_HUMAN_APPROVED_TILE_CANDIDATES.md` for bucket
 definitions, CSV format, and claim boundary.
 
+## Raw 256x256 map tile inspection
+
+MAP-23A provides a safe inspection and intake layer for raw 256x256 authoring map tiles.
+Reads the PNG, computes SHA256, counts pixels, validates 256x256 size, produces top N colors,
+and compares against worldgen and System 2 palettes to find unknown colors.
+Inspection only. No compilation. No runtime proof. No writer readiness.
+
+Does NOT write lotpack files. Does NOT write WorldGenOverride.lua.
+
+Inspect raw tile:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-raw-map-tile-inspection.ps1
+```
+
+Output (under `.local/`):
+- `.local\deadmtl-authoring\raw-map-tile-inspection\map_00\map_00.raw_tile_inspection.json`
+- `.local\deadmtl-authoring\raw-map-tile-inspection\map_00\map_00.raw_tile_inspection.md`
+- `.local\deadmtl-authoring\raw-map-tile-inspection\map_00\map_00.raw_tile_colors.csv`
+- `.local\deadmtl-authoring\raw-map-tile-inspection\map_00\map_00.raw_tile_inspection.summary.txt`
+
+See `docs/authoring/DEADMTL_RAW_256_MAP_TILE_INSPECTION.md` for field definitions and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
