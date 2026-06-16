@@ -969,6 +969,34 @@ fields, connectivity contract, component count totals, and claim boundary.
 
 ---
 
+## WorldBuilder component intent classification contract
+
+MAP-25L classifies the 45 connected components from MAP-25K into 7 future geometry intent
+buckets (RESIDENTIAL_LOT_BLOCK, COMMERCIAL_LOT_BLOCK, MAIN_ROAD_CORRIDOR, BACK_ALLEY_CORRIDOR,
+GREENSPACE_MASS, CIVIC_PLACEHOLDER, IGNORE_BORDER). Intent classification only — not concrete
+lot polygons, road geometries, building slots, sidewalk geometry, or fence geometry.
+
+No terrain generation, no lot subdivision, no concrete geometry created, no lotpack writing,
+no worldgen override file, layout not materialized, no runtime proof. Not writer-ready.
+
+Generate the component intent classification:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-component-intent-classification.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-component-intent-classification\map_00\map_00.component_intent_classification.json`
+- `.local\deadmtl-authoring\worldbuilder-component-intent-classification\map_00\map_00.component_intent_classification.md`
+- `.local\deadmtl-authoring\worldbuilder-component-intent-classification\map_00\map_00.component_intent_classification.csv`
+- `.local\deadmtl-authoring\worldbuilder-component-intent-classification\map_00\map_00.component_intent_classification.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_COMPONENT_INTENT_CLASSIFICATION_CONTRACT.md` for intent
+bucket definitions, classification rules, totals, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
