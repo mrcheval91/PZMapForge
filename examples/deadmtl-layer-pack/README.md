@@ -1027,6 +1027,37 @@ detection rules, relationship classification, edge totals, and claim boundary.
 
 ---
 
+## MAP-25N: WorldBuilder Adjacency Planning Candidate Extraction
+
+MAP-25N reads the MAP-25M component adjacency graph (82 edges) and converts each edge into a
+planning candidate record with candidate type, priority, family, future geometry requirement ID,
+and blocked-by requirements. 82 candidate records are produced: 71 actionable and 11 ignored.
+
+This is planning candidate extraction only. It is NOT lot polygons, road geometries, frontage
+geometry, rear access geometry, building slots, sidewalk geometry, fence geometry, or any
+materialized artifact. No generation of any kind occurs.
+
+No terrain generation, no lot subdivision, no concrete geometry created, no lotpack writing,
+no worldgen override file, layout not materialized, no runtime proof. Not writer-ready.
+
+Generate the adjacency planning candidate extraction:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-adjacency-planning-candidate-extraction.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-adjacency-planning-candidate-extraction\map_00\map_00.adjacency_planning_candidate_extraction.json`
+- `.local\deadmtl-authoring\worldbuilder-adjacency-planning-candidate-extraction\map_00\map_00.adjacency_planning_candidate_extraction.md`
+- `.local\deadmtl-authoring\worldbuilder-adjacency-planning-candidate-extraction\map_00\map_00.adjacency_planning_candidate_extraction.csv`
+- `.local\deadmtl-authoring\worldbuilder-adjacency-planning-candidate-extraction\map_00\map_00.adjacency_planning_candidate_extraction.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_ADJACENCY_PLANNING_CANDIDATE_EXTRACTION_CONTRACT.md` for
+candidate type mapping, priority policy, totals, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
