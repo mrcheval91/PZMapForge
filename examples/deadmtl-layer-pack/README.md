@@ -941,6 +941,34 @@ region fields, pixel count totals, future geometry requirement mapping, and clai
 
 ---
 
+## WorldBuilder connected component extraction contract
+
+MAP-25K splits each MAP-25J source mask region into individual 4-way connected pixel islands
+(components). 45 components extracted across 7 parent colors using 4-way connectivity only
+(no diagonal). Components are pixel-space islands — not concrete lot polygons, road geometries,
+building slots, sidewalk geometry, or fence geometry.
+
+No terrain generation, no lot subdivision, no concrete geometry created, no lotpack writing,
+no worldgen override file, layout not materialized, no runtime proof. Not writer-ready.
+
+Generate the connected component extraction:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-connected-component-extraction.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-connected-component-extraction\map_00\map_00.connected_component_extraction.json`
+- `.local\deadmtl-authoring\worldbuilder-connected-component-extraction\map_00\map_00.connected_component_extraction.md`
+- `.local\deadmtl-authoring\worldbuilder-connected-component-extraction\map_00\map_00.connected_component_extraction.csv`
+- `.local\deadmtl-authoring\worldbuilder-connected-component-extraction\map_00\map_00.connected_component_extraction.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_CONNECTED_COMPONENT_EXTRACTION_CONTRACT.md` for component
+fields, connectivity contract, component count totals, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.

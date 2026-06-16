@@ -90,6 +90,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                          --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-source-mask-region-extraction  --source-png <map_00.png> --metadata <zone_metadata.json> --geometry-primitive-schema <schema.json> --geometry-preflight <preflight.json>");
     Console.Error.WriteLine("                                                               --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-connected-component-extraction  --source-png <map_00.png> --metadata <zone_metadata.json> --geometry-primitive-schema <schema.json> --source-mask-regions <smre.json>");
+    Console.Error.WriteLine("                                                              --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     return 1;
 }
 
@@ -141,6 +143,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-concrete-geometry-preflight"     => DeadMtlBuildWorldBuilderConcreteGeometryPreflightCommand(args[1..]),
     "deadmtl-build-worldbuilder-geometry-primitive-schema"           => DeadMtlBuildWorldBuilderGeometryPrimitiveSchemaCommand(args[1..]),
     "deadmtl-build-worldbuilder-source-mask-region-extraction"       => DeadMtlBuildWorldBuilderSourceMaskRegionExtractionCommand(args[1..]),
+    "deadmtl-build-worldbuilder-connected-component-extraction"      => DeadMtlBuildWorldBuilderConnectedComponentExtractionCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5560,7 +5563,8 @@ static int UnknownCommand(string cmd)
         "deadmtl-build-worldbuilder-future-world-layout-plan, " +
         "deadmtl-build-worldbuilder-concrete-geometry-preflight, " +
         "deadmtl-build-worldbuilder-geometry-primitive-schema, " +
-        "deadmtl-build-worldbuilder-source-mask-region-extraction");
+        "deadmtl-build-worldbuilder-source-mask-region-extraction, " +
+        "deadmtl-build-worldbuilder-connected-component-extraction");
     return 1;
 }
 
@@ -6336,6 +6340,101 @@ static bool ContainsWord(string s, string word)
 // All alphabetic characters in s are uppercase (transit/landmark heuristic).
 static bool IsAllCapsAlpha(string s) =>
     s.Where(char.IsLetter).Any() && s.Where(char.IsLetter).All(char.IsUpper);
+
+static int DeadMtlBuildWorldBuilderConnectedComponentExtractionCommand(string[] args)
+{
+    var sourcePngPath               = string.Empty;
+    var metadataPath                = string.Empty;
+    var geometryPrimitiveSchemaPath = string.Empty;
+    var sourceMaskRegionsPath       = string.Empty;
+    var outputJson                  = string.Empty;
+    var outputMd                    = string.Empty;
+    var outputCsv                   = string.Empty;
+    var summaryPath                 = string.Empty;
+
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--source-png":               sourcePngPath               = args[++i]; break;
+            case "--metadata":                 metadataPath                = args[++i]; break;
+            case "--geometry-primitive-schema": geometryPrimitiveSchemaPath = args[++i]; break;
+            case "--source-mask-regions":      sourceMaskRegionsPath       = args[++i]; break;
+            case "--output-json":              outputJson                  = args[++i]; break;
+            case "--output-md":                outputMd                    = args[++i]; break;
+            case "--output-csv":               outputCsv                   = args[++i]; break;
+            case "--summary":                  summaryPath                 = args[++i]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(sourcePngPath)               || string.IsNullOrEmpty(metadataPath)              ||
+        string.IsNullOrEmpty(geometryPrimitiveSchemaPath) || string.IsNullOrEmpty(sourceMaskRegionsPath)     ||
+        string.IsNullOrEmpty(outputJson)                  || string.IsNullOrEmpty(outputMd)                  ||
+        string.IsNullOrEmpty(outputCsv)                   || string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-connected-component-extraction: " +
+            "--source-png, --metadata, --geometry-primitive-schema, --source-mask-regions, " +
+            "--output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        if (!p.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"Output path must contain .local: {p}");
+            return 1;
+        }
+    }
+
+    var result = DeadMtlWorldBuilderConnectedComponentExtractionBuilder.Build(
+        sourcePngPath, metadataPath, geometryPrimitiveSchemaPath, sourceMaskRegionsPath);
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var extraction = result.Extraction;
+    var jsonOpts   = new JsonSerializerOptions { WriteIndented = true };
+    File.WriteAllText(outputJson,  JsonSerializer.Serialize(extraction, jsonOpts),                                              Encoding.UTF8);
+    File.WriteAllText(outputMd,    DeadMtlWorldBuilderConnectedComponentExtractionBuilder.RenderMarkdown(extraction),           Encoding.UTF8);
+    File.WriteAllText(outputCsv,   DeadMtlWorldBuilderConnectedComponentExtractionBuilder.RenderCsv(extraction),                Encoding.UTF8);
+    File.WriteAllText(summaryPath, DeadMtlWorldBuilderConnectedComponentExtractionBuilder.RenderSummary(result),                Encoding.UTF8);
+
+    var t = extraction.Totals;
+    Console.WriteLine($"output-json:                          {outputJson}");
+    Console.WriteLine($"output-md:                            {outputMd}");
+    Console.WriteLine($"output-csv:                           {outputCsv}");
+    Console.WriteLine($"summary:                              {summaryPath}");
+    Console.WriteLine($"tile_id:                              {extraction.TileId}");
+    Console.WriteLine($"is_valid:                             {result.IsValid}");
+    Console.WriteLine($"source_png_width_px:                  {t.SourcePngWidthPx}");
+    Console.WriteLine($"source_png_height_px:                 {t.SourcePngHeightPx}");
+    Console.WriteLine($"source_pixel_count:                   {t.SourcePixelCount}");
+    Console.WriteLine($"parent_mask_region_count:             {t.ParentMaskRegionCount}");
+    Console.WriteLine($"connected_component_count:            {t.ConnectedComponentCount}");
+    Console.WriteLine($"known_color_component_count:          {t.KnownColorComponentCount}");
+    Console.WriteLine($"unknown_color_component_count:        {t.UnknownColorComponentCount}");
+    Console.WriteLine($"component_pixel_total:                {t.ComponentPixelTotal}");
+    Console.WriteLine($"residential_component_count:          {t.ResidentialComponentCount}");
+    Console.WriteLine($"main_road_component_count:            {t.MainRoadComponentCount}");
+    Console.WriteLine($"greenspace_component_count:           {t.GreenspaceComponentCount}");
+    Console.WriteLine($"back_alley_component_count:           {t.BackAlleyComponentCount}");
+    Console.WriteLine($"civic_placeholder_component_count:    {t.CivicPlaceholderComponentCount}");
+    Console.WriteLine($"commercial_component_count:           {t.CommercialComponentCount}");
+    Console.WriteLine($"ignore_component_count:               {t.IgnoreComponentCount}");
+    Console.WriteLine($"created_geometry_count:               {t.CreatedGeometryCount}");
+    Console.WriteLine($"writer_ready_component_count:         {t.WriterReadyComponentCount}");
+    Console.WriteLine($"runtime_validated_component_count:    {t.RuntimeValidatedComponentCount}");
+    Console.WriteLine($"connectivity_status:                  {extraction.ConnectivityStatus}");
+    Console.WriteLine($"extraction_status:                    {extraction.ExtractionStatus}");
+    Console.WriteLine($"geometry_status:                      {extraction.GeometryStatus}");
+    Console.WriteLine("VERDICT: MAP25K_WORLDBUILDER_CONNECTED_COMPONENT_EXTRACTION_CONTRACT_COMPLETE");
+
+    return result.IsValid ? 0 : 1;
+}
 
 static SvgLayerCandidatesResult WriteSvgLayerCandidates(SvgStructureResult r, string artifactsDir)
 {
