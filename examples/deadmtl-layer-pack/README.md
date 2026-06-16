@@ -1126,6 +1126,36 @@ the geometry algorithm, inset parameters, and claim boundary.
 
 ---
 
+## MAP-26B WorldBuilder Minimal Concrete Geometry QA Overlay
+
+MAP-26B is a QA/debug visualization step. It reads the source PNG and the MAP-26A
+minimal concrete geometry MVP JSON and renders a 4x-scale overlay PNG (plus
+JSON/MD/CSV/summary records) proving the MAP-26A component bbox, lot rectangles,
+and accepted building slot rectangles sit where expected on `map_00.png`.
+
+It is QA-only: no new geometry is derived, no PZ-consumable format is written,
+and the source PNG is never mutated. `writer_ready`, `runtime_valid`, and
+`materialized` all remain false.
+
+Generate the QA overlay:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-qa-overlay.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-qa-overlay\map_00\map_00.minimal_concrete_geometry_qa_overlay.png`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-qa-overlay\map_00\map_00.minimal_concrete_geometry_qa_overlay.json`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-qa-overlay\map_00\map_00.minimal_concrete_geometry_qa_overlay.md`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-qa-overlay\map_00\map_00.minimal_concrete_geometry_qa_overlay.csv`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-qa-overlay\map_00\map_00.minimal_concrete_geometry_qa_overlay.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_QA_OVERLAY_CONTRACT.md`
+for overlay semantics and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.

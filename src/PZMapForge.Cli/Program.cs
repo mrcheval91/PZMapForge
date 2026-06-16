@@ -102,6 +102,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                        --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-mvp  --png <map_00.png> --connected-components <cce.json> --access-profile <cap.json> --target-component-order <n>");
     Console.Error.WriteLine("                                                             --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-qa-overlay  --png <map_00.png> --geometry-mvp <mvp.json> --output-png <overlay.png>");
+    Console.Error.WriteLine("                                                                    --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     return 1;
 }
 
@@ -159,6 +161,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-adjacency-planning-candidate-extraction" => DeadMtlBuildWorldBuilderAdjacencyPlanningCandidateExtractionCommand(args[1..]),
     "deadmtl-build-worldbuilder-component-access-profile"               => DeadMtlBuildWorldBuilderComponentAccessProfileCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-mvp"         => DeadMtlBuildWorldBuilderMinimalConcreteGeometryMvpCommand(args[1..]),
+    "deadmtl-build-worldbuilder-minimal-concrete-geometry-qa-overlay"  => DeadMtlBuildWorldBuilderMinimalConcreteGeometryQaOverlayCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5584,7 +5587,8 @@ static int UnknownCommand(string cmd)
         "deadmtl-build-worldbuilder-component-adjacency-graph, " +
         "deadmtl-build-worldbuilder-adjacency-planning-candidate-extraction, " +
         "deadmtl-build-worldbuilder-component-access-profile, " +
-        "deadmtl-build-worldbuilder-minimal-concrete-geometry-mvp");
+        "deadmtl-build-worldbuilder-minimal-concrete-geometry-mvp, " +
+        "deadmtl-build-worldbuilder-minimal-concrete-geometry-qa-overlay");
     return 1;
 }
 
@@ -6427,6 +6431,74 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometryMvpCommand(string[] ar
     File.WriteAllText(outputCsv,   builder.RenderCsv(result));
     File.WriteAllText(summaryPath, builder.RenderSummary(result));
 
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+    return 0;
+}
+
+static int DeadMtlBuildWorldBuilderMinimalConcreteGeometryQaOverlayCommand(string[] args)
+{
+    var pngPath         = string.Empty;
+    var geometryMvpPath = string.Empty;
+    var outputPng       = string.Empty;
+    var outputJson      = string.Empty;
+    var outputMd        = string.Empty;
+    var outputCsv       = string.Empty;
+    var summaryPath     = string.Empty;
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--png":            pngPath         = args[i + 1]; break;
+            case "--geometry-mvp":   geometryMvpPath = args[i + 1]; break;
+            case "--output-png":    outputPng       = args[i + 1]; break;
+            case "--output-json":   outputJson      = args[i + 1]; break;
+            case "--output-md":     outputMd        = args[i + 1]; break;
+            case "--output-csv":    outputCsv       = args[i + 1]; break;
+            case "--summary":       summaryPath     = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(pngPath)     || string.IsNullOrEmpty(geometryMvpPath) ||
+        string.IsNullOrEmpty(outputPng)   || string.IsNullOrEmpty(outputJson)      ||
+        string.IsNullOrEmpty(outputMd)    || string.IsNullOrEmpty(outputCsv)       ||
+        string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-qa-overlay: " +
+            "--png, --geometry-mvp, --output-png, --output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    var allOutputs = new[] { outputPng, outputJson, outputMd, outputCsv, summaryPath };
+    if (allOutputs.Any(p => !p.Contains(".local")))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-qa-overlay: " +
+            "all output paths must contain '.local' in the path.");
+        return 1;
+    }
+
+    foreach (var p in allOutputs)
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderMinimalConcreteGeometryQaOverlayBuilder();
+    var result  = builder.Build(pngPath, geometryMvpPath, outputPng);
+
+    File.WriteAllText(outputJson,  builder.RenderJson(result));
+    File.WriteAllText(outputMd,    builder.RenderMarkdown(result));
+    File.WriteAllText(outputCsv,   builder.RenderCsv(result));
+    File.WriteAllText(summaryPath, builder.RenderSummary(result));
+
+    Console.WriteLine("MAP-26B WorldBuilder minimal concrete geometry QA overlay");
     Console.WriteLine(builder.RenderSummary(result));
 
     if (!result.IsValid)
