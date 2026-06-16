@@ -1091,6 +1091,41 @@ access readiness classification rules, primary candidate selection, totals, and 
 
 ---
 
+## MAP-26A WorldBuilder Minimal Concrete Geometry MVP
+
+MAP-26A is the first pivot from pure metadata to concrete integer rectangle geometry.
+It reads the source PNG, the connected component extraction, and the MAP-25O access profile
+and produces actual pixel/tile coordinate records for component_order=1 (RESIDENTIAL_LOT_BLOCK,
+DUAL_ACCESS_CANDIDATE):
+
+- **Component bounding box**: min_x, min_y, max_x, max_y, width_px, height_px
+- **Lot rectangles**: integer-clipped bbox slices along the frontage axis
+- **Building slot rectangles**: per-lot, with side insets (2px) and frontage/rear setbacks (3px)
+
+Lot slicing: target_lot_width=12px, min=8px, max_count=8. Side is detected by 4-directional
+pixel contact count against the primary frontage component (comp 23, MAIN_ROAD) and the primary
+rear component (comp 30, BACK_ALLEY).
+
+`created_geometry_count > 0`. Not writer-ready. Not runtime-proven. No lotpack. No WorldGenOverride.lua.
+
+Generate the minimal concrete geometry MVP:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-mvp.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-mvp\map_00\map_00.minimal_concrete_geometry_mvp.json`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-mvp\map_00\map_00.minimal_concrete_geometry_mvp.md`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-mvp\map_00\map_00.minimal_concrete_geometry_mvp.csv`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-mvp\map_00\map_00.minimal_concrete_geometry_mvp.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_MVP.md` for
+the geometry algorithm, inset parameters, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.

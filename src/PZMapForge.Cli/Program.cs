@@ -100,6 +100,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                                       --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-component-access-profile  --planning-candidates <planning_candidates.json> --component-intents <cic.json>");
     Console.Error.WriteLine("                                                        --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-mvp  --png <map_00.png> --connected-components <cce.json> --access-profile <cap.json> --target-component-order <n>");
+    Console.Error.WriteLine("                                                             --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     return 1;
 }
 
@@ -156,6 +158,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-component-adjacency-graph"          => DeadMtlBuildWorldBuilderComponentAdjacencyGraphCommand(args[1..]),
     "deadmtl-build-worldbuilder-adjacency-planning-candidate-extraction" => DeadMtlBuildWorldBuilderAdjacencyPlanningCandidateExtractionCommand(args[1..]),
     "deadmtl-build-worldbuilder-component-access-profile"               => DeadMtlBuildWorldBuilderComponentAccessProfileCommand(args[1..]),
+    "deadmtl-build-worldbuilder-minimal-concrete-geometry-mvp"         => DeadMtlBuildWorldBuilderMinimalConcreteGeometryMvpCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5580,7 +5583,8 @@ static int UnknownCommand(string cmd)
         "deadmtl-build-worldbuilder-component-intent-classification, " +
         "deadmtl-build-worldbuilder-component-adjacency-graph, " +
         "deadmtl-build-worldbuilder-adjacency-planning-candidate-extraction, " +
-        "deadmtl-build-worldbuilder-component-access-profile");
+        "deadmtl-build-worldbuilder-component-access-profile, " +
+        "deadmtl-build-worldbuilder-minimal-concrete-geometry-mvp");
     return 1;
 }
 
@@ -6356,6 +6360,83 @@ static bool ContainsWord(string s, string word)
 // All alphabetic characters in s are uppercase (transit/landmark heuristic).
 static bool IsAllCapsAlpha(string s) =>
     s.Where(char.IsLetter).Any() && s.Where(char.IsLetter).All(char.IsUpper);
+
+static int DeadMtlBuildWorldBuilderMinimalConcreteGeometryMvpCommand(string[] args)
+{
+    var pngPath                  = string.Empty;
+    var connectedComponentsPath  = string.Empty;
+    var accessProfilePath        = string.Empty;
+    var targetComponentOrderStr  = string.Empty;
+    var outputJson               = string.Empty;
+    var outputMd                 = string.Empty;
+    var outputCsv                = string.Empty;
+    var summaryPath              = string.Empty;
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--png":                      pngPath                 = args[i + 1]; break;
+            case "--connected-components":     connectedComponentsPath = args[i + 1]; break;
+            case "--access-profile":           accessProfilePath       = args[i + 1]; break;
+            case "--target-component-order":   targetComponentOrderStr = args[i + 1]; break;
+            case "--output-json":              outputJson              = args[i + 1]; break;
+            case "--output-md":                outputMd                = args[i + 1]; break;
+            case "--output-csv":               outputCsv               = args[i + 1]; break;
+            case "--summary":                  summaryPath             = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(pngPath)               || string.IsNullOrEmpty(connectedComponentsPath)  ||
+        string.IsNullOrEmpty(accessProfilePath)      || string.IsNullOrEmpty(targetComponentOrderStr)  ||
+        string.IsNullOrEmpty(outputJson)             || string.IsNullOrEmpty(outputMd)                 ||
+        string.IsNullOrEmpty(outputCsv)              || string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-mvp: " +
+            "--png, --connected-components, --access-profile, --target-component-order, " +
+            "--output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    if (!int.TryParse(targetComponentOrderStr, out int targetComponentOrder) || targetComponentOrder < 1)
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-mvp: " +
+            "--target-component-order must be a positive integer.");
+        return 1;
+    }
+
+    var allOutputs = new[] { outputJson, outputMd, outputCsv, summaryPath };
+    if (allOutputs.Any(p => !p.Contains(".local")))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-mvp: " +
+            "all output paths must contain '.local' in the path.");
+        return 1;
+    }
+
+    foreach (var p in allOutputs)
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderMinimalConcreteGeometryMvpBuilder();
+    var result  = builder.Build(pngPath, connectedComponentsPath, accessProfilePath, targetComponentOrder);
+
+    File.WriteAllText(outputJson,  builder.RenderJson(result));
+    File.WriteAllText(outputMd,    builder.RenderMarkdown(result));
+    File.WriteAllText(outputCsv,   builder.RenderCsv(result));
+    File.WriteAllText(summaryPath, builder.RenderSummary(result));
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+    return 0;
+}
 
 static int DeadMtlBuildWorldBuilderComponentAccessProfileCommand(string[] args)
 {
