@@ -94,6 +94,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                              --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-component-intent-classification  --metadata <zone_metadata.json> --source-mask-regions <smre.json> --connected-components <cce.json> --geometry-primitive-schema <schema.json> --geometry-preflight <preflight.json>");
     Console.Error.WriteLine("                                                               --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-component-adjacency-graph  --source-png <map_00.png> --connected-components <cce.json> --component-intents <cic.json> --geometry-primitive-schema <schema.json> --geometry-preflight <preflight.json>");
+    Console.Error.WriteLine("                                                         --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     return 1;
 }
 
@@ -147,6 +149,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-source-mask-region-extraction"       => DeadMtlBuildWorldBuilderSourceMaskRegionExtractionCommand(args[1..]),
     "deadmtl-build-worldbuilder-connected-component-extraction"      => DeadMtlBuildWorldBuilderConnectedComponentExtractionCommand(args[1..]),
     "deadmtl-build-worldbuilder-component-intent-classification"     => DeadMtlBuildWorldBuilderComponentIntentClassificationCommand(args[1..]),
+    "deadmtl-build-worldbuilder-component-adjacency-graph"          => DeadMtlBuildWorldBuilderComponentAdjacencyGraphCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5568,7 +5571,8 @@ static int UnknownCommand(string cmd)
         "deadmtl-build-worldbuilder-geometry-primitive-schema, " +
         "deadmtl-build-worldbuilder-source-mask-region-extraction, " +
         "deadmtl-build-worldbuilder-connected-component-extraction, " +
-        "deadmtl-build-worldbuilder-component-intent-classification");
+        "deadmtl-build-worldbuilder-component-intent-classification, " +
+        "deadmtl-build-worldbuilder-component-adjacency-graph");
     return 1;
 }
 
@@ -6344,6 +6348,106 @@ static bool ContainsWord(string s, string word)
 // All alphabetic characters in s are uppercase (transit/landmark heuristic).
 static bool IsAllCapsAlpha(string s) =>
     s.Where(char.IsLetter).Any() && s.Where(char.IsLetter).All(char.IsUpper);
+
+static int DeadMtlBuildWorldBuilderComponentAdjacencyGraphCommand(string[] args)
+{
+    var sourcePngPath                      = string.Empty;
+    var connectedComponentsPath            = string.Empty;
+    var componentIntentsPath               = string.Empty;
+    var geometryPrimitiveSchemaPath        = string.Empty;
+    var geometryPreflightPath              = string.Empty;
+    var outputJson                         = string.Empty;
+    var outputMd                           = string.Empty;
+    var outputCsv                          = string.Empty;
+    var summaryPath                        = string.Empty;
+
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--source-png":               sourcePngPath               = args[++i]; break;
+            case "--connected-components":     connectedComponentsPath     = args[++i]; break;
+            case "--component-intents":        componentIntentsPath        = args[++i]; break;
+            case "--geometry-primitive-schema": geometryPrimitiveSchemaPath = args[++i]; break;
+            case "--geometry-preflight":       geometryPreflightPath       = args[++i]; break;
+            case "--output-json":              outputJson                  = args[++i]; break;
+            case "--output-md":                outputMd                    = args[++i]; break;
+            case "--output-csv":               outputCsv                   = args[++i]; break;
+            case "--summary":                  summaryPath                 = args[++i]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(sourcePngPath)             || string.IsNullOrEmpty(connectedComponentsPath)    ||
+        string.IsNullOrEmpty(componentIntentsPath)      || string.IsNullOrEmpty(geometryPrimitiveSchemaPath) ||
+        string.IsNullOrEmpty(geometryPreflightPath)     || string.IsNullOrEmpty(outputJson)                  ||
+        string.IsNullOrEmpty(outputMd)                  || string.IsNullOrEmpty(outputCsv)                   ||
+        string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-component-adjacency-graph: " +
+            "--source-png, --connected-components, --component-intents, --geometry-primitive-schema, " +
+            "--geometry-preflight, --output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        if (!p.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"Output path must contain .local: {p}");
+            return 1;
+        }
+    }
+
+    var result = DeadMtlWorldBuilderComponentAdjacencyGraphBuilder.Build(
+        sourcePngPath, connectedComponentsPath, componentIntentsPath,
+        geometryPrimitiveSchemaPath, geometryPreflightPath);
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var g        = result.Graph;
+    var jsonOpts = new JsonSerializerOptions { WriteIndented = true };
+    File.WriteAllText(outputJson,  JsonSerializer.Serialize(g, jsonOpts),                                                  Encoding.UTF8);
+    File.WriteAllText(outputMd,    DeadMtlWorldBuilderComponentAdjacencyGraphBuilder.RenderMarkdown(g),                    Encoding.UTF8);
+    File.WriteAllText(outputCsv,   DeadMtlWorldBuilderComponentAdjacencyGraphBuilder.RenderCsv(g),                        Encoding.UTF8);
+    File.WriteAllText(summaryPath, DeadMtlWorldBuilderComponentAdjacencyGraphBuilder.RenderSummary(result),               Encoding.UTF8);
+
+    var t = g.Totals;
+    Console.WriteLine($"output-json:                                     {outputJson}");
+    Console.WriteLine($"output-md:                                       {outputMd}");
+    Console.WriteLine($"output-csv:                                      {outputCsv}");
+    Console.WriteLine($"summary:                                         {summaryPath}");
+    Console.WriteLine($"tile_id:                                         {g.TileId}");
+    Console.WriteLine($"is_valid:                                        {result.IsValid}");
+    Console.WriteLine($"component_node_count:                            {t.ComponentNodeCount}");
+    Console.WriteLine($"adjacency_edge_count:                            {t.AdjacencyEdgeCount}");
+    Console.WriteLine($"known_component_edge_count:                      {t.KnownComponentEdgeCount}");
+    Console.WriteLine($"unknown_component_edge_count:                    {t.UnknownComponentEdgeCount}");
+    Console.WriteLine($"self_edge_count:                                 {t.SelfEdgeCount}");
+    Console.WriteLine($"duplicate_edge_count:                            {t.DuplicateEdgeCount}");
+    Console.WriteLine($"diagonal_edge_count:                             {t.DiagonalEdgeCount}");
+    Console.WriteLine($"contact_length_total_px:                         {t.ContactLengthTotalPx}");
+    Console.WriteLine($"frontage_candidate_edge_count:                   {t.FrontageCandidateEdgeCount}");
+    Console.WriteLine($"rear_or_service_access_candidate_edge_count:     {t.RearOrServiceAccessCandidateEdgeCount}");
+    Console.WriteLine($"street_network_touchpoint_edge_count:            {t.StreetNetworkTouchpointEdgeCount}");
+    Console.WriteLine($"greenspace_access_edge_count:                    {t.GreenspaceAccessEdgeCount}");
+    Console.WriteLine($"greenspace_civic_edge_count:                     {t.GreenspaceCivicEdgeCount}");
+    Console.WriteLine($"mixed_lot_block_edge_count:                      {t.MixedLotBlockEdgeCount}");
+    Console.WriteLine($"ignore_boundary_adjacency_edge_count:            {t.IgnoreBoundaryAdjacencyEdgeCount}");
+    Console.WriteLine($"other_intent_adjacency_edge_count:               {t.OtherIntentAdjacencyEdgeCount}");
+    Console.WriteLine($"created_geometry_count:                          {t.CreatedGeometryCount}");
+    Console.WriteLine($"writer_ready_edge_count:                         {t.WriterReadyEdgeCount}");
+    Console.WriteLine($"runtime_validated_edge_count:                    {t.RuntimeValidatedEdgeCount}");
+    Console.WriteLine($"materialized_edge_count:                         {t.MaterializedEdgeCount}");
+    Console.WriteLine($"adjacency_status:                                {g.AdjacencyStatus}");
+    Console.WriteLine($"geometry_status:                                 {g.GeometryStatus}");
+    Console.WriteLine("VERDICT: MAP25M_WORLDBUILDER_COMPONENT_ADJACENCY_GRAPH_CONTRACT_COMPLETE");
+
+    return result.IsValid ? 0 : 1;
+}
 
 static int DeadMtlBuildWorldBuilderComponentIntentClassificationCommand(string[] args)
 {

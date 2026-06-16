@@ -997,6 +997,36 @@ bucket definitions, classification rules, totals, and claim boundary.
 
 ---
 
+## MAP-25M: WorldBuilder Component Adjacency Graph
+
+MAP-25M reads the raw PNG, reproduces the 45 connected component labels from MAP-25K, binds them
+to MAP-25L intent records, and emits undirected 4-way pixel adjacency edges between touching
+components. 82 adjacency edges are detected across 7 relationship types.
+
+This is adjacency graph only. It is NOT concrete lot polygons, road geometries, building slots,
+sidewalk geometry, or fence geometry. No generation of any kind occurs.
+
+No terrain generation, no lot subdivision, no concrete geometry created, no lotpack writing,
+no worldgen override file, layout not materialized, no runtime proof. Not writer-ready.
+
+Generate the component adjacency graph:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-component-adjacency-graph.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-component-adjacency-graph\map_00\map_00.component_adjacency_graph.json`
+- `.local\deadmtl-authoring\worldbuilder-component-adjacency-graph\map_00\map_00.component_adjacency_graph.md`
+- `.local\deadmtl-authoring\worldbuilder-component-adjacency-graph\map_00\map_00.component_adjacency_graph.csv`
+- `.local\deadmtl-authoring\worldbuilder-component-adjacency-graph\map_00\map_00.component_adjacency_graph.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_COMPONENT_ADJACENCY_GRAPH_CONTRACT.md` for adjacency
+detection rules, relationship classification, edge totals, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
