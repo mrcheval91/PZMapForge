@@ -1058,6 +1058,39 @@ candidate type mapping, priority policy, totals, and claim boundary.
 
 ---
 
+## MAP-25O WorldBuilder Component Access Profile
+
+MAP-25O reads the MAP-25N planning candidates and MAP-25L component intents and produces a
+per-component access profile for all 45 classified components. For each component it records:
+candidate counts by type, primary frontage and rear-service partners (by largest contact), and
+an access readiness class (DUAL_ACCESS_CANDIDATE, FRONTAGE_ONLY_CANDIDATE, MAIN_ROAD_CORRIDOR_NODE,
+etc.).
+
+This is access profile extraction only. It is NOT lot polygons, road geometries, frontage
+geometry, rear access geometry, building slots, sidewalk geometry, fence geometry, or any
+materialized artifact. No generation of any kind occurs.
+
+No terrain generation, no lot subdivision, no concrete geometry created, no lotpack writing,
+no worldgen override file, layout not materialized, no runtime proof. Not writer-ready.
+
+Generate the component access profile:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-component-access-profile.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-component-access-profile\map_00\map_00.component_access_profile.json`
+- `.local\deadmtl-authoring\worldbuilder-component-access-profile\map_00\map_00.component_access_profile.md`
+- `.local\deadmtl-authoring\worldbuilder-component-access-profile\map_00\map_00.component_access_profile.csv`
+- `.local\deadmtl-authoring\worldbuilder-component-access-profile\map_00\map_00.component_access_profile.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_COMPONENT_ACCESS_PROFILE_CONTRACT.md` for
+access readiness classification rules, primary candidate selection, totals, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.

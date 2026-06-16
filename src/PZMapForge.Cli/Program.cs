@@ -98,6 +98,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                         --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-adjacency-planning-candidate-extraction  --adjacency-graph <cag.json> --connected-components <cce.json> --component-intents <cic.json> --geometry-primitive-schema <schema.json> --geometry-preflight <preflight.json>");
     Console.Error.WriteLine("                                                                       --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-component-access-profile  --planning-candidates <planning_candidates.json> --component-intents <cic.json>");
+    Console.Error.WriteLine("                                                        --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     return 1;
 }
 
@@ -153,6 +155,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-component-intent-classification"     => DeadMtlBuildWorldBuilderComponentIntentClassificationCommand(args[1..]),
     "deadmtl-build-worldbuilder-component-adjacency-graph"          => DeadMtlBuildWorldBuilderComponentAdjacencyGraphCommand(args[1..]),
     "deadmtl-build-worldbuilder-adjacency-planning-candidate-extraction" => DeadMtlBuildWorldBuilderAdjacencyPlanningCandidateExtractionCommand(args[1..]),
+    "deadmtl-build-worldbuilder-component-access-profile"               => DeadMtlBuildWorldBuilderComponentAccessProfileCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5576,7 +5579,8 @@ static int UnknownCommand(string cmd)
         "deadmtl-build-worldbuilder-connected-component-extraction, " +
         "deadmtl-build-worldbuilder-component-intent-classification, " +
         "deadmtl-build-worldbuilder-component-adjacency-graph, " +
-        "deadmtl-build-worldbuilder-adjacency-planning-candidate-extraction");
+        "deadmtl-build-worldbuilder-adjacency-planning-candidate-extraction, " +
+        "deadmtl-build-worldbuilder-component-access-profile");
     return 1;
 }
 
@@ -6352,6 +6356,86 @@ static bool ContainsWord(string s, string word)
 // All alphabetic characters in s are uppercase (transit/landmark heuristic).
 static bool IsAllCapsAlpha(string s) =>
     s.Where(char.IsLetter).Any() && s.Where(char.IsLetter).All(char.IsUpper);
+
+static int DeadMtlBuildWorldBuilderComponentAccessProfileCommand(string[] args)
+{
+    var planningCandidatesPath = string.Empty;
+    var componentIntentsPath   = string.Empty;
+    var outputJson             = string.Empty;
+    var outputMd               = string.Empty;
+    var outputCsv              = string.Empty;
+    var summaryPath            = string.Empty;
+
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--planning-candidates": planningCandidatesPath = args[++i]; break;
+            case "--component-intents":  componentIntentsPath   = args[++i]; break;
+            case "--output-json":        outputJson             = args[++i]; break;
+            case "--output-md":          outputMd               = args[++i]; break;
+            case "--output-csv":         outputCsv              = args[++i]; break;
+            case "--summary":            summaryPath            = args[++i]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(planningCandidatesPath) || string.IsNullOrEmpty(componentIntentsPath) ||
+        string.IsNullOrEmpty(outputJson)             || string.IsNullOrEmpty(outputMd)              ||
+        string.IsNullOrEmpty(outputCsv)              || string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-component-access-profile: " +
+            "--planning-candidates, --component-intents, --output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        if (!p.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"Output path must contain .local: {p}");
+            return 1;
+        }
+    }
+
+    var result = DeadMtlWorldBuilderComponentAccessProfileBuilder.Build(
+        planningCandidatesPath, componentIntentsPath);
+
+    foreach (var p in new[] { outputJson, outputMd, outputCsv, summaryPath })
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var jsonOpts = new JsonSerializerOptions { WriteIndented = true };
+    File.WriteAllText(outputJson,  JsonSerializer.Serialize(result, jsonOpts),                                                           Encoding.UTF8);
+    File.WriteAllText(outputMd,    DeadMtlWorldBuilderComponentAccessProfileBuilder.RenderMarkdown(result),                              Encoding.UTF8);
+    File.WriteAllText(outputCsv,   DeadMtlWorldBuilderComponentAccessProfileBuilder.RenderCsv(result),                                  Encoding.UTF8);
+    File.WriteAllText(summaryPath, DeadMtlWorldBuilderComponentAccessProfileBuilder.RenderSummary(result),                              Encoding.UTF8);
+
+    var c = result.ProfileContract;
+    Console.WriteLine($"output-json:                          {outputJson}");
+    Console.WriteLine($"output-md:                            {outputMd}");
+    Console.WriteLine($"output-csv:                           {outputCsv}");
+    Console.WriteLine($"summary:                              {summaryPath}");
+    Console.WriteLine($"tile_id:                              {result.TileId}");
+    Console.WriteLine($"is_valid:                             {result.IsValid}");
+    Console.WriteLine($"profile_records_extracted:            {c.ProfileRecordsExtracted}");
+    Console.WriteLine($"dual_access_candidate_count:          {c.DualAccessCandidateCount}");
+    Console.WriteLine($"frontage_only_candidate_count:        {c.FrontageOnlyCandidateCount}");
+    Console.WriteLine($"rear_service_only_candidate_count:    {c.RearServiceOnlyCandidateCount}");
+    Console.WriteLine($"landlocked_candidate_count:           {c.LandlockedCandidateCount}");
+    Console.WriteLine($"main_road_corridor_node_count:        {c.MainRoadCorridorNodeCount}");
+    Console.WriteLine($"back_alley_corridor_node_count:       {c.BackAlleyCorridorNodeCount}");
+    Console.WriteLine($"greenspace_mass_node_count:           {c.GreenspaceMassNodeCount}");
+    Console.WriteLine($"civic_placeholder_node_count:         {c.CivicPlaceholderNodeCount}");
+    Console.WriteLine($"ignored_boundary_component_count:     {c.IgnoredBoundaryComponentCount}");
+    Console.WriteLine($"created_geometry_count:               {c.CreatedGeometryCount}");
+    Console.WriteLine($"writer_ready_profile_count:           {c.WriterReadyProfileCount}");
+    Console.WriteLine($"runtime_validated_profile_count:      {c.RuntimeValidatedProfileCount}");
+    Console.WriteLine($"VERDICT: {result.Verdict}");
+
+    return result.IsValid ? 0 : 1;
+}
 
 static int DeadMtlBuildWorldBuilderAdjacencyPlanningCandidateExtractionCommand(string[] args)
 {
@@ -7268,3 +7352,4 @@ sealed class SvgStructureResult
     public IReadOnlyList<string> AllClasses       { get; init; } = [];
     public IReadOnlyList<string> AllTextLabels    { get; init; } = [];
 }
+
