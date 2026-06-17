@@ -1156,6 +1156,35 @@ for overlay semantics and claim boundary.
 
 ---
 
+## MAP-26C WorldBuilder Minimal Concrete Geometry QA Review Packet
+
+MAP-26C reads the MAP-26A geometry MVP JSON and the MAP-26B overlay outputs and produces a
+structured review packet that cross-checks the whole minimal concrete geometry chain.
+It verifies component ID/bbox consistency, lot/slot counts (7/7), feature counts (15),
+CSV feature breakdown (1/7/7), inclusive right/bottom semantics, source-bound containment,
+and that all three boundary flags remain false (`writer_ready`, `runtime_valid`, `materialized`).
+
+It is QA-only: it creates no geometry, writes no PZ-consumable files, and does not compile
+or install anything.
+
+Generate the review packet:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-qa-review-packet.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-qa-review-packet\map_00\map_00.minimal_concrete_geometry_qa_review_packet.json`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-qa-review-packet\map_00\map_00.minimal_concrete_geometry_qa_review_packet.md`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-qa-review-packet\map_00\map_00.minimal_concrete_geometry_qa_review_packet.csv`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-qa-review-packet\map_00\map_00.minimal_concrete_geometry_qa_review_packet.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_QA_REVIEW_PACKET.md`
+for check semantics and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
