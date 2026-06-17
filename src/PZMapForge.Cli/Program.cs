@@ -106,6 +106,10 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                                    --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-qa-review-packet  --geometry-mvp <mvp.json> --qa-overlay-json <overlay.json> --qa-overlay-csv <overlay.csv>");
     Console.Error.WriteLine("                                                                          --qa-overlay-png <overlay.png> --output-json <json> --output-md <md> --output-csv <csv> --summary <summary>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-input-manifest  --geometry-mvp <MAP-26A json> --qa-overlay-json <MAP-26B json> --qa-overlay-csv <MAP-26B csv>");
+    Console.Error.WriteLine("                                                                               --qa-overlay-png <MAP-26B png> --qa-review-json <MAP-26C json> --qa-review-csv <MAP-26C csv>");
+    Console.Error.WriteLine("                                                                               --qa-review-md <MAP-26C md> --qa-review-summary <MAP-26C summary>");
+    Console.Error.WriteLine("                                                                               --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
     return 1;
 }
 
@@ -165,6 +169,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-mvp"         => DeadMtlBuildWorldBuilderMinimalConcreteGeometryMvpCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-qa-overlay"        => DeadMtlBuildWorldBuilderMinimalConcreteGeometryQaOverlayCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-qa-review-packet" => DeadMtlBuildWorldBuilderMinimalConcreteGeometryQaReviewPacketCommand(args[1..]),
+    "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-input-manifest" => DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterInputManifestCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5592,7 +5597,8 @@ static int UnknownCommand(string cmd)
         "deadmtl-build-worldbuilder-component-access-profile, " +
         "deadmtl-build-worldbuilder-minimal-concrete-geometry-mvp, " +
         "deadmtl-build-worldbuilder-minimal-concrete-geometry-qa-overlay, " +
-        "deadmtl-build-worldbuilder-minimal-concrete-geometry-qa-review-packet");
+        "deadmtl-build-worldbuilder-minimal-concrete-geometry-qa-review-packet, " +
+        "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-input-manifest");
     return 1;
 }
 
@@ -6435,6 +6441,89 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometryMvpCommand(string[] ar
     File.WriteAllText(outputCsv,   builder.RenderCsv(result));
     File.WriteAllText(summaryPath, builder.RenderSummary(result));
 
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+    return 0;
+}
+
+static int DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterInputManifestCommand(string[] args)
+{
+    var geometryMvpPath     = string.Empty;
+    var qaOverlayJsonPath   = string.Empty;
+    var qaOverlayCsvPath    = string.Empty;
+    var qaOverlayPngPath    = string.Empty;
+    var qaReviewJsonPath    = string.Empty;
+    var qaReviewCsvPath     = string.Empty;
+    var qaReviewMdPath      = string.Empty;
+    var qaReviewSummaryPath = string.Empty;
+    var outputJson          = string.Empty;
+    var outputMd            = string.Empty;
+    var outputCsv           = string.Empty;
+    var summaryPath         = string.Empty;
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--geometry-mvp":      geometryMvpPath     = args[i + 1]; break;
+            case "--qa-overlay-json":   qaOverlayJsonPath   = args[i + 1]; break;
+            case "--qa-overlay-csv":    qaOverlayCsvPath    = args[i + 1]; break;
+            case "--qa-overlay-png":    qaOverlayPngPath    = args[i + 1]; break;
+            case "--qa-review-json":    qaReviewJsonPath    = args[i + 1]; break;
+            case "--qa-review-csv":     qaReviewCsvPath     = args[i + 1]; break;
+            case "--qa-review-md":      qaReviewMdPath      = args[i + 1]; break;
+            case "--qa-review-summary": qaReviewSummaryPath = args[i + 1]; break;
+            case "--output-json":       outputJson          = args[i + 1]; break;
+            case "--output-md":         outputMd            = args[i + 1]; break;
+            case "--output-csv":        outputCsv           = args[i + 1]; break;
+            case "--summary":           summaryPath         = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(geometryMvpPath)   || string.IsNullOrEmpty(qaOverlayJsonPath) ||
+        string.IsNullOrEmpty(qaOverlayCsvPath)  || string.IsNullOrEmpty(qaOverlayPngPath)  ||
+        string.IsNullOrEmpty(qaReviewJsonPath)  || string.IsNullOrEmpty(qaReviewCsvPath)   ||
+        string.IsNullOrEmpty(qaReviewMdPath)    || string.IsNullOrEmpty(qaReviewSummaryPath) ||
+        string.IsNullOrEmpty(outputJson)         || string.IsNullOrEmpty(outputMd)           ||
+        string.IsNullOrEmpty(outputCsv)          || string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-input-manifest: " +
+            "--geometry-mvp, --qa-overlay-json, --qa-overlay-csv, --qa-overlay-png, " +
+            "--qa-review-json, --qa-review-csv, --qa-review-md, --qa-review-summary, " +
+            "--output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    var allOutputs = new[] { outputJson, outputMd, outputCsv, summaryPath };
+    if (allOutputs.Any(p => !p.Contains(".local")))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-input-manifest: " +
+            "all output paths must contain '.local' in the path.");
+        return 1;
+    }
+
+    foreach (var p in allOutputs)
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderMinimalConcreteGeometryWriterInputManifestBuilder();
+    var result  = builder.Build(geometryMvpPath, qaOverlayJsonPath, qaOverlayCsvPath, qaOverlayPngPath,
+        qaReviewJsonPath, qaReviewCsvPath, qaReviewMdPath, qaReviewSummaryPath);
+
+    File.WriteAllText(outputJson,  builder.RenderJson(result));
+    File.WriteAllText(outputMd,    builder.RenderMarkdown(result));
+    File.WriteAllText(outputCsv,   builder.RenderCsv(result));
+    File.WriteAllText(summaryPath, builder.RenderSummary(result));
+
+    Console.WriteLine("MAP-26D WorldBuilder minimal concrete geometry writer input manifest");
     Console.WriteLine(builder.RenderSummary(result));
 
     if (!result.IsValid)

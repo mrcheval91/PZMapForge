@@ -1185,6 +1185,36 @@ for check semantics and claim boundary.
 
 ---
 
+## MAP-26D WorldBuilder Minimal Concrete Geometry Writer Input Manifest
+
+MAP-26D reads all MAP-26A/B/C output artifacts and packages them into a locked, hash-verified
+input bundle. It performs 17 checks: all 8 artifacts exist and are SHA-256 hashed, MAP-26A/B/C
+verdicts are complete, MAP-26C passed all 18 review checks, and all geometry values (component ID,
+bbox, lot/slot counts, feature count, source dimensions) are stable. All three boundary flags
+remain false. The writer experiment gate is locked: `approved_for_writer_experiment: false`,
+`writer_experiment_gate_status: LOCKED_PENDING_OPERATOR_APPROVAL`.
+
+MAP-26D creates no geometry, writes no PZ-consumable files, and does not compile or install
+anything.
+
+Generate the writer input manifest:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-writer-input-manifest.ps1
+```
+
+Output (under `.local/`):
+
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-input-manifest\map_00\map_00.minimal_concrete_geometry_writer_input_manifest.json`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-input-manifest\map_00\map_00.minimal_concrete_geometry_writer_input_manifest.md`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-input-manifest\map_00\map_00.minimal_concrete_geometry_writer_input_manifest.csv`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-input-manifest\map_00\map_00.minimal_concrete_geometry_writer_input_manifest.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_WRITER_INPUT_MANIFEST.md`
+for check semantics, SHA-256 hashing, writer gate, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
