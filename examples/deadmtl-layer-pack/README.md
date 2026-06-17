@@ -1236,6 +1236,27 @@ for allowed/forbidden actions, preconditions, rollback, risk register, and claim
 
 ---
 
+## MAP-26F WorldBuilder Minimal Concrete Geometry Writer Dry-Run Design
+
+MAP-26F reads the MAP-26E scope record, MAP-26D manifest, and MAP-26A geometry MVP and produces
+a deterministic dry-run writer design record. It documents planned output records, sandbox
+constraints, forbidden output guards, and rollback checks. It does NOT emit any writer outputs.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-writer-dry-run-design.ps1
+```
+
+Output paths:
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-dry-run-design\map_00\map_00.minimal_concrete_geometry_writer_dry_run_design.json`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-dry-run-design\map_00\map_00.minimal_concrete_geometry_writer_dry_run_design.md`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-dry-run-design\map_00\map_00.minimal_concrete_geometry_writer_dry_run_design.csv`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-dry-run-design\map_00\map_00.minimal_concrete_geometry_writer_dry_run_design.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_WRITER_DRY_RUN_DESIGN.md`
+for planned records, sandbox constraints, forbidden guards, rollback checks, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
