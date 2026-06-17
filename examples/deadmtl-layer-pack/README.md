@@ -1215,6 +1215,27 @@ for check semantics, SHA-256 hashing, writer gate, and claim boundary.
 
 ---
 
+## MAP-26E WorldBuilder Minimal Concrete Geometry Writer Experiment Scope Record
+
+MAP-26E reads the MAP-26D manifest and produces a deterministic writer experiment scope /
+approval record. It documents allowed future actions, forbidden actions, required preconditions,
+rollback requirements, and a risk register. It does NOT authorize any writer experiment.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-writer-experiment-scope-record.ps1
+```
+
+Output paths:
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-experiment-scope-record\map_00\map_00.minimal_concrete_geometry_writer_experiment_scope_record.json`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-experiment-scope-record\map_00\map_00.minimal_concrete_geometry_writer_experiment_scope_record.md`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-experiment-scope-record\map_00\map_00.minimal_concrete_geometry_writer_experiment_scope_record.csv`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-experiment-scope-record\map_00\map_00.minimal_concrete_geometry_writer_experiment_scope_record.summary.txt`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_WRITER_EXPERIMENT_SCOPE_RECORD.md`
+for allowed/forbidden actions, preconditions, rollback, risk register, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
