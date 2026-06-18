@@ -131,6 +131,10 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                                                               --tile-buffer-ownership <json> --tile-buffer-replay-log <json> --tile-buffer-collision-report <json>");
     Console.Error.WriteLine("                                                                                               --tile-buffer-forbidden-output-guard <json>");
     Console.Error.WriteLine("                                                                                               --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0  --tile-materializer-result <MAP-27C json> --materialized-cells <csv>");
+    Console.Error.WriteLine("                                                                                                           --material-palette <json> --layer-stack <json> --materialization-replay-log <json>");
+    Console.Error.WriteLine("                                                                                                           --materialization-ownership-summary <json> --materializer-forbidden-output-guard <json>");
+    Console.Error.WriteLine("                                                                                                           --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
     return 1;
 }
 
@@ -198,7 +202,8 @@ return args[0] switch
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-adapter-contract"                   => DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterAdapterContractCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-v0"                        => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterV0Command(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0"           => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileBufferV0Command(args[1..]),
-    "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-v0"   => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializerV0Command(args[1..]),
+    "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-v0"           => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializerV0Command(args[1..]),
+    "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0" => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializerQaOverlayV0Command(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -6993,6 +6998,113 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMater
     File.WriteAllText(summaryPath, builder.RenderSummary(result));
 
     Console.WriteLine("MAP-27C WorldBuilder minimal concrete geometry sandbox writer tile materializer v0");
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return 0;
+}
+
+static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializerQaOverlayV0Command(string[] args)
+{
+    var tileMaterializerResultPath          = string.Empty;
+    var materializedCellsPath               = string.Empty;
+    var materialPalettePath                 = string.Empty;
+    var layerStackPath                      = string.Empty;
+    var materializationReplayLogPath        = string.Empty;
+    var materializationOwnershipSummaryPath = string.Empty;
+    var materializerForbiddenOutputGuardPath = string.Empty;
+    var outputRoot                          = string.Empty;
+    var outputJson                          = string.Empty;
+    var outputMd                            = string.Empty;
+    var outputCsv                           = string.Empty;
+    var summaryPath                         = string.Empty;
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--tile-materializer-result":           tileMaterializerResultPath          = args[i + 1]; break;
+            case "--materialized-cells":                 materializedCellsPath               = args[i + 1]; break;
+            case "--material-palette":                   materialPalettePath                 = args[i + 1]; break;
+            case "--layer-stack":                        layerStackPath                      = args[i + 1]; break;
+            case "--materialization-replay-log":         materializationReplayLogPath        = args[i + 1]; break;
+            case "--materialization-ownership-summary":  materializationOwnershipSummaryPath = args[i + 1]; break;
+            case "--materializer-forbidden-output-guard": materializerForbiddenOutputGuardPath = args[i + 1]; break;
+            case "--output-root":                        outputRoot                          = args[i + 1]; break;
+            case "--output-json":                        outputJson                          = args[i + 1]; break;
+            case "--output-md":                          outputMd                            = args[i + 1]; break;
+            case "--output-csv":                         outputCsv                           = args[i + 1]; break;
+            case "--summary":                            summaryPath                         = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(tileMaterializerResultPath)           ||
+        string.IsNullOrEmpty(materializedCellsPath)                ||
+        string.IsNullOrEmpty(materialPalettePath)                  ||
+        string.IsNullOrEmpty(layerStackPath)                       ||
+        string.IsNullOrEmpty(materializationReplayLogPath)         ||
+        string.IsNullOrEmpty(materializationOwnershipSummaryPath)  ||
+        string.IsNullOrEmpty(materializerForbiddenOutputGuardPath) ||
+        string.IsNullOrEmpty(outputRoot)                           ||
+        string.IsNullOrEmpty(outputJson)                           ||
+        string.IsNullOrEmpty(outputMd)                             ||
+        string.IsNullOrEmpty(outputCsv)                            ||
+        string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine(
+            "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0: " +
+            "--tile-materializer-result, --materialized-cells, --material-palette, --layer-stack, " +
+            "--materialization-replay-log, --materialization-ownership-summary, --materializer-forbidden-output-guard, " +
+            "--output-root, --output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    if (!outputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0: " +
+            "--output-root must contain '.local' in the path.");
+        return 1;
+    }
+
+    var allOutputs = new[] { outputJson, outputMd, outputCsv, summaryPath };
+    if (allOutputs.Any(p => !p.Contains(".local", StringComparison.OrdinalIgnoreCase)))
+    {
+        Console.Error.WriteLine(
+            "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0: " +
+            "all output file paths must contain '.local' in the path.");
+        return 1;
+    }
+
+    foreach (var p in allOutputs)
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializerQaOverlayBuilder();
+    var result  = builder.Build(
+        tileMaterializerResultPath,
+        materializedCellsPath,
+        materialPalettePath,
+        layerStackPath,
+        materializationReplayLogPath,
+        materializationOwnershipSummaryPath,
+        materializerForbiddenOutputGuardPath,
+        outputRoot);
+
+    File.WriteAllText(outputJson,  builder.RenderJson(result));
+    File.WriteAllText(outputMd,    builder.RenderMarkdown(result));
+    File.WriteAllText(outputCsv,   builder.RenderCsv(result));
+    File.WriteAllText(summaryPath, builder.RenderSummary(result));
+
+    Console.WriteLine("MAP-27D WorldBuilder minimal concrete geometry sandbox writer tile materializer QA overlay v0");
     Console.WriteLine(builder.RenderSummary(result));
 
     if (!result.IsValid)

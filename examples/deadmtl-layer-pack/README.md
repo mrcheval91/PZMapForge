@@ -1430,6 +1430,36 @@ for materialization rules, material palette, layer stack, and claim boundary.
 
 ---
 
+## MAP-27D WorldBuilder Minimal Concrete Geometry Sandbox Writer Tile Materializer QA Overlay V0
+
+MAP-27D reads the MAP-27C materialized cells CSV and renders a deterministic 1024x1024 PNG
+visual QA overlay. Each 256x256 tile-space cell is drawn as a 4x4 pixel block.
+
+Sandbox-only diagnostic artifact. No PZ runtime files are written. No runtime validity claimed.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.ps1
+```
+
+Output (under `.local/`):
+- `worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.local\map_00.sandbox_writer_tile_materializer_qa_overlay.png` (1024x1024 PNG)
+- `worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.local\map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.json`
+- `worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.local\map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.md`
+- `worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.local\map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.csv`
+- `worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.local\map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.summary.txt`
+
+39 checks. `writer_stage: SANDBOX_WRITER_TILE_MATERIALIZER_QA_OVERLAY_V0`.
+`sandbox_only: true`, `visual_qa_overlay_written: true`, `pz_runtime_materialized: false`,
+`writer_ready: false`, `materialized: false`.
+
+Material color palette: WALL=#1F1F1F, FLOOR=#A8A8A8, ACCESS=#2F6FDB, LOT=#4F8A3B,
+RESIDUAL=#7A4E2A, background=#101010.
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_TILE_MATERIALIZER_QA_OVERLAY_V0.md`
+for color palette, rendering rules, input requirements, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
