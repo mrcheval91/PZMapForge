@@ -124,6 +124,9 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                                                 --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-v0  --adapter-contract <MAP-26I/26J json>");
     Console.Error.WriteLine("                                                                           --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0  --sandbox-writer-result <MAP-27A json> --component-op <json>");
+    Console.Error.WriteLine("                                                                                        --lot-op <json> --building-slot-op <json> --access-op <json> --forbidden-guard <json>");
+    Console.Error.WriteLine("                                                                                        --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
     return 1;
 }
 
@@ -190,6 +193,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt"      => DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterDryRunEmissionAuditReceiptCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-adapter-contract"                   => DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterAdapterContractCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-v0"                        => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterV0Command(args[1..]),
+    "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0"           => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileBufferV0Command(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -6799,6 +6803,94 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterV0Command
     File.WriteAllText(summaryPath, builder.RenderSummary(result));
 
     Console.WriteLine("MAP-27A WorldBuilder minimal concrete geometry sandbox writer v0");
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return 0;
+}
+
+static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileBufferV0Command(string[] args)
+{
+    var sandboxWriterResultPath = string.Empty;
+    var componentOpPath         = string.Empty;
+    var lotOpPath               = string.Empty;
+    var buildingSlotOpPath      = string.Empty;
+    var accessOpPath            = string.Empty;
+    var forbiddenGuardPath      = string.Empty;
+    var outputRoot              = string.Empty;
+    var outputJson              = string.Empty;
+    var outputMd                = string.Empty;
+    var outputCsv               = string.Empty;
+    var summaryPath             = string.Empty;
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--sandbox-writer-result": sandboxWriterResultPath = args[i + 1]; break;
+            case "--component-op":          componentOpPath         = args[i + 1]; break;
+            case "--lot-op":                lotOpPath               = args[i + 1]; break;
+            case "--building-slot-op":      buildingSlotOpPath      = args[i + 1]; break;
+            case "--access-op":             accessOpPath            = args[i + 1]; break;
+            case "--forbidden-guard":       forbiddenGuardPath      = args[i + 1]; break;
+            case "--output-root":           outputRoot              = args[i + 1]; break;
+            case "--output-json":           outputJson              = args[i + 1]; break;
+            case "--output-md":             outputMd                = args[i + 1]; break;
+            case "--output-csv":            outputCsv               = args[i + 1]; break;
+            case "--summary":               summaryPath             = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(sandboxWriterResultPath) || string.IsNullOrEmpty(componentOpPath)    ||
+        string.IsNullOrEmpty(lotOpPath)               || string.IsNullOrEmpty(buildingSlotOpPath) ||
+        string.IsNullOrEmpty(accessOpPath)            || string.IsNullOrEmpty(forbiddenGuardPath) ||
+        string.IsNullOrEmpty(outputRoot)              || string.IsNullOrEmpty(outputJson)         ||
+        string.IsNullOrEmpty(outputMd)                || string.IsNullOrEmpty(outputCsv)          ||
+        string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0: " +
+            "--sandbox-writer-result, --component-op, --lot-op, --building-slot-op, --access-op, --forbidden-guard, " +
+            "--output-root, --output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    if (!outputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0: " +
+            "--output-root must contain '.local' in the path.");
+        return 1;
+    }
+
+    var allOutputs = new[] { outputJson, outputMd, outputCsv, summaryPath };
+    if (allOutputs.Any(p => !p.Contains(".local", StringComparison.OrdinalIgnoreCase)))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0: " +
+            "all output file paths must contain '.local' in the path.");
+        return 1;
+    }
+
+    foreach (var p in allOutputs)
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileBufferBuilder();
+    var result  = builder.Build(sandboxWriterResultPath, componentOpPath, lotOpPath,
+                                buildingSlotOpPath, accessOpPath, forbiddenGuardPath, outputRoot);
+
+    File.WriteAllText(outputJson,  builder.RenderJson(result));
+    File.WriteAllText(outputMd,    builder.RenderMarkdown(result));
+    File.WriteAllText(outputCsv,   builder.RenderCsv(result));
+    File.WriteAllText(summaryPath, builder.RenderSummary(result));
+
+    Console.WriteLine("MAP-27B WorldBuilder minimal concrete geometry sandbox writer tile buffer v0");
     Console.WriteLine(builder.RenderSummary(result));
 
     if (!result.IsValid)

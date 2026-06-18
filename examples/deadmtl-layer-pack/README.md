@@ -1371,6 +1371,34 @@ for checks, operation kinds, and claim boundary.
 
 ---
 
+## MAP-27B WorldBuilder Minimal Concrete Geometry Sandbox Writer Tile Buffer V0
+
+MAP-27B consumes MAP-27A operation files and applies them into an internal 256x256 tile buffer.
+No PZ runtime files are written. No runtime validity is claimed.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0.ps1
+```
+
+Main output paths (all under `.local`):
+- `.local\map27b\map_00.sandbox_writer_tile_buffer_v0.json`
+- `.local\map27b\map_00.sandbox_writer_tile_buffer_v0.summary.txt`
+
+Extra output files (all under `.local\map27b`):
+- `map_00.sandbox_writer_tile_buffer_cells.csv` (touched cells)
+- `map_00.sandbox_writer_tile_buffer_ownership.json` (4 ownership kinds)
+- `map_00.sandbox_writer_tile_buffer_replay_log.json` (17 replay entries)
+- `map_00.sandbox_writer_tile_buffer_collision_report.json` (collision records)
+- `map_00.sandbox_writer_tile_buffer_forbidden_output_guard.json` (inherited guard)
+
+Buffer: 256x256, `PNG_PIXEL_TILE_SPACE`, origin top-left. 37 checks.
+`writer_stage: SANDBOX_WRITER_TILE_BUFFER_V0`, `sandbox_only: true`, `writer_ready: false`.
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_TILE_BUFFER_V0.md`
+for buffer model, ownership priorities, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
