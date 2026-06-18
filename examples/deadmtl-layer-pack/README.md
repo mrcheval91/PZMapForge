@@ -1493,6 +1493,36 @@ for check list, input requirements, and claim boundary.
 
 ---
 
+## MAP-27F WorldBuilder Minimal Concrete Geometry Sandbox Writer Tile Materialization Acceptance Gate
+
+MAP-27F consumes the MAP-27E QA review packet and decides whether the sandbox tile
+materialization chain is acceptable as a future writer experiment input.
+
+Does NOT generate a new overlay. Does NOT write PZ runtime files.
+Does NOT approve writer-ready, runtime, or playable status.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-acceptance-gate.ps1
+```
+
+Output (under `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-acceptance-gate\map_00\`):
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_acceptance_gate.json`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_acceptance_gate.md`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_acceptance_gate.csv`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_acceptance_gate.summary.txt`
+
+38 checks. `acceptance_stage: SANDBOX_WRITER_TILE_MATERIALIZATION_ACCEPTANCE_GATE`.
+`acceptance_gate_status: ACCEPTED_FOR_NEXT_SANDBOX_EXPERIMENT_ONLY`.
+`sandbox_only: true`, `accepted_for_runtime_writer: false`, `accepted_for_playable_export: false`,
+`writer_ready: false`, `materialized: false`.
+
+Next allowed experiment: `MAP-27G_SANDBOX_WRITER_TILE_MATERIALIZATION_REPLAY_LOCK` (SANDBOX_ONLY_NOT_RUNTIME).
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_TILE_MATERIALIZATION_ACCEPTANCE_GATE.md`
+for check list, acceptance criteria, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
