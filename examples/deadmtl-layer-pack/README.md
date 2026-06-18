@@ -1257,6 +1257,38 @@ for planned records, sandbox constraints, forbidden guards, rollback checks, and
 
 ---
 
+## MAP-26G WorldBuilder Minimal Concrete Geometry Writer Dry-Run Emitter
+
+MAP-26G reads the MAP-26F dry-run design and the MAP-26A geometry MVP and emits deterministic
+dry-run records under `.local` only. It answers what a future writer would emit from the real
+MAP-26A geometry, without writing any PZ runtime files, `.lotpack`, `.lotheader`,
+`WorldGenOverride.lua`, or calling `compile-worldgen`.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-writer-dry-run-emitter.ps1
+```
+
+Main output paths:
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-dry-run-emitter\map_00\map_00.minimal_concrete_geometry_writer_dry_run_emitter.json`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-dry-run-emitter\map_00\map_00.minimal_concrete_geometry_writer_dry_run_emitter.md`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-dry-run-emitter\map_00\map_00.minimal_concrete_geometry_writer_dry_run_emitter.csv`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-dry-run-emitter\map_00\map_00.minimal_concrete_geometry_writer_dry_run_emitter.summary.txt`
+
+Dry-run emitted record files (8 total, all under the same directory):
+- `map_00.component_writer_record.json`
+- `map_00.lot_writer_records.json`
+- `map_00.building_slot_writer_records.json`
+- `map_00.frontage_access_record.json`
+- `map_00.rear_service_access_record.json`
+- `map_00.forbidden_output_scan.json`
+- `map_00.rollback_record.json`
+- `map_00.claim_boundary_record.json`
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_WRITER_DRY_RUN_EMITTER.md`
+for checks, claim boundary, and what this does and does not prove.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
