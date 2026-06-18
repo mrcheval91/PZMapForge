@@ -39,6 +39,24 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         });
     }
 
+    private static string ScanOutputRoot(string outputRoot)
+    {
+        if (!Directory.Exists(outputRoot))
+            return "POST_AUDIT_FORBIDDEN_SCAN PASS (0 forbidden artifacts in output root)";
+
+        var patterns = new[] { "*.lotpack", "*.lotheader", "*.lua", "*.bin" };
+        int count = patterns.Sum(p =>
+            Directory.GetFiles(outputRoot, p, SearchOption.AllDirectories).Length);
+
+        bool hasMediaMaps = Directory.GetDirectories(outputRoot, "*", SearchOption.AllDirectories)
+            .Any(d => { var di = new DirectoryInfo(d); return di.Name == "maps" && di.Parent?.Name == "media"; });
+        if (hasMediaMaps) count++;
+
+        return count == 0
+            ? "POST_AUDIT_FORBIDDEN_SCAN PASS (0 forbidden artifacts in output root)"
+            : $"POST_AUDIT_FORBIDDEN_SCAN FAIL ({count} forbidden artifacts found in output root)";
+    }
+
     public DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationLockedReplayAuditResult Build(
         string replayLockRoot,
         string outputRoot)
@@ -61,6 +79,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
             PublicPlayablePackagingClaimed = false,
             NextAllowedExperimentName      = "MAP-27I_SANDBOX_WRITER_LOCKED_MATERIALIZATION_REPLAY_DRY_RUN",
             NextAllowedExperimentStatus    = "SANDBOX_ONLY_NOT_RUNTIME",
+            ClaimBoundaryAudit             = "writer_ready=false | runtime_valid=false | materialized=false | runtime_proof_claimed=false | public_playable_packaging_claimed=false",
         };
 
         if (!Directory.Exists(replayLockRoot))
@@ -86,43 +105,80 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
 
         result.SourceReplayLockSha256 = HashFile(lockFilePath);
 
-        string storedVerdict          = string.Empty;
-        bool   storedIsValid          = false;
-        string storedStatus           = string.Empty;
-        string storedReplayLockId     = string.Empty;
-        int    storedFileCount        = 0;
-        bool   storedSandboxOnly      = false;
-        bool   storedPzRuntime        = true;
-        var    storedLockedFiles      = new List<(int Order, string Stage, string Role, string Name, string Path, string Sha256, bool LockedForReplay, bool RuntimeConsumable, bool WriterConsumable)>();
+        string storedVerdict                   = string.Empty;
+        bool   storedIsValid                   = false;
+        string storedStatus                    = string.Empty;
+        string storedReplayLockId              = string.Empty;
+        int    storedFileCount                 = 0;
+        bool   storedSandboxOnly               = false;
+        bool   storedPzRuntime                 = true;
+        bool   storedSandboxMaterializedSource = false;
+        bool   storedVisualQaOverlayWritten    = false;
+        int    storedMaterializedCellCount     = 0;
+        int    storedRenderedCellCount         = 0;
+        string storedCountMatchSummary         = string.Empty;
+        int    storedWallCount                 = 0;
+        int    storedFloorCount                = 0;
+        int    storedAccessCount               = 0;
+        int    storedLotCount                  = 0;
+        int    storedResidualCount             = 0;
+        int    storedMaterialKindCount         = 0;
+        int    storedLayerKindCount            = 0;
+        string storedTargetComponentId         = string.Empty;
+        var    storedNextForbiddenSteps        = new List<string>();
+
+        var storedLockedFiles = new List<(int Order, string Stage, string Role, string Name, string Path, string Sha256, bool LockedForReplay, bool RuntimeConsumable, bool WriterConsumable)>();
 
         try
         {
             using var doc = JsonDocument.Parse(File.ReadAllText(lockFilePath, Encoding.UTF8));
             var r = doc.RootElement;
-            if (r.TryGetProperty("verdict",              out var p)) storedVerdict      = p.GetString() ?? "";
-            if (r.TryGetProperty("is_valid",             out p))     storedIsValid      = p.GetBoolean();
-            if (r.TryGetProperty("replay_lock_status",   out p))     storedStatus       = p.GetString() ?? "";
-            if (r.TryGetProperty("replay_lock_id",       out p))     storedReplayLockId = p.GetString() ?? "";
-            if (r.TryGetProperty("replay_lock_file_count", out p))   storedFileCount    = p.GetInt32();
-            if (r.TryGetProperty("sandbox_only",         out p))     storedSandboxOnly  = p.GetBoolean();
-            if (r.TryGetProperty("pz_runtime_materialized", out p))  storedPzRuntime   = p.GetBoolean();
+
+            if (r.TryGetProperty("verdict",                             out var p)) storedVerdict                   = p.GetString() ?? "";
+            if (r.TryGetProperty("is_valid",                            out p))     storedIsValid                   = p.GetBoolean();
+            if (r.TryGetProperty("replay_lock_status",                  out p))     storedStatus                    = p.GetString() ?? "";
+            if (r.TryGetProperty("replay_lock_id",                      out p))     storedReplayLockId              = p.GetString() ?? "";
+            if (r.TryGetProperty("replay_lock_file_count",              out p))     storedFileCount                 = p.GetInt32();
+            if (r.TryGetProperty("sandbox_only",                        out p))     storedSandboxOnly               = p.GetBoolean();
+            if (r.TryGetProperty("pz_runtime_materialized",             out p))     storedPzRuntime                 = p.GetBoolean();
+            if (r.TryGetProperty("sandbox_materialized_source",         out p))     storedSandboxMaterializedSource = p.GetBoolean();
+            if (r.TryGetProperty("visual_qa_overlay_written",           out p))     storedVisualQaOverlayWritten    = p.GetBoolean();
+            if (r.TryGetProperty("materialized_cell_count",             out p))     storedMaterializedCellCount     = p.GetInt32();
+            if (r.TryGetProperty("rendered_cell_count",                 out p))     storedRenderedCellCount         = p.GetInt32();
+            if (r.TryGetProperty("count_match_summary",                 out p))     storedCountMatchSummary         = p.GetString() ?? "";
+            if (r.TryGetProperty("building_wall_candidate_cell_count",  out p))     storedWallCount                 = p.GetInt32();
+            if (r.TryGetProperty("building_floor_candidate_cell_count", out p))     storedFloorCount                = p.GetInt32();
+            if (r.TryGetProperty("access_edge_cell_count",              out p))     storedAccessCount               = p.GetInt32();
+            if (r.TryGetProperty("lot_space_cell_count",                out p))     storedLotCount                  = p.GetInt32();
+            if (r.TryGetProperty("component_residual_cell_count",       out p))     storedResidualCount             = p.GetInt32();
+            if (r.TryGetProperty("material_kind_count",                 out p))     storedMaterialKindCount         = p.GetInt32();
+            if (r.TryGetProperty("layer_kind_count",                    out p))     storedLayerKindCount            = p.GetInt32();
+            if (r.TryGetProperty("target_component_id",                 out p))     storedTargetComponentId         = p.GetString() ?? "";
+
+            if (r.TryGetProperty("next_forbidden_steps", out var nfsEl) &&
+                nfsEl.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var entry in nfsEl.EnumerateArray())
+                    storedNextForbiddenSteps.Add(entry.GetString() ?? "");
+            }
 
             if (r.TryGetProperty("replay_lock_files", out var filesEl) &&
                 filesEl.ValueKind == JsonValueKind.Array)
             {
                 foreach (var f in filesEl.EnumerateArray())
                 {
-                    int    order    = f.TryGetProperty("file_order",          out var fp) ? fp.GetInt32()    : 0;
-                    string stage    = f.TryGetProperty("source_stage",        out fp)     ? fp.GetString() ?? "" : "";
-                    string role     = f.TryGetProperty("file_role",           out fp)     ? fp.GetString() ?? "" : "";
-                    string name     = f.TryGetProperty("file_name",           out fp)     ? fp.GetString() ?? "" : "";
-                    string path     = f.TryGetProperty("file_path",           out fp)     ? fp.GetString() ?? "" : "";
-                    string sha256   = f.TryGetProperty("sha256",              out fp)     ? fp.GetString() ?? "" : "";
-                    bool   locked   = f.TryGetProperty("locked_for_replay",   out fp)     && fp.GetBoolean();
-                    bool   runtime  = f.TryGetProperty("runtime_consumable",  out fp)     && fp.GetBoolean();
-                    bool   writer   = f.TryGetProperty("writer_consumable",   out fp)     && fp.GetBoolean();
+                    int    order   = f.TryGetProperty("file_order",         out var fp) ? fp.GetInt32()    : 0;
+                    string stage   = f.TryGetProperty("source_stage",       out fp)     ? fp.GetString() ?? "" : "";
+                    string role    = f.TryGetProperty("file_role",          out fp)     ? fp.GetString() ?? "" : "";
+                    string name    = f.TryGetProperty("file_name",          out fp)     ? fp.GetString() ?? "" : "";
+                    string path    = f.TryGetProperty("file_path",          out fp)     ? fp.GetString() ?? "" : "";
+                    string sha256  = f.TryGetProperty("sha256",             out fp)     ? fp.GetString() ?? "" : "";
+                    bool   locked  = f.TryGetProperty("locked_for_replay",  out fp)     && fp.GetBoolean();
+                    bool   runtime = f.TryGetProperty("runtime_consumable", out fp)     && fp.GetBoolean();
+                    bool   writer  = f.TryGetProperty("writer_consumable",  out fp)     && fp.GetBoolean();
                     storedLockedFiles.Add((order, stage, role, name, path, sha256, locked, runtime, writer));
                 }
+                storedLockedFiles.Sort((a, b) => a.Order.CompareTo(b.Order));
             }
         }
         catch (Exception ex)
@@ -133,25 +189,38 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
             return result;
         }
 
-        result.SourceReplayLockVerdict   = storedVerdict;
-        result.SourceReplayLockIsValid   = storedIsValid;
-        result.SourceReplayLockStatus    = storedStatus;
-        result.SourceReplayLockId        = storedReplayLockId;
-        result.SourceReplayLockFileCount = storedFileCount;
-        result.SandboxOnly               = storedSandboxOnly;
-        result.PzRuntimeMaterialized     = storedPzRuntime;
-        result.LockedFileCount           = storedLockedFiles.Count;
+        result.SourceReplayLockVerdict         = storedVerdict;
+        result.SourceReplayLockIsValid         = storedIsValid;
+        result.SourceReplayLockStatus          = storedStatus;
+        result.SourceReplayLockId              = storedReplayLockId;
+        result.SourceReplayLockFileCount       = storedFileCount;
+        result.SandboxOnly                     = storedSandboxOnly;
+        result.PzRuntimeMaterialized           = storedPzRuntime;
+        result.SandboxMaterializedSource       = storedSandboxMaterializedSource;
+        result.VisualQaOverlayWritten          = storedVisualQaOverlayWritten;
+        result.MaterializedCellCount           = storedMaterializedCellCount;
+        result.RenderedCellCount               = storedRenderedCellCount;
+        result.CountMatchSummary               = storedCountMatchSummary;
+        result.BuildingWallCandidateCellCount  = storedWallCount;
+        result.BuildingFloorCandidateCellCount = storedFloorCount;
+        result.AccessEdgeCellCount             = storedAccessCount;
+        result.LotSpaceCellCount               = storedLotCount;
+        result.ComponentResidualCellCount      = storedResidualCount;
+        result.MaterialKindCount               = storedMaterialKindCount;
+        result.LayerKindCount                  = storedLayerKindCount;
+        result.TargetComponentId               = storedTargetComponentId;
+        result.NextForbiddenSteps              = storedNextForbiddenSteps;
 
-        // Re-hash each locked file and build audit file list
+        // Re-hash each locked file
         var auditFiles = new List<DeadMtlTileMaterializationLockedReplayAuditFile>();
         foreach (var lf in storedLockedFiles)
         {
-            bool   exists   = File.Exists(lf.Path);
-            string recomp   = exists ? HashFile(lf.Path) : string.Empty;
-            bool   matches  = exists && string.Equals(lf.Sha256, recomp, StringComparison.Ordinal);
-            string status   = !exists ? "LOCKED_FILE_MISSING"
-                            : matches ? "LOCKED_FILE_VERIFIED"
-                            : "LOCKED_FILE_HASH_MISMATCH";
+            bool   exists  = File.Exists(lf.Path);
+            string recomp  = exists ? HashFile(lf.Path) : string.Empty;
+            bool   matches = exists && string.Equals(lf.Sha256, recomp, StringComparison.Ordinal);
+            string status  = !exists ? "LOCKED_FILE_MISSING"
+                           : matches ? "LOCKED_FILE_VERIFIED"
+                           :           "LOCKED_FILE_HASH_MISMATCH";
             auditFiles.Add(new DeadMtlTileMaterializationLockedReplayAuditFile
             {
                 FileOrder         = lf.Order,
@@ -170,11 +239,12 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
             });
         }
         result.LockedFiles                 = auditFiles;
+        result.LockedFileCount             = auditFiles.Count;
         result.LockedFileHashMatchCount    = auditFiles.Count(f => f.HashMatches);
         result.LockedFileHashMismatchCount = auditFiles.Count(f => f.Exists && !f.HashMatches);
-        result.LockedFileHashMissingCount  = auditFiles.Count(f => !f.Exists);
+        result.LockedFileMissingCount      = auditFiles.Count(f => !f.Exists);
 
-        // Recompute replay lock ID using MAP-27G1 formula (with recomputed hashes)
+        // Recompute replay lock ID using MAP-27G1 formula with recomputed hashes
         bool allExistAndHashed = auditFiles.Count == 8 && auditFiles.All(f => f.Exists && !string.IsNullOrEmpty(f.RecomputedSha256));
         string recomputedLockId = "RECOMPUTED_LOCK_ID_NOT_GENERATED";
         if (allExistAndHashed)
@@ -188,7 +258,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
                 + "|" + auditFiles[5].FileRole + ":" + auditFiles[5].RecomputedSha256
                 + "|" + auditFiles[6].FileRole + ":" + auditFiles[6].RecomputedSha256
                 + "|" + auditFiles[7].FileRole + ":" + auditFiles[7].RecomputedSha256;
-            string lockHex  = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(lockInput))).ToLower();
+            string lockHex = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(lockInput))).ToLower();
             recomputedLockId = "map_00_replay_lock_" + lockHex[..16];
         }
         result.RecomputedReplayLockId = recomputedLockId;
@@ -196,128 +266,203 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
 
         bool allHashesMatch = result.LockedFileHashMatchCount == 8 &&
                               result.LockedFileHashMismatchCount == 0 &&
-                              result.LockedFileHashMissingCount  == 0;
+                              result.LockedFileMissingCount == 0;
 
-        // Determine audit_status
-        bool auditVerified = allHashesMatch && result.ReplayLockIdMatches;
-        result.AuditStatus = auditVerified
+        result.AuditStatus = allHashesMatch && result.ReplayLockIdMatches
             ? "VERIFIED_LOCKED_REPLAY_SOURCE_SET"
             : "AUDIT_FAILED";
 
-        // Check that only 1 MAP-27F file in locked set (the JSON, not md/csv/summary)
-        int map27fCount     = auditFiles.Count(f => f.SourceStage == "MAP-27F");
-        bool noOldMap27fMd  = map27fCount == 1 &&
-                              auditFiles.Where(f => f.SourceStage == "MAP-27F")
-                                        .All(f => f.FileRole == "ACCEPTANCE_GATE_RESULT_JSON");
+        // MAP-27F file filter: only 1 MAP-27F file, and it must be ACCEPTANCE_GATE_RESULT_JSON
+        bool noOldMap27fMd = auditFiles.Count(f => f.SourceStage == "MAP-27F") == 1 &&
+                             auditFiles.Where(f => f.SourceStage == "MAP-27F")
+                                       .All(f => f.FileRole == "ACCEPTANCE_GATE_RESULT_JSON");
 
-        // 45 checks
+        // Forbidden artifact scan of output root
+        Directory.CreateDirectory(outputRoot);
+        string forbiddenArtifactScan = ScanOutputRoot(outputRoot);
+        bool   forbiddenScanPasses   = forbiddenArtifactScan.StartsWith("POST_AUDIT_FORBIDDEN_SCAN PASS", StringComparison.Ordinal);
+        result.ForbiddenArtifactScan = forbiddenArtifactScan;
+
+        // Expected locked file roles in exact required order
+        var expectedRoles = new[]
+        {
+            "ACCEPTANCE_GATE_RESULT_JSON",
+            "TILE_MATERIALIZER_RESULT_JSON",
+            "MATERIALIZED_CELLS_CSV",
+            "MATERIAL_PALETTE_JSON",
+            "LAYER_STACK_JSON",
+            "MATERIALIZATION_REPLAY_LOG_JSON",
+            "MATERIALIZATION_OWNERSHIP_SUMMARY_JSON",
+            "MATERIALIZER_FORBIDDEN_OUTPUT_GUARD_JSON",
+        };
+        bool rolesInOrder = auditFiles.Count == 8 &&
+            Enumerable.Range(0, 8).All(i => auditFiles[i].FileRole == expectedRoles[i]);
+
+        string countMatchActual = storedCountMatchSummary.EndsWith(": MATCH", StringComparison.Ordinal)
+            ? "MATCH" : "MISMATCH";
+
+        // 45 checks in exact required order
         var checks = new List<DeadMtlTileMaterializationLockedReplayAuditCheck>();
 
-        // Group 1: Source replay lock file (4)
-        MakeCheck(checks, "SOURCE_REPLAY_LOCK_ROOT_EXISTS",      "Replay lock root exists");
-        AddCheck(checks,  "SOURCE_REPLAY_LOCK_FILE_EXISTS",       "Replay lock JSON file exists",
+        // 1-8: MAP-27G1 header
+        MakeCheck(checks, "MAP27G_REPLAY_LOCK_ROOT_EXISTS",
+            "MAP-27G1 replay lock root exists");
+        AddCheck(checks, "MAP27G_REPLAY_LOCK_JSON_EXISTS",
+            "MAP-27G1 replay lock JSON file exists",
             "true", File.Exists(lockFilePath) ? "true" : "false");
-        MakeCheck(checks, "SOURCE_REPLAY_LOCK_FILE_HASHED",      "Replay lock JSON SHA-256 hashed");
-        MakeCheck(checks, "SOURCE_REPLAY_LOCK_FILE_PARSEABLE",   "Replay lock JSON parseable");
-
-        // Group 2: Source lock header validation (6)
-        AddCheck(checks, "SOURCE_REPLAY_LOCK_STATUS_LOCKED_FOR_NEXT_SANDBOX",
-            "Source replay_lock_status is LOCKED_FOR_NEXT_SANDBOX_EXPERIMENT_ONLY",
-            "LOCKED_FOR_NEXT_SANDBOX_EXPERIMENT_ONLY", storedStatus);
-        AddCheck(checks, "SOURCE_REPLAY_LOCK_ID_PRESENT",
-            "Source replay_lock_id is not empty",
-            "true", !string.IsNullOrEmpty(storedReplayLockId) && storedReplayLockId != "LOCK_ID_NOT_GENERATED" ? "true" : "false");
-        AddCheck(checks, "SOURCE_REPLAY_LOCK_FILE_COUNT_8",
-            "Source replay_lock_file_count is 8",
-            "8", storedFileCount.ToString());
-        AddCheck(checks, "SOURCE_REPLAY_LOCK_VERDICT_COMPLETE",
-            "Source verdict is MAP27G COMPLETE",
+        MakeCheck(checks, "MAP27G_REPLAY_LOCK_JSON_HASHED",
+            "MAP-27G1 replay lock JSON SHA-256 hashed");
+        AddCheck(checks, "MAP27G_VERDICT_COMPLETE",
+            "MAP-27G1 verdict is REPLAY_LOCK_COMPLETE",
             "MAP27G_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_TILE_MATERIALIZATION_REPLAY_LOCK_COMPLETE",
             storedVerdict);
-        AddCheck(checks, "SOURCE_REPLAY_LOCK_IS_VALID_TRUE",
-            "Source is_valid is true",
+        AddCheck(checks, "MAP27G_IS_VALID_TRUE",
+            "MAP-27G1 is_valid is true",
             "true", storedIsValid ? "true" : "false");
-        AddCheck(checks, "SOURCE_REPLAY_LOCK_SANDBOX_ONLY_TRUE",
-            "Source sandbox_only is true",
-            "true", storedSandboxOnly ? "true" : "false");
-
-        // Group 3: Per-file existence (8)
-        for (int i = 0; i < 8; i++)
-        {
-            bool exists = i < auditFiles.Count && auditFiles[i].Exists;
-            AddCheck(checks, $"LOCKED_FILE_{i + 1}_EXISTS",
-                $"Locked file {i + 1} exists at stored path",
-                "true", exists ? "true" : "false");
-        }
-
-        // Group 4: Per-file hash match (8)
-        for (int i = 0; i < 8; i++)
-        {
-            bool matches = i < auditFiles.Count && auditFiles[i].HashMatches;
-            AddCheck(checks, $"LOCKED_FILE_{i + 1}_HASH_MATCHES",
-                $"Locked file {i + 1} recomputed SHA-256 matches stored",
-                "true", matches ? "true" : "false");
-        }
-
-        // Group 5: Aggregate hash counts (3)
-        AddCheck(checks, "ALL_8_LOCKED_FILE_HASHES_MATCH",
-            "All 8 locked file hashes match",
-            "true", allHashesMatch ? "true" : "false");
-        AddCheck(checks, "LOCKED_FILE_HASH_MISMATCH_COUNT_0",
-            "Locked file hash mismatch count is 0",
-            "0", result.LockedFileHashMismatchCount.ToString());
-        AddCheck(checks, "LOCKED_FILE_HASH_MISSING_COUNT_0",
-            "Locked file hash missing count is 0",
-            "0", result.LockedFileHashMissingCount.ToString());
-
-        // Group 6: Replay lock ID recomputation (4)
-        AddCheck(checks, "RECOMPUTED_REPLAY_LOCK_ID_PRESENT",
-            "Recomputed replay_lock_id is not RECOMPUTED_LOCK_ID_NOT_GENERATED",
+        AddCheck(checks, "MAP27G_STATUS_LOCKED_FOR_NEXT_SANDBOX_EXPERIMENT_ONLY",
+            "MAP-27G1 replay_lock_status is LOCKED_FOR_NEXT_SANDBOX_EXPERIMENT_ONLY",
+            "LOCKED_FOR_NEXT_SANDBOX_EXPERIMENT_ONLY", storedStatus);
+        AddCheck(checks, "MAP27G_REPLAY_LOCK_ID_PRESENT",
+            "MAP-27G1 replay_lock_id is present and non-empty",
             "true",
-            recomputedLockId != "RECOMPUTED_LOCK_ID_NOT_GENERATED" ? "true" : "false");
-        AddCheck(checks, "RECOMPUTED_REPLAY_LOCK_ID_MATCHES_STORED",
-            "Recomputed replay_lock_id matches stored replay_lock_id",
+            !string.IsNullOrEmpty(storedReplayLockId) && storedReplayLockId != "LOCK_ID_NOT_GENERATED"
+                ? "true" : "false");
+        AddCheck(checks, "MAP27G_REPLAY_LOCK_FILE_COUNT_8",
+            "MAP-27G1 replay_lock_file_count is 8",
+            "8", storedFileCount.ToString());
+
+        // 9: Role order
+        AddCheck(checks, "LOCKED_FILE_ROLES_EXACT_ORDER",
+            "Locked file roles match exact required order",
+            "EXACT_ORDER_MATCH", rolesInOrder ? "EXACT_ORDER_MATCH" : "ORDER_MISMATCH");
+
+        // 10-17: Per-file existence (named by role)
+        AddCheck(checks, "LOCKED_FILE_1_ACCEPTANCE_GATE_RESULT_JSON_EXISTS",
+            "Locked file 1 ACCEPTANCE_GATE_RESULT_JSON exists at stored path",
+            "true", auditFiles.Count > 0 && auditFiles[0].Exists ? "true" : "false");
+        AddCheck(checks, "LOCKED_FILE_2_TILE_MATERIALIZER_RESULT_JSON_EXISTS",
+            "Locked file 2 TILE_MATERIALIZER_RESULT_JSON exists at stored path",
+            "true", auditFiles.Count > 1 && auditFiles[1].Exists ? "true" : "false");
+        AddCheck(checks, "LOCKED_FILE_3_MATERIALIZED_CELLS_CSV_EXISTS",
+            "Locked file 3 MATERIALIZED_CELLS_CSV exists at stored path",
+            "true", auditFiles.Count > 2 && auditFiles[2].Exists ? "true" : "false");
+        AddCheck(checks, "LOCKED_FILE_4_MATERIAL_PALETTE_JSON_EXISTS",
+            "Locked file 4 MATERIAL_PALETTE_JSON exists at stored path",
+            "true", auditFiles.Count > 3 && auditFiles[3].Exists ? "true" : "false");
+        AddCheck(checks, "LOCKED_FILE_5_LAYER_STACK_JSON_EXISTS",
+            "Locked file 5 LAYER_STACK_JSON exists at stored path",
+            "true", auditFiles.Count > 4 && auditFiles[4].Exists ? "true" : "false");
+        AddCheck(checks, "LOCKED_FILE_6_MATERIALIZATION_REPLAY_LOG_JSON_EXISTS",
+            "Locked file 6 MATERIALIZATION_REPLAY_LOG_JSON exists at stored path",
+            "true", auditFiles.Count > 5 && auditFiles[5].Exists ? "true" : "false");
+        AddCheck(checks, "LOCKED_FILE_7_MATERIALIZATION_OWNERSHIP_SUMMARY_JSON_EXISTS",
+            "Locked file 7 MATERIALIZATION_OWNERSHIP_SUMMARY_JSON exists at stored path",
+            "true", auditFiles.Count > 6 && auditFiles[6].Exists ? "true" : "false");
+        AddCheck(checks, "LOCKED_FILE_8_MATERIALIZER_FORBIDDEN_OUTPUT_GUARD_JSON_EXISTS",
+            "Locked file 8 MATERIALIZER_FORBIDDEN_OUTPUT_GUARD_JSON exists at stored path",
+            "true", auditFiles.Count > 7 && auditFiles[7].Exists ? "true" : "false");
+
+        // 18-19: Hash aggregates
+        int hashedCount = auditFiles.Count(f => f.Exists && !string.IsNullOrEmpty(f.RecomputedSha256));
+        AddCheck(checks, "ALL_8_LOCKED_FILES_HASHED",
+            "All 8 locked files successfully hashed",
+            "8", hashedCount.ToString());
+        AddCheck(checks, "ALL_8_LOCKED_FILE_HASHES_MATCH",
+            "All 8 locked file recomputed hashes match stored hashes",
+            "true", allHashesMatch ? "true" : "false");
+
+        // 20-21: Replay lock ID
+        AddCheck(checks, "REPLAY_LOCK_ID_RECOMPUTED",
+            "Replay lock ID recomputed successfully",
+            "true", recomputedLockId != "RECOMPUTED_LOCK_ID_NOT_GENERATED" ? "true" : "false");
+        AddCheck(checks, "REPLAY_LOCK_ID_MATCHES_STORED",
+            "Recomputed replay lock ID matches stored replay_lock_id",
             "true", result.ReplayLockIdMatches ? "true" : "false");
-        MakeCheck(checks, "REPLAY_LOCK_ID_DETERMINISTIC",
-            "Replay lock ID formula is deterministic (recomputed == stored)");
-        AddCheck(checks, "AUDIT_LOCKED_FILE_COUNT_8",
-            "Audit found exactly 8 locked files",
-            "8", auditFiles.Count.ToString());
 
-        // Group 7: Claim boundary (6)
-        AddCheck(checks, "AUDIT_SANDBOX_ONLY_TRUE",
-            "sandbox_only from source lock is true",
-            "true", storedSandboxOnly ? "true" : "false");
-        AddCheck(checks, "AUDIT_PZ_RUNTIME_MATERIALIZED_FALSE",
-            "pz_runtime_materialized from source lock is false",
-            "false", storedPzRuntime ? "true" : "false");
-        MakeCheck(checks, "AUDIT_WRITER_READY_FALSE",           "writer_ready is false");
-        MakeCheck(checks, "AUDIT_RUNTIME_VALID_FALSE",          "runtime_valid is false");
-        MakeCheck(checks, "AUDIT_MATERIALIZED_FALSE",           "materialized (global PZ) is false");
-        MakeCheck(checks, "AUDIT_NO_RUNTIME_PROOF_CLAIM",       "No runtime proof claimed");
-
-        // Group 8: Final checks (6)
-        AddCheck(checks, "AUDIT_STATUS_VERIFIED",
-            "audit_status is VERIFIED_LOCKED_REPLAY_SOURCE_SET",
-            "VERIFIED_LOCKED_REPLAY_SOURCE_SET", result.AuditStatus);
-        MakeCheck(checks, "NEXT_ALLOWED_EXPERIMENT_SANDBOX_ONLY",
-            "Next allowed experiment is SANDBOX_ONLY_NOT_RUNTIME");
-        AddCheck(checks, "NO_OLD_MAP27F_MD_IN_LOCK_FILES",
+        // 22: Old MAP-27F file guard
+        AddCheck(checks, "NO_OLD_MAP27F_MD_CSV_SUMMARY_LOCKED",
             "Only 1 MAP-27F file in lock set and it is ACCEPTANCE_GATE_RESULT_JSON",
             "true", noOldMap27fMd ? "true" : "false");
-        MakeCheck(checks, "AUDIT_MODE_CORRECT",
-            "Audit mode is VERIFY_MAP27G1_REPLAY_LOCK_HASHES_AND_LOCK_ID_ONLY");
-        MakeCheck(checks, "AUDIT_REPLAY_LOCK_SOURCE_NEGATIVE",
-            "Audit does not produce any runtime outputs");
-        MakeCheck(checks, "AUDIT_COMPLETE_NO_RUNTIME_OUTPUTS",
-            "No runtime outputs emitted during audit");
+
+        // 23-25: Lock flags
+        AddCheck(checks, "ALL_8_LOCKED_FOR_REPLAY_TRUE",
+            "All 8 locked files have locked_for_replay=true",
+            "8", auditFiles.Count(f => f.LockedForReplay).ToString());
+        AddCheck(checks, "ALL_8_RUNTIME_CONSUMABLE_FALSE",
+            "All 8 locked files have runtime_consumable=false",
+            "0", auditFiles.Count(f => f.RuntimeConsumable).ToString());
+        AddCheck(checks, "ALL_8_WRITER_CONSUMABLE_FALSE",
+            "All 8 locked files have writer_consumable=false",
+            "0", auditFiles.Count(f => f.WriterConsumable).ToString());
+
+        // 26-29: Claim boundary booleans
+        AddCheck(checks, "SANDBOX_ONLY_TRUE",
+            "sandbox_only is true",
+            "true", storedSandboxOnly ? "true" : "false");
+        AddCheck(checks, "SANDBOX_MATERIALIZED_SOURCE_TRUE",
+            "sandbox_materialized_source is true",
+            "true", storedSandboxMaterializedSource ? "true" : "false");
+        AddCheck(checks, "VISUAL_QA_OVERLAY_WRITTEN_TRUE",
+            "visual_qa_overlay_written is true",
+            "true", storedVisualQaOverlayWritten ? "true" : "false");
+        AddCheck(checks, "PZ_RUNTIME_MATERIALIZED_FALSE",
+            "pz_runtime_materialized is false",
+            "false", storedPzRuntime ? "true" : "false");
+
+        // 30-39: Inherited count checks
+        AddCheck(checks, "MATERIALIZED_CELL_COUNT_5340",
+            "materialized_cell_count is 5340",
+            "5340", storedMaterializedCellCount.ToString());
+        AddCheck(checks, "RENDERED_CELL_COUNT_5340",
+            "rendered_cell_count is 5340",
+            "5340", storedRenderedCellCount.ToString());
+        AddCheck(checks, "COUNT_MATCH_SUMMARY_MATCH",
+            "count_match_summary indicates MATCH",
+            "MATCH", countMatchActual);
+        AddCheck(checks, "WALL_COUNT_850",
+            "building_wall_candidate_cell_count is 850",
+            "850", storedWallCount.ToString());
+        AddCheck(checks, "FLOOR_COUNT_2444",
+            "building_floor_candidate_cell_count is 2444",
+            "2444", storedFloorCount.ToString());
+        AddCheck(checks, "ACCESS_COUNT_148",
+            "access_edge_cell_count is 148",
+            "148", storedAccessCount.ToString());
+        AddCheck(checks, "LOT_COUNT_1898",
+            "lot_space_cell_count is 1898",
+            "1898", storedLotCount.ToString());
+        AddCheck(checks, "COMPONENT_RESIDUAL_COUNT_0",
+            "component_residual_cell_count is 0",
+            "0", storedResidualCount.ToString());
+        AddCheck(checks, "MATERIAL_KIND_COUNT_5",
+            "material_kind_count is 5",
+            "5", storedMaterialKindCount.ToString());
+        AddCheck(checks, "LAYER_KIND_COUNT_5",
+            "layer_kind_count is 5",
+            "5", storedLayerKindCount.ToString());
+
+        // 40-45: Final checks
+        MakeCheck(checks, "NEXT_ALLOWED_EXPERIMENT_SANDBOX_ONLY",
+            "Next allowed experiment is sandbox-only, not runtime");
+        AddCheck(checks, "FORBIDDEN_STEPS_LISTED",
+            "next_forbidden_steps lists exactly 11 entries",
+            "11", storedNextForbiddenSteps.Count.ToString());
+        AddCheck(checks, "POST_AUDIT_FORBIDDEN_SCAN_PASS",
+            "Post-audit forbidden artifact scan passes in output root",
+            "PASS", forbiddenScanPasses ? "PASS" : "FAIL");
+        MakeCheck(checks, "WRITER_READY_FALSE",
+            "writer_ready is false");
+        MakeCheck(checks, "NO_RUNTIME_PROOF_CLAIM",
+            "No runtime proof claimed");
+        MakeCheck(checks, "NO_PUBLIC_PLAYABLE_PACKAGING_CLAIM",
+            "No public playable packaging claimed");
 
         result.Checks           = checks;
         result.CheckCount       = checks.Count;
         result.PassedCheckCount = checks.Count(c => c.CheckStatus == "PASS");
         result.FailedCheckCount = checks.Count(c => c.CheckStatus == "FAIL");
 
-        bool allPass = result.FailedCheckCount == 0;
+        bool allPass   = result.FailedCheckCount == 0;
         result.IsValid = allPass;
         result.Verdict = allPass
             ? "MAP27H_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_TILE_MATERIALIZATION_LOCKED_REPLAY_AUDIT_COMPLETE"
@@ -347,7 +492,10 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         sb.AppendLine($"- **Locked File Count:** {result.LockedFileCount}");
         sb.AppendLine($"- **Hash Match Count:** {result.LockedFileHashMatchCount}");
         sb.AppendLine($"- **Hash Mismatch Count:** {result.LockedFileHashMismatchCount}");
-        sb.AppendLine($"- **Hash Missing Count:** {result.LockedFileHashMissingCount}");
+        sb.AppendLine($"- **Missing Count:** {result.LockedFileMissingCount}");
+        sb.AppendLine($"- **Materialized Cell Count:** {result.MaterializedCellCount}");
+        sb.AppendLine($"- **Forbidden Artifact Scan:** {result.ForbiddenArtifactScan}");
+        sb.AppendLine($"- **Claim Boundary:** {result.ClaimBoundaryAudit}");
         sb.AppendLine($"- **Verdict:** `{result.Verdict}`");
         sb.AppendLine($"- **Is Valid:** {result.IsValid}");
         sb.AppendLine($"- **Checks:** {result.CheckCount} / Passed: {result.PassedCheckCount} / Failed: {result.FailedCheckCount}");
@@ -359,8 +507,8 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         sb.AppendLine("|---|-------|------|------|----------------|--------------------|-------|--------------|");
         foreach (var f in result.LockedFiles)
         {
-            string stored   = f.StoredSha256.Length  >= 16 ? f.StoredSha256[..16]  + "..." : f.StoredSha256;
-            string recomp   = f.RecomputedSha256.Length >= 16 ? f.RecomputedSha256[..16] + "..." : f.RecomputedSha256;
+            string stored = f.StoredSha256.Length     >= 16 ? f.StoredSha256[..16]     + "..." : f.StoredSha256;
+            string recomp = f.RecomputedSha256.Length >= 16 ? f.RecomputedSha256[..16] + "..." : f.RecomputedSha256;
             sb.AppendLine($"| {f.FileOrder} | {f.SourceStage} | {f.FileRole} | {f.FileName} | `{stored}` | `{recomp}` | {f.HashMatches} | {f.AuditStatus} |");
         }
         sb.AppendLine();
@@ -399,16 +547,31 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         sb.AppendLine($"Locked File Count                : {result.LockedFileCount}");
         sb.AppendLine($"Hash Match Count                 : {result.LockedFileHashMatchCount}");
         sb.AppendLine($"Hash Mismatch Count              : {result.LockedFileHashMismatchCount}");
-        sb.AppendLine($"Hash Missing Count               : {result.LockedFileHashMissingCount}");
+        sb.AppendLine($"Missing Count                    : {result.LockedFileMissingCount}");
         sb.AppendLine($"Verdict                          : {result.Verdict}");
         sb.AppendLine($"Is Valid                         : {(result.IsValid ? 1 : 0)}");
         sb.AppendLine($"Sandbox Only                     : {(result.SandboxOnly ? 1 : 0)}");
         sb.AppendLine($"PZ Runtime Materialized          : {(result.PzRuntimeMaterialized ? 1 : 0)}");
+        sb.AppendLine($"Sandbox Materialized Source      : {(result.SandboxMaterializedSource ? 1 : 0)}");
+        sb.AppendLine($"Visual QA Overlay Written        : {(result.VisualQaOverlayWritten ? 1 : 0)}");
+        sb.AppendLine($"Materialized Cell Count          : {result.MaterializedCellCount}");
+        sb.AppendLine($"Rendered Cell Count              : {result.RenderedCellCount}");
+        sb.AppendLine($"Count Match                      : {result.CountMatchSummary}");
+        sb.AppendLine($"Wall Count                       : {result.BuildingWallCandidateCellCount}");
+        sb.AppendLine($"Floor Count                      : {result.BuildingFloorCandidateCellCount}");
+        sb.AppendLine($"Access Count                     : {result.AccessEdgeCellCount}");
+        sb.AppendLine($"Lot Count                        : {result.LotSpaceCellCount}");
+        sb.AppendLine($"Residual Count                   : {result.ComponentResidualCellCount}");
+        sb.AppendLine($"Material Kind Count              : {result.MaterialKindCount}");
+        sb.AppendLine($"Layer Kind Count                 : {result.LayerKindCount}");
         sb.AppendLine($"Writer Ready                     : {(result.WriterReady ? 1 : 0)}");
         sb.AppendLine($"Runtime Valid                    : {(result.RuntimeValid ? 1 : 0)}");
         sb.AppendLine($"Materialized                     : {(result.Materialized ? 1 : 0)}");
         sb.AppendLine($"Runtime Proof                    : {(result.RuntimeProofClaimed ? 1 : 0)}");
         sb.AppendLine($"Public Playable                  : {(result.PublicPlayablePackagingClaimed ? 1 : 0)}");
+        sb.AppendLine($"Forbidden Steps Count            : {result.NextForbiddenSteps.Count}");
+        sb.AppendLine($"Forbidden Artifact Scan          : {result.ForbiddenArtifactScan}");
+        sb.AppendLine($"Claim Boundary                   : {result.ClaimBoundaryAudit}");
         sb.AppendLine($"Next Allowed Experiment          : {result.NextAllowedExperimentName}");
         sb.AppendLine($"Next Experiment Status           : {result.NextAllowedExperimentStatus}");
         sb.AppendLine($"Checks                           : {result.CheckCount}");

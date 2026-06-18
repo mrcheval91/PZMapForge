@@ -340,4 +340,68 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         Assert.Contains("worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-replay-lock",       content);
         Assert.Contains("worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-locked-replay-audit", content);
     }
+
+    [Fact]
+    public void SandboxMaterializedSourceTrue()
+    {
+        WriteMap27gOutput();
+        Run(BuildArgs());
+        var json = File.ReadAllText(GetOutputJson());
+        using var doc = JsonDocument.Parse(json);
+        Assert.True(doc.RootElement.GetProperty("sandbox_materialized_source").GetBoolean());
+    }
+
+    [Fact]
+    public void ForbiddenArtifactScanContainsPass()
+    {
+        WriteMap27gOutput();
+        Run(BuildArgs());
+        var json = File.ReadAllText(GetOutputJson());
+        using var doc = JsonDocument.Parse(json);
+        Assert.Contains("PASS", doc.RootElement.GetProperty("forbidden_artifact_scan").GetString() ?? "");
+    }
+
+    [Fact]
+    public void ClaimBoundaryAuditPresent()
+    {
+        WriteMap27gOutput();
+        Run(BuildArgs());
+        var json = File.ReadAllText(GetOutputJson());
+        using var doc = JsonDocument.Parse(json);
+        var boundary = doc.RootElement.GetProperty("claim_boundary_audit").GetString() ?? "";
+        Assert.Contains("writer_ready=false", boundary);
+        Assert.Contains("runtime_proof_claimed=false", boundary);
+    }
+
+    [Fact]
+    public void NextForbiddenStepsCount11()
+    {
+        WriteMap27gOutput();
+        Run(BuildArgs());
+        var json = File.ReadAllText(GetOutputJson());
+        using var doc = JsonDocument.Parse(json);
+        var steps = doc.RootElement.GetProperty("next_forbidden_steps");
+        Assert.Equal(11, steps.GetArrayLength());
+    }
+
+    [Fact]
+    public void CheckIds_ContainMap27gPrefixedIds()
+    {
+        WriteMap27gOutput();
+        Run(BuildArgs());
+        var json = File.ReadAllText(GetOutputJson());
+        using var doc = JsonDocument.Parse(json);
+        var ids = doc.RootElement.GetProperty("checks")
+            .EnumerateArray()
+            .Select(c => c.GetProperty("check_id").GetString() ?? "")
+            .ToList();
+        Assert.Contains("MAP27G_REPLAY_LOCK_ROOT_EXISTS",                       ids);
+        Assert.Contains("MAP27G_VERDICT_COMPLETE",                              ids);
+        Assert.Contains("LOCKED_FILE_ROLES_EXACT_ORDER",                        ids);
+        Assert.Contains("LOCKED_FILE_1_ACCEPTANCE_GATE_RESULT_JSON_EXISTS",     ids);
+        Assert.Contains("SANDBOX_MATERIALIZED_SOURCE_TRUE",                     ids);
+        Assert.Contains("MATERIALIZED_CELL_COUNT_5340",                         ids);
+        Assert.Contains("POST_AUDIT_FORBIDDEN_SCAN_PASS",                       ids);
+        Assert.Contains("FORBIDDEN_STEPS_LISTED",                               ids);
+    }
 }

@@ -204,7 +204,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
     public void Build_WithValidInputs_HashMissingCount0()
     {
         var r = BuildResult();
-        Assert.Equal(0, r.LockedFileHashMissingCount);
+        Assert.Equal(0, r.LockedFileMissingCount);
     }
 
     [Fact]
@@ -413,6 +413,191 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
     {
         var r = BuildResult();
         Assert.All(r.LockedFiles, f => Assert.False(f.WriterConsumable));
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_TargetComponentIdIsEmpty()
+    {
+        var r = BuildResult();
+        Assert.Equal(string.Empty, r.TargetComponentId);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_SandboxMaterializedSourceTrue()
+    {
+        var r = BuildResult();
+        Assert.True(r.SandboxMaterializedSource);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_VisualQaOverlayWrittenTrue()
+    {
+        var r = BuildResult();
+        Assert.True(r.VisualQaOverlayWritten);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_MaterializedCellCount5340()
+    {
+        var r = BuildResult();
+        Assert.Equal(5340, r.MaterializedCellCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_RenderedCellCount5340()
+    {
+        var r = BuildResult();
+        Assert.Equal(5340, r.RenderedCellCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_CountMatchSummaryContainsMatch()
+    {
+        var r = BuildResult();
+        Assert.Contains("MATCH", r.CountMatchSummary, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_WallCount850()
+    {
+        var r = BuildResult();
+        Assert.Equal(850, r.BuildingWallCandidateCellCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_FloorCount2444()
+    {
+        var r = BuildResult();
+        Assert.Equal(2444, r.BuildingFloorCandidateCellCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_AccessCount148()
+    {
+        var r = BuildResult();
+        Assert.Equal(148, r.AccessEdgeCellCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_LotCount1898()
+    {
+        var r = BuildResult();
+        Assert.Equal(1898, r.LotSpaceCellCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_ComponentResidualCount0()
+    {
+        var r = BuildResult();
+        Assert.Equal(0, r.ComponentResidualCellCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_MaterialKindCount5()
+    {
+        var r = BuildResult();
+        Assert.Equal(5, r.MaterialKindCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_LayerKindCount5()
+    {
+        var r = BuildResult();
+        Assert.Equal(5, r.LayerKindCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_NextForbiddenStepsCount11()
+    {
+        var r = BuildResult();
+        Assert.Equal(11, r.NextForbiddenSteps.Count);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_NextForbiddenStepsContainsExpectedEntries()
+    {
+        var r = BuildResult();
+        Assert.Contains("LOT_PACK_RUNTIME_BINARY",          r.NextForbiddenSteps);
+        Assert.Contains("WORLDGEN_OVERRIDE_LUA",            r.NextForbiddenSteps);
+        Assert.Contains("RUNTIME_PROOF_CLAIM",              r.NextForbiddenSteps);
+        Assert.Contains("PUBLIC_PLAYABLE_PACKAGING_CLAIM",  r.NextForbiddenSteps);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_ForbiddenArtifactScanContainsPass()
+    {
+        var r = BuildResult();
+        Assert.Contains("PASS", r.ForbiddenArtifactScan, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_ClaimBoundaryAuditIsCorrect()
+    {
+        var r = BuildResult();
+        Assert.Equal(
+            "writer_ready=false | runtime_valid=false | materialized=false | runtime_proof_claimed=false | public_playable_packaging_claimed=false",
+            r.ClaimBoundaryAudit);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_CheckIdsExactOrder()
+    {
+        var r = BuildResult();
+        var ids = r.Checks.Select(c => c.CheckId).ToArray();
+        Assert.Equal("MAP27G_REPLAY_LOCK_ROOT_EXISTS",                          ids[0]);
+        Assert.Equal("MAP27G_REPLAY_LOCK_JSON_EXISTS",                          ids[1]);
+        Assert.Equal("MAP27G_REPLAY_LOCK_JSON_HASHED",                         ids[2]);
+        Assert.Equal("MAP27G_VERDICT_COMPLETE",                                 ids[3]);
+        Assert.Equal("MAP27G_IS_VALID_TRUE",                                    ids[4]);
+        Assert.Equal("MAP27G_STATUS_LOCKED_FOR_NEXT_SANDBOX_EXPERIMENT_ONLY",  ids[5]);
+        Assert.Equal("MAP27G_REPLAY_LOCK_ID_PRESENT",                          ids[6]);
+        Assert.Equal("MAP27G_REPLAY_LOCK_FILE_COUNT_8",                        ids[7]);
+        Assert.Equal("LOCKED_FILE_ROLES_EXACT_ORDER",                          ids[8]);
+        Assert.Equal("LOCKED_FILE_1_ACCEPTANCE_GATE_RESULT_JSON_EXISTS",       ids[9]);
+        Assert.Equal("LOCKED_FILE_2_TILE_MATERIALIZER_RESULT_JSON_EXISTS",     ids[10]);
+        Assert.Equal("LOCKED_FILE_3_MATERIALIZED_CELLS_CSV_EXISTS",            ids[11]);
+        Assert.Equal("LOCKED_FILE_4_MATERIAL_PALETTE_JSON_EXISTS",             ids[12]);
+        Assert.Equal("LOCKED_FILE_5_LAYER_STACK_JSON_EXISTS",                  ids[13]);
+        Assert.Equal("LOCKED_FILE_6_MATERIALIZATION_REPLAY_LOG_JSON_EXISTS",   ids[14]);
+        Assert.Equal("LOCKED_FILE_7_MATERIALIZATION_OWNERSHIP_SUMMARY_JSON_EXISTS", ids[15]);
+        Assert.Equal("LOCKED_FILE_8_MATERIALIZER_FORBIDDEN_OUTPUT_GUARD_JSON_EXISTS", ids[16]);
+        Assert.Equal("ALL_8_LOCKED_FILES_HASHED",                              ids[17]);
+        Assert.Equal("ALL_8_LOCKED_FILE_HASHES_MATCH",                         ids[18]);
+        Assert.Equal("REPLAY_LOCK_ID_RECOMPUTED",                              ids[19]);
+        Assert.Equal("REPLAY_LOCK_ID_MATCHES_STORED",                          ids[20]);
+        Assert.Equal("NO_OLD_MAP27F_MD_CSV_SUMMARY_LOCKED",                   ids[21]);
+        Assert.Equal("ALL_8_LOCKED_FOR_REPLAY_TRUE",                          ids[22]);
+        Assert.Equal("ALL_8_RUNTIME_CONSUMABLE_FALSE",                         ids[23]);
+        Assert.Equal("ALL_8_WRITER_CONSUMABLE_FALSE",                          ids[24]);
+        Assert.Equal("SANDBOX_ONLY_TRUE",                                      ids[25]);
+        Assert.Equal("SANDBOX_MATERIALIZED_SOURCE_TRUE",                       ids[26]);
+        Assert.Equal("VISUAL_QA_OVERLAY_WRITTEN_TRUE",                         ids[27]);
+        Assert.Equal("PZ_RUNTIME_MATERIALIZED_FALSE",                          ids[28]);
+        Assert.Equal("MATERIALIZED_CELL_COUNT_5340",                           ids[29]);
+        Assert.Equal("RENDERED_CELL_COUNT_5340",                               ids[30]);
+        Assert.Equal("COUNT_MATCH_SUMMARY_MATCH",                              ids[31]);
+        Assert.Equal("WALL_COUNT_850",                                         ids[32]);
+        Assert.Equal("FLOOR_COUNT_2444",                                       ids[33]);
+        Assert.Equal("ACCESS_COUNT_148",                                       ids[34]);
+        Assert.Equal("LOT_COUNT_1898",                                         ids[35]);
+        Assert.Equal("COMPONENT_RESIDUAL_COUNT_0",                             ids[36]);
+        Assert.Equal("MATERIAL_KIND_COUNT_5",                                  ids[37]);
+        Assert.Equal("LAYER_KIND_COUNT_5",                                     ids[38]);
+        Assert.Equal("NEXT_ALLOWED_EXPERIMENT_SANDBOX_ONLY",                   ids[39]);
+        Assert.Equal("FORBIDDEN_STEPS_LISTED",                                 ids[40]);
+        Assert.Equal("POST_AUDIT_FORBIDDEN_SCAN_PASS",                         ids[41]);
+        Assert.Equal("WRITER_READY_FALSE",                                     ids[42]);
+        Assert.Equal("NO_RUNTIME_PROOF_CLAIM",                                 ids[43]);
+        Assert.Equal("NO_PUBLIC_PLAYABLE_PACKAGING_CLAIM",                     ids[44]);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_LockedFileRolesExactOrderCheckPasses()
+    {
+        var r = BuildResult();
+        var check = r.Checks.Single(c => c.CheckId == "LOCKED_FILE_ROLES_EXACT_ORDER");
+        Assert.Equal("PASS", check.CheckStatus);
+        Assert.Equal("EXACT_ORDER_MATCH", check.Actual);
     }
 
     [Fact]
