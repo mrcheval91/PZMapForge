@@ -104,7 +104,7 @@ This step MUST NOT and WILL NOT produce:
         --materialization-replay-log          <json> \
         --materialization-ownership-summary   <json> \
         --materializer-forbidden-output-guard <json> \
-        --output-root   <path ending in .local> \
+        --output-root   <path containing .local> \
         --output-json   <json> \
         --output-md     <md> \
         --output-csv    <csv> \
@@ -114,7 +114,11 @@ This step MUST NOT and WILL NOT produce:
 
     examples/deadmtl-layer-pack/scripts/run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.ps1
 
-Reads MAP-27C outputs from the default authoring path.  Pass `-AuthoringRoot <path>` to override.
+Uses canonical paths by default:
+- Input:  `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-v0\map_00\`
+- Output: `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0\map_00\`
+
+Pass `-Map27CInputRoot <path>` to override the MAP-27C input directory.
 
 ## Verdict values
 

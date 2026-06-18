@@ -1441,12 +1441,15 @@ Sandbox-only diagnostic artifact. No PZ runtime files are written. No runtime va
 powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.ps1
 ```
 
-Output (under `.local/`):
-- `worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.local\map_00.sandbox_writer_tile_materializer_qa_overlay.png` (1024x1024 PNG)
-- `worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.local\map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.json`
-- `worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.local\map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.md`
-- `worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.local\map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.csv`
-- `worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.local\map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.summary.txt`
+Output (under `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0\map_00\`):
+- `map_00.sandbox_writer_tile_materializer_qa_overlay.png` (1024x1024 PNG)
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.json`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.md`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.csv`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.summary.txt`
+- `map_00.sandbox_writer_tile_materializer_qa_overlay_legend.json`
+- `map_00.sandbox_writer_tile_materializer_qa_overlay_counts.csv`
+- `map_00.sandbox_writer_tile_materializer_qa_overlay_forbidden_output_guard.json`
 
 39 checks. `writer_stage: SANDBOX_WRITER_TILE_MATERIALIZER_QA_OVERLAY_V0`.
 `sandbox_only: true`, `visual_qa_overlay_written: true`, `pz_runtime_materialized: false`,

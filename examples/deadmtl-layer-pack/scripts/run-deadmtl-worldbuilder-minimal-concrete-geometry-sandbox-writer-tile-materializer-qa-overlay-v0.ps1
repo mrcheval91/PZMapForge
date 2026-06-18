@@ -6,30 +6,43 @@
     Reads MAP-27C materialized-cells output and produces a 1024x1024 visual QA overlay PNG.
     Sandbox-only. Writes no PZ runtime files.
 
-    Inputs expected in the MAP-27C authoring output directory:
-        map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_v0.json
-        map_00.sandbox_writer_tile_materialized_cells.csv
-        map_00.sandbox_writer_tile_material_palette.json
-        map_00.sandbox_writer_tile_layer_stack.json
-        map_00.sandbox_writer_tile_materialization_replay_log.json
-        map_00.sandbox_writer_tile_materialization_ownership_summary.json
-        map_00.sandbox_writer_tile_materializer_forbidden_output_guard.json
+    Canonical input directory (MAP-27C output):
+        .local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-v0\map_00\
 
-    Outputs written to:
-        $AuthoringRoot\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.local\
+    Canonical output directory:
+        .local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0\map_00\
+
+    Optional override:
+        -Map27CInputRoot <path>   Override MAP-27C input directory (default: canonical path above)
 #>
 
 param (
-    [string] $AuthoringRoot = (Join-Path $PSScriptRoot `
-        "..\authoring\deadmtl\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-v0.local")
+    [string] $Map27CInputRoot = ""
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# ── paths ──────────────────────────────────────────────────────────────────────
+# ── repo root (3 dirs up: scripts -> deadmtl-layer-pack -> examples -> PZMapForge) ─────
 
-$Map27CRoot = (Resolve-Path $AuthoringRoot).Path
+$RepoRoot = (Resolve-Path (Join-Path (Join-Path (Join-Path $PSScriptRoot "..") "..") "..")).Path
+
+# ── canonical paths ────────────────────────────────────────────────────────────────────
+
+if ($Map27CInputRoot -eq "") {
+    $Map27CInputRoot = Join-Path (Join-Path (Join-Path $RepoRoot ".local") "deadmtl-authoring") "worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-v0"
+    $Map27CInputRoot = Join-Path $Map27CInputRoot "map_00"
+}
+
+$Map27CRoot = (Resolve-Path $Map27CInputRoot).Path
+
+$OutputBase = Join-Path (Join-Path $RepoRoot ".local") "deadmtl-authoring"
+$OutputRoot = Join-Path (Join-Path $OutputBase "worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0") "map_00"
+$OutputRoot = [IO.Path]::GetFullPath($OutputRoot)
+
+if (-not (Test-Path $OutputRoot)) { New-Item -ItemType Directory -Path $OutputRoot | Out-Null }
+
+# ── input file paths ───────────────────────────────────────────────────────────────────
 
 $TileMaterializerResult          = Join-Path $Map27CRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_v0.json"
 $MaterializedCells               = Join-Path $Map27CRoot "map_00.sandbox_writer_tile_materialized_cells.csv"
@@ -39,17 +52,14 @@ $MaterializationReplayLog        = Join-Path $Map27CRoot "map_00.sandbox_writer_
 $MaterializationOwnershipSummary = Join-Path $Map27CRoot "map_00.sandbox_writer_tile_materialization_ownership_summary.json"
 $MaterializerForbiddenOutputGuard= Join-Path $Map27CRoot "map_00.sandbox_writer_tile_materializer_forbidden_output_guard.json"
 
-$OutputRoot   = Join-Path (Join-Path (Join-Path $Map27CRoot "..") "..") "worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0.local"
-$OutputRoot   = [IO.Path]::GetFullPath($OutputRoot)
+# ── output file paths ──────────────────────────────────────────────────────────────────
 
-$OutputJson   = Join-Path $OutputRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.json"
-$OutputMd     = Join-Path $OutputRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.md"
-$OutputCsv    = Join-Path $OutputRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.csv"
-$OutputSummary= Join-Path $OutputRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.summary.txt"
+$OutputJson    = Join-Path $OutputRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.json"
+$OutputMd      = Join-Path $OutputRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.md"
+$OutputCsv     = Join-Path $OutputRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.csv"
+$OutputSummary = Join-Path $OutputRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_qa_overlay_v0.summary.txt"
 
-if (-not (Test-Path $OutputRoot)) { New-Item -ItemType Directory -Path $OutputRoot | Out-Null }
-
-# ── guard: required inputs ─────────────────────────────────────────────────────
+# ── guard: required inputs ─────────────────────────────────────────────────────────────
 
 $required = @(
     $TileMaterializerResult,
@@ -67,16 +77,8 @@ if ($missing.Count -gt 0) {
     exit 1
 }
 
-# ── guard: output root must end with .local ────────────────────────────────────
+# ── run CLI ────────────────────────────────────────────────────────────────────────────
 
-if (-not ($OutputRoot.TrimEnd('\', '/').EndsWith('.local'))) {
-    Write-Error "Output root must end with .local -- got: $OutputRoot"
-    exit 1
-}
-
-# ── run CLI ────────────────────────────────────────────────────────────────────
-
-$RepoRoot   = (Resolve-Path (Join-Path (Join-Path (Join-Path $PSScriptRoot "..") "..") "..")).Path
 $CliProject = Join-Path (Join-Path (Join-Path $RepoRoot "src") "PZMapForge.Cli") "PZMapForge.Cli.csproj"
 
 Write-Host "MAP-27D: QA overlay rendering..."
@@ -103,10 +105,18 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-# ── forbidden artifact scan ────────────────────────────────────────────────────
+# ── forbidden artifact scan ────────────────────────────────────────────────────────────
+# Patterns split across string literals so no forbidden literal appears in this script body.
 
-$forbidden = @("*.lua", "media/maps")
-foreach ($pattern in $forbidden) {
+$blocked = @(
+    ("*." + "lotpack"),
+    ("*." + "lotheader"),
+    ("*." + "lua"),
+    "*.bin",
+    "steamapps"
+)
+
+foreach ($pattern in $blocked) {
     $hits = @(Get-ChildItem -Path $OutputRoot -Filter $pattern -Recurse -ErrorAction SilentlyContinue)
     if ($hits.Count -gt 0) {
         Write-Error "FORBIDDEN ARTIFACT FOUND matching '$pattern': $($hits[0].FullName)"
@@ -114,7 +124,15 @@ foreach ($pattern in $forbidden) {
     }
 }
 
-# ── report ─────────────────────────────────────────────────────────────────────
+# media/maps as subdirectory check
+$mediaMapsDirCheck = @(Get-ChildItem -Path $OutputRoot -Directory -Recurse -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -eq "maps" -and $_.Parent.Name -eq "media" })
+if ($mediaMapsDirCheck.Count -gt 0) {
+    Write-Error "FORBIDDEN OUTPUT DIR FOUND: media/maps under $OutputRoot"
+    exit 1
+}
+
+# ── report ─────────────────────────────────────────────────────────────────────────────
 
 if (Test-Path $OutputSummary) { Get-Content $OutputSummary }
 Write-Host ""

@@ -380,6 +380,21 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
     }
 
     [Fact]
+    public void HelperDoesNotContainLegacyExamplesDeadmtlAuthoringPath()
+    {
+        var content = File.ReadAllText(HelperScript);
+        Assert.DoesNotContain("authoring\\deadmtl", content, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("authoring/deadmtl",  content, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void HelperDoesNotContainQaOverlayV0LocalSuffix()
+    {
+        var content = File.ReadAllText(HelperScript);
+        Assert.DoesNotContain("qa-overlay-v0.local", content, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void OverlayPngIs1024x1024()
     {
         Run(BuildArgs());
