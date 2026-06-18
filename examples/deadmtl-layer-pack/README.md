@@ -1554,6 +1554,35 @@ for check list, replay lock ID formula, and claim boundary.
 
 ---
 
+## MAP-27H WorldBuilder Minimal Concrete Geometry Sandbox Writer Tile Materialization Locked Replay Audit
+
+MAP-27H audits the MAP-27G1 replay lock by re-reading the replay lock result JSON,
+re-hashing every locked file at its stored absolute path, recomputing the replay_lock_id
+from the exact MAP-27G1 formula, and confirming the locked source set is deterministic
+and reproducible. Does NOT generate new geometry. Does NOT write PZ runtime files.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-locked-replay-audit.ps1
+```
+
+Output (under `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-locked-replay-audit\map_00\`):
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_locked_replay_audit.json`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_locked_replay_audit.md`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_locked_replay_audit.csv`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_locked_replay_audit.summary.txt`
+
+45 checks. `audit_stage: SANDBOX_WRITER_TILE_MATERIALIZATION_LOCKED_REPLAY_AUDIT`.
+`audit_mode: VERIFY_MAP27G1_REPLAY_LOCK_HASHES_AND_LOCK_ID_ONLY`.
+`audit_status: VERIFIED_LOCKED_REPLAY_SOURCE_SET` when all 8 hashes match and lock ID recomputes correctly.
+`sandbox_only: true`, `writer_ready: false`, `materialized: false`.
+
+Next allowed experiment: `MAP-27I_SANDBOX_WRITER_LOCKED_MATERIALIZATION_REPLAY_DRY_RUN` (SANDBOX_ONLY_NOT_RUNTIME).
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_TILE_MATERIALIZATION_LOCKED_REPLAY_AUDIT.md`
+for check list, audit procedure, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
