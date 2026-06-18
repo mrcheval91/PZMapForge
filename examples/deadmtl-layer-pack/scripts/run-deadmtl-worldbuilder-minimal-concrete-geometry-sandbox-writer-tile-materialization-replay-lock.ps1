@@ -82,7 +82,10 @@ $map27cRequired = @(
     (Join-Path $Map27CRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_v0.json"),
     (Join-Path $Map27CRoot "map_00.sandbox_writer_tile_materialized_cells.csv"),
     (Join-Path $Map27CRoot "map_00.sandbox_writer_tile_material_palette.json"),
-    (Join-Path $Map27CRoot "map_00.sandbox_writer_tile_layer_stack.json")
+    (Join-Path $Map27CRoot "map_00.sandbox_writer_tile_layer_stack.json"),
+    (Join-Path $Map27CRoot "map_00.sandbox_writer_tile_materialization_replay_log.json"),
+    (Join-Path $Map27CRoot "map_00.sandbox_writer_tile_materialization_ownership_summary.json"),
+    (Join-Path $Map27CRoot "map_00.sandbox_writer_tile_materializer_forbidden_output_guard.json")
 )
 
 $missing27c = @($map27cRequired | Where-Object { -not (Test-Path $_) })

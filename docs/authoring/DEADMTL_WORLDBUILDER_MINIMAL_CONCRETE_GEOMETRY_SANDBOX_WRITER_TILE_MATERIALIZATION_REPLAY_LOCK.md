@@ -3,7 +3,7 @@
 
 ## Purpose
 
-Consumes the MAP-27F acceptance gate and MAP-27C tile materializer source files,
+Consumes the MAP-27F acceptance gate result JSON and MAP-27C tile materializer replay source files,
 and locks the exact replayable source set for the next sandbox-only experiment.
 
 This step does NOT generate a new overlay.  It does NOT write PZ runtime files.
@@ -46,7 +46,7 @@ This step MUST NOT and WILL NOT produce:
 
 ## Inputs
 
-### MAP-27F acceptance gate root (4 required files)
+### MAP-27F acceptance gate root (4 required sanity files; only the JSON is locked)
 
 | File |
 |------|
@@ -55,14 +55,32 @@ This step MUST NOT and WILL NOT produce:
 | `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_acceptance_gate.csv` |
 | `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_acceptance_gate.summary.txt` |
 
-### MAP-27C tile materializer root (4 locked files)
+### MAP-27C tile materializer root (7 replay source files; all 7 locked)
 
 | File | Role |
 |------|------|
-| `map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_v0.json` | tile_materializer_result_json |
-| `map_00.sandbox_writer_tile_materialized_cells.csv` | materialized_cells_csv |
-| `map_00.sandbox_writer_tile_material_palette.json` | material_palette_json |
-| `map_00.sandbox_writer_tile_layer_stack.json` | layer_stack_json |
+| `map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_v0.json` | TILE_MATERIALIZER_RESULT_JSON |
+| `map_00.sandbox_writer_tile_materialized_cells.csv` | MATERIALIZED_CELLS_CSV |
+| `map_00.sandbox_writer_tile_material_palette.json` | MATERIAL_PALETTE_JSON |
+| `map_00.sandbox_writer_tile_layer_stack.json` | LAYER_STACK_JSON |
+| `map_00.sandbox_writer_tile_materialization_replay_log.json` | MATERIALIZATION_REPLAY_LOG_JSON |
+| `map_00.sandbox_writer_tile_materialization_ownership_summary.json` | MATERIALIZATION_OWNERSHIP_SUMMARY_JSON |
+| `map_00.sandbox_writer_tile_materializer_forbidden_output_guard.json` | MATERIALIZER_FORBIDDEN_OUTPUT_GUARD_JSON |
+
+## Locked file set
+
+8 locked files total: 1 MAP-27F acceptance gate result JSON + 7 MAP-27C replay source files.
+
+| # | Stage | Role |
+|---|-------|------|
+| 1 | MAP-27F | ACCEPTANCE_GATE_RESULT_JSON |
+| 2 | MAP-27C | TILE_MATERIALIZER_RESULT_JSON |
+| 3 | MAP-27C | MATERIALIZED_CELLS_CSV |
+| 4 | MAP-27C | MATERIAL_PALETTE_JSON |
+| 5 | MAP-27C | LAYER_STACK_JSON |
+| 6 | MAP-27C | MATERIALIZATION_REPLAY_LOG_JSON |
+| 7 | MAP-27C | MATERIALIZATION_OWNERSHIP_SUMMARY_JSON |
+| 8 | MAP-27C | MATERIALIZER_FORBIDDEN_OUTPUT_GUARD_JSON |
 
 ## Outputs (4 files)
 
@@ -75,17 +93,17 @@ This step MUST NOT and WILL NOT produce:
 
 ## Replay lock ID
 
-The replay lock ID is deterministically computed from all 8 file hashes:
+The replay lock ID is deterministically computed from all 8 file hashes (uppercase role names):
 
     lock_input = "MAP27G_REPLAY_LOCK_V1"
-               + "|acceptance_gate_json:<sha256>"
-               + "|acceptance_gate_md:<sha256>"
-               + "|acceptance_gate_csv:<sha256>"
-               + "|acceptance_gate_summary:<sha256>"
-               + "|tile_materializer_result_json:<sha256>"
-               + "|materialized_cells_csv:<sha256>"
-               + "|material_palette_json:<sha256>"
-               + "|layer_stack_json:<sha256>"
+               + "|ACCEPTANCE_GATE_RESULT_JSON:<sha256>"
+               + "|TILE_MATERIALIZER_RESULT_JSON:<sha256>"
+               + "|MATERIALIZED_CELLS_CSV:<sha256>"
+               + "|MATERIAL_PALETTE_JSON:<sha256>"
+               + "|LAYER_STACK_JSON:<sha256>"
+               + "|MATERIALIZATION_REPLAY_LOG_JSON:<sha256>"
+               + "|MATERIALIZATION_OWNERSHIP_SUMMARY_JSON:<sha256>"
+               + "|MATERIALIZER_FORBIDDEN_OUTPUT_GUARD_JSON:<sha256>"
     replay_lock_id = "map_00_replay_lock_" + SHA256(UTF8(lock_input))[..16]
 
 ## Locked file properties
@@ -100,7 +118,7 @@ All 8 locked files have:
 
 | Status | Meaning |
 |--------|---------|
-| `LOCKED` | All 8 files hashed and replay_lock_id computed |
+| `LOCKED_FOR_NEXT_SANDBOX_EXPERIMENT_ONLY` | All 8 files hashed and replay_lock_id computed |
 | `LOCK_FAILED` | One or more files missing or unhashable |
 
 ## CLI usage
@@ -128,49 +146,49 @@ Uses canonical paths by default:
 
 | # | Check ID |
 |---|----------|
-| 1 | ACCEPTANCE_GATE_ROOT_EXISTS |
-| 2 | ACCEPTANCE_GATE_4_FILES_EXIST |
-| 3 | ACCEPTANCE_GATE_JSON_HASHED |
-| 4 | ACCEPTANCE_GATE_VERDICT_COMPLETE |
-| 5 | ACCEPTANCE_GATE_IS_VALID_TRUE |
-| 6 | ACCEPTANCE_GATE_STATUS_ACCEPTED |
-| 7 | SOURCE_ACCEPTED_FOR_NEXT_SANDBOX_EXPERIMENT_TRUE |
-| 8 | SOURCE_ACCEPTED_FOR_RUNTIME_WRITER_FALSE |
-| 9 | SOURCE_ACCEPTED_FOR_PLAYABLE_EXPORT_FALSE |
-| 10 | TILE_MATERIALIZER_ROOT_EXISTS |
-| 11 | TILE_MATERIALIZER_4_LOCK_FILES_EXIST |
-| 12 | TILE_MATERIALIZER_RESULT_JSON_HASHED |
-| 13 | LOCK_FILE_1_ACCEPTANCE_GATE_JSON_EXISTS |
-| 14 | LOCK_FILE_2_ACCEPTANCE_GATE_MD_EXISTS |
-| 15 | LOCK_FILE_3_ACCEPTANCE_GATE_CSV_EXISTS |
-| 16 | LOCK_FILE_4_ACCEPTANCE_GATE_SUMMARY_EXISTS |
-| 17 | LOCK_FILE_5_TILE_MATERIALIZER_RESULT_JSON_EXISTS |
-| 18 | LOCK_FILE_6_MATERIALIZED_CELLS_CSV_EXISTS |
-| 19 | LOCK_FILE_7_MATERIAL_PALETTE_JSON_EXISTS |
-| 20 | LOCK_FILE_8_LAYER_STACK_JSON_EXISTS |
-| 21 | LOCK_FILE_1_SHA256_COMPUTED |
-| 22 | LOCK_FILE_2_SHA256_COMPUTED |
-| 23 | LOCK_FILE_3_SHA256_COMPUTED |
-| 24 | LOCK_FILE_4_SHA256_COMPUTED |
-| 25 | LOCK_FILE_5_SHA256_COMPUTED |
-| 26 | LOCK_FILE_6_SHA256_COMPUTED |
-| 27 | LOCK_FILE_7_SHA256_COMPUTED |
-| 28 | LOCK_FILE_8_SHA256_COMPUTED |
-| 29 | ALL_LOCK_FILES_LOCKED_FOR_REPLAY_TRUE |
-| 30 | ALL_LOCK_FILES_RUNTIME_CONSUMABLE_FALSE |
-| 31 | ALL_LOCK_FILES_WRITER_CONSUMABLE_FALSE |
-| 32 | LOCK_FILE_COUNT_8 |
-| 33 | REPLAY_LOCK_ID_GENERATED |
-| 34 | REPLAY_LOCK_ID_PREFIX_CORRECT |
-| 35 | REPLAY_LOCK_STATUS_LOCKED |
-| 36 | SANDBOX_ONLY_TRUE |
-| 37 | PZ_RUNTIME_MATERIALIZED_FALSE |
-| 38 | ACCEPTED_FOR_RUNTIME_WRITER_FALSE |
-| 39 | WRITER_READY_FALSE |
-| 40 | NO_RUNTIME_PROOF_CLAIM |
-| 41 | NO_PUBLIC_PLAYABLE_PACKAGING_CLAIM |
-| 42 | BLOCKING_REASONS_EMPTY |
-| 43 | POST_REPLAY_LOCK_FORBIDDEN_SCAN_PASS |
+| 1 | MAP27F_ROOT_EXISTS |
+| 2 | MAP27F_4_EXPECTED_FILES_EXIST |
+| 3 | MAP27F_ACCEPTANCE_GATE_HASHED |
+| 4 | MAP27F_VERDICT_COMPLETE |
+| 5 | MAP27F_IS_VALID_TRUE |
+| 6 | MAP27F_GATE_STATUS_ACCEPTED_FOR_NEXT_SANDBOX_ONLY |
+| 7 | MAP27F_ACCEPTED_FOR_NEXT_SANDBOX_TRUE |
+| 8 | MAP27F_ACCEPTED_FOR_RUNTIME_WRITER_FALSE |
+| 9 | MAP27F_ACCEPTED_FOR_PLAYABLE_EXPORT_FALSE |
+| 10 | MAP27C_ROOT_EXISTS |
+| 11 | MAP27C_7_REPLAY_SOURCE_FILES_EXIST |
+| 12 | ALL_8_REPLAY_LOCK_FILES_HASHED |
+| 13 | ALL_8_REPLAY_LOCK_FILES_LOCKED_FOR_REPLAY |
+| 14 | ALL_8_REPLAY_LOCK_FILES_RUNTIME_CONSUMABLE_FALSE |
+| 15 | ALL_8_REPLAY_LOCK_FILES_WRITER_CONSUMABLE_FALSE |
+| 16 | REPLAY_LOCK_ID_PRESENT |
+| 17 | REPLAY_LOCK_FILE_COUNT_8 |
+| 18 | SANDBOX_ONLY_TRUE |
+| 19 | SANDBOX_MATERIALIZED_SOURCE_TRUE |
+| 20 | VISUAL_QA_OVERLAY_WRITTEN_TRUE |
+| 21 | PZ_RUNTIME_MATERIALIZED_FALSE |
+| 22 | MATERIALIZED_CELL_COUNT_5340 |
+| 23 | RENDERED_CELL_COUNT_5340 |
+| 24 | COUNT_MATCH_SUMMARY_MATCH |
+| 25 | WALL_COUNT_850 |
+| 26 | FLOOR_COUNT_2444 |
+| 27 | ACCESS_COUNT_148 |
+| 28 | LOT_COUNT_1898 |
+| 29 | COMPONENT_RESIDUAL_COUNT_0 |
+| 30 | MATERIAL_KIND_COUNT_5 |
+| 31 | LAYER_KIND_COUNT_5 |
+| 32 | OVERLAY_PNG_WIDTH_1024 |
+| 33 | OVERLAY_PNG_HEIGHT_1024 |
+| 34 | NEXT_ALLOWED_EXPERIMENT_SANDBOX_ONLY |
+| 35 | FORBIDDEN_STEPS_LISTED |
+| 36 | BLOCKING_REASONS_EMPTY |
+| 37 | POST_REPLAY_LOCK_FORBIDDEN_SCAN_PASS |
+| 38 | WRITER_READY_FALSE |
+| 39 | RUNTIME_VALID_FALSE |
+| 40 | MATERIALIZED_FALSE |
+| 41 | NO_RUNTIME_PROOF_CLAIM |
+| 42 | NO_PUBLIC_PLAYABLE_PACKAGING_CLAIM |
+| 43 | NO_RUNTIME_OUTPUTS_EMITTED |
 
 ## Verdict values
 

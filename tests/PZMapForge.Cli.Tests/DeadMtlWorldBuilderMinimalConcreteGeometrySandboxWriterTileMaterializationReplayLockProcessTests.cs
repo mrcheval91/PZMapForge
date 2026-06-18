@@ -112,6 +112,15 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         File.WriteAllText(Path.Combine(root,
             "map_00.sandbox_writer_tile_layer_stack.json"),
             "{\"layers\":[\"STRUCTURE\",\"FLOOR\",\"EDGE\",\"SPACE\",\"RESIDUAL\"]}");
+        File.WriteAllText(Path.Combine(root,
+            "map_00.sandbox_writer_tile_materialization_replay_log.json"),
+            "{\"replay_log_entry_count\":5340}");
+        File.WriteAllText(Path.Combine(root,
+            "map_00.sandbox_writer_tile_materialization_ownership_summary.json"),
+            "{\"ownership_summary\":true}");
+        File.WriteAllText(Path.Combine(root,
+            "map_00.sandbox_writer_tile_materializer_forbidden_output_guard.json"),
+            "{\"forbidden_output_guard\":true,\"all_clean\":true}");
     }
 
     private string[] BuildArgs(
@@ -256,14 +265,14 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
     }
 
     [Fact]
-    public void ReplayLockStatus_IsLocked()
+    public void ReplayLockStatus_IsLockedForNextSandboxExperimentOnly()
     {
         WriteMap27fFiles();
         WriteMap27cFiles();
         Run(BuildArgs());
         var json = File.ReadAllText(GetOutputJson());
         using var doc = JsonDocument.Parse(json);
-        Assert.Equal("LOCKED", doc.RootElement.GetProperty("replay_lock_status").GetString());
+        Assert.Equal("LOCKED_FOR_NEXT_SANDBOX_EXPERIMENT_ONLY", doc.RootElement.GetProperty("replay_lock_status").GetString());
     }
 
     [Fact]
@@ -363,5 +372,8 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         Assert.Contains("worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-acceptance-gate", content);
         Assert.Contains("worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-v0",                content);
         Assert.Contains("worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-replay-lock",    content);
+        Assert.Contains("sandbox_writer_tile_materialization_replay_log",                                           content);
+        Assert.Contains("sandbox_writer_tile_materialization_ownership_summary",                                    content);
+        Assert.Contains("sandbox_writer_tile_materializer_forbidden_output_guard",                                  content);
     }
 }

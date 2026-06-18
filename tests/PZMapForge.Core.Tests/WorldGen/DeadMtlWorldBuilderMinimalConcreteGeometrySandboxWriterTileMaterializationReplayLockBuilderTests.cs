@@ -102,6 +102,15 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         File.WriteAllText(
             Path.Combine(_map27cDir, "map_00.sandbox_writer_tile_layer_stack.json"),
             "{\"layers\":[\"STRUCTURE\",\"FLOOR\",\"EDGE\",\"SPACE\",\"RESIDUAL\"]}");
+        File.WriteAllText(
+            Path.Combine(_map27cDir, "map_00.sandbox_writer_tile_materialization_replay_log.json"),
+            "{\"replay_log_entry_count\":5340}");
+        File.WriteAllText(
+            Path.Combine(_map27cDir, "map_00.sandbox_writer_tile_materialization_ownership_summary.json"),
+            "{\"ownership_summary\":true}");
+        File.WriteAllText(
+            Path.Combine(_map27cDir, "map_00.sandbox_writer_tile_materializer_forbidden_output_guard.json"),
+            "{\"forbidden_output_guard\":true,\"all_clean\":true}");
     }
 
     private DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationReplayLockResult BuildResult()
@@ -129,10 +138,10 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
     }
 
     [Fact]
-    public void Build_WithValidInputs_ReplayLockStatus_IsLocked()
+    public void Build_WithValidInputs_ReplayLockStatus_IsLockedForNextSandboxExperimentOnly()
     {
         var result = BuildResult();
-        Assert.Equal("LOCKED", result.ReplayLockStatus);
+        Assert.Equal("LOCKED_FOR_NEXT_SANDBOX_EXPERIMENT_ONLY", result.ReplayLockStatus);
     }
 
     [Fact]
@@ -327,10 +336,17 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
     }
 
     [Fact]
-    public void Build_WithValidInputs_ReplayLockReasons_Count_Is7()
+    public void Build_WithValidInputs_ReplayLockReasons_Count_Is6()
     {
         var result = BuildResult();
-        Assert.Equal(7, result.ReplayLockReasons.Count);
+        Assert.Equal(6, result.ReplayLockReasons.Count);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_ReplayRequirements_Count_Is8()
+    {
+        var result = BuildResult();
+        Assert.Equal(8, result.ReplayRequirements.Count);
     }
 
     [Fact]
@@ -355,19 +371,33 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
     }
 
     [Fact]
-    public void Build_WithValidInputs_4AgFilesInLockFiles()
+    public void Build_WithValidInputs_1AgFileInLockFiles()
     {
         var result = BuildResult();
         int agCount = result.ReplayLockFiles.Count(f => f.SourceStage == "MAP-27F");
-        Assert.Equal(4, agCount);
+        Assert.Equal(1, agCount);
     }
 
     [Fact]
-    public void Build_WithValidInputs_4TmFilesInLockFiles()
+    public void Build_WithValidInputs_7TmFilesInLockFiles()
     {
         var result = BuildResult();
         int tmCount = result.ReplayLockFiles.Count(f => f.SourceStage == "MAP-27C");
-        Assert.Equal(4, tmCount);
+        Assert.Equal(7, tmCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_LockFile1Role_IsAcceptanceGateResultJson()
+    {
+        var result = BuildResult();
+        Assert.Equal("ACCEPTANCE_GATE_RESULT_JSON", result.ReplayLockFiles[0].FileRole);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_LockFile2Role_IsTileMaterializerResultJson()
+    {
+        var result = BuildResult();
+        Assert.Equal("TILE_MATERIALIZER_RESULT_JSON", result.ReplayLockFiles[1].FileRole);
     }
 
     [Fact]

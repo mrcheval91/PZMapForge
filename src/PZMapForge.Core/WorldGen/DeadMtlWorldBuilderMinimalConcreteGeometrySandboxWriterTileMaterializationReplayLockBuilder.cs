@@ -80,13 +80,14 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
             },
             ReplayRequirements = new List<string>
             {
-                "MAP-27F acceptance gate must be ACCEPTED_FOR_NEXT_SANDBOX_EXPERIMENT_ONLY",
-                "MAP-27F accepted_for_next_sandbox_experiment must be true",
-                "MAP-27F accepted_for_runtime_writer must be false",
-                "All 4 MAP-27F acceptance gate output files must be present and hashable",
-                "All 4 MAP-27C primary tile materializer files must be present and hashable",
-                "Replay lock ID must be deterministically computed from all 8 file hashes",
-                "Output must remain sandbox-only with no runtime or writer claims",
+                "Use exactly the locked MAP-27C materialized cells CSV.",
+                "Use exactly the locked MAP-27C material palette JSON.",
+                "Use exactly the locked MAP-27C layer stack JSON.",
+                "Use exactly the locked MAP-27C materialization replay log JSON.",
+                "Use exactly the locked MAP-27C ownership summary JSON.",
+                "Preserve the MAP-27F acceptance gate hash.",
+                "Do not regenerate source geometry inside MAP-27G.",
+                "Do not write runtime PZ files.",
             },
         };
 
@@ -108,7 +109,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
             return result;
         }
 
-        // MAP-27F acceptance gate files (4 files to lock)
+        // MAP-27F acceptance gate sanity files (all 4 must exist; only JSON is locked)
         var agFiles = new[]
         {
             "map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_acceptance_gate.json",
@@ -117,13 +118,16 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
             "map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_acceptance_gate.summary.txt",
         };
 
-        // MAP-27C tile materializer files (4 files to lock)
+        // MAP-27C tile materializer replay source files (all 7 required; all 7 locked)
         var tmFiles = new[]
         {
             "map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_v0.json",
             "map_00.sandbox_writer_tile_materialized_cells.csv",
             "map_00.sandbox_writer_tile_material_palette.json",
             "map_00.sandbox_writer_tile_layer_stack.json",
+            "map_00.sandbox_writer_tile_materialization_replay_log.json",
+            "map_00.sandbox_writer_tile_materialization_ownership_summary.json",
+            "map_00.sandbox_writer_tile_materializer_forbidden_output_guard.json",
         };
 
         var missingAg = new List<string>();
@@ -180,28 +184,28 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         {
             using var doc = JsonDocument.Parse(File.ReadAllText(agJsonPath, Encoding.UTF8));
             var r = doc.RootElement;
-            if (r.TryGetProperty("verdict",                            out var p)) f27Verdict                   = p.GetString() ?? "";
-            if (r.TryGetProperty("is_valid",                           out p))     f27IsValid                   = p.GetBoolean();
-            if (r.TryGetProperty("acceptance_gate_status",             out p))     f27AcceptanceGateStatus      = p.GetString() ?? "";
-            if (r.TryGetProperty("accepted_for_next_sandbox_experiment", out p))   f27AcceptedForNextSandbox    = p.GetBoolean();
-            if (r.TryGetProperty("accepted_for_runtime_writer",        out p))     f27AcceptedForRuntimeWriter  = p.GetBoolean();
-            if (r.TryGetProperty("accepted_for_playable_export",       out p))     f27AcceptedForPlayableExport = p.GetBoolean();
-            if (r.TryGetProperty("sandbox_only",                       out p))     f27SandboxOnly               = p.GetBoolean();
-            if (r.TryGetProperty("sandbox_materialized_source",        out p))     f27SandboxMaterializedSource = p.GetBoolean();
-            if (r.TryGetProperty("visual_qa_overlay_written",          out p))     f27VisualQaOverlayWritten    = p.GetBoolean();
-            if (r.TryGetProperty("pz_runtime_materialized",            out p))     f27PzRuntimeMaterialized     = p.GetBoolean();
-            if (r.TryGetProperty("materialized_cell_count",            out p))     f27MaterializedCellCount     = p.GetInt32();
-            if (r.TryGetProperty("rendered_cell_count",                out p))     f27RenderedCellCount         = p.GetInt32();
-            if (r.TryGetProperty("count_match_summary",                out p))     f27CountMatchSummary         = p.GetString() ?? "";
-            if (r.TryGetProperty("building_wall_candidate_cell_count", out p))     f27WallCount                 = p.GetInt32();
-            if (r.TryGetProperty("building_floor_candidate_cell_count", out p))    f27FloorCount                = p.GetInt32();
-            if (r.TryGetProperty("access_edge_cell_count",             out p))     f27AccessCount               = p.GetInt32();
-            if (r.TryGetProperty("lot_space_cell_count",               out p))     f27LotCount                  = p.GetInt32();
-            if (r.TryGetProperty("component_residual_cell_count",      out p))     f27ResidualCount             = p.GetInt32();
-            if (r.TryGetProperty("material_kind_count",                out p))     f27MaterialKindCount         = p.GetInt32();
-            if (r.TryGetProperty("layer_kind_count",                   out p))     f27LayerKindCount            = p.GetInt32();
-            if (r.TryGetProperty("overlay_png_width",                  out p))     f27OverlayPngWidth           = p.GetInt32();
-            if (r.TryGetProperty("overlay_png_height",                 out p))     f27OverlayPngHeight          = p.GetInt32();
+            if (r.TryGetProperty("verdict",                             out var p)) f27Verdict                   = p.GetString() ?? "";
+            if (r.TryGetProperty("is_valid",                            out p))     f27IsValid                   = p.GetBoolean();
+            if (r.TryGetProperty("acceptance_gate_status",              out p))     f27AcceptanceGateStatus      = p.GetString() ?? "";
+            if (r.TryGetProperty("accepted_for_next_sandbox_experiment", out p))    f27AcceptedForNextSandbox    = p.GetBoolean();
+            if (r.TryGetProperty("accepted_for_runtime_writer",         out p))     f27AcceptedForRuntimeWriter  = p.GetBoolean();
+            if (r.TryGetProperty("accepted_for_playable_export",        out p))     f27AcceptedForPlayableExport = p.GetBoolean();
+            if (r.TryGetProperty("sandbox_only",                        out p))     f27SandboxOnly               = p.GetBoolean();
+            if (r.TryGetProperty("sandbox_materialized_source",         out p))     f27SandboxMaterializedSource = p.GetBoolean();
+            if (r.TryGetProperty("visual_qa_overlay_written",           out p))     f27VisualQaOverlayWritten    = p.GetBoolean();
+            if (r.TryGetProperty("pz_runtime_materialized",             out p))     f27PzRuntimeMaterialized     = p.GetBoolean();
+            if (r.TryGetProperty("materialized_cell_count",             out p))     f27MaterializedCellCount     = p.GetInt32();
+            if (r.TryGetProperty("rendered_cell_count",                 out p))     f27RenderedCellCount         = p.GetInt32();
+            if (r.TryGetProperty("count_match_summary",                 out p))     f27CountMatchSummary         = p.GetString() ?? "";
+            if (r.TryGetProperty("building_wall_candidate_cell_count",  out p))     f27WallCount                 = p.GetInt32();
+            if (r.TryGetProperty("building_floor_candidate_cell_count", out p))     f27FloorCount                = p.GetInt32();
+            if (r.TryGetProperty("access_edge_cell_count",              out p))     f27AccessCount               = p.GetInt32();
+            if (r.TryGetProperty("lot_space_cell_count",                out p))     f27LotCount                  = p.GetInt32();
+            if (r.TryGetProperty("component_residual_cell_count",       out p))     f27ResidualCount             = p.GetInt32();
+            if (r.TryGetProperty("material_kind_count",                 out p))     f27MaterialKindCount         = p.GetInt32();
+            if (r.TryGetProperty("layer_kind_count",                    out p))     f27LayerKindCount            = p.GetInt32();
+            if (r.TryGetProperty("overlay_png_width",                   out p))     f27OverlayPngWidth           = p.GetInt32();
+            if (r.TryGetProperty("overlay_png_height",                  out p))     f27OverlayPngHeight          = p.GetInt32();
         }
         catch (Exception ex)
         {
@@ -218,6 +222,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         result.SourceAcceptedForRuntimeWriter           = f27AcceptedForRuntimeWriter;
         result.SourceAcceptedForPlayableExport          = f27AcceptedForPlayableExport;
         result.AcceptedForNextSandboxExperiment         = f27AcceptedForNextSandbox;
+        result.SandboxMaterializedSource                = f27SandboxMaterializedSource;
         result.VisualQaOverlayWritten                   = f27VisualQaOverlayWritten;
         result.MaterializedCellCount                    = f27MaterializedCellCount;
         result.RenderedCellCount                        = f27RenderedCellCount;
@@ -268,17 +273,17 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         result.ClaimBoundaryAudit =
             "writer_ready=false | runtime_valid=false | materialized=false | runtime_proof_claimed=false | public_playable_packaging_claimed=false";
 
-        // Build all 8 lock files (4 AG + 4 TM)
+        // Build 8 locked files: 1 MAP-27F acceptance gate JSON + 7 MAP-27C replay source files
         var lockFileDefs = new (string Root, string Name, string Stage, string Role)[]
         {
-            (acceptanceGateRoot,  agFiles[0], "MAP-27F", "acceptance_gate_json"),
-            (acceptanceGateRoot,  agFiles[1], "MAP-27F", "acceptance_gate_md"),
-            (acceptanceGateRoot,  agFiles[2], "MAP-27F", "acceptance_gate_csv"),
-            (acceptanceGateRoot,  agFiles[3], "MAP-27F", "acceptance_gate_summary"),
-            (tileMaterializerRoot, tmFiles[0], "MAP-27C", "tile_materializer_result_json"),
-            (tileMaterializerRoot, tmFiles[1], "MAP-27C", "materialized_cells_csv"),
-            (tileMaterializerRoot, tmFiles[2], "MAP-27C", "material_palette_json"),
-            (tileMaterializerRoot, tmFiles[3], "MAP-27C", "layer_stack_json"),
+            (acceptanceGateRoot,   agFiles[0], "MAP-27F", "ACCEPTANCE_GATE_RESULT_JSON"),
+            (tileMaterializerRoot, tmFiles[0], "MAP-27C", "TILE_MATERIALIZER_RESULT_JSON"),
+            (tileMaterializerRoot, tmFiles[1], "MAP-27C", "MATERIALIZED_CELLS_CSV"),
+            (tileMaterializerRoot, tmFiles[2], "MAP-27C", "MATERIAL_PALETTE_JSON"),
+            (tileMaterializerRoot, tmFiles[3], "MAP-27C", "LAYER_STACK_JSON"),
+            (tileMaterializerRoot, tmFiles[4], "MAP-27C", "MATERIALIZATION_REPLAY_LOG_JSON"),
+            (tileMaterializerRoot, tmFiles[5], "MAP-27C", "MATERIALIZATION_OWNERSHIP_SUMMARY_JSON"),
+            (tileMaterializerRoot, tmFiles[6], "MAP-27C", "MATERIALIZER_FORBIDDEN_OUTPUT_GUARD_JSON"),
         };
 
         var lockFiles = new List<DeadMtlTileMaterializationReplayLockFile>();
@@ -306,9 +311,9 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         result.ReplayLockFiles     = lockFiles;
         result.ReplayLockFileCount = lockFiles.Count;
 
-        // Compute replay lock ID from all 8 hashes
+        // Compute replay lock ID from all 8 hashes (uppercase role names in formula)
         bool allFilesHashed = lockFiles.All(f => f.Exists && !string.IsNullOrEmpty(f.Sha256));
-        string replayLockId = "LOCK_ID_NOT_GENERATED";
+        string replayLockId     = "LOCK_ID_NOT_GENERATED";
         string replayLockStatus = "LOCK_FAILED";
         if (allFilesHashed)
         {
@@ -321,9 +326,9 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
                 + "|" + lockFiles[5].FileRole + ":" + lockFiles[5].Sha256
                 + "|" + lockFiles[6].FileRole + ":" + lockFiles[6].Sha256
                 + "|" + lockFiles[7].FileRole + ":" + lockFiles[7].Sha256;
-            string lockHex = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(lockInput))).ToLower();
+            string lockHex  = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(lockInput))).ToLower();
             replayLockId     = "map_00_replay_lock_" + lockHex[..16];
-            replayLockStatus = "LOCKED";
+            replayLockStatus = "LOCKED_FOR_NEXT_SANDBOX_EXPERIMENT_ONLY";
         }
         result.ReplayLockId     = replayLockId;
         result.ReplayLockStatus = replayLockStatus;
@@ -354,90 +359,106 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         result.ReplayLockReasons = lockAllPass ? new List<string>
         {
             "MAP-27F acceptance gate is complete and valid.",
-            "All 4 MAP-27F acceptance gate files are present and hashed.",
-            "All 4 MAP-27C tile materializer source files are present and hashed.",
-            "All 8 locked files have deterministic SHA-256 hashes.",
-            "Replay lock ID is deterministically computed from all 8 file hashes.",
-            "No forbidden artifacts in replay lock output root.",
-            "Claim boundary remains runtime-negative and writer-negative.",
+            "MAP-27F accepted the chain for the next sandbox experiment only.",
+            "All 8 replay lock files exist and are hashed.",
+            "Materialized and rendered cell counts remain matched at 5340.",
+            "Replay lock is sandbox-only and runtime-negative.",
+            "No forbidden artifacts were found in the replay-lock output root.",
         } : new List<string>();
 
         // 43 checks
         var checks = new List<DeadMtlTileMaterializationReplayLockCheck>();
 
-        // Group 1: Acceptance Gate root validation (5)
-        MakeCheck(checks, "ACCEPTANCE_GATE_ROOT_EXISTS",    "MAP-27F acceptance gate root exists");
-        MakeCheck(checks, "ACCEPTANCE_GATE_4_FILES_EXIST",  "All 4 MAP-27F acceptance gate files exist");
-        MakeCheck(checks, "ACCEPTANCE_GATE_JSON_HASHED",    "MAP-27F acceptance gate JSON SHA-256 hashed");
-        AddCheck(checks, "ACCEPTANCE_GATE_VERDICT_COMPLETE", "MAP-27F verdict is COMPLETE",
+        // Group 1: MAP-27F root and sanity (9)
+        MakeCheck(checks, "MAP27F_ROOT_EXISTS",              "MAP-27F acceptance gate root exists");
+        MakeCheck(checks, "MAP27F_4_EXPECTED_FILES_EXIST",   "All 4 MAP-27F acceptance gate files exist");
+        MakeCheck(checks, "MAP27F_ACCEPTANCE_GATE_HASHED",   "MAP-27F acceptance gate JSON SHA-256 hashed");
+        AddCheck(checks, "MAP27F_VERDICT_COMPLETE", "MAP-27F verdict is COMPLETE",
             "MAP27F_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_TILE_MATERIALIZATION_ACCEPTANCE_GATE_COMPLETE",
             f27Verdict);
-        AddCheck(checks, "ACCEPTANCE_GATE_IS_VALID_TRUE", "MAP-27F is_valid is true", "true", f27IsValid ? "true" : "false");
-
-        // Group 2: Acceptance Gate status (4)
-        AddCheck(checks, "ACCEPTANCE_GATE_STATUS_ACCEPTED", "MAP-27F acceptance_gate_status is ACCEPTED",
+        AddCheck(checks, "MAP27F_IS_VALID_TRUE",
+            "MAP-27F is_valid is true", "true", f27IsValid ? "true" : "false");
+        AddCheck(checks, "MAP27F_GATE_STATUS_ACCEPTED_FOR_NEXT_SANDBOX_ONLY",
+            "MAP-27F acceptance_gate_status is ACCEPTED_FOR_NEXT_SANDBOX_ONLY",
             "ACCEPTED_FOR_NEXT_SANDBOX_EXPERIMENT_ONLY", f27AcceptanceGateStatus);
-        AddCheck(checks, "SOURCE_ACCEPTED_FOR_NEXT_SANDBOX_EXPERIMENT_TRUE",
+        AddCheck(checks, "MAP27F_ACCEPTED_FOR_NEXT_SANDBOX_TRUE",
             "MAP-27F accepted_for_next_sandbox_experiment is true", "true", f27AcceptedForNextSandbox ? "true" : "false");
-        AddCheck(checks, "SOURCE_ACCEPTED_FOR_RUNTIME_WRITER_FALSE",
+        AddCheck(checks, "MAP27F_ACCEPTED_FOR_RUNTIME_WRITER_FALSE",
             "MAP-27F accepted_for_runtime_writer is false", "false", f27AcceptedForRuntimeWriter ? "true" : "false");
-        AddCheck(checks, "SOURCE_ACCEPTED_FOR_PLAYABLE_EXPORT_FALSE",
+        AddCheck(checks, "MAP27F_ACCEPTED_FOR_PLAYABLE_EXPORT_FALSE",
             "MAP-27F accepted_for_playable_export is false", "false", f27AcceptedForPlayableExport ? "true" : "false");
 
-        // Group 3: Tile materializer root validation (3)
-        MakeCheck(checks, "TILE_MATERIALIZER_ROOT_EXISTS",        "MAP-27C tile materializer root exists");
-        MakeCheck(checks, "TILE_MATERIALIZER_4_LOCK_FILES_EXIST", "All 4 MAP-27C lock files exist");
-        MakeCheck(checks, "TILE_MATERIALIZER_RESULT_JSON_HASHED", "MAP-27C tile materializer result JSON hashed");
+        // Group 2: MAP-27C root (2)
+        MakeCheck(checks, "MAP27C_ROOT_EXISTS",              "MAP-27C tile materializer root exists");
+        MakeCheck(checks, "MAP27C_7_REPLAY_SOURCE_FILES_EXIST", "All 7 MAP-27C replay source files exist");
 
-        // Group 4: All 8 lock files exist (8)
-        foreach (var lf in lockFiles)
-        {
-            AddCheck(checks, $"LOCK_FILE_{lf.FileOrder}_{lf.FileRole.ToUpperInvariant().Replace('-', '_')}_EXISTS",
-                $"Lock file {lf.FileOrder} ({lf.FileName}) exists", "true", lf.Exists ? "true" : "false");
-        }
-
-        // Group 5: SHA256 computed for all 8 (8)
-        foreach (var lf in lockFiles)
-        {
-            AddCheck(checks, $"LOCK_FILE_{lf.FileOrder}_SHA256_COMPUTED",
-                $"Lock file {lf.FileOrder} SHA-256 computed", "true", !string.IsNullOrEmpty(lf.Sha256) ? "true" : "false");
-        }
-
-        // Group 6: Lock file properties (4)
-        int lockedForReplayCount   = lockFiles.Count(f => f.LockedForReplay);
-        int runtimeConsumableCount = lockFiles.Count(f => f.RuntimeConsumable);
-        int writerConsumableCount  = lockFiles.Count(f => f.WriterConsumable);
-        AddCheck(checks, "ALL_LOCK_FILES_LOCKED_FOR_REPLAY_TRUE",
-            "All 8 lock files have locked_for_replay=true", "8", lockedForReplayCount.ToString());
-        AddCheck(checks, "ALL_LOCK_FILES_RUNTIME_CONSUMABLE_FALSE",
-            "All 8 lock files have runtime_consumable=false", "0", runtimeConsumableCount.ToString());
-        AddCheck(checks, "ALL_LOCK_FILES_WRITER_CONSUMABLE_FALSE",
-            "All 8 lock files have writer_consumable=false", "0", writerConsumableCount.ToString());
-        AddCheck(checks, "LOCK_FILE_COUNT_8",
+        // Group 3: Lock file hashing and properties (6)
+        int hashedCount          = lockFiles.Count(f => !string.IsNullOrEmpty(f.Sha256));
+        int lockedForReplayCount = lockFiles.Count(f => f.LockedForReplay);
+        int runtimeConsumCount   = lockFiles.Count(f => f.RuntimeConsumable);
+        int writerConsumCount    = lockFiles.Count(f => f.WriterConsumable);
+        AddCheck(checks, "ALL_8_REPLAY_LOCK_FILES_HASHED",
+            "All 8 replay lock files are hashed", "8", hashedCount.ToString());
+        AddCheck(checks, "ALL_8_REPLAY_LOCK_FILES_LOCKED_FOR_REPLAY",
+            "All 8 replay lock files have locked_for_replay=true", "8", lockedForReplayCount.ToString());
+        AddCheck(checks, "ALL_8_REPLAY_LOCK_FILES_RUNTIME_CONSUMABLE_FALSE",
+            "All 8 replay lock files have runtime_consumable=false", "0", runtimeConsumCount.ToString());
+        AddCheck(checks, "ALL_8_REPLAY_LOCK_FILES_WRITER_CONSUMABLE_FALSE",
+            "All 8 replay lock files have writer_consumable=false", "0", writerConsumCount.ToString());
+        AddCheck(checks, "REPLAY_LOCK_ID_PRESENT",
+            "Replay lock ID is present (not LOCK_ID_NOT_GENERATED)", "true",
+            !string.Equals(replayLockId, "LOCK_ID_NOT_GENERATED", StringComparison.Ordinal) ? "true" : "false");
+        AddCheck(checks, "REPLAY_LOCK_FILE_COUNT_8",
             "Total locked file count is 8", "8", lockFiles.Count.ToString());
 
-        // Group 7: Replay lock ID (3)
-        AddCheck(checks, "REPLAY_LOCK_ID_GENERATED",
-            "Replay lock ID is generated (not LOCK_ID_NOT_GENERATED)", "true",
-            !string.Equals(replayLockId, "LOCK_ID_NOT_GENERATED", StringComparison.Ordinal) ? "true" : "false");
-        AddCheck(checks, "REPLAY_LOCK_ID_PREFIX_CORRECT",
-            "Replay lock ID starts with map_00_replay_lock_", "map_00_replay_lock_",
-            replayLockId.Length >= 19 ? replayLockId[..19] : replayLockId);
-        AddCheck(checks, "REPLAY_LOCK_STATUS_LOCKED",
-            "Replay lock status is LOCKED", "LOCKED", replayLockStatus);
+        // Group 4: Counts and geometry from MAP-27F (16)
+        AddCheck(checks, "SANDBOX_ONLY_TRUE",
+            "sandbox_only is true", "true", f27SandboxOnly ? "true" : "false");
+        AddCheck(checks, "SANDBOX_MATERIALIZED_SOURCE_TRUE",
+            "sandbox_materialized_source is true", "true", f27SandboxMaterializedSource ? "true" : "false");
+        AddCheck(checks, "VISUAL_QA_OVERLAY_WRITTEN_TRUE",
+            "visual_qa_overlay_written is true", "true", f27VisualQaOverlayWritten ? "true" : "false");
+        AddCheck(checks, "PZ_RUNTIME_MATERIALIZED_FALSE",
+            "pz_runtime_materialized is false", "false", f27PzRuntimeMaterialized ? "true" : "false");
+        AddCheck(checks, "MATERIALIZED_CELL_COUNT_5340",
+            "Materialized cell count is 5340", "5340", f27MaterializedCellCount.ToString());
+        AddCheck(checks, "RENDERED_CELL_COUNT_5340",
+            "Rendered cell count is 5340", "5340", f27RenderedCellCount.ToString());
+        AddCheck(checks, "COUNT_MATCH_SUMMARY_MATCH",
+            "Count match summary contains MATCH", "MATCH",
+            f27CountMatchSummary.Contains("MATCH", StringComparison.Ordinal) ? "MATCH" : "MISMATCH");
+        AddCheck(checks, "WALL_COUNT_850",
+            "Building wall candidate count is 850", "850", f27WallCount.ToString());
+        AddCheck(checks, "FLOOR_COUNT_2444",
+            "Building floor candidate count is 2444", "2444", f27FloorCount.ToString());
+        AddCheck(checks, "ACCESS_COUNT_148",
+            "Access edge cell count is 148", "148", f27AccessCount.ToString());
+        AddCheck(checks, "LOT_COUNT_1898",
+            "Lot space cell count is 1898", "1898", f27LotCount.ToString());
+        AddCheck(checks, "COMPONENT_RESIDUAL_COUNT_0",
+            "Component residual cell count is 0", "0", f27ResidualCount.ToString());
+        AddCheck(checks, "MATERIAL_KIND_COUNT_5",
+            "Material kind count is 5", "5", f27MaterialKindCount.ToString());
+        AddCheck(checks, "LAYER_KIND_COUNT_5",
+            "Layer kind count is 5", "5", f27LayerKindCount.ToString());
+        AddCheck(checks, "OVERLAY_PNG_WIDTH_1024",
+            "Overlay PNG width is 1024", "1024", f27OverlayPngWidth.ToString());
+        AddCheck(checks, "OVERLAY_PNG_HEIGHT_1024",
+            "Overlay PNG height is 1024", "1024", f27OverlayPngHeight.ToString());
 
-        // Group 8: Claim boundary (6)
-        MakeCheck(checks, "SANDBOX_ONLY_TRUE",                  "sandbox_only is true");
-        MakeCheck(checks, "PZ_RUNTIME_MATERIALIZED_FALSE",       "pz_runtime_materialized is false");
-        MakeCheck(checks, "ACCEPTED_FOR_RUNTIME_WRITER_FALSE",   "accepted_for_runtime_writer is false");
-        MakeCheck(checks, "WRITER_READY_FALSE",                  "writer_ready is false");
-        MakeCheck(checks, "NO_RUNTIME_PROOF_CLAIM",              "No runtime proof claimed");
-        MakeCheck(checks, "NO_PUBLIC_PLAYABLE_PACKAGING_CLAIM",  "No public playable packaging claimed");
-
-        // Group 9: Final (2)
-        AddCheck(checks, "BLOCKING_REASONS_EMPTY", "No blocking reasons", "0", blockingReasons.Count.ToString());
-        AddCheck(checks, "POST_REPLAY_LOCK_FORBIDDEN_SCAN_PASS", "Post-replay-lock forbidden artifact scan passes",
-            "PASS", forbiddenScanPass ? "PASS" : "FAIL");
+        // Group 5: Claim boundary and final (10)
+        MakeCheck(checks, "NEXT_ALLOWED_EXPERIMENT_SANDBOX_ONLY", "Next allowed experiment status is SANDBOX_ONLY_NOT_RUNTIME");
+        MakeCheck(checks, "FORBIDDEN_STEPS_LISTED",               "All 11 forbidden next steps are listed");
+        AddCheck(checks, "BLOCKING_REASONS_EMPTY",
+            "No blocking reasons", "0", blockingReasons.Count.ToString());
+        AddCheck(checks, "POST_REPLAY_LOCK_FORBIDDEN_SCAN_PASS",
+            "Post-replay-lock forbidden artifact scan passes", "PASS", forbiddenScanPass ? "PASS" : "FAIL");
+        MakeCheck(checks, "WRITER_READY_FALSE",                 "writer_ready is false");
+        MakeCheck(checks, "RUNTIME_VALID_FALSE",                "runtime_valid is false");
+        MakeCheck(checks, "MATERIALIZED_FALSE",                 "materialized (global PZ) is false");
+        MakeCheck(checks, "NO_RUNTIME_PROOF_CLAIM",             "No runtime proof claimed");
+        MakeCheck(checks, "NO_PUBLIC_PLAYABLE_PACKAGING_CLAIM", "No public playable packaging claimed");
+        MakeCheck(checks, "NO_RUNTIME_OUTPUTS_EMITTED",         "No runtime outputs emitted");
 
         result.Checks           = checks;
         result.CheckCount       = checks.Count;
