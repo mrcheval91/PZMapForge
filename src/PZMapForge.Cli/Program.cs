@@ -120,7 +120,7 @@ if (args.Length < 1)
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt  --emitter-result <MAP-26G json> --emitter-output-root <MAP-26G dir>");
     Console.Error.WriteLine("                                                                                               --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-adapter-contract  --audit-receipt <MAP-26H json> --component-record <json> --lot-records <json>");
-    Console.Error.WriteLine("                                                                                 --building-slot-records <json> --frontage-access <json> --rear-service-access <json> --claim-boundary <json>");
+    Console.Error.WriteLine("                                                                                 --building-slot-records <json> --frontage-access-record <json> --rear-service-access-record <json> --claim-boundary-record <json>");
     Console.Error.WriteLine("                                                                                 --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
     return 1;
 }
@@ -6658,8 +6658,11 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterAdapterContractC
             case "--component-record":     componentRecordPath    = args[i + 1]; break;
             case "--lot-records":          lotRecordsPath         = args[i + 1]; break;
             case "--building-slot-records": buildingSlotRecordsPath = args[i + 1]; break;
+            case "--frontage-access-record":
             case "--frontage-access":      frontageAccessPath     = args[i + 1]; break;
+            case "--rear-service-access-record":
             case "--rear-service-access":  rearServiceAccessPath  = args[i + 1]; break;
+            case "--claim-boundary-record":
             case "--claim-boundary":       claimBoundaryPath      = args[i + 1]; break;
             case "--output-root":          outputRoot             = args[i + 1]; break;
             case "--output-json":          outputJson             = args[i + 1]; break;
@@ -6678,7 +6681,7 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterAdapterContractC
     {
         Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-adapter-contract: " +
             "--audit-receipt, --component-record, --lot-records, --building-slot-records, " +
-            "--frontage-access, --rear-service-access, --claim-boundary, " +
+            "--frontage-access-record, --rear-service-access-record, --claim-boundary-record, " +
             "--output-root, --output-json, --output-md, --output-csv, and --summary are required.");
         return 1;
     }

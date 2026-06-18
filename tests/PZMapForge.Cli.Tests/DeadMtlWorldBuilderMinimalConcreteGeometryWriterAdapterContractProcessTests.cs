@@ -144,6 +144,26 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContr
     private string[] BuildArgs(string auditReceipt, string component, string lot, string slot,
         string frontage, string rear, string claim,
         string? outputJson = null, string? outputMd = null, string? outputCsv = null, string? summary = null)
+        => BuildArgsWithFrontageArg("--frontage-access-record", "--rear-service-access-record", "--claim-boundary-record",
+            auditReceipt, component, lot, slot, frontage, rear, claim, outputJson, outputMd, outputCsv, summary);
+
+    private string[] BuildCanonicalArgs(string auditReceipt, string component, string lot, string slot,
+        string frontage, string rear, string claim,
+        string? outputJson = null, string? outputMd = null, string? outputCsv = null, string? summary = null)
+        => BuildArgsWithFrontageArg("--frontage-access-record", "--rear-service-access-record", "--claim-boundary-record",
+            auditReceipt, component, lot, slot, frontage, rear, claim, outputJson, outputMd, outputCsv, summary);
+
+    private string[] BuildLegacyArgs(string auditReceipt, string component, string lot, string slot,
+        string frontage, string rear, string claim,
+        string? outputJson = null, string? outputMd = null, string? outputCsv = null, string? summary = null)
+        => BuildArgsWithFrontageArg("--frontage-access", "--rear-service-access", "--claim-boundary",
+            auditReceipt, component, lot, slot, frontage, rear, claim, outputJson, outputMd, outputCsv, summary);
+
+    private string[] BuildArgsWithFrontageArg(
+        string frontageArgName, string rearArgName, string claimArgName,
+        string auditReceipt, string component, string lot, string slot,
+        string frontage, string rear, string claim,
+        string? outputJson, string? outputMd, string? outputCsv, string? summary)
     {
         outputJson  ??= Path.Combine(_tempDir, "out.json");
         outputMd    ??= Path.Combine(_tempDir, "out.md");
@@ -152,18 +172,18 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContr
         return new[]
         {
             "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-adapter-contract",
-            "--audit-receipt",          auditReceipt,
-            "--component-record",       component,
-            "--lot-records",            lot,
-            "--building-slot-records",  slot,
-            "--frontage-access",        frontage,
-            "--rear-service-access",    rear,
-            "--claim-boundary",         claim,
-            "--output-root",            _tempDir,
-            "--output-json",            outputJson,
-            "--output-md",              outputMd,
-            "--output-csv",             outputCsv,
-            "--summary",                summary
+            "--audit-receipt",       auditReceipt,
+            "--component-record",    component,
+            "--lot-records",         lot,
+            "--building-slot-records", slot,
+            frontageArgName,         frontage,
+            rearArgName,             rear,
+            claimArgName,            claim,
+            "--output-root",         _tempDir,
+            "--output-json",         outputJson,
+            "--output-md",           outputMd,
+            "--output-csv",          outputCsv,
+            "--summary",             summary
         };
     }
 
@@ -336,5 +356,94 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContr
         RunCli(BuildArgs(ar, comp, lot, slot, front, rear, claim, summary: outSummary));
         var summary = File.ReadAllText(outSummary);
         Assert.Contains("Checks           : 28", summary);
+    }
+
+    // MAP-26J canonical vocabulary CLI tests
+
+    [Fact]
+    public void CanonicalCliArgs_ExitCode0()
+    {
+        var (ar, comp, lot, slot, front, rear, claim) = WriteEmitterFixture();
+        var (exitCode, _, _) = RunCli(BuildCanonicalArgs(ar, comp, lot, slot, front, rear, claim));
+        Assert.Equal(0, exitCode);
+    }
+
+    [Fact]
+    public void OutputJson_ComponentSourceRecordId_IsCanonical()
+    {
+        var (ar, comp, lot, slot, front, rear, claim) = WriteEmitterFixture();
+        var outJson = Path.Combine(_tempDir, "canon_comp.json");
+        RunCli(BuildCanonicalArgs(ar, comp, lot, slot, front, rear, claim, outputJson: outJson));
+        using var doc = JsonDocument.Parse(File.ReadAllText(outJson));
+        var srcId = doc.RootElement
+            .GetProperty("normalized_component")
+            .GetProperty("source_record_id")
+            .GetString();
+        Assert.Equal("COMPONENT_WRITER_RECORD", srcId);
+    }
+
+    [Fact]
+    public void OutputJson_AccessKinds_AreCanonical()
+    {
+        var (ar, comp, lot, slot, front, rear, claim) = WriteEmitterFixture();
+        var outJson = Path.Combine(_tempDir, "canon_access.json");
+        RunCli(BuildCanonicalArgs(ar, comp, lot, slot, front, rear, claim, outputJson: outJson));
+        using var doc = JsonDocument.Parse(File.ReadAllText(outJson));
+        var accessRecords = doc.RootElement.GetProperty("normalized_access_records");
+        Assert.Equal("FRONTAGE_ACCESS",      accessRecords[0].GetProperty("access_kind").GetString());
+        Assert.Equal("REAR_SERVICE_ACCESS",  accessRecords[1].GetProperty("access_kind").GetString());
+    }
+
+    [Fact]
+    public void OutputJson_ForbiddenFamilyIds_AreCanonical()
+    {
+        var (ar, comp, lot, slot, front, rear, claim) = WriteEmitterFixture();
+        var outJson = Path.Combine(_tempDir, "canon_families.json");
+        RunCli(BuildCanonicalArgs(ar, comp, lot, slot, front, rear, claim, outputJson: outJson));
+        using var doc = JsonDocument.Parse(File.ReadAllText(outJson));
+        var families = doc.RootElement.GetProperty("forbidden_output_families");
+        string[] expected = {
+            "LOT_PACK_RUNTIME_BINARY", "LOT_HEADER_RUNTIME_BINARY", "WORLDGEN_OVERRIDE_LUA",
+            "RUNTIME_LUA", "PROJECT_ZOMBOID_INSTALL_PATH", "STEAM_WORKSHOP_OUTPUT",
+            "COMPILE_WORLDGEN_INVOCATION", "MAP_00_PNG_MUTATION"
+        };
+        for (int i = 0; i < expected.Length; i++)
+            Assert.Equal(expected[i], families[i].GetProperty("family_id").GetString());
+    }
+
+    [Fact]
+    public void OutputJson_ForbiddenFamilyStatuses_AreForbidden()
+    {
+        var (ar, comp, lot, slot, front, rear, claim) = WriteEmitterFixture();
+        var outJson = Path.Combine(_tempDir, "canon_status.json");
+        RunCli(BuildCanonicalArgs(ar, comp, lot, slot, front, rear, claim, outputJson: outJson));
+        using var doc = JsonDocument.Parse(File.ReadAllText(outJson));
+        var families = doc.RootElement.GetProperty("forbidden_output_families");
+        foreach (var f in families.EnumerateArray())
+            Assert.Equal("FORBIDDEN", f.GetProperty("status").GetString());
+    }
+
+    [Fact]
+    public void HelperScript_UsesCanonicalArgNames()
+    {
+        var scriptPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
+            "..", "..", "..", "..", "..",
+            "examples", "deadmtl-layer-pack", "scripts",
+            "run-deadmtl-worldbuilder-minimal-concrete-geometry-writer-adapter-contract.ps1"));
+        Assert.True(File.Exists(scriptPath), $"Helper script not found: {scriptPath}");
+        var content = File.ReadAllText(scriptPath);
+        Assert.Contains("--frontage-access-record", content);
+        Assert.Contains("--rear-service-access-record", content);
+        Assert.Contains("--claim-boundary-record", content);
+    }
+
+    [Fact]
+    public void HelpText_MentionsCanonicalArgNames()
+    {
+        var (exitCode, _, stderr) = RunCli(new[] { "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-adapter-contract" });
+        Assert.Equal(1, exitCode);
+        Assert.Contains("--frontage-access-record", stderr);
+        Assert.Contains("--rear-service-access-record", stderr);
+        Assert.Contains("--claim-boundary-record", stderr);
     }
 }

@@ -39,18 +39,18 @@ New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
 
 dotnet run --project $cliProject -- `
     deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-adapter-contract `
-    --audit-receipt         $auditReceipt `
-    --component-record      $componentRecord `
-    --lot-records           $lotRecords `
-    --building-slot-records $slotRecords `
-    --frontage-access       $frontageAccess `
-    --rear-service-access   $rearAccess `
-    --claim-boundary        $claimBoundary `
-    --output-root           $outputRoot `
-    --output-json           $outputJson `
-    --output-md             $outputMd `
-    --output-csv            $outputCsv `
-    --summary               $outputSummary
+    --audit-receipt                $auditReceipt `
+    --component-record             $componentRecord `
+    --lot-records                  $lotRecords `
+    --building-slot-records        $slotRecords `
+    --frontage-access-record       $frontageAccess `
+    --rear-service-access-record   $rearAccess `
+    --claim-boundary-record        $claimBoundary `
+    --output-root                  $outputRoot `
+    --output-json                  $outputJson `
+    --output-md                    $outputMd `
+    --output-csv                   $outputCsv `
+    --summary                      $outputSummary
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "adapter-contract command failed with exit code $LASTEXITCODE"

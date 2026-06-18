@@ -27,9 +27,9 @@ This is NOT a real Project Zomboid writer and NOT runtime proof.
 | `--component-record` | Path to `map_00.component_writer_record.json` (MAP-26G output) |
 | `--lot-records` | Path to `map_00.lot_writer_records.json` (MAP-26G output) |
 | `--building-slot-records` | Path to `map_00.building_slot_writer_records.json` (MAP-26G output) |
-| `--frontage-access` | Path to `map_00.frontage_access_record.json` (MAP-26G output) |
-| `--rear-service-access` | Path to `map_00.rear_service_access_record.json` (MAP-26G output) |
-| `--claim-boundary` | Path to `map_00.claim_boundary_record.json` (MAP-26G output) |
+| `--frontage-access-record` | Path to `map_00.frontage_access_record.json` (MAP-26G output) |
+| `--rear-service-access-record` | Path to `map_00.rear_service_access_record.json` (MAP-26G output) |
+| `--claim-boundary-record` | Path to `map_00.claim_boundary_record.json` (MAP-26G output) |
 | `--output-root` | `.local` directory for MAP-26I outputs |
 | `--output-json` | Path for the adapter contract JSON |
 | `--output-md` | Path for the adapter contract Markdown |
@@ -37,6 +37,9 @@ This is NOT a real Project Zomboid writer and NOT runtime proof.
 | `--summary` | Path for the adapter contract summary text |
 
 All output paths must contain `.local`.
+
+Legacy aliases `--frontage-access`, `--rear-service-access`, `--claim-boundary` are accepted
+for backward compatibility but the canonical names above are preferred.
 
 ## Outputs (4 files, all under .local)
 
@@ -49,23 +52,25 @@ All output paths must contain `.local`.
 
 All normalized records have `writer_consumable: false` and `runtime_consumable: false`.
 
-- `normalized_component` — 1 component (map_00_component_0001)
+- `normalized_component` — 1 component (map_00_component_0001), `source_record_id: COMPONENT_WRITER_RECORD`
 - `normalized_lots[]` — 7 lots
 - `normalized_building_slots[]` — 7 building slots
-- `normalized_access_records[]` — 2 records (FRONTAGE + REAR_SERVICE)
+- `normalized_access_records[]` — 2 records (`access_kind: FRONTAGE_ACCESS` and `access_kind: REAR_SERVICE_ACCESS`)
 
 ## Forbidden Output Families (8)
 
+All entries have `status: FORBIDDEN`.
+
 | # | Family ID | Blocked Pattern |
 |---|-----------|-----------------|
-| 1 | DOTLOTPACK_FILES | `*.lotpack` |
-| 2 | DOTLOTHEADER_FILES | `*.lotheader` |
-| 3 | WORLDGENOVERRIDE_LUA | `WorldGenOverride.lua` |
-| 4 | RUNTIME_LUA_SCRIPTS | `*.lua` |
-| 5 | COMPILE_WORLDGEN | `compile-worldgen` |
-| 6 | PZ_INSTALLATION_PATHS | `*/Project Zomboid/*` |
-| 7 | MEDIA_MAPS_DIRECTORY | `*/media/maps/*` |
-| 8 | LOT_BIN_EXPORT | `*.bin` |
+| 1 | `LOT_PACK_RUNTIME_BINARY` | `*.lotpack` |
+| 2 | `LOT_HEADER_RUNTIME_BINARY` | `*.lotheader` |
+| 3 | `WORLDGEN_OVERRIDE_LUA` | `WorldGenOverride.lua` |
+| 4 | `RUNTIME_LUA` | `*.lua` |
+| 5 | `PROJECT_ZOMBOID_INSTALL_PATH` | `*/Project Zomboid/*` |
+| 6 | `STEAM_WORKSHOP_OUTPUT` | `*/steamapps/workshop/*` |
+| 7 | `COMPILE_WORLDGEN_INVOCATION` | `compile-worldgen` |
+| 8 | `MAP_00_PNG_MUTATION` | `map_00.png` |
 
 ## Checks (28)
 
@@ -84,13 +89,13 @@ All normalized records have `writer_consumable: false` and `runtime_consumable: 
 | 11 | FRONTAGE_ACCESS_RECORD_EXISTS | No (past guard) |
 | 12 | REAR_SERVICE_ACCESS_RECORD_EXISTS | No (past guard) |
 | 13 | CLAIM_BOUNDARY_RECORD_EXISTS | No (past guard) |
-| 14 | NORMALIZED_COMPONENT_STABLE | Yes |
+| 14 | NORMALIZED_COMPONENT_STABLE | Yes — verifies target_component_id and source_record_id:COMPONENT_WRITER_RECORD |
 | 15 | NORMALIZED_LOT_COUNT_7 | Yes |
 | 16 | NORMALIZED_BUILDING_SLOT_COUNT_7 | Yes |
 | 17 | NORMALIZED_ACCESS_RECORD_COUNT_2 | Yes |
-| 18 | FRONTAGE_ACCESS_STABLE | Yes |
-| 19 | REAR_SERVICE_ACCESS_STABLE | Yes |
-| 20 | FORBIDDEN_OUTPUT_FAMILIES_LISTED | Yes |
+| 18 | FRONTAGE_ACCESS_STABLE | Yes — verifies side:NORTH and access_kind:FRONTAGE_ACCESS |
+| 19 | REAR_SERVICE_ACCESS_STABLE | Yes — verifies side:EAST and access_kind:REAR_SERVICE_ACCESS |
+| 20 | FORBIDDEN_OUTPUT_FAMILIES_LISTED | Yes — verifies 8 canonical IDs with status:FORBIDDEN |
 | 21 | WRITER_READY_FALSE | Yes |
 | 22 | RUNTIME_VALID_FALSE | Yes |
 | 23 | MATERIALIZED_FALSE | Yes |
@@ -110,18 +115,18 @@ All normalized records have `writer_consumable: false` and `runtime_consumable: 
 ```powershell
 dotnet run --project src/PZMapForge.Cli/PZMapForge.Cli.csproj -- `
     deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-adapter-contract `
-    --audit-receipt         .local\...\audit_receipt.json `
-    --component-record      .local\...\map_00.component_writer_record.json `
-    --lot-records           .local\...\map_00.lot_writer_records.json `
-    --building-slot-records .local\...\map_00.building_slot_writer_records.json `
-    --frontage-access       .local\...\map_00.frontage_access_record.json `
-    --rear-service-access   .local\...\map_00.rear_service_access_record.json `
-    --claim-boundary        .local\...\map_00.claim_boundary_record.json `
-    --output-root           .local\...\adapter-contract\map_00 `
-    --output-json           .local\...\adapter_contract.json `
-    --output-md             .local\...\adapter_contract.md `
-    --output-csv            .local\...\adapter_contract.csv `
-    --summary               .local\...\adapter_contract.summary.txt
+    --audit-receipt                .local\...\audit_receipt.json `
+    --component-record             .local\...\map_00.component_writer_record.json `
+    --lot-records                  .local\...\map_00.lot_writer_records.json `
+    --building-slot-records        .local\...\map_00.building_slot_writer_records.json `
+    --frontage-access-record       .local\...\map_00.frontage_access_record.json `
+    --rear-service-access-record   .local\...\map_00.rear_service_access_record.json `
+    --claim-boundary-record        .local\...\map_00.claim_boundary_record.json `
+    --output-root                  .local\...\adapter-contract\map_00 `
+    --output-json                  .local\...\adapter_contract.json `
+    --output-md                    .local\...\adapter_contract.md `
+    --output-csv                   .local\...\adapter_contract.csv `
+    --summary                      .local\...\adapter_contract.summary.txt
 ```
 
 ## Helper Script

@@ -490,4 +490,81 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContr
         var summary = builder.RenderSummary(result);
         Assert.Contains("Is Valid         : 1", summary);
     }
+
+    // MAP-26J canonical vocabulary tests
+
+    [Fact]
+    public void ValidFixture_NormalizedComponent_SourceRecordId_IsCanonical()
+    {
+        var (ar, comp, lot, slot, front, rear, claim) = WriteValidFixture();
+        var result = new DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContractBuilder()
+            .Build(ar, comp, lot, slot, front, rear, claim);
+        Assert.Equal("COMPONENT_WRITER_RECORD", result.NormalizedComponent.SourceRecordId);
+    }
+
+    [Fact]
+    public void ValidFixture_FrontageAccessKind_IsCanonical()
+    {
+        var (ar, comp, lot, slot, front, rear, claim) = WriteValidFixture();
+        var result = new DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContractBuilder()
+            .Build(ar, comp, lot, slot, front, rear, claim);
+        Assert.Equal("FRONTAGE_ACCESS", result.NormalizedAccessRecords[0].AccessKind);
+    }
+
+    [Fact]
+    public void ValidFixture_RearServiceAccessKind_IsCanonical()
+    {
+        var (ar, comp, lot, slot, front, rear, claim) = WriteValidFixture();
+        var result = new DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContractBuilder()
+            .Build(ar, comp, lot, slot, front, rear, claim);
+        Assert.Equal("REAR_SERVICE_ACCESS", result.NormalizedAccessRecords[1].AccessKind);
+    }
+
+    [Fact]
+    public void ValidFixture_ForbiddenFamilyIds_AreCanonical()
+    {
+        var (ar, comp, lot, slot, front, rear, claim) = WriteValidFixture();
+        var result = new DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContractBuilder()
+            .Build(ar, comp, lot, slot, front, rear, claim);
+        string[] expected = {
+            "LOT_PACK_RUNTIME_BINARY", "LOT_HEADER_RUNTIME_BINARY", "WORLDGEN_OVERRIDE_LUA",
+            "RUNTIME_LUA", "PROJECT_ZOMBOID_INSTALL_PATH", "STEAM_WORKSHOP_OUTPUT",
+            "COMPILE_WORLDGEN_INVOCATION", "MAP_00_PNG_MUTATION"
+        };
+        Assert.Equal(expected, result.ForbiddenOutputFamilies.Select(f => f.FamilyId).ToArray());
+    }
+
+    [Fact]
+    public void ValidFixture_ForbiddenFamilyStatuses_AreForbidden()
+    {
+        var (ar, comp, lot, slot, front, rear, claim) = WriteValidFixture();
+        var result = new DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContractBuilder()
+            .Build(ar, comp, lot, slot, front, rear, claim);
+        Assert.All(result.ForbiddenOutputFamilies, f => Assert.Equal("FORBIDDEN", f.Status));
+    }
+
+    [Fact]
+    public void ValidFixture_ForbiddenFamilies_DoNotUseBlockedStatus()
+    {
+        var (ar, comp, lot, slot, front, rear, claim) = WriteValidFixture();
+        var result = new DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContractBuilder()
+            .Build(ar, comp, lot, slot, front, rear, claim);
+        Assert.DoesNotContain(result.ForbiddenOutputFamilies, f => f.Status == "BLOCKED");
+    }
+
+    [Fact]
+    public void ValidFixture_ForbiddenFamilies_DoNotUseOldIds()
+    {
+        var (ar, comp, lot, slot, front, rear, claim) = WriteValidFixture();
+        var result = new DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContractBuilder()
+            .Build(ar, comp, lot, slot, front, rear, claim);
+        string[] oldIds = {
+            "DOTLOTPACK_FILES", "DOTLOTHEADER_FILES", "WORLDGENOVERRIDE_LUA",
+            "RUNTIME_LUA_SCRIPTS", "COMPILE_WORLDGEN", "PZ_INSTALLATION_PATHS",
+            "MEDIA_MAPS_DIRECTORY", "LOT_BIN_EXPORT"
+        };
+        var actualIds = result.ForbiddenOutputFamilies.Select(f => f.FamilyId).ToHashSet();
+        Assert.True(oldIds.All(id => !actualIds.Contains(id)),
+            "Forbidden families must not contain any old (non-canonical) family IDs.");
+    }
 }

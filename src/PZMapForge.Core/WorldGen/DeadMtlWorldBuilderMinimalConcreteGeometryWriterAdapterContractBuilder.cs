@@ -154,7 +154,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContr
                 if (bbox.TryGetProperty("width_px", out p)) compWidthPx = p.GetInt32();
                 if (bbox.TryGetProperty("height_px", out p)) compHeightPx = p.GetInt32();
             }
-            compSourceRecordId = $"map_00.component_writer_record.json";
+            compSourceRecordId = "COMPONENT_WRITER_RECORD";
         }
         catch (Exception ex)
         {
@@ -342,7 +342,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContr
             {
                 AccessOrder      = 1,
                 AccessId         = "map_00_comp0001_frontage_access",
-                AccessKind       = "FRONTAGE",
+                AccessKind       = "FRONTAGE_ACCESS",
                 Side             = frontSide,
                 ComponentId      = frontCompId,
                 ContactPx        = frontContactPx,
@@ -353,7 +353,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContr
             {
                 AccessOrder      = 2,
                 AccessId         = "map_00_comp0001_rear_service_access",
-                AccessKind       = "REAR_SERVICE",
+                AccessKind       = "REAR_SERVICE_ACCESS",
                 Side             = rearSide,
                 ComponentId      = rearCompId,
                 ContactPx        = rearContactPx,
@@ -395,14 +395,14 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContr
         // --- forbidden output families ---
         result.ForbiddenOutputFamilies = new List<DeadMtlAdapterContractForbiddenOutputFamily>
         {
-            new() { FamilyOrder=1, FamilyId="DOTLOTPACK_FILES",          BlockedPattern="*.lotpack",             Status="BLOCKED", Details="Lot-pack binary export files are forbidden. No PZ lot pack is produced." },
-            new() { FamilyOrder=2, FamilyId="DOTLOTHEADER_FILES",        BlockedPattern="*.lotheader",           Status="BLOCKED", Details="Lot-header binary files are forbidden. No PZ lot header is produced." },
-            new() { FamilyOrder=3, FamilyId="WORLDGENOVERRIDE_LUA",      BlockedPattern="WorldGenOverride.lua",  Status="BLOCKED", Details="WorldGen override Lua is forbidden. No runtime script is produced." },
-            new() { FamilyOrder=4, FamilyId="RUNTIME_LUA_SCRIPTS",       BlockedPattern="*.lua",                 Status="BLOCKED", Details="Runtime Lua scripts are forbidden. No Lua output is produced." },
-            new() { FamilyOrder=5, FamilyId="COMPILE_WORLDGEN",          BlockedPattern="compile-worldgen",      Status="BLOCKED", Details="compile-worldgen invocation is forbidden. No compilation step is run." },
-            new() { FamilyOrder=6, FamilyId="PZ_INSTALLATION_PATHS",     BlockedPattern="*/Project Zomboid/*",   Status="BLOCKED", Details="PZ installation directory writes are forbidden. Nothing is installed into PZ." },
-            new() { FamilyOrder=7, FamilyId="MEDIA_MAPS_DIRECTORY",      BlockedPattern="*/media/maps/*",        Status="BLOCKED", Details="media/maps directory writes are forbidden. No PZ map directory is populated." },
-            new() { FamilyOrder=8, FamilyId="LOT_BIN_EXPORT",            BlockedPattern="*.bin",                 Status="BLOCKED", Details="Lot binary export files are forbidden. No PZ lot bin is produced." }
+            new() { FamilyOrder=1, FamilyId="LOT_PACK_RUNTIME_BINARY",       BlockedPattern="*.lotpack",                 Status="FORBIDDEN", Details="Lot-pack runtime binary files are forbidden. No PZ lot pack is produced." },
+            new() { FamilyOrder=2, FamilyId="LOT_HEADER_RUNTIME_BINARY",     BlockedPattern="*.lotheader",               Status="FORBIDDEN", Details="Lot-header runtime binary files are forbidden. No PZ lot header is produced." },
+            new() { FamilyOrder=3, FamilyId="WORLDGEN_OVERRIDE_LUA",         BlockedPattern="WorldGenOverride.lua",      Status="FORBIDDEN", Details="WorldGen override Lua is forbidden. No runtime script is produced." },
+            new() { FamilyOrder=4, FamilyId="RUNTIME_LUA",                   BlockedPattern="*.lua",                     Status="FORBIDDEN", Details="Runtime Lua scripts are forbidden. No Lua output is produced." },
+            new() { FamilyOrder=5, FamilyId="PROJECT_ZOMBOID_INSTALL_PATH",  BlockedPattern="*/Project Zomboid/*",       Status="FORBIDDEN", Details="Project Zomboid installation path writes are forbidden. Nothing is installed into PZ." },
+            new() { FamilyOrder=6, FamilyId="STEAM_WORKSHOP_OUTPUT",         BlockedPattern="*/steamapps/workshop/*",    Status="FORBIDDEN", Details="Steam Workshop output paths are forbidden. No workshop upload is performed." },
+            new() { FamilyOrder=7, FamilyId="COMPILE_WORLDGEN_INVOCATION",   BlockedPattern="compile-worldgen",          Status="FORBIDDEN", Details="compile-worldgen invocation is forbidden. No compilation step is run." },
+            new() { FamilyOrder=8, FamilyId="MAP_00_PNG_MUTATION",           BlockedPattern="map_00.png",                Status="FORBIDDEN", Details="map_00.png source asset mutation is forbidden. The source image is read-only." }
         };
 
         // --- build 28 checks ---
@@ -477,10 +477,18 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContr
             "PRESENT", "PRESENT", "Claim boundary record confirmed present before parsing."));
 
         // 14: normalized component stable
-        checks.Add(AddCheck(++order, "NORMALIZED_COMPONENT_STABLE",
-            "Normalized component target_component_id is stable",
-            "map_00_component_0001", result.NormalizedComponent.TargetComponentId,
-            "Verifies the normalized component ID matches the expected map_00 component."));
+        bool compStable = string.Equals(result.NormalizedComponent.TargetComponentId, "map_00_component_0001", StringComparison.Ordinal)
+            && string.Equals(result.NormalizedComponent.SourceRecordId, "COMPONENT_WRITER_RECORD", StringComparison.Ordinal);
+        checks.Add(new DeadMtlAdapterContractCheck
+        {
+            CheckOrder  = ++order,
+            CheckId     = "NORMALIZED_COMPONENT_STABLE",
+            CheckLabel  = "Normalized component target_component_id and source_record_id are canonical",
+            CheckStatus = compStable ? "PASS" : "FAIL",
+            Expected    = "target_component_id:map_00_component_0001|source_record_id:COMPONENT_WRITER_RECORD",
+            Actual      = $"target_component_id:{result.NormalizedComponent.TargetComponentId}|source_record_id:{result.NormalizedComponent.SourceRecordId}",
+            Details     = "Verifies the normalized component ID and source_record_id match canonical values."
+        });
 
         // 15: normalized lot count 7
         checks.Add(AddCheck(++order, "NORMALIZED_LOT_COUNT_7",
@@ -501,22 +509,54 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometryWriterAdapterContr
             "Verifies 2 access records (frontage + rear service) were normalized."));
 
         // 18: frontage access stable
-        checks.Add(AddCheck(++order, "FRONTAGE_ACCESS_STABLE",
-            "Frontage access side is NORTH",
-            "NORTH", frontSide,
-            $"Frontage component_id: {frontCompId}, contact_px: {frontContactPx}."));
+        var frontageRec = result.NormalizedAccessRecords[0];
+        bool frontageStable = string.Equals(frontageRec.Side, "NORTH", StringComparison.Ordinal)
+            && string.Equals(frontageRec.AccessKind, "FRONTAGE_ACCESS", StringComparison.Ordinal);
+        checks.Add(new DeadMtlAdapterContractCheck
+        {
+            CheckOrder  = ++order,
+            CheckId     = "FRONTAGE_ACCESS_STABLE",
+            CheckLabel  = "Frontage access side is NORTH and access_kind is FRONTAGE_ACCESS",
+            CheckStatus = frontageStable ? "PASS" : "FAIL",
+            Expected    = "side:NORTH|access_kind:FRONTAGE_ACCESS",
+            Actual      = $"side:{frontageRec.Side}|access_kind:{frontageRec.AccessKind}",
+            Details     = $"Frontage component_id: {frontCompId}, contact_px: {frontContactPx}."
+        });
 
         // 19: rear service access stable
-        checks.Add(AddCheck(++order, "REAR_SERVICE_ACCESS_STABLE",
-            "Rear service access side is EAST",
-            "EAST", rearSide,
-            $"Rear service component_id: {rearCompId}, contact_px: {rearContactPx}."));
+        var rearRec = result.NormalizedAccessRecords[1];
+        bool rearStable = string.Equals(rearRec.Side, "EAST", StringComparison.Ordinal)
+            && string.Equals(rearRec.AccessKind, "REAR_SERVICE_ACCESS", StringComparison.Ordinal);
+        checks.Add(new DeadMtlAdapterContractCheck
+        {
+            CheckOrder  = ++order,
+            CheckId     = "REAR_SERVICE_ACCESS_STABLE",
+            CheckLabel  = "Rear service access side is EAST and access_kind is REAR_SERVICE_ACCESS",
+            CheckStatus = rearStable ? "PASS" : "FAIL",
+            Expected    = "side:EAST|access_kind:REAR_SERVICE_ACCESS",
+            Actual      = $"side:{rearRec.Side}|access_kind:{rearRec.AccessKind}",
+            Details     = $"Rear service component_id: {rearCompId}, contact_px: {rearContactPx}."
+        });
 
-        // 20: forbidden output families listed
-        checks.Add(AddCheck(++order, "FORBIDDEN_OUTPUT_FAMILIES_LISTED",
-            "Forbidden output families count is 8",
-            "8", result.ForbiddenOutputFamilies.Count.ToString(),
-            "Verifies all 8 forbidden output families are declared in the adapter contract."));
+        // 20: forbidden output families listed with canonical IDs and FORBIDDEN status
+        string[] canonicalFamilyIds = {
+            "LOT_PACK_RUNTIME_BINARY", "LOT_HEADER_RUNTIME_BINARY", "WORLDGEN_OVERRIDE_LUA",
+            "RUNTIME_LUA", "PROJECT_ZOMBOID_INSTALL_PATH", "STEAM_WORKSHOP_OUTPUT",
+            "COMPILE_WORLDGEN_INVOCATION", "MAP_00_PNG_MUTATION"
+        };
+        bool familiesCanonical = result.ForbiddenOutputFamilies.Count == 8
+            && result.ForbiddenOutputFamilies.Select(f => f.FamilyId).SequenceEqual(canonicalFamilyIds, StringComparer.Ordinal)
+            && result.ForbiddenOutputFamilies.All(f => string.Equals(f.Status, "FORBIDDEN", StringComparison.Ordinal));
+        checks.Add(new DeadMtlAdapterContractCheck
+        {
+            CheckOrder  = ++order,
+            CheckId     = "FORBIDDEN_OUTPUT_FAMILIES_LISTED",
+            CheckLabel  = "8 canonical forbidden output families declared with FORBIDDEN status",
+            CheckStatus = familiesCanonical ? "PASS" : "FAIL",
+            Expected    = "count:8|ids:canonical|status:FORBIDDEN",
+            Actual      = $"count:{result.ForbiddenOutputFamilies.Count}|status_unique:{string.Join(",", result.ForbiddenOutputFamilies.Select(f => f.Status).Distinct())}",
+            Details     = "Verifies all 8 canonical forbidden output family IDs are declared with status FORBIDDEN."
+        });
 
         // 21: writer_ready false
         checks.Add(AddCheck(++order, "WRITER_READY_FALSE",
