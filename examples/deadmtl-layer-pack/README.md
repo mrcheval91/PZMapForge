@@ -1314,6 +1314,32 @@ for checks, claim boundary, and what this does and does not prove.
 
 ---
 
+## MAP-26I WorldBuilder Minimal Concrete Geometry Writer Adapter Contract
+
+MAP-26I normalizes the 8 dry-run records emitted by MAP-26G (and verified by MAP-26H) into a
+single bounded adapter contract document. All normalized records carry `writer_consumable: false`
+and `runtime_consumable: false`. 8 forbidden output families are explicitly declared.
+
+This is NOT a real PZ writer and NOT runtime proof. Requires MAP-26G and MAP-26H to be run first.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-writer-adapter-contract.ps1
+```
+
+Main output paths (all under `.local`):
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-adapter-contract\map_00\map_00.minimal_concrete_geometry_writer_adapter_contract.json`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-adapter-contract\map_00\map_00.minimal_concrete_geometry_writer_adapter_contract.md`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-adapter-contract\map_00\map_00.minimal_concrete_geometry_writer_adapter_contract.csv`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-adapter-contract\map_00\map_00.minimal_concrete_geometry_writer_adapter_contract.summary.txt`
+
+Normalizes: 1 component, 7 lots, 7 building slots, 2 access records. Runs 28 checks.
+`adapter_contract_status: NORMALIZED_DRY_RUN_RECORDS_ONLY`.
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_WRITER_ADAPTER_CONTRACT.md`
+for checks, forbidden output families, and claim boundaries.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
