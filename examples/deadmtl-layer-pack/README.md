@@ -1340,6 +1340,37 @@ for checks, forbidden output families, and claim boundaries.
 
 ---
 
+## MAP-27A WorldBuilder Minimal Concrete Geometry Sandbox Writer V0
+
+MAP-27A is the first writer seam. It reads the canonical MAP-26I/MAP-26J adapter contract and
+emits concrete writer-operation artifacts under `.local`.
+
+It writes sandbox writer operation artifacts only. It does not write PZ runtime files.
+It does not prove runtime validity.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-v0.ps1
+```
+
+Main output paths (all under `.local`):
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-v0\map_00\map_00.minimal_concrete_geometry_sandbox_writer_v0.json`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-v0\map_00\map_00.minimal_concrete_geometry_sandbox_writer_v0.summary.txt`
+
+Emitted sandbox writer operation files (all under `.local`):
+- `map_00.sandbox_writer_component_operations.json` (1 op)
+- `map_00.sandbox_writer_lot_operations.json` (7 ops)
+- `map_00.sandbox_writer_building_slot_operations.json` (7 ops)
+- `map_00.sandbox_writer_access_operations.json` (2 ops)
+- `map_00.sandbox_writer_forbidden_output_guard.json` (8 guards)
+
+Operations: 17 total, all `runtime_effect: NONE`. Runs 33 checks.
+`writer_stage: SANDBOX_WRITER_V0`, `sandbox_only: true`, `writer_ready: false`.
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_V0.md`
+for checks, operation kinds, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
