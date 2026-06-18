@@ -117,6 +117,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                                               --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emitter  --dry-run-design <MAP-26F json> --geometry-mvp <MAP-26A json>");
     Console.Error.WriteLine("                                                                                --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt  --emitter-result <MAP-26G json> --emitter-output-root <MAP-26G dir>");
+    Console.Error.WriteLine("                                                                                               --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
     return 1;
 }
 
@@ -179,7 +181,8 @@ return args[0] switch
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-input-manifest" => DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterInputManifestCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-experiment-scope-record" => DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterExperimentScopeRecordCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-design"         => DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterDryRunDesignCommand(args[1..]),
-    "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emitter"       => DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterDryRunEmitterCommand(args[1..]),
+    "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emitter"                      => DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterDryRunEmitterCommand(args[1..]),
+    "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt"      => DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterDryRunEmissionAuditReceiptCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -5611,7 +5614,8 @@ static int UnknownCommand(string cmd)
         "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-input-manifest, " +
         "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-experiment-scope-record, " +
         "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-design, " +
-        "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emitter");
+        "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emitter, " +
+        "deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt");
     return 1;
 }
 
@@ -6530,6 +6534,90 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterDryRunEmitterCom
     File.WriteAllText(summaryPath, builder.RenderSummary(result));
 
     Console.WriteLine("MAP-26G WorldBuilder minimal concrete geometry writer dry-run emitter");
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return 0;
+}
+
+static int DeadMtlBuildWorldBuilderMinimalConcreteGeometryWriterDryRunEmissionAuditReceiptCommand(string[] args)
+{
+    var emitterResultPath  = string.Empty;
+    var emitterOutputRoot  = string.Empty;
+    var outputRoot         = string.Empty;
+    var outputJson         = string.Empty;
+    var outputMd           = string.Empty;
+    var outputCsv          = string.Empty;
+    var summaryPath        = string.Empty;
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--emitter-result":       emitterResultPath = args[i + 1]; break;
+            case "--emitter-output-root":  emitterOutputRoot = args[i + 1]; break;
+            case "--output-root":          outputRoot        = args[i + 1]; break;
+            case "--output-json":          outputJson        = args[i + 1]; break;
+            case "--output-md":            outputMd          = args[i + 1]; break;
+            case "--output-csv":           outputCsv         = args[i + 1]; break;
+            case "--summary":              summaryPath       = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(emitterResultPath) || string.IsNullOrEmpty(emitterOutputRoot) ||
+        string.IsNullOrEmpty(outputRoot)        || string.IsNullOrEmpty(outputJson)         ||
+        string.IsNullOrEmpty(outputMd)          || string.IsNullOrEmpty(outputCsv)          ||
+        string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt: " +
+            "--emitter-result, --emitter-output-root, --output-root, " +
+            "--output-json, --output-md, --output-csv, and --summary are required.");
+        return 1;
+    }
+
+    if (!emitterOutputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt: " +
+            "--emitter-output-root must contain '.local' in the path.");
+        return 1;
+    }
+
+    if (!outputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt: " +
+            "--output-root must contain '.local' in the path.");
+        return 1;
+    }
+
+    var allOutputs = new[] { outputJson, outputMd, outputCsv, summaryPath };
+    if (allOutputs.Any(p => !p.Contains(".local", StringComparison.OrdinalIgnoreCase)))
+    {
+        Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt: " +
+            "all output file paths must contain '.local' in the path.");
+        return 1;
+    }
+
+    foreach (var p in allOutputs)
+    {
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderMinimalConcreteGeometryWriterDryRunEmissionAuditReceiptBuilder();
+    var result  = builder.Build(emitterResultPath, emitterOutputRoot);
+
+    File.WriteAllText(outputJson,  builder.RenderJson(result));
+    File.WriteAllText(outputMd,    builder.RenderMarkdown(result));
+    File.WriteAllText(outputCsv,   builder.RenderCsv(result));
+    File.WriteAllText(summaryPath, builder.RenderSummary(result));
+
+    Console.WriteLine("MAP-26H WorldBuilder minimal concrete geometry writer dry-run emission audit receipt");
     Console.WriteLine(builder.RenderSummary(result));
 
     if (!result.IsValid)

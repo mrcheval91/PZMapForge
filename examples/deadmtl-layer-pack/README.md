@@ -1289,6 +1289,31 @@ for checks, claim boundary, and what this does and does not prove.
 
 ---
 
+## MAP-26H WorldBuilder Minimal Concrete Geometry Writer Dry-Run Emission Audit Receipt
+
+MAP-26H independently verifies MAP-26G's 8 emitted dry-run records after emission. It answers:
+Did MAP-26G emit exactly the expected records under `.local`, with stable hashes, correct claim
+boundaries, and no forbidden runtime artifacts?
+
+This is NOT a real PZ writer and NOT runtime proof. Requires MAP-26G to be run first.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt.ps1
+```
+
+Main output paths (all under `.local`):
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt\map_00\map_00.minimal_concrete_geometry_writer_dry_run_emission_audit_receipt.json`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt\map_00\map_00.minimal_concrete_geometry_writer_dry_run_emission_audit_receipt.md`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt\map_00\map_00.minimal_concrete_geometry_writer_dry_run_emission_audit_receipt.csv`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-writer-dry-run-emission-audit-receipt\map_00\map_00.minimal_concrete_geometry_writer_dry_run_emission_audit_receipt.summary.txt`
+
+Audits 12 files: 4 main MAP-26G outputs + 8 emitted records. Runs 29 checks.
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_WRITER_DRY_RUN_EMISSION_AUDIT_RECEIPT.md`
+for checks, claim boundary, and what this does and does not prove.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
