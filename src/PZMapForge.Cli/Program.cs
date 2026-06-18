@@ -139,6 +139,8 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                                                                               --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-acceptance-gate  --qa-review-packet-root <MAP-27E dir>");
     Console.Error.WriteLine("                                                                                                             --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-replay-lock  --acceptance-gate-root <MAP-27F dir> --tile-materializer-root <MAP-27C dir>");
+    Console.Error.WriteLine("                                                                                                    --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
     return 1;
 }
 
@@ -210,6 +212,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-qa-overlay-v0" => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializerQaOverlayV0Command(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-qa-review-packet" => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationQaReviewPacketCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-acceptance-gate" => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationAcceptanceGateCommand(args[1..]),
+    "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-replay-lock"    => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationReplayLockCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -7004,6 +7007,90 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMater
     File.WriteAllText(summaryPath, builder.RenderSummary(result));
 
     Console.WriteLine("MAP-27C WorldBuilder minimal concrete geometry sandbox writer tile materializer v0");
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return 0;
+}
+
+static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationReplayLockCommand(string[] args)
+{
+    var acceptanceGateRoot   = string.Empty;
+    var tileMaterializerRoot = string.Empty;
+    var outputRoot           = string.Empty;
+    var outputJson           = string.Empty;
+    var outputMd             = string.Empty;
+    var outputCsv            = string.Empty;
+    var summaryPath          = string.Empty;
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--acceptance-gate-root":    acceptanceGateRoot   = args[i + 1]; break;
+            case "--tile-materializer-root":  tileMaterializerRoot = args[i + 1]; break;
+            case "--output-root":             outputRoot           = args[i + 1]; break;
+            case "--output-json":             outputJson           = args[i + 1]; break;
+            case "--output-md":               outputMd             = args[i + 1]; break;
+            case "--output-csv":              outputCsv            = args[i + 1]; break;
+            case "--summary":                 summaryPath          = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(acceptanceGateRoot) || string.IsNullOrEmpty(tileMaterializerRoot) ||
+        string.IsNullOrEmpty(outputRoot) || string.IsNullOrEmpty(outputJson) ||
+        string.IsNullOrEmpty(outputMd)  || string.IsNullOrEmpty(outputCsv) ||
+        string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-replay-lock " +
+            "--acceptance-gate-root <MAP-27F dir> --tile-materializer-root <MAP-27C dir> " +
+            "--output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
+        return 1;
+    }
+
+    if (!outputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine($"ERROR: --output-root must contain .local to prevent accidental output outside sandbox: {outputRoot}");
+        return 1;
+    }
+    if (!outputJson.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine($"ERROR: --output-json must contain .local: {outputJson}");
+        return 1;
+    }
+    if (!outputMd.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine($"ERROR: --output-md must contain .local: {outputMd}");
+        return 1;
+    }
+    if (!outputCsv.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine($"ERROR: --output-csv must contain .local: {outputCsv}");
+        return 1;
+    }
+    if (!summaryPath.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine($"ERROR: --summary must contain .local: {summaryPath}");
+        return 1;
+    }
+
+    var builder = new PZMapForge.Core.WorldGen
+        .DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationReplayLockBuilder();
+    var result = builder.Build(acceptanceGateRoot, tileMaterializerRoot, outputRoot);
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputJson)!);
+    File.WriteAllText(outputJson,   builder.RenderJson(result));
+    File.WriteAllText(outputMd,     builder.RenderMarkdown(result));
+    File.WriteAllText(outputCsv,    builder.RenderCsv(result));
+    File.WriteAllText(summaryPath,  builder.RenderSummary(result));
+
     Console.WriteLine(builder.RenderSummary(result));
 
     if (!result.IsValid)

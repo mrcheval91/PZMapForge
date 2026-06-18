@@ -1523,6 +1523,37 @@ for check list, acceptance criteria, and claim boundary.
 
 ---
 
+## MAP-27G WorldBuilder Minimal Concrete Geometry Sandbox Writer Tile Materialization Replay Lock
+
+MAP-27G consumes the MAP-27F acceptance gate and MAP-27C tile materializer source files,
+and locks the exact replayable source set for the next sandbox-only experiment.
+Generates a deterministic replay_lock_id from all 8 file hashes.
+
+Does NOT generate a new overlay. Does NOT write PZ runtime files.
+Does NOT approve writer-ready, runtime, or playable status.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-replay-lock.ps1
+```
+
+Output (under `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-replay-lock\map_00\`):
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_replay_lock.json`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_replay_lock.md`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_replay_lock.csv`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_replay_lock.summary.txt`
+
+43 checks. `replay_lock_stage: SANDBOX_WRITER_TILE_MATERIALIZATION_REPLAY_LOCK`.
+`replay_lock_status: LOCKED`. 8 locked files (4 MAP-27F + 4 MAP-27C).
+`sandbox_only: true`, `accepted_for_runtime_writer: false`, `accepted_for_playable_export: false`,
+`writer_ready: false`, `materialized: false`.
+
+Next allowed experiment: `MAP-27H_SANDBOX_WRITER_TILE_MATERIALIZATION_LOCKED_REPLAY_AUDIT` (SANDBOX_ONLY_NOT_RUNTIME).
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_TILE_MATERIALIZATION_REPLAY_LOCK.md`
+for check list, replay lock ID formula, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
