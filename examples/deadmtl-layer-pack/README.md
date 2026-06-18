@@ -1400,6 +1400,36 @@ for buffer model, ownership priorities, edge derivation, and claim boundary.
 
 ---
 
+## MAP-27C WorldBuilder Minimal Concrete Geometry Sandbox Writer Tile Materializer V0
+
+MAP-27C consumes MAP-27B1 tile buffer outputs and materializes every touched cell into
+deterministic sandbox tile/material records. No PZ runtime files are written.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-v0.ps1
+```
+
+Main output paths (all under `.local`):
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-v0\map_00\map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_v0.json`
+- `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materializer-v0\map_00\map_00.minimal_concrete_geometry_sandbox_writer_tile_materializer_v0.summary.txt`
+
+Extra output files (same dir):
+- `map_00.sandbox_writer_tile_materialized_cells.csv` (materialized cells with material_kind, layer_kind)
+- `map_00.sandbox_writer_tile_material_palette.json` (5 material kinds with cell counts)
+- `map_00.sandbox_writer_tile_layer_stack.json` (5 layers: COMPONENT/LOT/ACCESS/FLOOR/WALL)
+- `map_00.sandbox_writer_tile_materialization_replay_log.json` (cells per owner_kind × material_kind)
+- `map_00.sandbox_writer_tile_materialization_ownership_summary.json` (cells per owner_kind)
+- `map_00.sandbox_writer_tile_materializer_forbidden_output_guard.json` (inherited guard)
+
+30 checks. Key invariant: `materialized_cell_count == input_touched_cell_count`.
+`writer_stage: SANDBOX_WRITER_TILE_MATERIALIZER_V0`, `sandbox_only: true`, `sandbox_materialized: true`, `writer_ready: false`.
+BUILDING_FOOTPRINT cells classified as WALL (exterior) or FLOOR (interior) per per-slot bbox.
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_TILE_MATERIALIZER_V0.md`
+for materialization rules, material palette, layer stack, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
