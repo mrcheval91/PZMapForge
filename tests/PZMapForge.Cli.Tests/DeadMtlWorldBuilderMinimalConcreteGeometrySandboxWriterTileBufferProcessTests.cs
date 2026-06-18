@@ -113,10 +113,10 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
         var ops = new object[]
         {
             new { operation_order = 1, operation_kind = "ACCESS_LINK_WRITE", operation_group = "ACCESS_LINK",
-                  access_id = "map_00_comp0001_frontage_access",
+                  access_id = "map_00_comp0001_frontage_access", access_kind = "FRONTAGE_ACCESS", side = "NORTH",
                   min_x = 0, min_y = 0, max_x = 0, max_y = 0, width_px = 0, height_px = 0, runtime_effect = "NONE" },
             new { operation_order = 2, operation_kind = "ACCESS_LINK_WRITE", operation_group = "ACCESS_LINK",
-                  access_id = "map_00_comp0001_rear_service_access",
+                  access_id = "map_00_comp0001_rear_service_access", access_kind = "REAR_SERVICE_ACCESS", side = "EAST",
                   min_x = 0, min_y = 0, max_x = 0, max_y = 0, width_px = 0, height_px = 0, runtime_effect = "NONE" }
         };
         var obj = new { format = "MAP-27A_SANDBOX_WRITER_ACCESS_OPERATIONS", operation_count = 2, operations = ops };
@@ -171,17 +171,17 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
         return new[]
         {
             "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0",
-            "--sandbox-writer-result", swrResult,
-            "--component-op",          compOp,
-            "--lot-op",                lotOp,
-            "--building-slot-op",      slotOp,
-            "--access-op",             accessOp,
-            "--forbidden-guard",       guard,
-            "--output-root",           root,
-            "--output-json",           outputJson  ?? Path.Combine(root, "map_00.sandbox_writer_tile_buffer_v0.json"),
-            "--output-md",             outputMd    ?? Path.Combine(root, "map_00.sandbox_writer_tile_buffer_v0.md"),
-            "--output-csv",            outputCsv   ?? Path.Combine(root, "map_00.sandbox_writer_tile_buffer_v0.csv"),
-            "--summary",               summary     ?? Path.Combine(root, "map_00.sandbox_writer_tile_buffer_v0.summary.txt")
+            "--sandbox-writer-result",    swrResult,
+            "--component-operations",     compOp,
+            "--lot-operations",           lotOp,
+            "--building-slot-operations", slotOp,
+            "--access-operations",        accessOp,
+            "--forbidden-output-guard",   guard,
+            "--output-root",              root,
+            "--output-json",              outputJson ?? Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.json"),
+            "--output-md",                outputMd   ?? Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.md"),
+            "--output-csv",               outputCsv  ?? Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.csv"),
+            "--summary",                  summary    ?? Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.summary.txt")
         };
     }
 
@@ -220,17 +220,17 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
         var (exitCode, _, stderr) = RunCli(new[]
         {
             "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0",
-            "--sandbox-writer-result", WriteMap27AResult(),
-            "--component-op",    WriteComponentOp(),
-            "--lot-op",          WriteLotOp(),
-            "--building-slot-op",WriteBuildingSlotOp(),
-            "--access-op",       WriteAccessOp(),
-            "--forbidden-guard", WriteForbiddenGuard(),
-            "--output-root",     badRoot,
-            "--output-json",     Path.Combine(badRoot, "x.json"),
-            "--output-md",       Path.Combine(badRoot, "x.md"),
-            "--output-csv",      Path.Combine(badRoot, "x.csv"),
-            "--summary",         Path.Combine(badRoot, "x.txt")
+            "--sandbox-writer-result",    WriteMap27AResult(),
+            "--component-operations",     WriteComponentOp(),
+            "--lot-operations",           WriteLotOp(),
+            "--building-slot-operations", WriteBuildingSlotOp(),
+            "--access-operations",        WriteAccessOp(),
+            "--forbidden-output-guard",   WriteForbiddenGuard(),
+            "--output-root",              badRoot,
+            "--output-json",              Path.Combine(badRoot, "x.json"),
+            "--output-md",                Path.Combine(badRoot, "x.md"),
+            "--output-csv",               Path.Combine(badRoot, "x.csv"),
+            "--summary",                  Path.Combine(badRoot, "x.txt")
         });
         Assert.Equal(1, exitCode);
         Assert.Contains(".local", stderr);
@@ -240,10 +240,10 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
     public void ValidFixture_Writes4MainOutputs()
     {
         var root    = Path.Combine(_tempDir, "out.local");
-        var outJson = Path.Combine(root, "map_00.sandbox_writer_tile_buffer_v0.json");
-        var outMd   = Path.Combine(root, "map_00.sandbox_writer_tile_buffer_v0.md");
-        var outCsv  = Path.Combine(root, "map_00.sandbox_writer_tile_buffer_v0.csv");
-        var outTxt  = Path.Combine(root, "map_00.sandbox_writer_tile_buffer_v0.summary.txt");
+        var outJson = Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.json");
+        var outMd   = Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.md");
+        var outCsv  = Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.csv");
+        var outTxt  = Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.summary.txt");
         var args = BuildArgs(WriteMap27AResult(), WriteComponentOp(), WriteLotOp(), WriteBuildingSlotOp(), WriteAccessOp(), WriteForbiddenGuard(),
             root, outJson, outMd, outCsv, outTxt);
         RunCli(args);
@@ -370,5 +370,91 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
             "run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0.ps1");
         string content = File.ReadAllText(scriptPath);
         Assert.DoesNotContain(".lotpack", content, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void LegacyArgNames_ExitCode0()
+    {
+        var root = Path.Combine(_tempDir, "out.local");
+        var args = new[]
+        {
+            "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0",
+            "--sandbox-writer-result", WriteMap27AResult(),
+            "--component-op",          WriteComponentOp(),
+            "--lot-op",                WriteLotOp(),
+            "--building-slot-op",      WriteBuildingSlotOp(),
+            "--access-op",             WriteAccessOp(),
+            "--forbidden-guard",       WriteForbiddenGuard(),
+            "--output-root",           root,
+            "--output-json",           Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.json"),
+            "--output-md",             Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.md"),
+            "--output-csv",            Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.csv"),
+            "--summary",               Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.summary.txt")
+        };
+        var (exitCode, _, _) = RunCli(args);
+        Assert.Equal(0, exitCode);
+    }
+
+    [Fact]
+    public void CanonicalArgNames_ExitCode0()
+    {
+        var root = Path.Combine(_tempDir, "out.local");
+        var args = new[]
+        {
+            "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0",
+            "--sandbox-writer-result",    WriteMap27AResult(),
+            "--component-operations",     WriteComponentOp(),
+            "--lot-operations",           WriteLotOp(),
+            "--building-slot-operations", WriteBuildingSlotOp(),
+            "--access-operations",        WriteAccessOp(),
+            "--forbidden-output-guard",   WriteForbiddenGuard(),
+            "--output-root",              root,
+            "--output-json",              Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.json"),
+            "--output-md",                Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.md"),
+            "--output-csv",               Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.csv"),
+            "--summary",                  Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.summary.txt")
+        };
+        var (exitCode, _, _) = RunCli(args);
+        Assert.Equal(0, exitCode);
+    }
+
+    [Fact]
+    public void HelperScript_ContainsCanonicalArgNames()
+    {
+        string content = File.ReadAllText(Path.Combine(s_repoRoot, "examples", "deadmtl-layer-pack", "scripts",
+            "run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0.ps1"));
+        Assert.Contains("--component-operations",     content);
+        Assert.Contains("--lot-operations",           content);
+        Assert.Contains("--building-slot-operations", content);
+        Assert.Contains("--access-operations",        content);
+        Assert.Contains("--forbidden-output-guard",   content);
+    }
+
+    [Fact]
+    public void HelperScript_PointsAtDeadmtlAuthoringPaths()
+    {
+        string content = File.ReadAllText(Path.Combine(s_repoRoot, "examples", "deadmtl-layer-pack", "scripts",
+            "run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0.ps1"));
+        Assert.Contains("deadmtl-authoring",                                               content);
+        Assert.Contains("worldbuilder-minimal-concrete-geometry-sandbox-writer-v0",        content);
+        Assert.Contains("worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0", content);
+    }
+
+    [Fact]
+    public void HelperScript_UsesCanonicalMainOutputNames()
+    {
+        string content = File.ReadAllText(Path.Combine(s_repoRoot, "examples", "deadmtl-layer-pack", "scripts",
+            "run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0.ps1"));
+        Assert.Contains("map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.json",       content);
+        Assert.Contains("map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.md",         content);
+        Assert.Contains("map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.summary.txt",content);
+    }
+
+    [Fact]
+    public void HelperScript_DoesNotContainDotLotheader()
+    {
+        string content = File.ReadAllText(Path.Combine(s_repoRoot, "examples", "deadmtl-layer-pack", "scripts",
+            "run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0.ps1"));
+        Assert.DoesNotContain(".lotheader", content, StringComparison.OrdinalIgnoreCase);
     }
 }

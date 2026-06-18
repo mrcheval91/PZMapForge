@@ -14,6 +14,8 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
         public string Kind          = string.Empty;
         public string Group         = string.Empty;
         public string OwnerId       = string.Empty;
+        public string AccessKind    = string.Empty;
+        public string Side          = string.Empty;
         public int    MinX, MinY, MaxX, MaxY, WidthPx, HeightPx;
         public string RuntimeEffect = "NONE";
         public string SourceFile    = string.Empty;
@@ -24,7 +26,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
         public string       PrimaryOwnerKind = string.Empty;
         public string       PrimaryOwnerId   = string.Empty;
         public List<string> TagKinds         = new();
-        public List<string> OwnerIds         = new();
+        public List<string> OpIds            = new();
         public int          CollisionCount;
     }
 
@@ -61,7 +63,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
         int declaredCount = 0;
         string sourceFile = Path.GetFileName(filePath);
 
-        using var doc = JsonDocument.Parse(File.ReadAllBytes(filePath));
+        using var doc = JsonDocument.Parse(File.ReadAllText(filePath, Encoding.UTF8));
         var root = doc.RootElement;
         if (root.TryGetProperty("operation_count", out var ocp)) declaredCount = ocp.GetInt32();
         if (!root.TryGetProperty("operations", out var opsArr)) return (ops, declaredCount);
@@ -81,6 +83,8 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
                 WidthPx       = op.TryGetProperty("width_px", out p) ? p.GetInt32() : 0,
                 HeightPx      = op.TryGetProperty("height_px", out p) ? p.GetInt32() : 0,
                 RuntimeEffect = op.TryGetProperty("runtime_effect", out p) ? p.GetString() ?? "NONE" : "NONE",
+                AccessKind    = op.TryGetProperty("access_kind", out p) ? p.GetString() ?? "" : "",
+                Side          = op.TryGetProperty("side", out p) ? p.GetString() ?? "" : "",
             };
 
             string ownerId = "";
@@ -151,22 +155,22 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
     {
         var result = new DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileBufferResult
         {
-            Format                        = "MAP-27B_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_TILE_BUFFER_V0",
-            GeneratedUtc                  = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-            MapId                         = "map_00",
-            WriterStage                   = "SANDBOX_WRITER_TILE_BUFFER_V0",
-            WriterMode                    = "APPLY_SANDBOX_OPERATIONS_TO_INTERNAL_TILE_BUFFER_ONLY",
-            SandboxOnly                   = true,
-            BufferWidth                   = 256,
-            BufferHeight                  = 256,
-            CoordinateSystem              = "PNG_PIXEL_TILE_SPACE",
-            Origin                        = "TOP_LEFT",
-            WriterReady                   = false,
-            RuntimeValid                  = false,
-            Materialized                  = false,
-            ApprovedForWriterExperiment   = false,
-            WriterExperimentGateStatus    = "LOCKED_PENDING_OPERATOR_APPROVAL",
-            RuntimeProofClaimed           = false,
+            Format                         = "MAP-27B_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_TILE_BUFFER_V0",
+            GeneratedUtc                   = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+            MapId                          = "map_00",
+            WriterStage                    = "SANDBOX_WRITER_TILE_BUFFER_V0",
+            WriterMode                     = "APPLY_SANDBOX_OPERATIONS_TO_INTERNAL_TILE_BUFFER_ONLY",
+            SandboxOnly                    = true,
+            BufferWidth                    = 256,
+            BufferHeight                   = 256,
+            CoordinateSystem               = "PNG_PIXEL_TILE_SPACE",
+            Origin                         = "TOP_LEFT",
+            WriterReady                    = false,
+            RuntimeValid                   = false,
+            Materialized                   = false,
+            ApprovedForWriterExperiment    = false,
+            WriterExperimentGateStatus     = "LOCKED_PENDING_OPERATOR_APPROVAL",
+            RuntimeProofClaimed            = false,
             PublicPlayablePackagingClaimed = false
         };
 
@@ -192,10 +196,10 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
 
         try
         {
-            swrBytes   = File.ReadAllBytes(sandboxWriterResultPath);
-            swrSha256  = Convert.ToHexString(SHA256.HashData(swrBytes)).ToLower();
+            swrBytes  = File.ReadAllBytes(sandboxWriterResultPath);
+            swrSha256 = Convert.ToHexString(SHA256.HashData(swrBytes)).ToLower();
 
-            using var doc = JsonDocument.Parse(swrBytes);
+            using var doc = JsonDocument.Parse(File.ReadAllText(sandboxWriterResultPath, Encoding.UTF8));
             var r = doc.RootElement;
             if (r.TryGetProperty("verdict",              out var p)) swrVerdict             = p.GetString() ?? "";
             if (r.TryGetProperty("is_valid",             out p))     swrIsValid             = p.GetBoolean();
@@ -240,7 +244,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
             (buildingSlotOps, _) = ParseOpFile(buildingSlotOpPath);
             (accessOps, _)       = ParseOpFile(accessOpPath);
 
-            using var guardDoc = JsonDocument.Parse(File.ReadAllBytes(forbiddenGuardPath));
+            using var guardDoc = JsonDocument.Parse(File.ReadAllText(forbiddenGuardPath, Encoding.UTF8));
             var gr = guardDoc.RootElement;
             if (gr.TryGetProperty("guards", out var guardsArr))
             {
@@ -275,6 +279,10 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
         var collisionRecords = new List<DeadMtlSandboxWriterTileBufferCollisionRecord>();
         int replayOrder      = 0;
 
+        // Component bbox used by ACCESS_LINK edge derivation for zero-dimension ops.
+        ParsedOp? compEnvOp = componentOps.FirstOrDefault(o => o.Kind == "COMPONENT_ENVELOPE_WRITE" && o.WidthPx > 0 && o.HeightPx > 0);
+        bool hasCompBbox = compEnvOp != null;
+
         var allOpGroups = new[] { componentOps, lotOps, buildingSlotOps, accessOps };
 
         foreach (var group in allOpGroups)
@@ -284,73 +292,93 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
                 replayOrder++;
                 string ownerKind   = GetOwnerKind(op.Kind);
                 int    newPriority = GetOperationPriority(op.Kind);
+                string opId        = $"{op.SourceFile}#{op.Kind}#{op.Order}";
 
-                int appliedCells    = 0;
+                int appliedCells     = 0;
                 int overwrittenCells = 0;
-                int opCollisions    = 0;
+                int opCollisions     = 0;
 
-                if (op.WidthPx > 0 && op.HeightPx > 0)
+                void ApplyCell(int cx, int cy)
+                {
+                    appliedCells++;
+                    if (!buffer.TryGetValue((cx, cy), out var cell))
+                    {
+                        cell = new CellState
+                        {
+                            PrimaryOwnerKind = ownerKind,
+                            PrimaryOwnerId   = op.OwnerId,
+                        };
+                        cell.TagKinds.Add(ownerKind);
+                        cell.OpIds.Add(opId);
+                        buffer[(cx, cy)] = cell;
+                    }
+                    else
+                    {
+                        opCollisions++;
+                        cell.CollisionCount++;
+                        int    currentPriority = GetOwnerPriority(cell.PrimaryOwnerKind);
+                        string prevKind        = cell.PrimaryOwnerKind;
+                        string prevId          = cell.PrimaryOwnerId;
+                        string resolution;
+
+                        if (newPriority > currentPriority)
+                        {
+                            resolution = "OVERRIDE_BY_PRIORITY";
+                            overwrittenCells++;
+                            cell.PrimaryOwnerKind = ownerKind;
+                            cell.PrimaryOwnerId   = op.OwnerId;
+                        }
+                        else if (newPriority == currentPriority)
+                        {
+                            resolution = "SAME_OWNER_TAG_MERGE";
+                        }
+                        else
+                        {
+                            resolution = "LOWER_PRIORITY_RETAINED";
+                        }
+
+                        if (!cell.TagKinds.Contains(ownerKind)) cell.TagKinds.Add(ownerKind);
+                        if (!cell.OpIds.Contains(opId))         cell.OpIds.Add(opId);
+
+                        collisionRecords.Add(new DeadMtlSandboxWriterTileBufferCollisionRecord
+                        {
+                            CollisionOrder    = collisionRecords.Count + 1,
+                            X                 = cx,
+                            Y                 = cy,
+                            PreviousOwnerKind = prevKind,
+                            PreviousOwnerId   = prevId,
+                            NewOwnerKind      = ownerKind,
+                            NewOwnerId        = op.OwnerId,
+                            OperationKind     = op.Kind,
+                            Resolution        = resolution
+                        });
+                    }
+                }
+
+                if (op.Kind == "ACCESS_LINK_WRITE" && op.WidthPx == 0 && op.HeightPx == 0 && hasCompBbox)
+                {
+                    // Zero-dimension access op: derive edge cells from component bbox.
+                    bool isFrontage = op.AccessKind == "FRONTAGE_ACCESS" || op.Side == "NORTH";
+                    bool isEast     = op.AccessKind == "REAR_SERVICE_ACCESS" || op.Side == "EAST";
+
+                    if (isFrontage)
+                    {
+                        // North edge: y = comp.min_y, x = comp.min_x..comp.max_x
+                        for (int x = compEnvOp!.MinX; x <= compEnvOp.MaxX; x++)
+                            ApplyCell(x, compEnvOp.MinY);
+                    }
+                    else if (isEast)
+                    {
+                        // East edge: x = comp.max_x, y = comp.min_y..comp.max_y
+                        for (int y = compEnvOp!.MinY; y <= compEnvOp.MaxY; y++)
+                            ApplyCell(compEnvOp.MaxX, y);
+                    }
+                }
+                else if (op.WidthPx > 0 && op.HeightPx > 0)
                 {
                     for (int x = op.MinX; x <= op.MaxX; x++)
-                    {
                         for (int y = op.MinY; y <= op.MaxY; y++)
-                        {
-                            appliedCells++;
-
-                            if (!buffer.TryGetValue((x, y), out var cell))
-                            {
-                                cell = new CellState
-                                {
-                                    PrimaryOwnerKind = ownerKind,
-                                    PrimaryOwnerId   = op.OwnerId,
-                                };
-                                cell.TagKinds.Add(ownerKind);
-                                cell.OwnerIds.Add(op.OwnerId);
-                                buffer[(x, y)] = cell;
-                            }
-                            else
-                            {
-                                opCollisions++;
-                                cell.CollisionCount++;
-                                int    currentPriority = GetOwnerPriority(cell.PrimaryOwnerKind);
-                                string prevKind        = cell.PrimaryOwnerKind;
-                                string prevId          = cell.PrimaryOwnerId;
-                                string resolution;
-
-                                if (newPriority > currentPriority)
-                                {
-                                    resolution = "OVERRIDE_BY_PRIORITY";
-                                    overwrittenCells++;
-                                    cell.PrimaryOwnerKind = ownerKind;
-                                    cell.PrimaryOwnerId   = op.OwnerId;
-                                }
-                                else if (newPriority == currentPriority)
-                                {
-                                    resolution = "SAME_OWNER_TAG_MERGE";
-                                }
-                                else
-                                {
-                                    resolution = "LOWER_PRIORITY_RETAINED";
-                                }
-
-                                if (!cell.TagKinds.Contains(ownerKind)) cell.TagKinds.Add(ownerKind);
-                                if (!cell.OwnerIds.Contains(op.OwnerId)) cell.OwnerIds.Add(op.OwnerId);
-
-                                collisionRecords.Add(new DeadMtlSandboxWriterTileBufferCollisionRecord
-                                {
-                                    CollisionOrder    = collisionRecords.Count + 1,
-                                    X                 = x,
-                                    Y                 = y,
-                                    PreviousOwnerKind = prevKind,
-                                    PreviousOwnerId   = prevId,
-                                    NewOwnerKind      = ownerKind,
-                                    NewOwnerId        = op.OwnerId,
-                                    OperationKind     = op.Kind,
-                                    Resolution        = resolution
-                                });
-                            }
-                        }
-                    }
+                            ApplyCell(x, y);
                 }
 
                 replayEntries.Add(new DeadMtlSandboxWriterTileBufferReplayEntry
@@ -386,7 +414,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
                     PrimaryOwnerKind = s.PrimaryOwnerKind,
                     PrimaryOwnerId   = s.PrimaryOwnerId,
                     Tags             = string.Join("|", s.TagKinds),
-                    OperationIds     = string.Join("|", s.OwnerIds),
+                    OperationIds     = string.Join("|", s.OpIds),
                     CollisionCount   = s.CollisionCount
                 };
             }).ToList();
@@ -407,7 +435,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
                 Kind                  = kind,
                 ClaimedCellCount      = buffer.Values.Count(c => c.TagKinds.Contains(kind)),
                 PrimaryOwnedCellCount = buffer.Values.Count(c => c.PrimaryOwnerKind == kind),
-                OperationCount        = replayEntries.Count(r => r.OperationKind == opKind),
+                OperationCount        = replayEntries.Count(re => re.OperationKind == opKind),
                 SourceOperationKinds  = new List<string> { opKind }
             };
         }).ToList();
@@ -501,28 +529,28 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
 
         result.OutputFiles = outputFiles;
 
-        // --- 37 checks ---
+        // --- 38 checks ---
         MakeCheck(checks, "MAP27A_RESULT_EXISTS",  "MAP-27A sandbox writer result file exists");
         MakeCheck(checks, "MAP27A_RESULT_HASHED",  "MAP-27A sandbox writer result SHA-256 computed");
 
-        AddCheck(checks, "MAP27A_VERDICT_COMPLETE", "MAP-27A verdict is COMPLETE",
+        AddCheck(checks, "MAP27A_VERDICT_COMPLETE",       "MAP-27A verdict is COMPLETE",
             "MAP27A_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_V0_COMPLETE", swrVerdict);
-        AddCheck(checks, "MAP27A_IS_VALID_TRUE",    "MAP-27A is_valid is true",    "true", swrIsValid    ? "true" : "false");
-        AddCheck(checks, "MAP27A_SANDBOX_ONLY_TRUE","MAP-27A sandbox_only is true","true", swrSandboxOnly? "true" : "false");
-        AddCheck(checks, "MAP27A_OPERATION_COUNT_17",    "MAP-27A operation_count is 17",    "17", swrOperationCount.ToString());
-        AddCheck(checks, "MAP27A_OPERATION_FILE_COUNT_5","MAP-27A operation_file_count is 5","5",  swrOperationFileCount.ToString());
+        AddCheck(checks, "MAP27A_IS_VALID_TRUE",          "MAP-27A is_valid is true",     "true", swrIsValid     ? "true" : "false");
+        AddCheck(checks, "MAP27A_SANDBOX_ONLY_TRUE",      "MAP-27A sandbox_only is true", "true", swrSandboxOnly ? "true" : "false");
+        AddCheck(checks, "MAP27A_OPERATION_COUNT_17",     "MAP-27A operation_count is 17",    "17", swrOperationCount.ToString());
+        AddCheck(checks, "MAP27A_OPERATION_FILE_COUNT_5", "MAP-27A operation_file_count is 5", "5", swrOperationFileCount.ToString());
 
-        MakeCheck(checks, "COMPONENT_OPERATION_FILE_EXISTS",     "Component operation file exists");
-        MakeCheck(checks, "LOT_OPERATION_FILE_EXISTS",            "Lot operation file exists");
-        MakeCheck(checks, "BUILDING_SLOT_OPERATION_FILE_EXISTS",  "Building slot operation file exists");
-        MakeCheck(checks, "ACCESS_OPERATION_FILE_EXISTS",         "Access operation file exists");
-        MakeCheck(checks, "FORBIDDEN_OUTPUT_GUARD_FILE_EXISTS",   "Forbidden output guard file exists");
+        MakeCheck(checks, "COMPONENT_OPERATION_FILE_EXISTS",    "Component operation file exists");
+        MakeCheck(checks, "LOT_OPERATION_FILE_EXISTS",           "Lot operation file exists");
+        MakeCheck(checks, "BUILDING_SLOT_OPERATION_FILE_EXISTS", "Building slot operation file exists");
+        MakeCheck(checks, "ACCESS_OPERATION_FILE_EXISTS",        "Access operation file exists");
+        MakeCheck(checks, "FORBIDDEN_OUTPUT_GUARD_FILE_EXISTS",  "Forbidden output guard file exists");
 
-        AddCheck(checks, "COMPONENT_OPERATION_COUNT_1",       "Component operation count is 1",       "1",  componentOps.Count.ToString());
-        AddCheck(checks, "LOT_OPERATION_COUNT_7",             "Lot operation count is 7",             "7",  lotOps.Count.ToString());
-        AddCheck(checks, "BUILDING_SLOT_OPERATION_COUNT_7",   "Building slot operation count is 7",   "7",  buildingSlotOps.Count.ToString());
-        AddCheck(checks, "ACCESS_OPERATION_COUNT_2",          "Access operation count is 2",          "2",  accessOps.Count.ToString());
-        AddCheck(checks, "TOTAL_INPUT_OPERATION_COUNT_17",    "Total input operation count is 17",    "17", result.InputOperationCount.ToString());
+        AddCheck(checks, "COMPONENT_OPERATION_COUNT_1",     "Component operation count is 1",     "1",  componentOps.Count.ToString());
+        AddCheck(checks, "LOT_OPERATION_COUNT_7",           "Lot operation count is 7",           "7",  lotOps.Count.ToString());
+        AddCheck(checks, "BUILDING_SLOT_OPERATION_COUNT_7", "Building slot operation count is 7", "7",  buildingSlotOps.Count.ToString());
+        AddCheck(checks, "ACCESS_OPERATION_COUNT_2",        "Access operation count is 2",        "2",  accessOps.Count.ToString());
+        AddCheck(checks, "TOTAL_INPUT_OPERATION_COUNT_17",  "Total input operation count is 17",  "17", result.InputOperationCount.ToString());
 
         MakeCheck(checks, "BUFFER_DIMENSIONS_256X256",              "Buffer dimensions are 256x256");
         MakeCheck(checks, "COORDINATE_SYSTEM_PNG_PIXEL_TILE_SPACE", "Coordinate system is PNG_PIXEL_TILE_SPACE");
@@ -532,26 +560,30 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
         bool allNone = replayEntries.All(re => re.RuntimeEffect == "NONE");
         AddCheck(checks, "ALL_REPLAY_ENTRIES_RUNTIME_EFFECT_NONE", "All replay entries have runtime_effect NONE",
             "true", allNone ? "true" : "false");
-        AddCheck(checks, "REPLAY_ENTRY_COUNT_17",      "Replay entry count is 17",       "17",  replayEntries.Count.ToString());
-        AddCheck(checks, "TOUCHED_CELL_COUNT_GT_0",    "Touched cell count > 0",         "true", result.TouchedCellCount > 0    ? "true" : "false");
-        AddCheck(checks, "PRIMARY_OWNED_CELL_COUNT_GT_0","Primary owned cell count > 0", "true", result.PrimaryOwnedCellCount > 0 ? "true" : "false");
-        AddCheck(checks, "OWNERSHIP_KIND_COUNT_4",     "Ownership kind count is 4",      "4",   result.OwnershipKindCount.ToString());
+        AddCheck(checks, "REPLAY_ENTRY_COUNT_17",        "Replay entry count is 17",         "17",   replayEntries.Count.ToString());
+        AddCheck(checks, "TOUCHED_CELL_COUNT_GT_0",      "Touched cell count > 0",           "true", result.TouchedCellCount > 0      ? "true" : "false");
+        AddCheck(checks, "PRIMARY_OWNED_CELL_COUNT_GT_0","Primary owned cell count > 0",     "true", result.PrimaryOwnedCellCount > 0  ? "true" : "false");
+        AddCheck(checks, "OWNERSHIP_KIND_COUNT_4",       "Ownership kind count is 4",        "4",    result.OwnershipKindCount.ToString());
 
-        MakeCheck(checks, "COLLISION_REPORT_WRITTEN",  "Collision report file written");
-        MakeCheck(checks, "OWNERSHIP_REPORT_WRITTEN",  "Ownership report file written");
-        MakeCheck(checks, "REPLAY_LOG_WRITTEN",         "Replay log file written");
-        MakeCheck(checks, "TILE_CELLS_CSV_WRITTEN",     "Tile buffer cells CSV written");
+        int accessLinkPrimaryOwned = ownershipRecords.FirstOrDefault(r => r.Kind == "ACCESS_LINK")?.PrimaryOwnedCellCount ?? 0;
+        AddCheck(checks, "ACCESS_LINK_PRIMARY_OWNED_GT_0", "ACCESS_LINK primary owned cell count > 0",
+            "true", accessLinkPrimaryOwned > 0 ? "true" : "false");
 
-        MakeCheck(checks, "NO_LOTPACK_WRITTEN",                    "No lotpack artifact emitted");
-        MakeCheck(checks, "NO_LOTHEADER_WRITTEN",                  "No lotheader artifact emitted");
-        MakeCheck(checks, "NO_WORLDGENOVERRIDE_WRITTEN",           "No WorldGenOverride artifact emitted");
-        MakeCheck(checks, "NO_RUNTIME_LUA_WRITTEN",                "No runtime Lua emitted");
-        MakeCheck(checks, "NO_COMPILE_WORLDGEN_CALLED",            "compile-worldgen was not called");
-        MakeCheck(checks, "NO_RUNTIME_PROOF_CLAIMED",              "No runtime proof claimed");
-        MakeCheck(checks, "NO_PUBLIC_PLAYABLE_PACKAGING_CLAIMED",  "No public playable packaging claimed");
+        MakeCheck(checks, "COLLISION_REPORT_WRITTEN", "Collision report file written");
+        MakeCheck(checks, "OWNERSHIP_REPORT_WRITTEN", "Ownership report file written");
+        MakeCheck(checks, "REPLAY_LOG_WRITTEN",        "Replay log file written");
+        MakeCheck(checks, "TILE_CELLS_CSV_WRITTEN",    "Tile buffer cells CSV written");
 
-        result.Checks          = checks;
-        result.CheckCount      = checks.Count;
+        MakeCheck(checks, "NO_LOTPACK_WRITTEN",                   "No lotpack artifact emitted");
+        MakeCheck(checks, "NO_LOTHEADER_WRITTEN",                 "No lotheader artifact emitted");
+        MakeCheck(checks, "NO_WORLDGENOVERRIDE_WRITTEN",          "No WorldGenOverride artifact emitted");
+        MakeCheck(checks, "NO_RUNTIME_LUA_WRITTEN",               "No runtime Lua emitted");
+        MakeCheck(checks, "NO_COMPILE_WORLDGEN_CALLED",           "compile-worldgen was not called");
+        MakeCheck(checks, "NO_RUNTIME_PROOF_CLAIMED",             "No runtime proof claimed");
+        MakeCheck(checks, "NO_PUBLIC_PLAYABLE_PACKAGING_CLAIMED", "No public playable packaging claimed");
+
+        result.Checks           = checks;
+        result.CheckCount       = checks.Count;
         result.PassedCheckCount = checks.Count(c => c.CheckStatus == "PASS");
         result.FailedCheckCount = checks.Count(c => c.CheckStatus == "FAIL");
 

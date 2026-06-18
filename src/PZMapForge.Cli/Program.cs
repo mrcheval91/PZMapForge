@@ -6833,17 +6833,22 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileBuffe
     {
         switch (args[i])
         {
-            case "--sandbox-writer-result": sandboxWriterResultPath = args[i + 1]; break;
-            case "--component-op":          componentOpPath         = args[i + 1]; break;
-            case "--lot-op":                lotOpPath               = args[i + 1]; break;
-            case "--building-slot-op":      buildingSlotOpPath      = args[i + 1]; break;
-            case "--access-op":             accessOpPath            = args[i + 1]; break;
-            case "--forbidden-guard":       forbiddenGuardPath      = args[i + 1]; break;
-            case "--output-root":           outputRoot              = args[i + 1]; break;
-            case "--output-json":           outputJson              = args[i + 1]; break;
-            case "--output-md":             outputMd                = args[i + 1]; break;
-            case "--output-csv":            outputCsv               = args[i + 1]; break;
-            case "--summary":               summaryPath             = args[i + 1]; break;
+            case "--sandbox-writer-result":    sandboxWriterResultPath = args[i + 1]; break;
+            case "--component-op":
+            case "--component-operations":     componentOpPath         = args[i + 1]; break;
+            case "--lot-op":
+            case "--lot-operations":           lotOpPath               = args[i + 1]; break;
+            case "--building-slot-op":
+            case "--building-slot-operations": buildingSlotOpPath      = args[i + 1]; break;
+            case "--access-op":
+            case "--access-operations":        accessOpPath            = args[i + 1]; break;
+            case "--forbidden-guard":
+            case "--forbidden-output-guard":   forbiddenGuardPath      = args[i + 1]; break;
+            case "--output-root":              outputRoot              = args[i + 1]; break;
+            case "--output-json":              outputJson              = args[i + 1]; break;
+            case "--output-md":                outputMd                = args[i + 1]; break;
+            case "--output-csv":               outputCsv               = args[i + 1]; break;
+            case "--summary":                  summaryPath             = args[i + 1]; break;
         }
     }
 
@@ -6855,7 +6860,8 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileBuffe
         string.IsNullOrEmpty(summaryPath))
     {
         Console.Error.WriteLine("deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0: " +
-            "--sandbox-writer-result, --component-op, --lot-op, --building-slot-op, --access-op, --forbidden-guard, " +
+            "--sandbox-writer-result, --component-operations, --lot-operations, --building-slot-operations, " +
+            "--access-operations, --forbidden-output-guard, " +
             "--output-root, --output-json, --output-md, --output-csv, and --summary are required.");
         return 1;
     }

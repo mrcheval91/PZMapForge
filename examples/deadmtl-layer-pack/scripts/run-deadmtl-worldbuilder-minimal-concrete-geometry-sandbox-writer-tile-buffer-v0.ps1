@@ -6,61 +6,67 @@
               forbidden output guard JSON, plus 4 main outputs.
 
     SANDBOX ONLY. No PZ runtime files are written.
+
+    Access edge derivation: zero-dimension ACCESS_LINK_WRITE ops derive their
+    edge cells from the component envelope bbox using access_kind/side fields.
+    FRONTAGE_ACCESS/NORTH -> north edge (y=min_y, x=min_x..max_x).
+    REAR_SERVICE_ACCESS/EAST -> east edge (x=max_x, y=min_y..max_y).
 #>
 
 param(
     [string]$SandboxWriterResult = "",
-    [string]$ComponentOp         = "",
-    [string]$LotOp               = "",
-    [string]$BuildingSlotOp      = "",
-    [string]$AccessOp            = "",
-    [string]$ForbiddenGuard      = "",
-    [string]$OutputRoot          = "",
-    [string]$OutputJson          = "",
-    [string]$OutputMd            = "",
-    [string]$OutputCsv           = "",
-    [string]$Summary             = ""
+    [string]$ComponentOperations  = "",
+    [string]$LotOperations        = "",
+    [string]$BuildingSlotOperations = "",
+    [string]$AccessOperations     = "",
+    [string]$ForbiddenOutputGuard = "",
+    [string]$OutputRoot           = "",
+    [string]$OutputJson           = "",
+    [string]$OutputMd             = "",
+    [string]$OutputCsv            = "",
+    [string]$Summary              = ""
 )
 
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = "Stop"
 
-$RepoRoot    = Resolve-Path (Join-Path $PSScriptRoot "..\..\..") | Select-Object -ExpandProperty Path
-$ExamplesDir = Join-Path $RepoRoot "examples\deadmtl-layer-pack"
-$LocalDir    = Join-Path $ExamplesDir ".local\map27b"
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..\..") | Select-Object -ExpandProperty Path
+
+$InputDir  = Join-Path $RepoRoot ".local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-v0\map_00"
+$OutputDir = Join-Path $RepoRoot ".local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0\map_00"
 
 if ([string]::IsNullOrEmpty($SandboxWriterResult)) {
-    $SandboxWriterResult = Join-Path $ExamplesDir ".local\map27a\map_00.sandbox_writer_v0.json"
+    $SandboxWriterResult = Join-Path $InputDir "map_00.minimal_concrete_geometry_sandbox_writer_v0.json"
 }
-if ([string]::IsNullOrEmpty($ComponentOp)) {
-    $ComponentOp = Join-Path $ExamplesDir ".local\map27a\map_00.sandbox_writer_component_operations.json"
+if ([string]::IsNullOrEmpty($ComponentOperations)) {
+    $ComponentOperations = Join-Path $InputDir "map_00.sandbox_writer_component_operations.json"
 }
-if ([string]::IsNullOrEmpty($LotOp)) {
-    $LotOp = Join-Path $ExamplesDir ".local\map27a\map_00.sandbox_writer_lot_operations.json"
+if ([string]::IsNullOrEmpty($LotOperations)) {
+    $LotOperations = Join-Path $InputDir "map_00.sandbox_writer_lot_operations.json"
 }
-if ([string]::IsNullOrEmpty($BuildingSlotOp)) {
-    $BuildingSlotOp = Join-Path $ExamplesDir ".local\map27a\map_00.sandbox_writer_building_slot_operations.json"
+if ([string]::IsNullOrEmpty($BuildingSlotOperations)) {
+    $BuildingSlotOperations = Join-Path $InputDir "map_00.sandbox_writer_building_slot_operations.json"
 }
-if ([string]::IsNullOrEmpty($AccessOp)) {
-    $AccessOp = Join-Path $ExamplesDir ".local\map27a\map_00.sandbox_writer_access_operations.json"
+if ([string]::IsNullOrEmpty($AccessOperations)) {
+    $AccessOperations = Join-Path $InputDir "map_00.sandbox_writer_access_operations.json"
 }
-if ([string]::IsNullOrEmpty($ForbiddenGuard)) {
-    $ForbiddenGuard = Join-Path $ExamplesDir ".local\map27a\map_00.sandbox_writer_forbidden_output_guard.json"
+if ([string]::IsNullOrEmpty($ForbiddenOutputGuard)) {
+    $ForbiddenOutputGuard = Join-Path $InputDir "map_00.sandbox_writer_forbidden_output_guard.json"
 }
 if ([string]::IsNullOrEmpty($OutputRoot)) {
-    $OutputRoot = $LocalDir
+    $OutputRoot = $OutputDir
 }
 if ([string]::IsNullOrEmpty($OutputJson)) {
-    $OutputJson = Join-Path $OutputRoot "map_00.sandbox_writer_tile_buffer_v0.json"
+    $OutputJson = Join-Path $OutputRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.json"
 }
 if ([string]::IsNullOrEmpty($OutputMd)) {
-    $OutputMd = Join-Path $OutputRoot "map_00.sandbox_writer_tile_buffer_v0.md"
+    $OutputMd = Join-Path $OutputRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.md"
 }
 if ([string]::IsNullOrEmpty($OutputCsv)) {
-    $OutputCsv = Join-Path $OutputRoot "map_00.sandbox_writer_tile_buffer_v0.csv"
+    $OutputCsv = Join-Path $OutputRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.csv"
 }
 if ([string]::IsNullOrEmpty($Summary)) {
-    $Summary = Join-Path $OutputRoot "map_00.sandbox_writer_tile_buffer_v0.summary.txt"
+    $Summary = Join-Path $OutputRoot "map_00.minimal_concrete_geometry_sandbox_writer_tile_buffer_v0.summary.txt"
 }
 
 New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
@@ -70,17 +76,17 @@ $CliProject = Join-Path $RepoRoot "src\PZMapForge.Cli\PZMapForge.Cli.csproj"
 $ArgList = @(
     "run", "--project", $CliProject, "--",
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-buffer-v0",
-    "--sandbox-writer-result", $SandboxWriterResult,
-    "--component-op",          $ComponentOp,
-    "--lot-op",                $LotOp,
-    "--building-slot-op",      $BuildingSlotOp,
-    "--access-op",             $AccessOp,
-    "--forbidden-guard",       $ForbiddenGuard,
-    "--output-root",           $OutputRoot,
-    "--output-json",           $OutputJson,
-    "--output-md",             $OutputMd,
-    "--output-csv",            $OutputCsv,
-    "--summary",               $Summary
+    "--sandbox-writer-result",    $SandboxWriterResult,
+    "--component-operations",     $ComponentOperations,
+    "--lot-operations",           $LotOperations,
+    "--building-slot-operations", $BuildingSlotOperations,
+    "--access-operations",        $AccessOperations,
+    "--forbidden-output-guard",   $ForbiddenOutputGuard,
+    "--output-root",              $OutputRoot,
+    "--output-json",              $OutputJson,
+    "--output-md",                $OutputMd,
+    "--output-csv",               $OutputCsv,
+    "--summary",                  $Summary
 )
 
 Write-Host "Running MAP-27B tile buffer writer..."

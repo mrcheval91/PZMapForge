@@ -111,10 +111,10 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
         var ops = new object[]
         {
             new { operation_order = 1, operation_kind = "ACCESS_LINK_WRITE", operation_group = "ACCESS_LINK",
-                  access_id = "map_00_comp0001_frontage_access",
+                  access_id = "map_00_comp0001_frontage_access", access_kind = "FRONTAGE_ACCESS", side = "NORTH",
                   min_x = 0, min_y = 0, max_x = 0, max_y = 0, width_px = 0, height_px = 0, runtime_effect = "NONE" },
             new { operation_order = 2, operation_kind = "ACCESS_LINK_WRITE", operation_group = "ACCESS_LINK",
-                  access_id = "map_00_comp0001_rear_service_access",
+                  access_id = "map_00_comp0001_rear_service_access", access_kind = "REAR_SERVICE_ACCESS", side = "EAST",
                   min_x = 0, min_y = 0, max_x = 0, max_y = 0, width_px = 0, height_px = 0, runtime_effect = "NONE" }
         };
         var obj = new { format = "MAP-27A_SANDBOX_WRITER_ACCESS_OPERATIONS", operation_count = 2, operations = ops };
@@ -269,10 +269,10 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
     }
 
     [Fact]
-    public void Build_ValidInputs_CheckCountIs37()
+    public void Build_ValidInputs_CheckCountIs38()
     {
         var r = RunBuild();
-        Assert.Equal(37, r.CheckCount);
+        Assert.Equal(38, r.CheckCount);
     }
 
     [Fact]
@@ -405,5 +405,62 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileB
         var r       = RunBuild();
         var summary = builder.RenderSummary(r);
         Assert.Contains("Writer Ready       : 0", summary);
+    }
+
+    [Fact]
+    public void Build_ValidInputs_AccessLinkPrimaryOwnedCellCountGreaterThanZero()
+    {
+        var r = RunBuild();
+        var check = r.Checks.FirstOrDefault(c => c.CheckId == "ACCESS_LINK_PRIMARY_OWNED_GT_0");
+        Assert.NotNull(check);
+        Assert.Equal("PASS", check.CheckStatus);
+    }
+
+    [Fact]
+    public void Build_ValidInputs_AccessReplayEntriesHavePositiveAppliedCellCount()
+    {
+        RunBuild();
+        var json = File.ReadAllText(Path.Combine(_outputRoot, "map_00.sandbox_writer_tile_buffer_replay_log.json"));
+        using var doc = JsonDocument.Parse(json);
+        var entries = doc.RootElement.GetProperty("replay_entries").EnumerateArray().ToList();
+        var accessEntries = entries.Where(e =>
+            e.GetProperty("operation_kind").GetString() == "ACCESS_LINK_WRITE").ToList();
+        Assert.NotEmpty(accessEntries);
+        foreach (var entry in accessEntries)
+            Assert.True(entry.GetProperty("applied_cell_count").GetInt32() > 0);
+    }
+
+    [Fact]
+    public void Build_ValidInputs_OperationIdsContainHashSeparator()
+    {
+        RunBuild();
+        var csv = File.ReadAllText(Path.Combine(_outputRoot, "map_00.sandbox_writer_tile_buffer_cells.csv"));
+        var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries).Skip(1).Take(5).ToList();
+        Assert.NotEmpty(lines);
+        foreach (var line in lines)
+        {
+            var cols = line.Split(',');
+            Assert.True(cols.Length >= 6, $"Expected at least 6 columns, got {cols.Length}");
+            Assert.Contains("#", cols[5]);
+        }
+    }
+
+    [Fact]
+    public void Build_ValidInputs_OwnershipReportAccessLinkPrimaryOwnedGreaterThanZero()
+    {
+        RunBuild();
+        var json = File.ReadAllText(Path.Combine(_outputRoot, "map_00.sandbox_writer_tile_buffer_ownership.json"));
+        using var doc = JsonDocument.Parse(json);
+        bool found = false;
+        foreach (var record in doc.RootElement.GetProperty("ownership").EnumerateArray())
+        {
+            if (record.GetProperty("kind").GetString() == "ACCESS_LINK")
+            {
+                Assert.True(record.GetProperty("primary_owned_cell_count").GetInt32() > 0);
+                found = true;
+                break;
+            }
+        }
+        Assert.True(found, "No ACCESS_LINK ownership record found");
     }
 }
