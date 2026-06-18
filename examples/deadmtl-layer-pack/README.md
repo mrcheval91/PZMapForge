@@ -1463,6 +1463,36 @@ for color palette, rendering rules, input requirements, and claim boundary.
 
 ---
 
+## MAP-27E WorldBuilder Minimal Concrete Geometry Sandbox Writer Tile Materialization QA Review Packet
+
+MAP-27E audits the full MAP-27C/MAP-27D sandbox tile materialization chain.
+It reads all 18 canonical output files from MAP-27C and MAP-27D, hashes them,
+verifies verdicts, checks counts, and inspects PNG overlay dimensions.
+
+Does NOT generate a new overlay. Does NOT write PZ runtime files.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-qa-review-packet.ps1
+```
+
+Output (under `.local\deadmtl-authoring\worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-qa-review-packet\map_00\`):
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_qa_review_packet.json`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_qa_review_packet.md`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_qa_review_packet.csv`
+- `map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_qa_review_packet.summary.txt`
+
+40 checks. `review_stage: SANDBOX_WRITER_TILE_MATERIALIZATION_QA_REVIEW_PACKET`.
+`sandbox_only: true`, `reviewed_file_count: 18`, `pz_runtime_materialized: false`,
+`writer_ready: false`, `materialized: false`.
+
+Expected counts: materialized=5340, rendered=5340, wall=850, floor=2444,
+access=148, lot=1898, residual=0. Overlay PNG: 1024x1024.
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_TILE_MATERIALIZATION_QA_REVIEW_PACKET.md`
+for check list, input requirements, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
