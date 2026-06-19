@@ -56,6 +56,8 @@ This is a backend-neutral plan object. It is NOT a runtime writer, NOT a lotpack
 51 checks run in deterministic order. All must pass for `is_valid=true` and
 `backend_plan_status=BACKEND_PLAN_COMPLETE`.
 
+The CLI finalizes the forbidden artifact scan after writing the 8 MAP-27J output files, then rewrites the result files with the finalized scan/verdict.
+
 ## Forbidden steps (11)
 
 | Category |

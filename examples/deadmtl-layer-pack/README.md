@@ -1661,7 +1661,7 @@ source manifest JSON, locked replay digest JSON, forbidden output guard JSON).
 | `map_00.sandbox_writer_locked_replay_backend_source_manifest.json` | Source manifest JSON |
 | `map_00.sandbox_writer_locked_replay_backend_forbidden_output_guard.json` | Forbidden output guard |
 
-51 checks. `backend_plan_stage: MAP27J_SANDBOX_WRITER_LOCKED_REPLAY_BACKEND_PLAN`.
+51 checks. `backend_plan_stage: SANDBOX_WRITER_LOCKED_REPLAY_BACKEND_PLAN`.
 `backend_plan_status: BACKEND_PLAN_COMPLETE`. 5 backend operation records (WALL/FLOOR/ACCESS/LOT/COMPONENT),
 all `requires_locked_replay_digest=true`, none emitting runtime/binary/Lua/install artifacts.
 

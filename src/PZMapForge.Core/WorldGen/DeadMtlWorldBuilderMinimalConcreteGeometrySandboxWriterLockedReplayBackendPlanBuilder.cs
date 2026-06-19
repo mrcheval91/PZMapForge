@@ -461,6 +461,37 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
         return result;
     }
 
+    public DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanResult FinalizeAfterOutputs(
+        DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanResult result,
+        string outputRoot)
+    {
+        const string invalidVerdict =
+            "MAP27J_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_LOCKED_REPLAY_BACKEND_PLAN_INVALID";
+
+        string finalScan = ScanOutputRoot(outputRoot);
+        bool   scanPasses = finalScan.StartsWith("POST_BACKEND_PLAN_FORBIDDEN_SCAN PASS", StringComparison.Ordinal);
+        result.ForbiddenArtifactScan = finalScan;
+
+        var check = result.Checks.FirstOrDefault(c => c.CheckId == "POST_BACKEND_PLAN_FORBIDDEN_SCAN_PASS");
+        if (check is not null)
+        {
+            check.CheckStatus = scanPasses ? "PASS" : "FAIL";
+            check.Actual      = scanPasses ? "PASS" : "FAIL";
+        }
+
+        result.PassedCheckCount = result.Checks.Count(c => c.CheckStatus == "PASS");
+        result.FailedCheckCount = result.Checks.Count(c => c.CheckStatus == "FAIL");
+
+        bool allPass             = result.FailedCheckCount == 0;
+        result.IsValid           = allPass;
+        result.BackendPlanStatus = allPass ? "BACKEND_PLAN_COMPLETE" : "BACKEND_PLAN_FAILED";
+        result.Verdict           = allPass
+            ? "MAP27J_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_LOCKED_REPLAY_BACKEND_PLAN_COMPLETE"
+            : invalidVerdict;
+
+        return result;
+    }
+
     public string RenderJson(DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanResult result) =>
         JsonSerializer.Serialize(result, s_jsonOptions);
 

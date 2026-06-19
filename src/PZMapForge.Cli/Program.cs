@@ -8931,15 +8931,32 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedRep
         .DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanBuilder();
     var result = builder.Build(dryRunRoot, outputRoot);
 
+    if (!result.IsValid && result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
     Directory.CreateDirectory(Path.GetDirectoryName(outputJson)!);
-    File.WriteAllText(outputJson,         builder.RenderJson(result));
-    File.WriteAllText(outputMd,           builder.RenderMarkdown(result));
-    File.WriteAllText(outputCsv,          builder.RenderCsv(result));
-    File.WriteAllText(summaryPath,        builder.RenderSummary(result));
-    File.WriteAllText(operationPlanJson,  builder.RenderOperationPlanJson(result));
-    File.WriteAllText(operationPlanCsv,   builder.RenderOperationPlanCsv(result));
-    File.WriteAllText(sourceManifestJson, builder.RenderSourceManifestJson(result));
-    File.WriteAllText(forbiddenGuardJson, builder.RenderForbiddenOutputGuardJson(result));
+
+    void WriteOutputs()
+    {
+        File.WriteAllText(outputJson,         builder.RenderJson(result));
+        File.WriteAllText(outputMd,           builder.RenderMarkdown(result));
+        File.WriteAllText(outputCsv,          builder.RenderCsv(result));
+        File.WriteAllText(summaryPath,        builder.RenderSummary(result));
+        File.WriteAllText(operationPlanJson,  builder.RenderOperationPlanJson(result));
+        File.WriteAllText(operationPlanCsv,   builder.RenderOperationPlanCsv(result));
+        File.WriteAllText(sourceManifestJson, builder.RenderSourceManifestJson(result));
+        File.WriteAllText(forbiddenGuardJson, builder.RenderForbiddenOutputGuardJson(result));
+    }
+
+    WriteOutputs();
+
+    result = builder.FinalizeAfterOutputs(result, outputRoot);
+
+    WriteOutputs();
 
     Console.WriteLine(builder.RenderSummary(result));
 

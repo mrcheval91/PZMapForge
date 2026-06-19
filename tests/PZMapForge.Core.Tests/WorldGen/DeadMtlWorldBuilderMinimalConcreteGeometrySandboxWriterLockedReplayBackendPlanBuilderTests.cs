@@ -531,4 +531,66 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
         Assert.Equal("FAIL", check.CheckStatus);
         Assert.False(r.IsValid);
     }
+
+    // -----------------------------------------------------------------------
+    // FinalizeAfterOutputs tests
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void FinalizeAfterOutputs_WithSafeOutputs_KeepsForbiddenScanPass()
+    {
+        WriteMap27iFiles();
+        var builder = new DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanBuilder();
+        var r = builder.Build(_map27iDir, _outputDir);
+        // Write safe output files (json/md/csv — no forbidden extensions)
+        File.WriteAllText(Path.Combine(_outputDir, "map_00.plan.json"), "{\"ok\":true}");
+        var finalized = builder.FinalizeAfterOutputs(r, _outputDir);
+        Assert.Contains("PASS", finalized.ForbiddenArtifactScan, StringComparison.Ordinal);
+        Assert.True(finalized.IsValid);
+        Assert.Equal("BACKEND_PLAN_COMPLETE", finalized.BackendPlanStatus);
+    }
+
+    [Fact]
+    public void FinalizeAfterOutputs_WithBinFileAfterInitialBuild_MarksResultInvalid()
+    {
+        WriteMap27iFiles();
+        var builder = new DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanBuilder();
+        var r = builder.Build(_map27iDir, _outputDir);
+        Assert.True(r.IsValid); // clean before finalize
+        // Inject a forbidden file after initial build
+        File.WriteAllText(Path.Combine(_outputDir, "evil.bin"), "data");
+        var finalized = builder.FinalizeAfterOutputs(r, _outputDir);
+        Assert.Contains("FAIL", finalized.ForbiddenArtifactScan, StringComparison.Ordinal);
+        Assert.False(finalized.IsValid);
+        Assert.Equal("BACKEND_PLAN_FAILED", finalized.BackendPlanStatus);
+        Assert.Contains("INVALID", finalized.Verdict);
+    }
+
+    [Fact]
+    public void FinalizeAfterOutputs_RecomputesCheckTotals()
+    {
+        WriteMap27iFiles();
+        var builder = new DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanBuilder();
+        var r = builder.Build(_map27iDir, _outputDir);
+        // Plant a forbidden file to force a FAIL
+        File.WriteAllText(Path.Combine(_outputDir, "bad.bin"), "x");
+        var finalized = builder.FinalizeAfterOutputs(r, _outputDir);
+        Assert.Equal(finalized.Checks.Count(c => c.CheckStatus == "PASS"), finalized.PassedCheckCount);
+        Assert.Equal(finalized.Checks.Count(c => c.CheckStatus == "FAIL"), finalized.FailedCheckCount);
+        Assert.True(finalized.FailedCheckCount > 0);
+    }
+
+    [Fact]
+    public void FinalizeAfterOutputs_UpdatesPostBackendPlanForbiddenScanCheck()
+    {
+        WriteMap27iFiles();
+        var builder = new DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanBuilder();
+        var r = builder.Build(_map27iDir, _outputDir);
+        // Inject forbidden file after initial build to flip the check
+        File.WriteAllText(Path.Combine(_outputDir, "trap.bin"), "x");
+        var finalized = builder.FinalizeAfterOutputs(r, _outputDir);
+        var check = finalized.Checks.Single(c => c.CheckId == "POST_BACKEND_PLAN_FORBIDDEN_SCAN_PASS");
+        Assert.Equal("FAIL", check.CheckStatus);
+        Assert.Equal("FAIL", check.Actual);
+    }
 }

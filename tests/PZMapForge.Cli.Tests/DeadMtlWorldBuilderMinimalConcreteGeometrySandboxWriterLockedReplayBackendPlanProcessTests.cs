@@ -405,6 +405,31 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
     }
 
     [Fact]
+    public void ForbiddenArtifactScan_AfterOutputsPresent_ContainsExactPassString()
+    {
+        WriteMap27iOutput();
+        Run(BuildArgs());
+        var json = File.ReadAllText(GetOutputJson());
+        using var doc = JsonDocument.Parse(json);
+        var scan = doc.RootElement.GetProperty("forbidden_artifact_scan").GetString() ?? "";
+        Assert.Equal("POST_BACKEND_PLAN_FORBIDDEN_SCAN PASS (0 forbidden artifacts in output root)", scan);
+    }
+
+    [Fact]
+    public void ForbiddenGuardJson_ContainsFinalForbiddenScan()
+    {
+        WriteMap27iOutput();
+        Run(BuildArgs());
+        var guardPath = Path.Combine(GetOutputRoot(),
+            "map_00.sandbox_writer_locked_replay_backend_forbidden_output_guard.json");
+        var json = File.ReadAllText(guardPath);
+        using var doc = JsonDocument.Parse(json);
+        var scan = doc.RootElement.GetProperty("forbidden_artifact_scan").GetString() ?? "";
+        Assert.Contains("PASS", scan, StringComparison.Ordinal);
+        Assert.True(doc.RootElement.GetProperty("all_clean").GetBoolean());
+    }
+
+    [Fact]
     public void WriterReadyFalse()
     {
         WriteMap27iOutput();
