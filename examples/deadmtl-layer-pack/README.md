@@ -1637,6 +1637,45 @@ for check list, digest formula, and claim boundary.
 
 ---
 
+## MAP-27J WorldBuilder Minimal Concrete Geometry Sandbox Writer Locked Replay Backend Plan
+
+MAP-27J consumes the MAP-27I locked materialization replay dry-run output and produces a
+deterministic backend-neutral writer plan. This is NOT a runtime writer, NOT a lotpack writer,
+and NOT a Project Zomboid export. It defines what a future backend would need to consume, what
+operations it would emit, what ordering it must use, what invariants must hold, and what remains
+forbidden.
+
+**Input:** 6 MAP-27I canonical output files (dry-run JSON, summary TXT, material counts CSV,
+source manifest JSON, locked replay digest JSON, forbidden output guard JSON).
+
+**Output:** 8 files:
+
+| File | Description |
+|------|-------------|
+| `map_00.minimal_concrete_geometry_sandbox_writer_locked_replay_backend_plan.json` | Full result JSON |
+| `map_00.minimal_concrete_geometry_sandbox_writer_locked_replay_backend_plan.md` | Markdown summary |
+| `map_00.minimal_concrete_geometry_sandbox_writer_locked_replay_backend_plan.csv` | Checks CSV |
+| `map_00.minimal_concrete_geometry_sandbox_writer_locked_replay_backend_plan.summary.txt` | Summary text |
+| `map_00.sandbox_writer_locked_replay_backend_operation_plan.json` | Operation plan JSON |
+| `map_00.sandbox_writer_locked_replay_backend_operation_plan.csv` | Operation plan CSV |
+| `map_00.sandbox_writer_locked_replay_backend_source_manifest.json` | Source manifest JSON |
+| `map_00.sandbox_writer_locked_replay_backend_forbidden_output_guard.json` | Forbidden output guard |
+
+51 checks. `backend_plan_stage: MAP27J_SANDBOX_WRITER_LOCKED_REPLAY_BACKEND_PLAN`.
+`backend_plan_status: BACKEND_PLAN_COMPLETE`. 5 backend operation records (WALL/FLOOR/ACCESS/LOT/COMPONENT),
+all `requires_locked_replay_digest=true`, none emitting runtime/binary/Lua/install artifacts.
+
+Claim boundary: `sandbox_only=true`, `sandbox_backend_plan_only=true`, `writer_ready=false`,
+`runtime_valid=false`, `materialized=false`, `pz_runtime_materialized=false`,
+`runtime_proof_claimed=false`, `public_playable_packaging_claimed=false`.
+
+Next allowed experiment: `MAP-27K_SANDBOX_WRITER_LOCKED_REPLAY_BACKEND_DRY_RUN_EMITTER` (SANDBOX_ONLY_NOT_RUNTIME).
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_LOCKED_REPLAY_BACKEND_PLAN.md`
+for check list, operation plan, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.

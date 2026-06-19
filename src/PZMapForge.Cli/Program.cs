@@ -221,6 +221,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-replay-lock"    => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationReplayLockCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-locked-replay-audit" => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationLockedReplayAuditCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-materialization-replay-dry-run"   => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMaterializationReplayDryRunCommand(args[1..]),
+    "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-replay-backend-plan"              => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -8847,6 +8848,97 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMat
     File.WriteAllText(materialCountsCsv,  builder.RenderMaterialCountsCsv(result));
     File.WriteAllText(sourceManifestJson, builder.RenderSourceManifestJson(result));
     File.WriteAllText(replayDigestJson,   builder.RenderReplayDigestJson(result));
+    File.WriteAllText(forbiddenGuardJson, builder.RenderForbiddenOutputGuardJson(result));
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return 0;
+}
+
+static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanCommand(string[] args)
+{
+    var dryRunRoot          = string.Empty;
+    var outputRoot          = string.Empty;
+    var outputJson          = string.Empty;
+    var outputMd            = string.Empty;
+    var outputCsv           = string.Empty;
+    var summaryPath         = string.Empty;
+    var operationPlanJson   = string.Empty;
+    var operationPlanCsv    = string.Empty;
+    var sourceManifestJson  = string.Empty;
+    var forbiddenGuardJson  = string.Empty;
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--dry-run-root":                dryRunRoot         = args[i + 1]; break;
+            case "--output-root":                 outputRoot         = args[i + 1]; break;
+            case "--output-json":                 outputJson         = args[i + 1]; break;
+            case "--output-md":                   outputMd           = args[i + 1]; break;
+            case "--output-csv":                  outputCsv          = args[i + 1]; break;
+            case "--summary":                     summaryPath        = args[i + 1]; break;
+            case "--output-operation-plan-json":  operationPlanJson  = args[i + 1]; break;
+            case "--output-operation-plan-csv":   operationPlanCsv   = args[i + 1]; break;
+            case "--output-source-manifest-json": sourceManifestJson = args[i + 1]; break;
+            case "--output-forbidden-guard-json": forbiddenGuardJson = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(dryRunRoot)       || string.IsNullOrEmpty(outputRoot)       ||
+        string.IsNullOrEmpty(outputJson)        || string.IsNullOrEmpty(outputMd)         ||
+        string.IsNullOrEmpty(outputCsv)         || string.IsNullOrEmpty(summaryPath)      ||
+        string.IsNullOrEmpty(operationPlanJson) || string.IsNullOrEmpty(operationPlanCsv) ||
+        string.IsNullOrEmpty(sourceManifestJson) || string.IsNullOrEmpty(forbiddenGuardJson))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-replay-backend-plan " +
+            "--dry-run-root <MAP-27I dir> " +
+            "--output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt> " +
+            "--output-operation-plan-json <json> --output-operation-plan-csv <csv> " +
+            "--output-source-manifest-json <json> --output-forbidden-guard-json <json>");
+        return 1;
+    }
+
+    foreach (var (flag, value) in new[]
+    {
+        ("--output-root",                 outputRoot),
+        ("--output-json",                 outputJson),
+        ("--output-md",                   outputMd),
+        ("--output-csv",                  outputCsv),
+        ("--summary",                     summaryPath),
+        ("--output-operation-plan-json",  operationPlanJson),
+        ("--output-operation-plan-csv",   operationPlanCsv),
+        ("--output-source-manifest-json", sourceManifestJson),
+        ("--output-forbidden-guard-json", forbiddenGuardJson),
+    })
+    {
+        if (!value.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"ERROR: {flag} must contain .local to prevent accidental output outside sandbox: {value}");
+            return 1;
+        }
+    }
+
+    var builder = new PZMapForge.Core.WorldGen
+        .DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanBuilder();
+    var result = builder.Build(dryRunRoot, outputRoot);
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputJson)!);
+    File.WriteAllText(outputJson,         builder.RenderJson(result));
+    File.WriteAllText(outputMd,           builder.RenderMarkdown(result));
+    File.WriteAllText(outputCsv,          builder.RenderCsv(result));
+    File.WriteAllText(summaryPath,        builder.RenderSummary(result));
+    File.WriteAllText(operationPlanJson,  builder.RenderOperationPlanJson(result));
+    File.WriteAllText(operationPlanCsv,   builder.RenderOperationPlanCsv(result));
+    File.WriteAllText(sourceManifestJson, builder.RenderSourceManifestJson(result));
     File.WriteAllText(forbiddenGuardJson, builder.RenderForbiddenOutputGuardJson(result));
 
     Console.WriteLine(builder.RenderSummary(result));
