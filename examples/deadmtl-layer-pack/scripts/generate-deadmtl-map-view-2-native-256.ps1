@@ -63,30 +63,77 @@ $rawW = $rawBmp.Width; $rawH = $rawBmp.Height
 Write-Host "  Source: ${rawW}x${rawH}"
 
 Write-Host "Loading cells CSV: $CsvPath"
-if (-not (Test-Path $CsvPath)) { Write-Error "Cells CSV not found: $CsvPath"; exit 1 }
+if (-not (Test-Path $CsvPath)) { Write-Host "FAIL: Cells CSV not found: $CsvPath"; exit 1 }
 $cells = Import-Csv $CsvPath
 Write-Host "  Loaded $($cells.Count) cells"
 
+# --- Resolve material bucket column ---
+# Preference order: material_kind, material, material_id, tile_material_kind, layer_kind
+# A bucket column has values exclusively from {WALL, FLOOR, ACCESS, LOT, RESIDUAL}.
+# material_kind in this CSV contains granular candidates (e.g. BUILDING_EXTERIOR_WALL_CANDIDATE),
+# so it is skipped and layer_kind is selected as the bucket column.
+$bucketVocab    = @("WALL","FLOOR","ACCESS","LOT","RESIDUAL")
+$colCandidates  = @("material_kind","material","material_id","tile_material_kind","layer_kind")
+$csvHeaders     = ($cells | Select-Object -First 1).PSObject.Properties.Name
+$MaterialColumn = $null
+
+Write-Host ""
+Write-Host "=== Material column resolution ==="
+Write-Host "  CSV headers: $($csvHeaders -join ', ')"
+foreach ($col in $colCandidates) {
+    if ($csvHeaders -contains $col) {
+        $uniqueVals = $cells | Select-Object -ExpandProperty $col | Sort-Object -Unique
+        $nonBucket  = @($uniqueVals | Where-Object { $bucketVocab -notcontains $_.ToUpper() })
+        if ($nonBucket.Count -gt 0) {
+            Write-Host "  SKIP '$col': non-bucket values (e.g. '$($uniqueVals[0])')"
+        } else {
+            $MaterialColumn = $col
+            Write-Host "  USE  '$col': all unique values are bucket vocabulary ($($uniqueVals -join ', '))"
+            break
+        }
+    }
+}
+if (-not $MaterialColumn) {
+    Write-Host "FAIL: no column with pure bucket vocabulary found in: $($colCandidates -join ', ')"
+    exit 1
+}
+
+# --- Pre-process cells: resolve bucket per cell, build count dict ---
+$counts = @{ WALL = 0; FLOOR = 0; ACCESS = 0; LOT = 0; RESIDUAL = 0 }
+$cellData = foreach ($c in $cells) {
+    $bucket = ($c.$MaterialColumn).ToUpper()
+    if ($counts.ContainsKey($bucket)) { $counts[$bucket]++ } else { $counts["RESIDUAL"]++ }
+    [PSCustomObject]@{ X = [int]$c.x; Y = [int]$c.y; Bucket = $bucket }
+}
+
+Write-Host ""
+Write-Host "=== Material count summary ==="
+Write-Host "  Column used  : $MaterialColumn"
+Write-Host "  WALL         : $($counts.WALL)"
+Write-Host "  FLOOR        : $($counts.FLOOR)"
+Write-Host "  ACCESS       : $($counts.ACCESS)"
+Write-Host "  LOT          : $($counts.LOT)"
+Write-Host "  RESIDUAL/other: $($counts.RESIDUAL)"
+Write-Host "  Total cells  : $($cellData.Count)"
+
 # ============================================================
-# IMAGE 1: Raw source — exact copy, 256x256
+# IMAGE 1: Raw source — direct file copy (source must be 256x256)
 # ============================================================
+Write-Host ""
 Write-Host "Generating Image 1: raw source native 256..."
 
-$img1 = New-Object System.Drawing.Bitmap(256, 256, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
-$g1   = [System.Drawing.Graphics]::FromImage($img1)
-$g1.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor
-$g1.PixelOffsetMode   = [System.Drawing.Drawing2D.PixelOffsetMode]::Half
-$g1.DrawImage($rawBmp, 0, 0, 256, 256)
-$g1.Dispose()
-
+if ($rawW -ne 256 -or $rawH -ne 256) {
+    Write-Host "FAIL: source PNG is ${rawW}x${rawH}, expected exactly 256x256 -- refusing to resize"
+    exit 1
+}
 $out1 = Join-Path $OutDir "map_00_raw_source_native_256.png"
-$img1.Save($out1, [System.Drawing.Imaging.ImageFormat]::Png)
-$img1.Dispose()
-Write-Host "  Saved: $out1  (256x256)"
+[System.IO.File]::Copy($RawPng, $out1, $true)
+Write-Host "  Saved: $out1  (direct copy, 256x256)"
 
 # ============================================================
 # IMAGE 2: Component context — raw + bbox outline + cell pixels
 # ============================================================
+Write-Host ""
 Write-Host "Generating Image 2: component context native 256..."
 
 $img2 = New-Object System.Drawing.Bitmap(256, 256, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
@@ -96,10 +143,9 @@ $g2.PixelOffsetMode   = [System.Drawing.Drawing2D.PixelOffsetMode]::Half
 $g2.DrawImage($rawBmp, 0, 0, 256, 256)
 $g2.Dispose()
 
-# Paint materialized cells at 1px/tile over raw background
-foreach ($c in $cells) {
-    $cx = [int]$c.x; $cy = [int]$c.y
-    $img2.SetPixel($cx, $cy, (MaterialColor $c.layer_kind))
+# Paint materialized cells at 1px/tile over raw background (using resolved bucket column)
+foreach ($cd in $cellData) {
+    $img2.SetPixel($cd.X, $cd.Y, (MaterialColor $cd.Bucket))
 }
 
 # Bbox outline at exact native tile coords — use SetPixel for 1px precision
@@ -120,6 +166,7 @@ Write-Host "  Saved: $out2  (256x256)"
 # ============================================================
 # IMAGE 3: Materialized overlay — dark background + cell pixels
 # ============================================================
+Write-Host ""
 Write-Host "Generating Image 3: materialized overlay native 256..."
 
 $img3 = New-Object System.Drawing.Bitmap(256, 256, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
@@ -129,10 +176,9 @@ $g3.FillRectangle($b3, 0, 0, 256, 256)
 $b3.Dispose()
 $g3.Dispose()
 
-# Paint each cell: 1 pixel = 1 tile
-foreach ($c in $cells) {
-    $cx = [int]$c.x; $cy = [int]$c.y
-    $img3.SetPixel($cx, $cy, (MaterialColor $c.layer_kind))
+# Paint each cell: 1 pixel = 1 tile (using resolved bucket column)
+foreach ($cd in $cellData) {
+    $img3.SetPixel($cd.X, $cd.Y, (MaterialColor $cd.Bucket))
 }
 
 # Thin bbox outline
