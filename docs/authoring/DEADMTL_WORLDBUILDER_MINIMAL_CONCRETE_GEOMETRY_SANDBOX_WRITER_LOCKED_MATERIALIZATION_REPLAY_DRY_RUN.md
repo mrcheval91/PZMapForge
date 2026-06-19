@@ -36,10 +36,10 @@ MAP-27H audit file: `map_00.minimal_concrete_geometry_sandbox_writer_tile_materi
 | `map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.md` | Markdown report |
 | `map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.csv` | Checks CSV |
 | `map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.summary.txt` | Summary text |
-| `map_00.locked_replay_dry_run_material_counts.csv` | Material bucket counts |
-| `map_00.locked_replay_dry_run_source_manifest.json` | Locked file re-hash manifest |
-| `map_00.locked_replay_dry_run_replay_digest.json` | Locked replay digest JSON |
-| `map_00.locked_replay_dry_run_forbidden_output_guard.json` | Forbidden output guard |
+| `map_00.sandbox_writer_locked_replay_material_counts.csv` | Material bucket counts |
+| `map_00.sandbox_writer_locked_replay_source_manifest.json` | Locked file re-hash manifest |
+| `map_00.sandbox_writer_locked_replay_digest.json` | Locked replay digest JSON |
+| `map_00.sandbox_writer_locked_replay_forbidden_output_guard.json` | Forbidden output guard |
 
 ## Locked replay digest formula
 
@@ -56,9 +56,9 @@ MAP27I_LOCKED_REPLAY_DRY_RUN_V1
 
 SHA-256(UTF-8(above string)).ToLower()
 
-## Checks (44)
+## Checks (53)
 
-44 checks run in deterministic order. All must pass for `is_valid=true` and
+53 checks run in deterministic order. All must pass for `is_valid=true` and
 `dry_run_status=LOCKED_REPLAY_DRY_RUN_COMPLETE`.
 
 ## Forbidden steps (11)

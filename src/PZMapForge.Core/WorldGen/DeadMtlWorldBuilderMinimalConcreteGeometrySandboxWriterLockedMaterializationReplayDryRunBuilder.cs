@@ -8,6 +8,9 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
 {
     private static readonly JsonSerializerOptions s_jsonOptions = new() { WriteIndented = true };
 
+    private static readonly string[] s_materialColumnNames =
+        { "material_kind", "material", "material_id", "tile_material_kind" };
+
     private static string HashFile(string path) =>
         Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLower();
 
@@ -85,6 +88,57 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
         return count == 0
             ? "POST_DRY_RUN_FORBIDDEN_SCAN PASS (0 forbidden artifacts in output root)"
             : $"POST_DRY_RUN_FORBIDDEN_SCAN FAIL ({count} forbidden artifacts found in output root)";
+    }
+
+    // Parses the materialized cells CSV by header name.
+    // Returns (total, wall, floor, access, lot, residual, materialKinds, parsed).
+    // materialKinds is always 5 (the fixed set of canonical buckets).
+    internal static (int Total, int Wall, int Floor, int Access, int Lot, int Residual, int MaterialKinds, bool Parsed)
+        ParseMaterializedCellsCsv(string csvPath)
+    {
+        if (!File.Exists(csvPath))
+            return (0, 0, 0, 0, 0, 0, 0, false);
+
+        try
+        {
+            var lines = File.ReadAllLines(csvPath, Encoding.UTF8);
+            if (lines.Length < 1)
+                return (0, 0, 0, 0, 0, 0, 0, false);
+
+            var headers = lines[0].Split(',').Select(h => h.Trim().ToLowerInvariant()).ToArray();
+            int matCol = -1;
+            foreach (var name in s_materialColumnNames)
+            {
+                matCol = Array.IndexOf(headers, name);
+                if (matCol >= 0) break;
+            }
+            if (matCol < 0)
+                return (0, 0, 0, 0, 0, 0, 0, false);
+
+            int total = 0, wall = 0, floor = 0, access = 0, lot = 0, residual = 0;
+
+            for (int i = 1; i < lines.Length; i++)
+            {
+                var parts = lines[i].Split(',');
+                if (parts.Length <= matCol) continue;
+                var mat = parts[matCol].Trim().ToUpperInvariant();
+                if (string.IsNullOrEmpty(mat)) continue;
+
+                total++;
+                if      (mat.Contains("WALL",     StringComparison.Ordinal)) wall++;
+                else if (mat.Contains("FLOOR",    StringComparison.Ordinal)) floor++;
+                else if (mat.Contains("ACCESS",   StringComparison.Ordinal)) access++;
+                else if (mat.Contains("LOT",      StringComparison.Ordinal)) lot++;
+                else if (mat == "COMPONENT" || mat.Contains("RESIDUAL", StringComparison.Ordinal)) residual++;
+            }
+
+            // 5 canonical material kind buckets are always tracked regardless of per-bucket counts
+            return (total, wall, floor, access, lot, residual, 5, true);
+        }
+        catch
+        {
+            return (0, 0, 0, 0, 0, 0, 0, false);
+        }
     }
 
     public DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMaterializationReplayDryRunResult Build(
@@ -230,13 +284,6 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
         result.SourceReplayLockId           = storedSourceReplayLockId;
         result.SourceRecomputedReplayLockId = storedRecomputedReplayLockId;
         result.SourceReplayLockIdMatches    = storedReplayLockIdMatches;
-        result.MaterializedCellCount        = storedMaterializedCellCount;
-        result.BuildingWallCandidateCellCount  = storedWallCount;
-        result.BuildingFloorCandidateCellCount = storedFloorCount;
-        result.AccessEdgeCellCount          = storedAccessCount;
-        result.LotSpaceCellCount            = storedLotCount;
-        result.ComponentResidualCellCount   = storedResidualCount;
-        result.MaterialKindCount            = storedMaterialKindCount;
         result.LayerKindCount               = storedLayerKindCount;
         result.NextForbiddenSteps           = storedNextForbiddenSteps.Count > 0
             ? storedNextForbiddenSteps
@@ -266,18 +313,49 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
         result.LockedFileHashMismatchCount = lockedFiles.Count(f => f.Exists && !f.HashStillMatches);
         result.LockedFileMissingCount      = lockedFiles.Count(f => !f.Exists);
 
-        // Load materialized cells CSV (role = MATERIALIZED_CELLS_CSV, order = 3)
+        // Load AND parse materialized cells CSV
         string cellsCsvSha256 = string.Empty;
         bool   csvLoaded      = false;
+        bool   csvParsed      = false;
+        int    csvTotal = 0, csvWall = 0, csvFloor = 0, csvAccess = 0, csvLot = 0, csvResidual = 0, csvMaterialKinds = 0;
         var    csvFile        = lockedFiles.FirstOrDefault(f => f.FileRole == "MATERIALIZED_CELLS_CSV");
         if (csvFile != null && csvFile.Exists)
         {
             cellsCsvSha256 = HashFile(csvFile.FilePath);
             csvLoaded      = true;
+            (csvTotal, csvWall, csvFloor, csvAccess, csvLot, csvResidual, csvMaterialKinds, csvParsed) =
+                ParseMaterializedCellsCsv(csvFile.FilePath);
         }
         result.MaterializedCellsCsvSha256 = cellsCsvSha256;
 
-        // Locked replay digest
+        // Canonical counts — CSV-derived
+        result.MaterializedCellCount           = csvTotal;
+        result.BuildingWallCandidateCellCount  = csvWall;
+        result.BuildingFloorCandidateCellCount = csvFloor;
+        result.AccessEdgeCellCount             = csvAccess;
+        result.LotSpaceCellCount               = csvLot;
+        result.ComponentResidualCellCount      = csvResidual;
+        result.MaterialKindCount               = csvMaterialKinds;
+
+        // CSV-prefixed fields
+        result.CsvMaterializedCellCount           = csvTotal;
+        result.CsvBuildingWallCandidateCellCount  = csvWall;
+        result.CsvBuildingFloorCandidateCellCount = csvFloor;
+        result.CsvAccessEdgeCellCount             = csvAccess;
+        result.CsvLotSpaceCellCount               = csvLot;
+        result.CsvComponentResidualCellCount      = csvResidual;
+        result.CsvMaterialKindCount               = csvMaterialKinds;
+
+        // Audit-prefixed fields (from MAP-27H stored values)
+        result.AuditMaterializedCellCount           = storedMaterializedCellCount;
+        result.AuditBuildingWallCandidateCellCount  = storedWallCount;
+        result.AuditBuildingFloorCandidateCellCount = storedFloorCount;
+        result.AuditAccessEdgeCellCount             = storedAccessCount;
+        result.AuditLotSpaceCellCount               = storedLotCount;
+        result.AuditComponentResidualCellCount      = storedResidualCount;
+        result.AuditMaterialKindCount               = storedMaterialKindCount;
+
+        // Locked replay digest (uses CSV-derived counts)
         bool allRehashedAndMatch = lockedFiles.Count == 8 && lockedFiles.All(f => f.Exists && f.HashStillMatches);
         string lockedReplayDigest = string.Empty;
         if (allRehashedAndMatch && csvLoaded)
@@ -288,9 +366,9 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
             foreach (var lf in lockedFiles)
                 sb.Append($"|{lf.FileRole}:{lf.RehashedSha256}");
             sb.Append($"|CELLS_CSV_SHA256:{cellsCsvSha256}");
-            sb.Append($"|CELL_COUNT:{storedMaterializedCellCount}");
-            sb.Append($"|WALL:{storedWallCount}|FLOOR:{storedFloorCount}|ACCESS:{storedAccessCount}|LOT:{storedLotCount}|RESIDUAL:{storedResidualCount}");
-            sb.Append($"|MATERIAL_KINDS:{storedMaterialKindCount}|LAYER_KINDS:{storedLayerKindCount}");
+            sb.Append($"|CELL_COUNT:{result.MaterializedCellCount}");
+            sb.Append($"|WALL:{result.BuildingWallCandidateCellCount}|FLOOR:{result.BuildingFloorCandidateCellCount}|ACCESS:{result.AccessEdgeCellCount}|LOT:{result.LotSpaceCellCount}|RESIDUAL:{result.ComponentResidualCellCount}");
+            sb.Append($"|MATERIAL_KINDS:{result.MaterialKindCount}|LAYER_KINDS:{result.LayerKindCount}");
             lockedReplayDigest = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(sb.ToString()))).ToLower();
         }
         result.LockedReplayDigest = lockedReplayDigest;
@@ -304,15 +382,34 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
         bool rolesInOrder = lockedFiles.Count == 8 &&
             Enumerable.Range(0, 8).All(i => lockedFiles[i].FileRole == s_expectedRoles[i]);
 
-        bool allStillMatch   = result.LockedFileHashMatchCount == 8 &&
-                               result.LockedFileHashMismatchCount == 0 &&
-                               result.LockedFileMissingCount == 0;
-        int  rehashedCount   = lockedFiles.Count(f => f.Exists && !string.IsNullOrEmpty(f.RehashedSha256));
+        bool allStillMatch = result.LockedFileHashMatchCount == 8 &&
+                             result.LockedFileHashMismatchCount == 0 &&
+                             result.LockedFileMissingCount == 0;
+        int  rehashedCount = lockedFiles.Count(f => f.Exists && !string.IsNullOrEmpty(f.RehashedSha256));
 
         bool storedForbiddenScanPassed = storedForbiddenArtifactScan.StartsWith("POST_AUDIT_FORBIDDEN_SCAN PASS", StringComparison.Ordinal);
-        var missingFromAudit = s_requiredForbiddenSteps.Where(r => !storedNextForbiddenSteps.Contains(r)).ToList();
+        var  missingFromAudit = s_requiredForbiddenSteps.Where(r => !storedNextForbiddenSteps.Contains(r)).ToList();
 
-        // 44 checks in exact required order
+        // CSV-vs-audit count match
+        bool csvCountsMatchAudit =
+            csvTotal    == storedMaterializedCellCount &&
+            csvWall     == storedWallCount             &&
+            csvFloor    == storedFloorCount            &&
+            csvAccess   == storedAccessCount           &&
+            csvLot      == storedLotCount              &&
+            csvResidual == storedResidualCount         &&
+            csvMaterialKinds == storedMaterialKindCount;
+
+        string csvMatchActual = csvCountsMatchAudit ? "COUNTS_MATCH" : BuildCountsMismatchDetail(
+            csvTotal, storedMaterializedCellCount,
+            csvWall, storedWallCount,
+            csvFloor, storedFloorCount,
+            csvAccess, storedAccessCount,
+            csvLot, storedLotCount,
+            csvResidual, storedResidualCount,
+            csvMaterialKinds, storedMaterialKindCount);
+
+        // 53 checks in exact required order
         var checks = new List<DeadMtlLockedReplayDryRunCheck>();
 
         // 1-3: Audit root / file / hash
@@ -400,28 +497,28 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
             "Materialized cells CSV loaded successfully",
             "LOADED", csvLoaded ? "LOADED" : "FAILED_TO_LOAD");
 
-        // 25-32: Count checks (inherited stored values from MAP-27H audit)
+        // 25-32: Count checks — CSV-derived canonical counts
         AddCheck(checks, "MATERIALIZED_CELL_COUNT_5340",
             "materialized_cell_count is 5340",
-            "5340", storedMaterializedCellCount.ToString());
+            "5340", csvTotal.ToString());
         AddCheck(checks, "WALL_COUNT_850",
             "building_wall_candidate_cell_count is 850",
-            "850", storedWallCount.ToString());
+            "850", csvWall.ToString());
         AddCheck(checks, "FLOOR_COUNT_2444",
             "building_floor_candidate_cell_count is 2444",
-            "2444", storedFloorCount.ToString());
+            "2444", csvFloor.ToString());
         AddCheck(checks, "ACCESS_COUNT_148",
             "access_edge_cell_count is 148",
-            "148", storedAccessCount.ToString());
+            "148", csvAccess.ToString());
         AddCheck(checks, "LOT_COUNT_1898",
             "lot_space_cell_count is 1898",
-            "1898", storedLotCount.ToString());
+            "1898", csvLot.ToString());
         AddCheck(checks, "COMPONENT_RESIDUAL_COUNT_0",
             "component_residual_cell_count is 0",
-            "0", storedResidualCount.ToString());
+            "0", csvResidual.ToString());
         AddCheck(checks, "MATERIAL_KIND_COUNT_5",
             "material_kind_count is 5",
-            "5", storedMaterialKindCount.ToString());
+            "5", csvMaterialKinds.ToString());
         AddCheck(checks, "LAYER_KIND_COUNT_5",
             "layer_kind_count is 5",
             "5", storedLayerKindCount.ToString());
@@ -458,6 +555,35 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
         MakeCheck(checks, "NO_RUNTIME_OUTPUTS_EMITTED",
             "No runtime outputs emitted — sandbox dry-run only");
 
+        // 45-53: CSV replay checks
+        AddCheck(checks, "MATERIALIZED_CELLS_CSV_PARSED",
+            "Materialized cells CSV parsed by header name",
+            "PARSED", csvParsed ? "PARSED" : "PARSE_FAILED");
+        AddCheck(checks, "CSV_MATERIALIZED_CELL_COUNT_5340",
+            "CSV materialized_cell_count is 5340",
+            "5340", csvTotal.ToString());
+        AddCheck(checks, "CSV_WALL_COUNT_850",
+            "CSV building_wall_candidate_cell_count is 850",
+            "850", csvWall.ToString());
+        AddCheck(checks, "CSV_FLOOR_COUNT_2444",
+            "CSV building_floor_candidate_cell_count is 2444",
+            "2444", csvFloor.ToString());
+        AddCheck(checks, "CSV_ACCESS_COUNT_148",
+            "CSV access_edge_cell_count is 148",
+            "148", csvAccess.ToString());
+        AddCheck(checks, "CSV_LOT_COUNT_1898",
+            "CSV lot_space_cell_count is 1898",
+            "1898", csvLot.ToString());
+        AddCheck(checks, "CSV_COMPONENT_RESIDUAL_COUNT_0",
+            "CSV component_residual_cell_count is 0",
+            "0", csvResidual.ToString());
+        AddCheck(checks, "CSV_MATERIAL_KIND_COUNT_5",
+            "CSV material_kind_count is 5",
+            "5", csvMaterialKinds.ToString());
+        AddCheck(checks, "CSV_COUNTS_MATCH_MAP27H_AUDIT",
+            "CSV-derived counts match MAP-27H audit stored counts",
+            "COUNTS_MATCH", csvMatchActual);
+
         result.Checks           = checks;
         result.CheckCount       = checks.Count;
         result.PassedCheckCount = checks.Count(c => c.CheckStatus == "PASS");
@@ -471,6 +597,26 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
             : invalidVerdict;
 
         return result;
+    }
+
+    private static string BuildCountsMismatchDetail(
+        int csvTotal, int auditTotal,
+        int csvWall, int auditWall,
+        int csvFloor, int auditFloor,
+        int csvAccess, int auditAccess,
+        int csvLot, int auditLot,
+        int csvResidual, int auditResidual,
+        int csvKinds, int auditKinds)
+    {
+        var mismatches = new List<string>();
+        if (csvTotal    != auditTotal)    mismatches.Add($"cell_count(csv={csvTotal},audit={auditTotal})");
+        if (csvWall     != auditWall)     mismatches.Add($"wall(csv={csvWall},audit={auditWall})");
+        if (csvFloor    != auditFloor)    mismatches.Add($"floor(csv={csvFloor},audit={auditFloor})");
+        if (csvAccess   != auditAccess)   mismatches.Add($"access(csv={csvAccess},audit={auditAccess})");
+        if (csvLot      != auditLot)      mismatches.Add($"lot(csv={csvLot},audit={auditLot})");
+        if (csvResidual != auditResidual) mismatches.Add($"residual(csv={csvResidual},audit={auditResidual})");
+        if (csvKinds    != auditKinds)    mismatches.Add($"material_kinds(csv={csvKinds},audit={auditKinds})");
+        return "COUNTS_MISMATCH:" + string.Join(",", mismatches);
     }
 
     public string RenderJson(
@@ -495,12 +641,12 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
         sb.AppendLine($"- **Hash Match Count:** {result.LockedFileHashMatchCount}");
         sb.AppendLine($"- **Hash Mismatch Count:** {result.LockedFileHashMismatchCount}");
         sb.AppendLine($"- **Missing Count:** {result.LockedFileMissingCount}");
-        sb.AppendLine($"- **Materialized Cell Count:** {result.MaterializedCellCount}");
-        sb.AppendLine($"- **Wall Count:** {result.BuildingWallCandidateCellCount}");
-        sb.AppendLine($"- **Floor Count:** {result.BuildingFloorCandidateCellCount}");
-        sb.AppendLine($"- **Access Count:** {result.AccessEdgeCellCount}");
-        sb.AppendLine($"- **Lot Count:** {result.LotSpaceCellCount}");
-        sb.AppendLine($"- **Residual Count:** {result.ComponentResidualCellCount}");
+        sb.AppendLine($"- **Materialized Cell Count (CSV):** {result.MaterializedCellCount}");
+        sb.AppendLine($"- **Wall Count (CSV):** {result.BuildingWallCandidateCellCount}");
+        sb.AppendLine($"- **Floor Count (CSV):** {result.BuildingFloorCandidateCellCount}");
+        sb.AppendLine($"- **Access Count (CSV):** {result.AccessEdgeCellCount}");
+        sb.AppendLine($"- **Lot Count (CSV):** {result.LotSpaceCellCount}");
+        sb.AppendLine($"- **Residual Count (CSV):** {result.ComponentResidualCellCount}");
         sb.AppendLine($"- **Locked Replay Digest:** `{result.LockedReplayDigest}`");
         sb.AppendLine($"- **Forbidden Artifact Scan:** {result.ForbiddenArtifactScan}");
         sb.AppendLine($"- **Claim Boundary:** {result.ClaimBoundaryAudit}");
@@ -555,12 +701,12 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
         sb.AppendLine($"Materialized                     : 0");
         sb.AppendLine($"Runtime Proof                    : 0");
         sb.AppendLine($"Public Playable                  : 0");
-        sb.AppendLine($"Materialized Cell Count          : {result.MaterializedCellCount}");
-        sb.AppendLine($"Wall Count                       : {result.BuildingWallCandidateCellCount}");
-        sb.AppendLine($"Floor Count                      : {result.BuildingFloorCandidateCellCount}");
-        sb.AppendLine($"Access Count                     : {result.AccessEdgeCellCount}");
-        sb.AppendLine($"Lot Count                        : {result.LotSpaceCellCount}");
-        sb.AppendLine($"Residual Count                   : {result.ComponentResidualCellCount}");
+        sb.AppendLine($"Materialized Cell Count (CSV)    : {result.MaterializedCellCount}");
+        sb.AppendLine($"Wall Count (CSV)                 : {result.BuildingWallCandidateCellCount}");
+        sb.AppendLine($"Floor Count (CSV)                : {result.BuildingFloorCandidateCellCount}");
+        sb.AppendLine($"Access Count (CSV)               : {result.AccessEdgeCellCount}");
+        sb.AppendLine($"Lot Count (CSV)                  : {result.LotSpaceCellCount}");
+        sb.AppendLine($"Residual Count (CSV)             : {result.ComponentResidualCellCount}");
         sb.AppendLine($"Material Kind Count              : {result.MaterialKindCount}");
         sb.AppendLine($"Layer Kind Count                 : {result.LayerKindCount}");
         sb.AppendLine($"Cells CSV SHA-256                : {result.MaterializedCellsCsvSha256}");
@@ -579,12 +725,12 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
         DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMaterializationReplayDryRunResult result)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("material_kind,cell_count");
-        sb.AppendLine($"WALL,{result.BuildingWallCandidateCellCount}");
-        sb.AppendLine($"FLOOR,{result.BuildingFloorCandidateCellCount}");
-        sb.AppendLine($"ACCESS,{result.AccessEdgeCellCount}");
-        sb.AppendLine($"LOT,{result.LotSpaceCellCount}");
-        sb.Append(    $"COMPONENT,{result.ComponentResidualCellCount}");
+        sb.AppendLine("material_kind,cell_count,source");
+        sb.AppendLine($"WALL,{result.BuildingWallCandidateCellCount},CSV");
+        sb.AppendLine($"FLOOR,{result.BuildingFloorCandidateCellCount},CSV");
+        sb.AppendLine($"ACCESS,{result.AccessEdgeCellCount},CSV");
+        sb.AppendLine($"LOT,{result.LotSpaceCellCount},CSV");
+        sb.Append(    $"COMPONENT,{result.ComponentResidualCellCount},CSV");
         return sb.ToString();
     }
 
@@ -593,11 +739,11 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
     {
         var manifest = new
         {
-            source_audit_path        = result.SourceAuditPath,
-            source_audit_sha256      = result.SourceAuditSha256,
-            source_replay_lock_id    = result.SourceReplayLockId,
-            locked_file_count        = result.LockedFileCount,
-            locked_files             = result.LockedFiles.Select(f => new
+            source_audit_path     = result.SourceAuditPath,
+            source_audit_sha256   = result.SourceAuditSha256,
+            source_replay_lock_id = result.SourceReplayLockId,
+            locked_file_count     = result.LockedFileCount,
+            locked_files          = result.LockedFiles.Select(f => new
             {
                 file_order         = f.FileOrder,
                 file_role          = f.FileRole,
@@ -616,13 +762,13 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
     {
         var digest = new
         {
-            locked_replay_digest           = result.LockedReplayDigest,
-            source_replay_lock_id          = result.SourceReplayLockId,
-            source_audit_sha256            = result.SourceAuditSha256,
-            materialized_cells_csv_sha256  = result.MaterializedCellsCsvSha256,
-            materialized_cell_count        = result.MaterializedCellCount,
-            dry_run_stage                  = result.DryRunStage,
-            dry_run_mode                   = result.DryRunMode,
+            locked_replay_digest          = result.LockedReplayDigest,
+            source_replay_lock_id         = result.SourceReplayLockId,
+            source_audit_sha256           = result.SourceAuditSha256,
+            materialized_cells_csv_sha256 = result.MaterializedCellsCsvSha256,
+            materialized_cell_count       = result.MaterializedCellCount,
+            dry_run_stage                 = result.DryRunStage,
+            dry_run_mode                  = result.DryRunMode,
         };
         return JsonSerializer.Serialize(digest, s_jsonOptions);
     }
@@ -632,17 +778,17 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
     {
         var guard = new
         {
-            forbidden_output_guard                = true,
-            sandbox_only                          = true,
-            sandbox_locked_replay_dry_run         = true,
-            writer_ready                          = false,
-            runtime_valid                         = false,
-            materialized                          = false,
-            pz_runtime_materialized               = false,
-            runtime_proof_claimed                 = false,
-            public_playable_packaging_claimed     = false,
-            forbidden_artifact_scan               = result.ForbiddenArtifactScan,
-            all_clean                             = result.ForbiddenArtifactScan.StartsWith("POST_DRY_RUN_FORBIDDEN_SCAN PASS", StringComparison.Ordinal),
+            forbidden_output_guard            = true,
+            sandbox_only                      = true,
+            sandbox_locked_replay_dry_run     = true,
+            writer_ready                      = false,
+            runtime_valid                     = false,
+            materialized                      = false,
+            pz_runtime_materialized           = false,
+            runtime_proof_claimed             = false,
+            public_playable_packaging_claimed = false,
+            forbidden_artifact_scan           = result.ForbiddenArtifactScan,
+            all_clean                         = result.ForbiddenArtifactScan.StartsWith("POST_DRY_RUN_FORBIDDEN_SCAN PASS", StringComparison.Ordinal),
         };
         return JsonSerializer.Serialize(guard, s_jsonOptions);
     }

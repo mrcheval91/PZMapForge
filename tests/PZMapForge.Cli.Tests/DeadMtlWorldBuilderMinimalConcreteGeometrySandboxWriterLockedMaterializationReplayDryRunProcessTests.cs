@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using PZMapForge.Core.WorldGen;
 using Xunit;
@@ -43,6 +44,16 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
     private string GetOutputJson() =>
         Path.Combine(GetOutputRoot(),
             "map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.json");
+
+    private static string MakeFixtureCsv()
+    {
+        var sb = new StringBuilder("cell_x,cell_y,material_kind,layer_kind\n");
+        for (int i = 0; i < 850;  i++) sb.Append($"{i},0,WALL,STRUCTURE\n");
+        for (int i = 0; i < 2444; i++) sb.Append($"{i},1,FLOOR,FLOOR\n");
+        for (int i = 0; i < 148;  i++) sb.Append($"{i},2,ACCESS,EDGE\n");
+        for (int i = 0; i < 1898; i++) sb.Append($"{i},3,LOT,SPACE\n");
+        return sb.ToString();
+    }
 
     private void WriteMap27fFiles()
     {
@@ -106,7 +117,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
             "{\"format\":\"MAP-27C\",\"is_valid\":true,\"sandbox_only\":true,\"materialized_cell_count\":5340}");
         File.WriteAllText(Path.Combine(root,
             "map_00.sandbox_writer_tile_materialized_cells.csv"),
-            "cell_x,cell_y,material_kind\n0,0,WALL\n");
+            MakeFixtureCsv());
         File.WriteAllText(Path.Combine(root,
             "map_00.sandbox_writer_tile_material_palette.json"),
             "{\"materials\":[\"WALL\",\"FLOOR\",\"ACCESS\",\"LOT\",\"RESIDUAL\"]}");
@@ -162,10 +173,10 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
             "--output-md",    Path.Combine(outputRoot, "map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.md"),
             "--output-csv",   Path.Combine(outputRoot, "map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.csv"),
             "--summary",      Path.Combine(outputRoot, "map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.summary.txt"),
-            "--output-material-counts-csv",   Path.Combine(outputRoot, "map_00.locked_replay_dry_run_material_counts.csv"),
-            "--output-source-manifest-json",  Path.Combine(outputRoot, "map_00.locked_replay_dry_run_source_manifest.json"),
-            "--output-replay-digest-json",    Path.Combine(outputRoot, "map_00.locked_replay_dry_run_replay_digest.json"),
-            "--output-forbidden-guard-json",  Path.Combine(outputRoot, "map_00.locked_replay_dry_run_forbidden_output_guard.json"),
+            "--output-material-counts-csv",   Path.Combine(outputRoot, "map_00.sandbox_writer_locked_replay_material_counts.csv"),
+            "--output-source-manifest-json",  Path.Combine(outputRoot, "map_00.sandbox_writer_locked_replay_source_manifest.json"),
+            "--output-replay-digest-json",    Path.Combine(outputRoot, "map_00.sandbox_writer_locked_replay_digest.json"),
+            "--output-forbidden-guard-json",  Path.Combine(outputRoot, "map_00.sandbox_writer_locked_replay_forbidden_output_guard.json"),
         };
     }
 
@@ -237,10 +248,22 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
         Assert.True(File.Exists(Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.md")));
         Assert.True(File.Exists(Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.csv")));
         Assert.True(File.Exists(Path.Combine(root, "map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.summary.txt")));
-        Assert.True(File.Exists(Path.Combine(root, "map_00.locked_replay_dry_run_material_counts.csv")));
-        Assert.True(File.Exists(Path.Combine(root, "map_00.locked_replay_dry_run_source_manifest.json")));
-        Assert.True(File.Exists(Path.Combine(root, "map_00.locked_replay_dry_run_replay_digest.json")));
-        Assert.True(File.Exists(Path.Combine(root, "map_00.locked_replay_dry_run_forbidden_output_guard.json")));
+        Assert.True(File.Exists(Path.Combine(root, "map_00.sandbox_writer_locked_replay_material_counts.csv")));
+        Assert.True(File.Exists(Path.Combine(root, "map_00.sandbox_writer_locked_replay_source_manifest.json")));
+        Assert.True(File.Exists(Path.Combine(root, "map_00.sandbox_writer_locked_replay_digest.json")));
+        Assert.True(File.Exists(Path.Combine(root, "map_00.sandbox_writer_locked_replay_forbidden_output_guard.json")));
+    }
+
+    [Fact]
+    public void Writes8Outputs_OldAuxFilenamesAbsent()
+    {
+        WriteMap27hOutput();
+        Run(BuildArgs());
+        string root = GetOutputRoot();
+        Assert.False(File.Exists(Path.Combine(root, "map_00.locked_replay_dry_run_material_counts.csv")));
+        Assert.False(File.Exists(Path.Combine(root, "map_00.locked_replay_dry_run_source_manifest.json")));
+        Assert.False(File.Exists(Path.Combine(root, "map_00.locked_replay_dry_run_replay_digest.json")));
+        Assert.False(File.Exists(Path.Combine(root, "map_00.locked_replay_dry_run_forbidden_output_guard.json")));
     }
 
     [Fact]
@@ -277,14 +300,14 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
     }
 
     [Fact]
-    public void CheckCount44AllPass()
+    public void CheckCount53AllPass()
     {
         WriteMap27hOutput();
         Run(BuildArgs());
         var json = File.ReadAllText(GetOutputJson());
         using var doc = JsonDocument.Parse(json);
-        Assert.Equal(44, doc.RootElement.GetProperty("check_count").GetInt32());
-        Assert.Equal(44, doc.RootElement.GetProperty("passed_check_count").GetInt32());
+        Assert.Equal(53, doc.RootElement.GetProperty("check_count").GetInt32());
+        Assert.Equal(53, doc.RootElement.GetProperty("passed_check_count").GetInt32());
         Assert.Equal(0,  doc.RootElement.GetProperty("failed_check_count").GetInt32());
     }
 
@@ -296,6 +319,20 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
         var json = File.ReadAllText(GetOutputJson());
         using var doc = JsonDocument.Parse(json);
         Assert.Equal(5340, doc.RootElement.GetProperty("materialized_cell_count").GetInt32());
+    }
+
+    [Fact]
+    public void CsvCountsMatchAuditCheckPresent()
+    {
+        WriteMap27hOutput();
+        Run(BuildArgs());
+        var json = File.ReadAllText(GetOutputJson());
+        using var doc = JsonDocument.Parse(json);
+        var checks = doc.RootElement.GetProperty("checks").EnumerateArray()
+            .Where(c => c.GetProperty("check_id").GetString() == "CSV_COUNTS_MATCH_MAP27H_AUDIT")
+            .ToList();
+        Assert.Single(checks);
+        Assert.Equal("PASS", checks[0].GetProperty("check_status").GetString());
     }
 
     [Fact]
@@ -394,6 +431,26 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
     }
 
     [Fact]
+    public void HelperScript_ContainsCanonicalAuxFilenames()
+    {
+        var content = File.ReadAllText(HelperScript);
+        Assert.Contains("sandbox_writer_locked_replay_material_counts.csv",       content);
+        Assert.Contains("sandbox_writer_locked_replay_source_manifest.json",      content);
+        Assert.Contains("sandbox_writer_locked_replay_digest.json",               content);
+        Assert.Contains("sandbox_writer_locked_replay_forbidden_output_guard.json", content);
+    }
+
+    [Fact]
+    public void HelperScript_DoesNotContainOldAuxFilenames()
+    {
+        var content = File.ReadAllText(HelperScript);
+        Assert.DoesNotContain("locked_replay_dry_run_material_counts.csv",        content);
+        Assert.DoesNotContain("locked_replay_dry_run_source_manifest.json",       content);
+        Assert.DoesNotContain("locked_replay_dry_run_replay_digest.json",         content);
+        Assert.DoesNotContain("locked_replay_dry_run_forbidden_output_guard.json", content);
+    }
+
+    [Fact]
     public void PointsAtCanonicalPaths()
     {
         var content = File.ReadAllText(HelperScript);
@@ -412,13 +469,16 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
             .EnumerateArray()
             .Select(c => c.GetProperty("check_id").GetString() ?? "")
             .ToList();
-        Assert.Contains("MAP27H_AUDIT_ROOT_EXISTS",           ids);
-        Assert.Contains("MAP27H_AUDIT_STATUS_VERIFIED",       ids);
-        Assert.Contains("LOCKED_FILE_ROLES_EXACT_ORDER",      ids);
+        Assert.Contains("MAP27H_AUDIT_ROOT_EXISTS",                   ids);
+        Assert.Contains("MAP27H_AUDIT_STATUS_VERIFIED",               ids);
+        Assert.Contains("LOCKED_FILE_ROLES_EXACT_ORDER",              ids);
         Assert.Contains("LOCKED_FILE_3_MATERIALIZED_CELLS_CSV_EXISTS", ids);
-        Assert.Contains("MATERIALIZED_CELL_COUNT_5340",       ids);
-        Assert.Contains("LOCKED_REPLAY_DIGEST_COMPUTED",      ids);
-        Assert.Contains("POST_DRY_RUN_FORBIDDEN_SCAN_PASS",   ids);
+        Assert.Contains("MATERIALIZED_CELL_COUNT_5340",               ids);
+        Assert.Contains("LOCKED_REPLAY_DIGEST_COMPUTED",              ids);
+        Assert.Contains("POST_DRY_RUN_FORBIDDEN_SCAN_PASS",           ids);
         Assert.Contains("MAP27H_FORBIDDEN_STEPS_REQUIRED_11_PRESENT", ids);
+        Assert.Contains("MATERIALIZED_CELLS_CSV_PARSED",              ids);
+        Assert.Contains("CSV_MATERIALIZED_CELL_COUNT_5340",           ids);
+        Assert.Contains("CSV_COUNTS_MATCH_MAP27H_AUDIT",              ids);
     }
 }

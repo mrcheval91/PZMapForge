@@ -1620,12 +1620,12 @@ Outputs (8 files):
 - `map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.md`
 - `map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.csv`
 - `map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.summary.txt`
-- `map_00.locked_replay_dry_run_material_counts.csv`
-- `map_00.locked_replay_dry_run_source_manifest.json`
-- `map_00.locked_replay_dry_run_replay_digest.json`
-- `map_00.locked_replay_dry_run_forbidden_output_guard.json`
+- `map_00.sandbox_writer_locked_replay_material_counts.csv`
+- `map_00.sandbox_writer_locked_replay_source_manifest.json`
+- `map_00.sandbox_writer_locked_replay_digest.json`
+- `map_00.sandbox_writer_locked_replay_forbidden_output_guard.json`
 
-44 checks run. Verdict field: `MAP27I_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_LOCKED_MATERIALIZATION_REPLAY_DRY_RUN_COMPLETE`.
+53 checks run. Verdict field: `MAP27I_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_LOCKED_MATERIALIZATION_REPLAY_DRY_RUN_COMPLETE`.
 
 Claim boundary: `sandbox_only=true`, `sandbox_locked_replay_dry_run=true`, `writer_ready=false`,
 `runtime_valid=false`, `materialized=false`, `runtime_proof_claimed=false`, `public_playable_packaging_claimed=false`.

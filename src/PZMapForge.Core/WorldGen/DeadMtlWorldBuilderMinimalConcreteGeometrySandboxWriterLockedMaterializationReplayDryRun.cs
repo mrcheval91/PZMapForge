@@ -34,6 +34,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
     [JsonPropertyName("locked_file_hash_mismatch_count")] public int LockedFileHashMismatchCount { get; set; }
     [JsonPropertyName("locked_file_missing_count")] public int LockedFileMissingCount { get; set; }
 
+    // Canonical counts — CSV-derived
     [JsonPropertyName("materialized_cell_count")] public int MaterializedCellCount { get; set; }
     [JsonPropertyName("building_wall_candidate_cell_count")] public int BuildingWallCandidateCellCount { get; set; }
     [JsonPropertyName("building_floor_candidate_cell_count")] public int BuildingFloorCandidateCellCount { get; set; }
@@ -42,6 +43,24 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
     [JsonPropertyName("component_residual_cell_count")] public int ComponentResidualCellCount { get; set; }
     [JsonPropertyName("material_kind_count")] public int MaterialKindCount { get; set; }
     [JsonPropertyName("layer_kind_count")] public int LayerKindCount { get; set; }
+
+    // CSV-prefixed counts
+    [JsonPropertyName("csv_materialized_cell_count")] public int CsvMaterializedCellCount { get; set; }
+    [JsonPropertyName("csv_building_wall_candidate_cell_count")] public int CsvBuildingWallCandidateCellCount { get; set; }
+    [JsonPropertyName("csv_building_floor_candidate_cell_count")] public int CsvBuildingFloorCandidateCellCount { get; set; }
+    [JsonPropertyName("csv_access_edge_cell_count")] public int CsvAccessEdgeCellCount { get; set; }
+    [JsonPropertyName("csv_lot_space_cell_count")] public int CsvLotSpaceCellCount { get; set; }
+    [JsonPropertyName("csv_component_residual_cell_count")] public int CsvComponentResidualCellCount { get; set; }
+    [JsonPropertyName("csv_material_kind_count")] public int CsvMaterialKindCount { get; set; }
+
+    // Audit-prefixed counts (from MAP-27H stored values)
+    [JsonPropertyName("audit_materialized_cell_count")] public int AuditMaterializedCellCount { get; set; }
+    [JsonPropertyName("audit_building_wall_candidate_cell_count")] public int AuditBuildingWallCandidateCellCount { get; set; }
+    [JsonPropertyName("audit_building_floor_candidate_cell_count")] public int AuditBuildingFloorCandidateCellCount { get; set; }
+    [JsonPropertyName("audit_access_edge_cell_count")] public int AuditAccessEdgeCellCount { get; set; }
+    [JsonPropertyName("audit_lot_space_cell_count")] public int AuditLotSpaceCellCount { get; set; }
+    [JsonPropertyName("audit_component_residual_cell_count")] public int AuditComponentResidualCellCount { get; set; }
+    [JsonPropertyName("audit_material_kind_count")] public int AuditMaterialKindCount { get; set; }
 
     [JsonPropertyName("materialized_cells_csv_sha256")] public string MaterializedCellsCsvSha256 { get; set; } = string.Empty;
     [JsonPropertyName("locked_replay_digest")] public string LockedReplayDigest { get; set; } = string.Empty;

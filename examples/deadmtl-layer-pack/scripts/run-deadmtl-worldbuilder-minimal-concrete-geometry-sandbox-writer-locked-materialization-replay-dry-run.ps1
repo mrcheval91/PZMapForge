@@ -59,10 +59,10 @@ $OutputJson    = Join-Path $OutputRoot ($BaseName + ".json")
 $OutputMd      = Join-Path $OutputRoot ($BaseName + ".md")
 $OutputCsv     = Join-Path $OutputRoot ($BaseName + ".csv")
 $OutputSummary = Join-Path $OutputRoot ($BaseName + ".summary.txt")
-$MaterialCsv   = Join-Path $OutputRoot "map_00.locked_replay_dry_run_material_counts.csv"
-$SourceManJson = Join-Path $OutputRoot "map_00.locked_replay_dry_run_source_manifest.json"
-$DigestJson    = Join-Path $OutputRoot "map_00.locked_replay_dry_run_replay_digest.json"
-$GuardJson     = Join-Path $OutputRoot "map_00.locked_replay_dry_run_forbidden_output_guard.json"
+$MaterialCsv   = Join-Path $OutputRoot "map_00.sandbox_writer_locked_replay_material_counts.csv"
+$SourceManJson = Join-Path $OutputRoot "map_00.sandbox_writer_locked_replay_source_manifest.json"
+$DigestJson    = Join-Path $OutputRoot "map_00.sandbox_writer_locked_replay_digest.json"
+$GuardJson     = Join-Path $OutputRoot "map_00.sandbox_writer_locked_replay_forbidden_output_guard.json"
 
 Write-Host "MAP-27I Sandbox Writer Locked Materialization Replay Dry Run"
 Write-Host "Audit Root : $AuditRoot"

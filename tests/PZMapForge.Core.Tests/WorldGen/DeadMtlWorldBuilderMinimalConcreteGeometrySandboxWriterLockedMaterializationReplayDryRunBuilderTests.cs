@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using PZMapForge.Core.WorldGen;
 
@@ -31,6 +32,16 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
     public void Dispose()
     {
         try { Directory.Delete(_tempDir, recursive: true); } catch { }
+    }
+
+    private static string MakeFixtureCsv()
+    {
+        var sb = new StringBuilder("cell_x,cell_y,material_kind,layer_kind\n");
+        for (int i = 0; i < 850;  i++) sb.Append($"{i},0,WALL,STRUCTURE\n");
+        for (int i = 0; i < 2444; i++) sb.Append($"{i},1,FLOOR,FLOOR\n");
+        for (int i = 0; i < 148;  i++) sb.Append($"{i},2,ACCESS,EDGE\n");
+        for (int i = 0; i < 1898; i++) sb.Append($"{i},3,LOT,SPACE\n");
+        return sb.ToString();
     }
 
     private void WriteMap27fFiles()
@@ -86,7 +97,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
             "MAP-27F summary\n");
     }
 
-    private void WriteMap27cFiles()
+    private void WriteMap27cFiles(string? csvContent = null)
     {
         var json = new
         {
@@ -102,7 +113,7 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
             JsonSerializer.Serialize(json, opts));
         File.WriteAllText(
             Path.Combine(_map27cDir, "map_00.sandbox_writer_tile_materialized_cells.csv"),
-            "cell_x,cell_y,material_kind,layer_kind\n0,0,WALL,STRUCTURE\n");
+            csvContent ?? MakeFixtureCsv());
         File.WriteAllText(
             Path.Combine(_map27cDir, "map_00.sandbox_writer_tile_material_palette.json"),
             "{\"materials\":[\"WALL\",\"FLOOR\",\"ACCESS\",\"LOT\",\"RESIDUAL\"]}");
@@ -120,10 +131,10 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
             "{\"forbidden_output_guard\":true,\"all_clean\":true}");
     }
 
-    private void WriteMap27hOutput()
+    private void WriteMap27hOutput(string? csvContent = null)
     {
         WriteMap27fFiles();
-        WriteMap27cFiles();
+        WriteMap27cFiles(csvContent);
         var lockBuilder = new DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationReplayLockBuilder();
         var lockResult  = lockBuilder.Build(_map27fDir, _map27cDir, _map27gDir);
         File.WriteAllText(
@@ -137,9 +148,10 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
             auditBuilder.RenderJson(auditResult));
     }
 
-    private DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMaterializationReplayDryRunResult BuildResult()
+    private DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMaterializationReplayDryRunResult BuildResult(
+        string? csvContent = null)
     {
-        WriteMap27hOutput();
+        WriteMap27hOutput(csvContent);
         var builder = new DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMaterializationReplayDryRunBuilder();
         return builder.Build(_map27hDir, _outputDir);
     }
@@ -172,17 +184,17 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
     }
 
     [Fact]
-    public void Build_WithValidInputs_CheckCount44()
+    public void Build_WithValidInputs_CheckCount53()
     {
         var r = BuildResult();
-        Assert.Equal(44, r.CheckCount);
+        Assert.Equal(53, r.CheckCount);
     }
 
     [Fact]
     public void Build_WithValidInputs_AllChecksPass()
     {
         var r = BuildResult();
-        Assert.Equal(44, r.PassedCheckCount);
+        Assert.Equal(53, r.PassedCheckCount);
         Assert.Equal(0,  r.FailedCheckCount);
     }
 
@@ -466,6 +478,89 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
     }
 
     // -----------------------------------------------------------------------
+    // CSV replay field tests
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Build_WithValidInputs_CsvMaterializedCellCount5340()
+    {
+        var r = BuildResult();
+        Assert.Equal(5340, r.CsvMaterializedCellCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_CsvWallCount850()
+    {
+        var r = BuildResult();
+        Assert.Equal(850, r.CsvBuildingWallCandidateCellCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_CsvFloorCount2444()
+    {
+        var r = BuildResult();
+        Assert.Equal(2444, r.CsvBuildingFloorCandidateCellCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_CsvAccessCount148()
+    {
+        var r = BuildResult();
+        Assert.Equal(148, r.CsvAccessEdgeCellCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_CsvLotCount1898()
+    {
+        var r = BuildResult();
+        Assert.Equal(1898, r.CsvLotSpaceCellCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_CsvResidualCount0()
+    {
+        var r = BuildResult();
+        Assert.Equal(0, r.CsvComponentResidualCellCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_CsvMaterialKindCount5()
+    {
+        var r = BuildResult();
+        Assert.Equal(5, r.CsvMaterialKindCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_AuditFieldsPopulated()
+    {
+        var r = BuildResult();
+        Assert.Equal(5340, r.AuditMaterializedCellCount);
+        Assert.Equal(850,  r.AuditBuildingWallCandidateCellCount);
+        Assert.Equal(2444, r.AuditBuildingFloorCandidateCellCount);
+        Assert.Equal(148,  r.AuditAccessEdgeCellCount);
+        Assert.Equal(1898, r.AuditLotSpaceCellCount);
+        Assert.Equal(0,    r.AuditComponentResidualCellCount);
+        Assert.Equal(5,    r.AuditMaterialKindCount);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_CsvCountsMatchAuditCheckPasses()
+    {
+        var r = BuildResult();
+        var check = r.Checks.Single(c => c.CheckId == "CSV_COUNTS_MATCH_MAP27H_AUDIT");
+        Assert.Equal("PASS", check.CheckStatus);
+        Assert.Equal("COUNTS_MATCH", check.Actual);
+    }
+
+    [Fact]
+    public void Build_WithValidInputs_MaterializedCellsCsvParsedCheckPasses()
+    {
+        var r = BuildResult();
+        var check = r.Checks.Single(c => c.CheckId == "MATERIALIZED_CELLS_CSV_PARSED");
+        Assert.Equal("PASS", check.CheckStatus);
+    }
+
+    // -----------------------------------------------------------------------
     // Failure path tests
     // -----------------------------------------------------------------------
 
@@ -504,6 +599,47 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
         Assert.True(r.LockedFileHashMismatchCount > 0);
         Assert.False(r.IsValid);
         Assert.Contains("INVALID", r.Verdict);
+    }
+
+    [Fact]
+    public void Build_WithTamperedCsvRowCount_IsInvalid()
+    {
+        // CSV with only 100 WALL rows — totals will not match expected 5340 counts
+        var sb = new StringBuilder("cell_x,cell_y,material_kind,layer_kind\n");
+        for (int i = 0; i < 100; i++) sb.Append($"{i},0,WALL,STRUCTURE\n");
+        var r = BuildResult(sb.ToString());
+
+        Assert.False(r.IsValid);
+        Assert.Contains("INVALID", r.Verdict);
+        var check = r.Checks.Single(c => c.CheckId == "CSV_MATERIALIZED_CELL_COUNT_5340");
+        Assert.Equal("FAIL", check.CheckStatus);
+    }
+
+    [Fact]
+    public void Build_WithTamperedCsvBucket_IsInvalid()
+    {
+        // CSV with correct total but all rows as WALL — floor/access/lot counts wrong
+        var sb = new StringBuilder("cell_x,cell_y,material_kind,layer_kind\n");
+        for (int i = 0; i < 5340; i++) sb.Append($"{i},0,WALL,STRUCTURE\n");
+        var r = BuildResult(sb.ToString());
+
+        Assert.False(r.IsValid);
+        Assert.Contains("INVALID", r.Verdict);
+        var check = r.Checks.Single(c => c.CheckId == "CSV_FLOOR_COUNT_2444");
+        Assert.Equal("FAIL", check.CheckStatus);
+    }
+
+    [Fact]
+    public void Build_WithMissingCsvMaterialColumn_IsInvalid()
+    {
+        // CSV has no material column — parser cannot find it
+        const string csv = "cell_x,cell_y,layer_kind\n0,0,STRUCTURE\n1,0,STRUCTURE\n";
+        var r = BuildResult(csv);
+
+        Assert.False(r.IsValid);
+        Assert.Contains("INVALID", r.Verdict);
+        var check = r.Checks.Single(c => c.CheckId == "MATERIALIZED_CELLS_CSV_PARSED");
+        Assert.Equal("FAIL", check.CheckStatus);
     }
 
     [Fact]
