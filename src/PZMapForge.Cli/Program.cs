@@ -143,6 +143,10 @@ if (args.Length < 1)
     Console.Error.WriteLine("                                                                                                    --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
     Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-locked-replay-audit  --replay-lock-root <MAP-27G dir>");
     Console.Error.WriteLine("                                                                                                                 --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
+    Console.Error.WriteLine("  deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-materialization-replay-dry-run  --audit-root <MAP-27H dir>");
+    Console.Error.WriteLine("                                                                                                              --output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt>");
+    Console.Error.WriteLine("                                                                                                              --output-material-counts-csv <csv> --output-source-manifest-json <json>");
+    Console.Error.WriteLine("                                                                                                              --output-replay-digest-json <json> --output-forbidden-guard-json <json>");
     return 1;
 }
 
@@ -216,6 +220,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-acceptance-gate" => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationAcceptanceGateCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-replay-lock"    => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationReplayLockCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-locked-replay-audit" => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationLockedReplayAuditCommand(args[1..]),
+    "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-materialization-replay-dry-run"   => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMaterializationReplayDryRunCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -8752,6 +8757,97 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMater
     File.WriteAllText(outputMd,    builder.RenderMarkdown(result));
     File.WriteAllText(outputCsv,   builder.RenderCsv(result));
     File.WriteAllText(summaryPath, builder.RenderSummary(result));
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return 0;
+}
+
+static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMaterializationReplayDryRunCommand(string[] args)
+{
+    var auditRoot          = string.Empty;
+    var outputRoot         = string.Empty;
+    var outputJson         = string.Empty;
+    var outputMd           = string.Empty;
+    var outputCsv          = string.Empty;
+    var summaryPath        = string.Empty;
+    var materialCountsCsv  = string.Empty;
+    var sourceManifestJson = string.Empty;
+    var replayDigestJson   = string.Empty;
+    var forbiddenGuardJson = string.Empty;
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--audit-root":                  auditRoot          = args[i + 1]; break;
+            case "--output-root":                 outputRoot         = args[i + 1]; break;
+            case "--output-json":                 outputJson         = args[i + 1]; break;
+            case "--output-md":                   outputMd           = args[i + 1]; break;
+            case "--output-csv":                  outputCsv          = args[i + 1]; break;
+            case "--summary":                     summaryPath        = args[i + 1]; break;
+            case "--output-material-counts-csv":  materialCountsCsv  = args[i + 1]; break;
+            case "--output-source-manifest-json": sourceManifestJson = args[i + 1]; break;
+            case "--output-replay-digest-json":   replayDigestJson   = args[i + 1]; break;
+            case "--output-forbidden-guard-json": forbiddenGuardJson = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(auditRoot)          || string.IsNullOrEmpty(outputRoot)      ||
+        string.IsNullOrEmpty(outputJson)          || string.IsNullOrEmpty(outputMd)        ||
+        string.IsNullOrEmpty(outputCsv)           || string.IsNullOrEmpty(summaryPath)     ||
+        string.IsNullOrEmpty(materialCountsCsv)   || string.IsNullOrEmpty(sourceManifestJson) ||
+        string.IsNullOrEmpty(replayDigestJson)    || string.IsNullOrEmpty(forbiddenGuardJson))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-materialization-replay-dry-run " +
+            "--audit-root <MAP-27H dir> " +
+            "--output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt> " +
+            "--output-material-counts-csv <csv> --output-source-manifest-json <json> " +
+            "--output-replay-digest-json <json> --output-forbidden-guard-json <json>");
+        return 1;
+    }
+
+    foreach (var (flag, value) in new[]
+    {
+        ("--output-root",                 outputRoot),
+        ("--output-json",                 outputJson),
+        ("--output-md",                   outputMd),
+        ("--output-csv",                  outputCsv),
+        ("--summary",                     summaryPath),
+        ("--output-material-counts-csv",  materialCountsCsv),
+        ("--output-source-manifest-json", sourceManifestJson),
+        ("--output-replay-digest-json",   replayDigestJson),
+        ("--output-forbidden-guard-json", forbiddenGuardJson),
+    })
+    {
+        if (!value.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"ERROR: {flag} must contain .local to prevent accidental output outside sandbox: {value}");
+            return 1;
+        }
+    }
+
+    var builder = new PZMapForge.Core.WorldGen
+        .DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMaterializationReplayDryRunBuilder();
+    var result = builder.Build(auditRoot, outputRoot);
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputJson)!);
+    File.WriteAllText(outputJson,         builder.RenderJson(result));
+    File.WriteAllText(outputMd,           builder.RenderMarkdown(result));
+    File.WriteAllText(outputCsv,          builder.RenderCsv(result));
+    File.WriteAllText(summaryPath,        builder.RenderSummary(result));
+    File.WriteAllText(materialCountsCsv,  builder.RenderMaterialCountsCsv(result));
+    File.WriteAllText(sourceManifestJson, builder.RenderSourceManifestJson(result));
+    File.WriteAllText(replayDigestJson,   builder.RenderReplayDigestJson(result));
+    File.WriteAllText(forbiddenGuardJson, builder.RenderForbiddenOutputGuardJson(result));
 
     Console.WriteLine(builder.RenderSummary(result));
 

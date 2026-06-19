@@ -1602,6 +1602,41 @@ for check list, audit procedure, and claim boundary.
 
 ---
 
+## MAP-27I WorldBuilder Minimal Concrete Geometry Sandbox Writer Locked Materialization Replay Dry Run
+
+MAP-27I verifies the 8 MAP-27H locked files remain intact by re-hashing each one, loads the
+materialized cells CSV, computes a deterministic locked replay digest, and emits 8 output files.
+
+**SANDBOX ONLY.** `writer_ready=false`, `runtime_valid=false`, `materialized=false`.
+No lotpack, lotheader, runtime Lua, or Project Zomboid installation target.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run-deadmtl-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-materialization-replay-dry-run.ps1
+```
+
+Outputs (8 files):
+
+- `map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.json`
+- `map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.md`
+- `map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.csv`
+- `map_00.minimal_concrete_geometry_sandbox_writer_locked_materialization_replay_dry_run.summary.txt`
+- `map_00.locked_replay_dry_run_material_counts.csv`
+- `map_00.locked_replay_dry_run_source_manifest.json`
+- `map_00.locked_replay_dry_run_replay_digest.json`
+- `map_00.locked_replay_dry_run_forbidden_output_guard.json`
+
+44 checks run. Verdict field: `MAP27I_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_LOCKED_MATERIALIZATION_REPLAY_DRY_RUN_COMPLETE`.
+
+Claim boundary: `sandbox_only=true`, `sandbox_locked_replay_dry_run=true`, `writer_ready=false`,
+`runtime_valid=false`, `materialized=false`, `runtime_proof_claimed=false`, `public_playable_packaging_claimed=false`.
+
+Next allowed experiment: `MAP-27J_SANDBOX_WRITER_LOCKED_REPLAY_BACKEND_PLAN` (SANDBOX_ONLY_NOT_RUNTIME).
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_LOCKED_MATERIALIZATION_REPLAY_DRY_RUN.md`
+for check list, digest formula, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
