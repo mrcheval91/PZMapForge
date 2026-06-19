@@ -163,35 +163,50 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilderTe
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void Build_NSSouthFootprints_Width11()
+    public void Build_NSFootprints_Width13()
     {
         var r = RunBuild();
         Assert.All(r.BuildingFootprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH"),
-            f => Assert.Equal(11, f.Width));
+            f => Assert.Equal(13, f.Width));
     }
 
     [Fact]
-    public void Build_NSFootprints_Depth16()
+    public void Build_NSFootprints_Depth27()
     {
         var r = RunBuild();
         Assert.All(r.BuildingFootprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH"),
-            f => Assert.Equal(16, f.Height));
+            f => Assert.Equal(27, f.Height));
     }
 
     [Fact]
-    public void Build_EastFootprints_Width6()
+    public void Build_EastFootprints_Width9()
     {
         var r = RunBuild();
         Assert.All(r.BuildingFootprints.Where(f => f.FrontageDirection == "EAST"),
-            f => Assert.Equal(6, f.Width));
+            f => Assert.Equal(9, f.Width));
     }
 
     [Fact]
-    public void Build_EastFootprints_Height13()
+    public void Build_EastFootprints_Height15()
     {
         var r = RunBuild();
         Assert.All(r.BuildingFootprints.Where(f => f.FrontageDirection == "EAST"),
-            f => Assert.Equal(13, f.Height));
+            f => Assert.Equal(15, f.Height));
+    }
+
+    [Fact]
+    public void Build_EveryFootprintMatchesParentParcelBounds()
+    {
+        var r        = RunBuild();
+        var topology = MakeTopologyBuilder().Build(_tempDir);
+        Assert.All(r.BuildingFootprints, f =>
+        {
+            var parcel = topology.ResidentialParcels.First(p => p.ParcelId == f.ParentParcelId);
+            Assert.Equal(parcel.X1, f.X1);
+            Assert.Equal(parcel.Y1, f.Y1);
+            Assert.Equal(parcel.X2, f.X2);
+            Assert.Equal(parcel.Y2, f.Y2);
+        });
     }
 
     // -----------------------------------------------------------------------

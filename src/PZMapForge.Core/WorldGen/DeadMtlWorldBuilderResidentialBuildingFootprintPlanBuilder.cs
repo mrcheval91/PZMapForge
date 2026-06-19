@@ -141,68 +141,56 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
 
             if (parcel.FrontageDirection == "NORTH")
             {
-                int fx1 = parcel.X1 + 1;
-                int fx2 = parcel.X2 - 1;
-                int fy1 = parcel.Y1 + 3;
-                int fy2 = fy1 + 15;
                 fp = new DeadMtlResidentialBuildingFootprint
                 {
                     FootprintId       = parcel.ParcelId.Replace("MAP28A_", "MAP28B_") + "_FOOTPRINT",
                     ParentParcelId    = parcel.ParcelId,
                     FrontageDirection = "NORTH",
                     BuildingKind      = "ROWHOUSE_MAIN_VOLUME",
-                    X1 = fx1, Y1 = fy1, X2 = fx2, Y2 = fy2,
-                    Width            = fx2 - fx1 + 1,
-                    Height           = fy2 - fy1 + 1,
-                    TileCount        = (fx2 - fx1 + 1) * (fy2 - fy1 + 1),
-                    SetbackFront     = fy1 - parcel.Y1,
-                    SetbackRear      = parcel.Y2 - fy2,
-                    SetbackSideLeft  = fx1 - parcel.X1,
-                    SetbackSideRight = parcel.X2 - fx2,
+                    X1 = parcel.X1, Y1 = parcel.Y1, X2 = parcel.X2, Y2 = parcel.Y2,
+                    Width            = parcel.Width,
+                    Height           = parcel.Height,
+                    TileCount        = parcel.TileCount,
+                    SetbackFront     = 0,
+                    SetbackRear      = 0,
+                    SetbackSideLeft  = 0,
+                    SetbackSideRight = 0,
                 };
             }
             else if (parcel.FrontageDirection == "SOUTH")
             {
-                int fx1 = parcel.X1 + 1;
-                int fx2 = parcel.X2 - 1;
-                int fy2 = parcel.Y2 - 3;
-                int fy1 = fy2 - 15;
                 fp = new DeadMtlResidentialBuildingFootprint
                 {
                     FootprintId       = parcel.ParcelId.Replace("MAP28A_", "MAP28B_") + "_FOOTPRINT",
                     ParentParcelId    = parcel.ParcelId,
                     FrontageDirection = "SOUTH",
                     BuildingKind      = "ROWHOUSE_MAIN_VOLUME",
-                    X1 = fx1, Y1 = fy1, X2 = fx2, Y2 = fy2,
-                    Width            = fx2 - fx1 + 1,
-                    Height           = fy2 - fy1 + 1,
-                    TileCount        = (fx2 - fx1 + 1) * (fy2 - fy1 + 1),
-                    SetbackFront     = parcel.Y2 - fy2,
-                    SetbackRear      = fy1 - parcel.Y1,
-                    SetbackSideLeft  = fx1 - parcel.X1,
-                    SetbackSideRight = parcel.X2 - fx2,
+                    X1 = parcel.X1, Y1 = parcel.Y1, X2 = parcel.X2, Y2 = parcel.Y2,
+                    Width            = parcel.Width,
+                    Height           = parcel.Height,
+                    TileCount        = parcel.TileCount,
+                    SetbackFront     = 0,
+                    SetbackRear      = 0,
+                    SetbackSideLeft  = 0,
+                    SetbackSideRight = 0,
                 };
             }
             else // EAST
             {
-                int fx1 = parcel.X1 + 1;
-                int fx2 = parcel.X2 - 2;
-                int fy1 = parcel.Y1 + 1;
-                int fy2 = parcel.Y2 - 1;
                 fp = new DeadMtlResidentialBuildingFootprint
                 {
                     FootprintId       = parcel.ParcelId.Replace("MAP28A_", "MAP28B_") + "_FOOTPRINT",
                     ParentParcelId    = parcel.ParcelId,
                     FrontageDirection = "EAST",
                     BuildingKind      = "EAST_EDGE_RESIDENTIAL_VOLUME",
-                    X1 = fx1, Y1 = fy1, X2 = fx2, Y2 = fy2,
-                    Width            = fx2 - fx1 + 1,
-                    Height           = fy2 - fy1 + 1,
-                    TileCount        = (fx2 - fx1 + 1) * (fy2 - fy1 + 1),
-                    SetbackFront     = parcel.X2 - fx2,
-                    SetbackRear      = fx1 - parcel.X1,
-                    SetbackSideLeft  = fy1 - parcel.Y1,
-                    SetbackSideRight = parcel.Y2 - fy2,
+                    X1 = parcel.X1, Y1 = parcel.Y1, X2 = parcel.X2, Y2 = parcel.Y2,
+                    Width            = parcel.Width,
+                    Height           = parcel.Height,
+                    TileCount        = parcel.TileCount,
+                    SetbackFront     = 0,
+                    SetbackRear      = 0,
+                    SetbackSideLeft  = 0,
+                    SetbackSideRight = 0,
                 };
             }
 
@@ -358,39 +346,50 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
             "East footprints use EAST frontage direction",
             "PASS", eastFrontage ? "PASS" : "FAIL");
 
-        // 19 — N/S footprint width = 11
-        bool nsWidth11 = footprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH")
-            .All(f => f.Width == 11);
+        // 19 — N/S footprint width = 13 (full-lot)
+        bool nsWidth13 = footprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH")
+            .All(f => f.Width == 13);
         AddCheck(checks,
-            "MAP28B_NS_FOOTPRINT_WIDTH_11",
-            "All N/S footprints have width = 11 tiles",
-            "PASS", nsWidth11 ? "PASS" : "FAIL");
+            "MAP28B_NS_FOOTPRINT_WIDTH_13",
+            "All N/S footprints have width = 13 tiles (full-lot)",
+            "PASS", nsWidth13 ? "PASS" : "FAIL");
 
-        // 20 — N/S footprint depth = 16
-        bool nsDepth16 = footprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH")
-            .All(f => f.Height == 16);
+        // 20 — N/S footprint depth = 27 (full-lot)
+        bool nsDepth27 = footprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH")
+            .All(f => f.Height == 27);
         AddCheck(checks,
-            "MAP28B_NS_FOOTPRINT_DEPTH_16",
-            "All N/S footprints have depth = 16 tiles",
-            "PASS", nsDepth16 ? "PASS" : "FAIL");
+            "MAP28B_NS_FOOTPRINT_DEPTH_27",
+            "All N/S footprints have depth = 27 tiles (full-lot)",
+            "PASS", nsDepth27 ? "PASS" : "FAIL");
 
-        // 21 — E footprint width = 6
-        bool eWidth6 = footprints.Where(f => f.FrontageDirection == "EAST")
-            .All(f => f.Width == 6);
+        // 21 — E footprint width = 9 (full-lot)
+        bool eWidth9 = footprints.Where(f => f.FrontageDirection == "EAST")
+            .All(f => f.Width == 9);
         AddCheck(checks,
-            "MAP28B_E_FOOTPRINT_WIDTH_6",
-            "All E footprints have width = 6 tiles",
-            "PASS", eWidth6 ? "PASS" : "FAIL");
+            "MAP28B_E_FOOTPRINT_WIDTH_9",
+            "All E footprints have width = 9 tiles (full-lot)",
+            "PASS", eWidth9 ? "PASS" : "FAIL");
 
-        // 22 — E footprint height = 13
-        bool eHeight13 = footprints.Where(f => f.FrontageDirection == "EAST")
-            .All(f => f.Height == 13);
+        // 22 — E footprint height = 15 (full-lot)
+        bool eHeight15 = footprints.Where(f => f.FrontageDirection == "EAST")
+            .All(f => f.Height == 15);
         AddCheck(checks,
-            "MAP28B_E_FOOTPRINT_HEIGHT_13",
-            "All E footprints have height = 13 tiles",
-            "PASS", eHeight13 ? "PASS" : "FAIL");
+            "MAP28B_E_FOOTPRINT_HEIGHT_15",
+            "All E footprints have height = 15 tiles (full-lot)",
+            "PASS", eHeight15 ? "PASS" : "FAIL");
 
-        // 23-29: PENDING post-output checks
+        // 23 — Every footprint exactly equals parent parcel bounds
+        bool allExact = footprints.All(f =>
+        {
+            var p = topology.ResidentialParcels.FirstOrDefault(x => x.ParcelId == f.ParentParcelId);
+            return p is not null && f.X1 == p.X1 && f.Y1 == p.Y1 && f.X2 == p.X2 && f.Y2 == p.Y2;
+        });
+        AddCheck(checks,
+            "MAP28B_EVERY_FOOTPRINT_EQUALS_PARENT_PARCEL_BOUNDS",
+            "Every footprint exactly equals its parent parcel bounds (full-lot occupancy)",
+            "PASS", allExact ? "PASS" : "FAIL");
+
+        // 24-30: PENDING post-output checks
         AddPendingCheck(checks, "MAP28B_OUTPUT_PNGS_256X256",
             "All 3 output PNGs are exactly 256x256 pixels");
         AddPendingCheck(checks, "MAP28B_HTML_ASCII_ONLY",
@@ -406,7 +405,7 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         AddPendingCheck(checks, "MAP28B_FORBIDDEN_SCAN_PASS",
             "Forbidden artifact scan passes after outputs are written");
 
-        // 30-34: claim boundary
+        // 31-35: claim boundary
         AddCheck(checks, "MAP28B_WRITER_READY_FALSE",
             "WriterReady is false (sandbox only)", "False", result.WriterReady.ToString());
         AddCheck(checks, "MAP28B_RUNTIME_VALID_FALSE",
@@ -744,7 +743,7 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         sb.AppendLine("<p>");
         sb.AppendLine($"Component: {result.ComponentId}<br>");
         sb.AppendLine($"Footprints: {result.TotalFootprintCount} total ({result.NorthFootprintCount} north + {result.SouthFootprintCount} south + {result.EastFootprintCount} east)<br>");
-        sb.AppendLine("N/S footprints: 11 wide x 16 deep (ROWHOUSE_MAIN_VOLUME). E footprints: 6 wide x 13 tall (EAST_EDGE_RESIDENTIAL_VOLUME).<br>");
+        sb.AppendLine("N/S full-lot occupancy footprints: 13 wide x 27 deep (ROWHOUSE_MAIN_VOLUME). E full-lot massing footprints: 9 wide x 15 tall (EAST_EDGE_RESIDENTIAL_VOLUME).<br>");
         sb.AppendLine("No sidewalk overlap. No REAR_BOUNDARY overlap. No inter-footprint overlap.");
         sb.AppendLine("</p>");
         sb.AppendLine("<div class=\"pal\"><b>Palette:</b>");
@@ -797,9 +796,9 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         sb.AppendLine("## Footprints");
         sb.AppendLine();
         sb.AppendLine($"- Total footprints   : {result.TotalFootprintCount}");
-        sb.AppendLine($"- North-facing       : {result.NorthFootprintCount} (ROWHOUSE_MAIN_VOLUME, 11 wide x 16 deep)");
-        sb.AppendLine($"- South-facing       : {result.SouthFootprintCount} (ROWHOUSE_MAIN_VOLUME, 11 wide x 16 deep)");
-        sb.AppendLine($"- East-facing        : {result.EastFootprintCount} (EAST_EDGE_RESIDENTIAL_VOLUME, 6 wide x 13 tall)");
+        sb.AppendLine($"- North-facing       : {result.NorthFootprintCount} (ROWHOUSE_MAIN_VOLUME, full-lot occupancy, 13 wide x 27 deep)");
+        sb.AppendLine($"- South-facing       : {result.SouthFootprintCount} (ROWHOUSE_MAIN_VOLUME, full-lot occupancy, 13 wide x 27 deep)");
+        sb.AppendLine($"- East-facing        : {result.EastFootprintCount} (EAST_EDGE_RESIDENTIAL_VOLUME, full-lot massing, 9 wide x 15 tall)");
         sb.AppendLine();
         sb.AppendLine("## Claim boundary");
         sb.AppendLine();
