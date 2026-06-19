@@ -9094,6 +9094,7 @@ static int DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(string[] arg
     var outputStripsCsv    = string.Empty;
     var outputChecksCsv    = string.Empty;
     var summaryPath        = string.Empty;
+    var outputReadme       = string.Empty;
     var outputCleanPng     = string.Empty;
     var outputDebugPng     = string.Empty;
     var outputOverlayPng   = string.Empty;
@@ -9111,6 +9112,7 @@ static int DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(string[] arg
             case "--output-sidewalk-strips-csv": outputStripsCsv = args[i + 1]; break;
             case "--output-checks-csv":       outputChecksCsv  = args[i + 1]; break;
             case "--summary":                 summaryPath      = args[i + 1]; break;
+            case "--output-readme":           outputReadme     = args[i + 1]; break;
             case "--output-clean-png":        outputCleanPng   = args[i + 1]; break;
             case "--output-debug-png":        outputDebugPng   = args[i + 1]; break;
             case "--output-overlay-png":      outputOverlayPng = args[i + 1]; break;
@@ -9122,17 +9124,18 @@ static int DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(string[] arg
     if (string.IsNullOrEmpty(outputRoot)       || string.IsNullOrEmpty(outputJson)        ||
         string.IsNullOrEmpty(outputParcelsCsv)  || string.IsNullOrEmpty(outputEdgesCsv)   ||
         string.IsNullOrEmpty(outputStripsCsv)   || string.IsNullOrEmpty(outputChecksCsv)  ||
-        string.IsNullOrEmpty(summaryPath)        || string.IsNullOrEmpty(outputCleanPng)   ||
-        string.IsNullOrEmpty(outputDebugPng)     || string.IsNullOrEmpty(outputOverlayPng) ||
-        string.IsNullOrEmpty(outputHtml))
+        string.IsNullOrEmpty(summaryPath)        || string.IsNullOrEmpty(outputReadme)     ||
+        string.IsNullOrEmpty(outputCleanPng)     || string.IsNullOrEmpty(outputDebugPng)   ||
+        string.IsNullOrEmpty(outputOverlayPng)   || string.IsNullOrEmpty(outputHtml))
     {
         Console.Error.WriteLine(
             "Usage: deadmtl-build-worldbuilder-residential-parcel-topology " +
             "--output-root <.local dir> --output-json <json> " +
             "--output-parcels-csv <csv> --output-frontage-edges-csv <csv> " +
             "--output-sidewalk-strips-csv <csv> --output-checks-csv <csv> " +
-            "--summary <txt> --output-clean-png <png> --output-debug-png <png> " +
-            "--output-overlay-png <png> --output-html <html> [--raw-source-png <png>]");
+            "--summary <txt> --output-readme <md> --output-clean-png <png> " +
+            "--output-debug-png <png> --output-overlay-png <png> " +
+            "--output-html <html> [--raw-source-png <png>]");
         return 1;
     }
 
@@ -9145,6 +9148,7 @@ static int DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(string[] arg
         ("--output-sidewalk-strips-csv", outputStripsCsv),
         ("--output-checks-csv",         outputChecksCsv),
         ("--summary",                   summaryPath),
+        ("--output-readme",             outputReadme),
         ("--output-clean-png",          outputCleanPng),
         ("--output-debug-png",          outputDebugPng),
         ("--output-overlay-png",        outputOverlayPng),
@@ -9178,6 +9182,7 @@ static int DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(string[] arg
         File.WriteAllText(outputStripsCsv,  builder.RenderSidewalkStripsCsv(result));
         File.WriteAllText(outputChecksCsv,  builder.RenderChecksCsv(result));
         File.WriteAllText(summaryPath,      builder.RenderSummary(result));
+        File.WriteAllText(outputReadme,     builder.RenderReadme(result));
         File.WriteAllText(outputHtml,       builder.RenderHtml(result));
         File.WriteAllBytes(outputCleanPng,   builder.RenderCleanParcelPngBytes(result));
         File.WriteAllBytes(outputDebugPng,   builder.RenderDebugParcelPngBytes(result));
@@ -9187,7 +9192,7 @@ static int DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(string[] arg
     WriteOutputs();
 
     result = builder.FinalizeAfterOutputs(result, outputRoot,
-        outputCleanPng, outputDebugPng, outputOverlayPng, outputHtml, summaryPath);
+        outputCleanPng, outputDebugPng, outputOverlayPng, outputHtml, outputReadme);
 
     WriteOutputs();
 

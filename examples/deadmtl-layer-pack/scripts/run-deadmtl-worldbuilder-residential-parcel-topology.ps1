@@ -3,7 +3,7 @@
 .SYNOPSIS
 MAP-28A: Run the DeadMTL residential parcel topology builder for map_00_component_0001.
 
-Produces 10 output files under:
+Produces 11 output files under:
   .local\deadmtl-authoring\worldbuilder-residential-parcel-topology\map_00\
 
 This is a sandbox-only planning artifact. NOT a playable Project Zomboid export.
@@ -24,6 +24,7 @@ $EdgesCsv        = Join-Path $OutputRoot "map_00.residential_parcel_topology_fro
 $StripsCsv       = Join-Path $OutputRoot "map_00.residential_parcel_topology_sidewalk_strips.csv"
 $ChecksCsv       = Join-Path $OutputRoot "map_00.residential_parcel_topology_checks.csv"
 $Summary         = Join-Path $OutputRoot "map_00.residential_parcel_topology.summary.txt"
+$Readme          = Join-Path $OutputRoot "README_MAP28A_RESIDENTIAL_PARCEL_TOPOLOGY.md"
 $CleanPng        = Join-Path $OutputRoot "map_00_residential_parcels_topology_clean_native_256.png"
 $DebugPng        = Join-Path $OutputRoot "map_00_residential_parcels_topology_debug_native_256.png"
 $OverlayPng      = Join-Path $OutputRoot "map_00_residential_parcels_topology_overlay_native_256.png"
@@ -42,26 +43,27 @@ if (Test-Path $RawSourcePng) {
     Write-Host "  Raw source PNG: not found -- overlay will use dark background"
 }
 
-dotnet run --project $CliProject --configuration Release --no-build -- `
+dotnet run --project $CliProject -- `
     "deadmtl-build-worldbuilder-residential-parcel-topology" `
-    "--output-root"              $OutputRoot `
-    "--output-json"              $OutputJson `
-    "--output-parcels-csv"       $ParcelsCsv `
+    "--output-root"               $OutputRoot `
+    "--output-json"               $OutputJson `
+    "--output-parcels-csv"        $ParcelsCsv `
     "--output-frontage-edges-csv" $EdgesCsv `
     "--output-sidewalk-strips-csv" $StripsCsv `
-    "--output-checks-csv"        $ChecksCsv `
-    "--summary"                  $Summary `
-    "--output-clean-png"         $CleanPng `
-    "--output-debug-png"         $DebugPng `
-    "--output-overlay-png"       $OverlayPng `
-    "--output-html"              $Html `
+    "--output-checks-csv"         $ChecksCsv `
+    "--summary"                   $Summary `
+    "--output-readme"             $Readme `
+    "--output-clean-png"          $CleanPng `
+    "--output-debug-png"          $DebugPng `
+    "--output-overlay-png"        $OverlayPng `
+    "--output-html"               $Html `
     @extraArgs
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host ""
     Write-Host "Output files:"
     $files = @($OutputJson, $ParcelsCsv, $EdgesCsv, $StripsCsv, $ChecksCsv,
-               $Summary, $CleanPng, $DebugPng, $OverlayPng, $Html)
+               $Summary, $Readme, $CleanPng, $DebugPng, $OverlayPng, $Html)
     foreach ($f in $files) {
         if (Test-Path $f) {
             $size = (Get-Item $f).Length

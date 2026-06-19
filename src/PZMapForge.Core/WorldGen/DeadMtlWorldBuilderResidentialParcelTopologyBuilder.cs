@@ -844,7 +844,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         sb.AppendLine("    <img src=\"map_00_residential_parcels_topology_clean_native_256.png\" alt=\"clean parcel view\">");
         sb.AppendLine("    <div class=\"lbl\">clean parcel view (256x256)</div>");
         sb.AppendLine("  </div>");
-        sb.AppendLine("  <div class=\"cardn\">");
+        sb.AppendLine("  <div class=\"card\">");
         sb.AppendLine("    <img src=\"map_00_residential_parcels_topology_debug_native_256.png\" alt=\"debug view\">");
         sb.AppendLine("    <div class=\"lbl\">debug view: lot dividers + frontage ticks (256x256)</div>");
         sb.AppendLine("  </div>");

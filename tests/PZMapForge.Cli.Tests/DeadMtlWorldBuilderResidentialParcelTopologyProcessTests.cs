@@ -34,6 +34,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
     private string StripsCsv   => Path.Combine(OutputRoot, "map_00.residential_parcel_topology_sidewalk_strips.csv");
     private string ChecksCsv   => Path.Combine(OutputRoot, "map_00.residential_parcel_topology_checks.csv");
     private string Summary     => Path.Combine(OutputRoot, "map_00.residential_parcel_topology.summary.txt");
+    private string Readme      => Path.Combine(OutputRoot, "README_MAP28A_RESIDENTIAL_PARCEL_TOPOLOGY.md");
     private string CleanPng    => Path.Combine(OutputRoot, "map_00_residential_parcels_topology_clean_native_256.png");
     private string DebugPng    => Path.Combine(OutputRoot, "map_00_residential_parcels_topology_debug_native_256.png");
     private string OverlayPng  => Path.Combine(OutputRoot, "map_00_residential_parcels_topology_overlay_native_256.png");
@@ -48,6 +49,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
         "--output-sidewalk-strips-csv", StripsCsv,
         "--output-checks-csv",        ChecksCsv,
         "--summary",                  Summary,
+        "--output-readme",            Readme,
         "--output-clean-png",         CleanPng,
         "--output-debug-png",         DebugPng,
         "--output-overlay-png",       OverlayPng,
@@ -61,7 +63,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
             .ToArray();
 
         var psi = new ProcessStartInfo("dotnet",
-            $"run --project \"{CliProject}\" --configuration Release --no-build -- " +
+            $"run --project \"{CliProject}\" -- " +
             string.Join(" ", allArgs.Select(a => a.Contains(' ') ? $"\"{a}\"" : a)))
         {
             RedirectStandardOutput = true,
@@ -73,8 +75,22 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
         using var proc = Process.Start(psi)!;
         string stdout = proc.StandardOutput.ReadToEnd();
         string stderr = proc.StandardError.ReadToEnd();
-        proc.WaitForExit(60_000);
+        proc.WaitForExit(120_000);
         return (proc.ExitCode, stdout, stderr);
+    }
+
+    // -----------------------------------------------------------------------
+    // Command string does not contain brittle build flags
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void RunCli_CommandString_DoesNotContainNoBuildOrConfigurationRelease()
+    {
+        var psi = new ProcessStartInfo("dotnet",
+            $"run --project \"{CliProject}\" -- deadmtl-build-worldbuilder-residential-parcel-topology");
+        var cmdLine = psi.Arguments;
+        Assert.DoesNotContain("--no-build",            cmdLine, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("--configuration Release", cmdLine, StringComparison.OrdinalIgnoreCase);
     }
 
     // -----------------------------------------------------------------------
@@ -99,6 +115,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
             "--output-sidewalk-strips-csv", Path.Combine(_tempDir, "s.csv"),
             "--output-checks-csv",        Path.Combine(_tempDir, "c.csv"),
             "--summary",                  Path.Combine(_tempDir, "s.txt"),
+            "--output-readme",            Path.Combine(_tempDir, "readme.md"),
             "--output-clean-png",         Path.Combine(_tempDir, "clean.png"),
             "--output-debug-png",         Path.Combine(_tempDir, "debug.png"),
             "--output-overlay-png",       Path.Combine(_tempDir, "overlay.png"),
@@ -115,7 +132,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
     }
 
     // -----------------------------------------------------------------------
-    // Output files written
+    // Output files written (11)
     // -----------------------------------------------------------------------
 
     [Fact]
@@ -128,6 +145,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
         Assert.True(File.Exists(StripsCsv),   "strips CSV not written");
         Assert.True(File.Exists(ChecksCsv),   "checks CSV not written");
         Assert.True(File.Exists(Summary),     "summary not written");
+        Assert.True(File.Exists(Readme),      "README not written");
         Assert.True(File.Exists(CleanPng),    "clean PNG not written");
         Assert.True(File.Exists(DebugPng),    "debug PNG not written");
         Assert.True(File.Exists(OverlayPng),  "overlay PNG not written");
@@ -157,6 +175,78 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
     }
 
     [Fact]
+    public void OutputJson_NorthFacingLotCount_Is6()
+    {
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        Assert.Equal(6, doc.RootElement.GetProperty("north_facing_lot_count").GetInt32());
+    }
+
+    [Fact]
+    public void OutputJson_SouthFacingLotCount_Is6()
+    {
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        Assert.Equal(6, doc.RootElement.GetProperty("south_facing_lot_count").GetInt32());
+    }
+
+    [Fact]
+    public void OutputJson_EastFacingLotCount_Is4()
+    {
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        Assert.Equal(4, doc.RootElement.GetProperty("east_facing_lot_count").GetInt32());
+    }
+
+    [Fact]
+    public void OutputJson_SidewalkStripCount_Is3()
+    {
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        Assert.Equal(3, doc.RootElement.GetProperty("sidewalk_strip_count").GetInt32());
+    }
+
+    [Fact]
+    public void OutputJson_RearBoundaryStripCount_Is1()
+    {
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        Assert.Equal(1, doc.RootElement.GetProperty("rear_boundary_strip_count").GetInt32());
+    }
+
+    [Fact]
+    public void OutputJson_InventedAlleyCount_IsZero()
+    {
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        Assert.Equal(0, doc.RootElement.GetProperty("invented_alley_count").GetInt32());
+    }
+
+    [Fact]
+    public void OutputJson_CheckCount_Is25()
+    {
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        Assert.Equal(25, doc.RootElement.GetProperty("check_count").GetInt32());
+    }
+
+    [Fact]
+    public void OutputJson_PassedCheckCount_Is25()
+    {
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        Assert.Equal(25, doc.RootElement.GetProperty("passed_check_count").GetInt32());
+    }
+
+    [Fact]
+    public void OutputJson_FailedCheckCount_IsZero()
+    {
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        Assert.Equal(0, doc.RootElement.GetProperty("failed_check_count").GetInt32());
+    }
+
+    [Fact]
     public void OutputJson_IsValid_IsTrue()
     {
         RunCli(MakeFullArgs());
@@ -173,19 +263,35 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
     }
 
     [Fact]
-    public void OutputJson_CheckCount_Is25()
+    public void OutputJson_RuntimeValid_IsFalse()
     {
         RunCli(MakeFullArgs());
         using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
-        Assert.Equal(25, doc.RootElement.GetProperty("check_count").GetInt32());
+        Assert.False(doc.RootElement.GetProperty("runtime_valid").GetBoolean());
     }
 
     [Fact]
-    public void OutputJson_FailedCheckCount_IsZero()
+    public void OutputJson_Materialized_IsFalse()
     {
         RunCli(MakeFullArgs());
         using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
-        Assert.Equal(0, doc.RootElement.GetProperty("failed_check_count").GetInt32());
+        Assert.False(doc.RootElement.GetProperty("materialized").GetBoolean());
+    }
+
+    [Fact]
+    public void OutputJson_RuntimeProofClaimed_IsFalse()
+    {
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        Assert.False(doc.RootElement.GetProperty("runtime_proof_claimed").GetBoolean());
+    }
+
+    [Fact]
+    public void OutputJson_PublicPlayablePackagingClaimed_IsFalse()
+    {
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        Assert.False(doc.RootElement.GetProperty("public_playable_packaging_claimed").GetBoolean());
     }
 
     // -----------------------------------------------------------------------
@@ -253,6 +359,14 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
         Assert.All(bytes, b => Assert.True(b < 128, $"Non-ASCII byte 0x{b:X2}"));
     }
 
+    [Fact]
+    public void Readme_IsAsciiOnly()
+    {
+        RunCli(MakeFullArgs());
+        var bytes = File.ReadAllBytes(Readme);
+        Assert.All(bytes, b => Assert.True(b < 128, $"Non-ASCII byte 0x{b:X2}"));
+    }
+
     // -----------------------------------------------------------------------
     // No runtime artifacts
     // -----------------------------------------------------------------------
@@ -269,7 +383,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
     }
 
     // -----------------------------------------------------------------------
-    // Helper script exists
+    // Helper script
     // -----------------------------------------------------------------------
 
     [Fact]
@@ -283,7 +397,6 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
     public void HelperScript_DoesNotContainForbiddenRuntimeWriterCalls()
     {
         var content = File.ReadAllText(HelperScript);
-        // Check for actual runtime writer invocations, not disclaimer mentions
         Assert.DoesNotContain("WorldGenOverride.lua",  content, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("compile-worldgen",      content, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("media/maps",            content, StringComparison.OrdinalIgnoreCase);

@@ -76,7 +76,7 @@ Checks 21-25: claim boundary checks, resolved during Build().
 
 Expected: 25 PASS / 0 FAIL when all outputs are valid.
 
-## Output files (10)
+## Output files (11)
 
 | File | Description |
 |------|-------------|
@@ -86,6 +86,7 @@ Expected: 25 PASS / 0 FAIL when all outputs are valid.
 | `map_00.residential_parcel_topology_sidewalk_strips.csv` | Sidewalk/fence strip records (4 rows) |
 | `map_00.residential_parcel_topology_checks.csv` | Check results (25 rows) |
 | `map_00.residential_parcel_topology.summary.txt` | Human-readable summary |
+| `README_MAP28A_RESIDENTIAL_PARCEL_TOPOLOGY.md` | ASCII-only planning README |
 | `map_00_residential_parcels_topology_clean_native_256.png` | 256x256 clean parcel view |
 | `map_00_residential_parcels_topology_debug_native_256.png` | 256x256 debug view (dividers + ticks) |
 | `map_00_residential_parcels_topology_overlay_native_256.png` | 256x256 overlay on raw source |
@@ -104,6 +105,7 @@ deadmtl-build-worldbuilder-residential-parcel-topology
   --output-sidewalk-strips-csv <path>
   --output-checks-csv <path>
   --summary <path>
+  --output-readme <path>
   --output-clean-png <path>
   --output-debug-png <path>
   --output-overlay-png <path>
