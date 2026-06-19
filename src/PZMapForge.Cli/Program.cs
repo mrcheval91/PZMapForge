@@ -223,7 +223,8 @@ return args[0] switch
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-materialization-replay-dry-run"   => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMaterializationReplayDryRunCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-replay-backend-plan"              => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-replay-backend-dry-run-emitter"  => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendDryRunEmitterCommand(args[1..]),
-    "deadmtl-build-worldbuilder-residential-parcel-topology"  => DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(args[1..]),
+    "deadmtl-build-worldbuilder-residential-parcel-topology"           => DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(args[1..]),
+    "deadmtl-build-worldbuilder-residential-building-footprint-plan"   => DeadMtlBuildWorldBuilderResidentialBuildingFootprintPlanCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -9187,6 +9188,125 @@ static int DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(string[] arg
         File.WriteAllBytes(outputCleanPng,   builder.RenderCleanParcelPngBytes(result));
         File.WriteAllBytes(outputDebugPng,   builder.RenderDebugParcelPngBytes(result));
         File.WriteAllBytes(outputOverlayPng, builder.RenderOverlayParcelPngBytes(result, rawSourcePng));
+    }
+
+    WriteOutputs();
+
+    result = builder.FinalizeAfterOutputs(result, outputRoot,
+        outputCleanPng, outputDebugPng, outputOverlayPng, outputHtml, outputReadme);
+
+    WriteOutputs();
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return 0;
+}
+
+static int DeadMtlBuildWorldBuilderResidentialBuildingFootprintPlanCommand(string[] args)
+{
+    var outputRoot        = string.Empty;
+    var outputJson        = string.Empty;
+    var outputFootprintsCsv = string.Empty;
+    var outputChecksCsv   = string.Empty;
+    var summaryPath       = string.Empty;
+    var outputReadme      = string.Empty;
+    var outputCleanPng    = string.Empty;
+    var outputDebugPng    = string.Empty;
+    var outputOverlayPng  = string.Empty;
+    var outputHtml        = string.Empty;
+    var outputParentManifest = string.Empty;
+    var rawSourcePng      = string.Empty; // optional
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--output-root":           outputRoot           = args[i + 1]; break;
+            case "--output-json":           outputJson           = args[i + 1]; break;
+            case "--output-footprints-csv": outputFootprintsCsv  = args[i + 1]; break;
+            case "--output-checks-csv":     outputChecksCsv      = args[i + 1]; break;
+            case "--summary":               summaryPath          = args[i + 1]; break;
+            case "--output-readme":         outputReadme         = args[i + 1]; break;
+            case "--output-clean-png":      outputCleanPng       = args[i + 1]; break;
+            case "--output-debug-png":      outputDebugPng       = args[i + 1]; break;
+            case "--output-overlay-png":    outputOverlayPng     = args[i + 1]; break;
+            case "--output-html":           outputHtml           = args[i + 1]; break;
+            case "--output-parent-manifest": outputParentManifest = args[i + 1]; break;
+            case "--raw-source-png":        rawSourcePng         = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(outputRoot)         || string.IsNullOrEmpty(outputJson)         ||
+        string.IsNullOrEmpty(outputFootprintsCsv) || string.IsNullOrEmpty(outputChecksCsv)   ||
+        string.IsNullOrEmpty(summaryPath)         || string.IsNullOrEmpty(outputReadme)       ||
+        string.IsNullOrEmpty(outputCleanPng)      || string.IsNullOrEmpty(outputDebugPng)     ||
+        string.IsNullOrEmpty(outputOverlayPng)    || string.IsNullOrEmpty(outputHtml)         ||
+        string.IsNullOrEmpty(outputParentManifest))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-residential-building-footprint-plan " +
+            "--output-root <.local dir> --output-json <json> " +
+            "--output-footprints-csv <csv> --output-checks-csv <csv> " +
+            "--summary <txt> --output-readme <md> --output-clean-png <png> " +
+            "--output-debug-png <png> --output-overlay-png <png> " +
+            "--output-html <html> --output-parent-manifest <json> [--raw-source-png <png>]");
+        return 1;
+    }
+
+    foreach (var (flag, value) in new[]
+    {
+        ("--output-root",            outputRoot),
+        ("--output-json",            outputJson),
+        ("--output-footprints-csv",  outputFootprintsCsv),
+        ("--output-checks-csv",      outputChecksCsv),
+        ("--summary",                summaryPath),
+        ("--output-readme",          outputReadme),
+        ("--output-clean-png",       outputCleanPng),
+        ("--output-debug-png",       outputDebugPng),
+        ("--output-overlay-png",     outputOverlayPng),
+        ("--output-html",            outputHtml),
+        ("--output-parent-manifest", outputParentManifest),
+    })
+    {
+        if (!value.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"ERROR: {flag} must contain .local to prevent accidental output outside sandbox: {value}");
+            return 1;
+        }
+    }
+
+    var builder  = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder();
+    var topology = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderResidentialParcelTopologyBuilder().Build(outputRoot);
+    var result   = builder.Build(outputRoot);
+
+    if (!result.IsValid && result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputJson)!);
+
+    void WriteOutputs()
+    {
+        File.WriteAllText(outputJson,           builder.RenderJson(result));
+        File.WriteAllText(outputFootprintsCsv,  builder.RenderFootprintsCsv(result));
+        File.WriteAllText(outputChecksCsv,      builder.RenderChecksCsv(result));
+        File.WriteAllText(summaryPath,          builder.RenderSummary(result));
+        File.WriteAllText(outputReadme,         builder.RenderReadme(result));
+        File.WriteAllText(outputHtml,           builder.RenderHtml(result));
+        File.WriteAllText(outputParentManifest, builder.RenderParentManifestJson(result));
+        File.WriteAllBytes(outputCleanPng,      builder.RenderCleanFootprintPngBytes(result, topology));
+        File.WriteAllBytes(outputDebugPng,      builder.RenderDebugFootprintPngBytes(result, topology));
+        File.WriteAllBytes(outputOverlayPng,    builder.RenderOverlayFootprintPngBytes(result, topology, rawSourcePng));
     }
 
     WriteOutputs();
