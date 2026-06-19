@@ -223,6 +223,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-materialization-replay-dry-run"   => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMaterializationReplayDryRunCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-replay-backend-plan"              => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-replay-backend-dry-run-emitter"  => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendDryRunEmitterCommand(args[1..]),
+    "deadmtl-build-worldbuilder-residential-parcel-topology"  => DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -9069,6 +9070,124 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedRep
     WriteOutputs();
 
     result = builder.FinalizeAfterOutputs(result, outputRoot);
+
+    WriteOutputs();
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return 0;
+}
+
+static int DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(string[] args)
+{
+    var outputRoot         = string.Empty;
+    var outputJson         = string.Empty;
+    var outputParcelsCsv   = string.Empty;
+    var outputEdgesCsv     = string.Empty;
+    var outputStripsCsv    = string.Empty;
+    var outputChecksCsv    = string.Empty;
+    var summaryPath        = string.Empty;
+    var outputCleanPng     = string.Empty;
+    var outputDebugPng     = string.Empty;
+    var outputOverlayPng   = string.Empty;
+    var outputHtml         = string.Empty;
+    var rawSourcePng       = string.Empty; // optional
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--output-root":             outputRoot       = args[i + 1]; break;
+            case "--output-json":             outputJson       = args[i + 1]; break;
+            case "--output-parcels-csv":      outputParcelsCsv = args[i + 1]; break;
+            case "--output-frontage-edges-csv": outputEdgesCsv = args[i + 1]; break;
+            case "--output-sidewalk-strips-csv": outputStripsCsv = args[i + 1]; break;
+            case "--output-checks-csv":       outputChecksCsv  = args[i + 1]; break;
+            case "--summary":                 summaryPath      = args[i + 1]; break;
+            case "--output-clean-png":        outputCleanPng   = args[i + 1]; break;
+            case "--output-debug-png":        outputDebugPng   = args[i + 1]; break;
+            case "--output-overlay-png":      outputOverlayPng = args[i + 1]; break;
+            case "--output-html":             outputHtml       = args[i + 1]; break;
+            case "--raw-source-png":          rawSourcePng     = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(outputRoot)       || string.IsNullOrEmpty(outputJson)        ||
+        string.IsNullOrEmpty(outputParcelsCsv)  || string.IsNullOrEmpty(outputEdgesCsv)   ||
+        string.IsNullOrEmpty(outputStripsCsv)   || string.IsNullOrEmpty(outputChecksCsv)  ||
+        string.IsNullOrEmpty(summaryPath)        || string.IsNullOrEmpty(outputCleanPng)   ||
+        string.IsNullOrEmpty(outputDebugPng)     || string.IsNullOrEmpty(outputOverlayPng) ||
+        string.IsNullOrEmpty(outputHtml))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-residential-parcel-topology " +
+            "--output-root <.local dir> --output-json <json> " +
+            "--output-parcels-csv <csv> --output-frontage-edges-csv <csv> " +
+            "--output-sidewalk-strips-csv <csv> --output-checks-csv <csv> " +
+            "--summary <txt> --output-clean-png <png> --output-debug-png <png> " +
+            "--output-overlay-png <png> --output-html <html> [--raw-source-png <png>]");
+        return 1;
+    }
+
+    foreach (var (flag, value) in new[]
+    {
+        ("--output-root",               outputRoot),
+        ("--output-json",               outputJson),
+        ("--output-parcels-csv",        outputParcelsCsv),
+        ("--output-frontage-edges-csv", outputEdgesCsv),
+        ("--output-sidewalk-strips-csv", outputStripsCsv),
+        ("--output-checks-csv",         outputChecksCsv),
+        ("--summary",                   summaryPath),
+        ("--output-clean-png",          outputCleanPng),
+        ("--output-debug-png",          outputDebugPng),
+        ("--output-overlay-png",        outputOverlayPng),
+        ("--output-html",               outputHtml),
+    })
+    {
+        if (!value.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"ERROR: {flag} must contain .local to prevent accidental output outside sandbox: {value}");
+            return 1;
+        }
+    }
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderResidentialParcelTopologyBuilder();
+    var result  = builder.Build(outputRoot);
+
+    if (!result.IsValid && result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputJson)!);
+
+    void WriteOutputs()
+    {
+        File.WriteAllText(outputJson,       builder.RenderJson(result));
+        File.WriteAllText(outputParcelsCsv, builder.RenderParcelsCsv(result));
+        File.WriteAllText(outputEdgesCsv,   builder.RenderFrontageEdgesCsv(result));
+        File.WriteAllText(outputStripsCsv,  builder.RenderSidewalkStripsCsv(result));
+        File.WriteAllText(outputChecksCsv,  builder.RenderChecksCsv(result));
+        File.WriteAllText(summaryPath,      builder.RenderSummary(result));
+        File.WriteAllText(outputHtml,       builder.RenderHtml(result));
+        File.WriteAllBytes(outputCleanPng,   builder.RenderCleanParcelPngBytes(result));
+        File.WriteAllBytes(outputDebugPng,   builder.RenderDebugParcelPngBytes(result));
+        File.WriteAllBytes(outputOverlayPng, builder.RenderOverlayParcelPngBytes(result, rawSourcePng));
+    }
+
+    WriteOutputs();
+
+    result = builder.FinalizeAfterOutputs(result, outputRoot,
+        outputCleanPng, outputDebugPng, outputOverlayPng, outputHtml, summaryPath);
 
     WriteOutputs();
 
