@@ -222,6 +222,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-tile-materialization-locked-replay-audit" => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationLockedReplayAuditCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-materialization-replay-dry-run"   => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMaterializationReplayDryRunCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-replay-backend-plan"              => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanCommand(args[1..]),
+    "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-replay-backend-dry-run-emitter"  => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendDryRunEmitterCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -8950,6 +8951,119 @@ static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedRep
         File.WriteAllText(operationPlanCsv,   builder.RenderOperationPlanCsv(result));
         File.WriteAllText(sourceManifestJson, builder.RenderSourceManifestJson(result));
         File.WriteAllText(forbiddenGuardJson, builder.RenderForbiddenOutputGuardJson(result));
+    }
+
+    WriteOutputs();
+
+    result = builder.FinalizeAfterOutputs(result, outputRoot);
+
+    WriteOutputs();
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return 0;
+}
+
+static int DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendDryRunEmitterCommand(string[] args)
+{
+    var backendPlanRoot     = string.Empty;
+    var outputRoot          = string.Empty;
+    var outputJson          = string.Empty;
+    var outputMd            = string.Empty;
+    var outputCsv           = string.Empty;
+    var summaryPath         = string.Empty;
+    var outputOperationsJson = string.Empty;
+    var outputOperationsCsv  = string.Empty;
+    var outputSourceManifestJson = string.Empty;
+    var outputDryRunDigestJson   = string.Empty;
+    var outputForbiddenGuardJson = string.Empty;
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--backend-plan-root":             backendPlanRoot          = args[i + 1]; break;
+            case "--output-root":                   outputRoot               = args[i + 1]; break;
+            case "--output-json":                   outputJson               = args[i + 1]; break;
+            case "--output-md":                     outputMd                 = args[i + 1]; break;
+            case "--output-csv":                    outputCsv                = args[i + 1]; break;
+            case "--summary":                       summaryPath              = args[i + 1]; break;
+            case "--output-operations-json":        outputOperationsJson     = args[i + 1]; break;
+            case "--output-operations-csv":         outputOperationsCsv      = args[i + 1]; break;
+            case "--output-source-manifest-json":   outputSourceManifestJson = args[i + 1]; break;
+            case "--output-dry-run-digest-json":    outputDryRunDigestJson   = args[i + 1]; break;
+            case "--output-forbidden-guard-json":   outputForbiddenGuardJson = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(backendPlanRoot)       || string.IsNullOrEmpty(outputRoot)           ||
+        string.IsNullOrEmpty(outputJson)             || string.IsNullOrEmpty(outputMd)             ||
+        string.IsNullOrEmpty(outputCsv)              || string.IsNullOrEmpty(summaryPath)          ||
+        string.IsNullOrEmpty(outputOperationsJson)   || string.IsNullOrEmpty(outputOperationsCsv)  ||
+        string.IsNullOrEmpty(outputSourceManifestJson) || string.IsNullOrEmpty(outputDryRunDigestJson) ||
+        string.IsNullOrEmpty(outputForbiddenGuardJson))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-replay-backend-dry-run-emitter " +
+            "--backend-plan-root <MAP-27J dir> " +
+            "--output-root <.local dir> --output-json <json> --output-md <md> --output-csv <csv> --summary <txt> " +
+            "--output-operations-json <json> --output-operations-csv <csv> " +
+            "--output-source-manifest-json <json> --output-dry-run-digest-json <json> --output-forbidden-guard-json <json>");
+        return 1;
+    }
+
+    foreach (var (flag, value) in new[]
+    {
+        ("--output-root",                 outputRoot),
+        ("--output-json",                 outputJson),
+        ("--output-md",                   outputMd),
+        ("--output-csv",                  outputCsv),
+        ("--summary",                     summaryPath),
+        ("--output-operations-json",      outputOperationsJson),
+        ("--output-operations-csv",       outputOperationsCsv),
+        ("--output-source-manifest-json", outputSourceManifestJson),
+        ("--output-dry-run-digest-json",  outputDryRunDigestJson),
+        ("--output-forbidden-guard-json", outputForbiddenGuardJson),
+    })
+    {
+        if (!value.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"ERROR: {flag} must contain .local to prevent accidental output outside sandbox: {value}");
+            return 1;
+        }
+    }
+
+    var builder = new PZMapForge.Core.WorldGen
+        .DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendDryRunEmitterBuilder();
+    var result = builder.Build(backendPlanRoot, outputRoot);
+
+    if (!result.IsValid && result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputJson)!);
+
+    void WriteOutputs()
+    {
+        File.WriteAllText(outputJson,               builder.RenderJson(result));
+        File.WriteAllText(outputMd,                 builder.RenderMarkdown(result));
+        File.WriteAllText(outputCsv,                builder.RenderCsv(result));
+        File.WriteAllText(summaryPath,              builder.RenderSummary(result));
+        File.WriteAllText(outputOperationsJson,     builder.RenderOperationsJson(result));
+        File.WriteAllText(outputOperationsCsv,      builder.RenderOperationsCsv(result));
+        File.WriteAllText(outputSourceManifestJson, builder.RenderSourceManifestJson(result));
+        File.WriteAllText(outputDryRunDigestJson,   builder.RenderDryRunDigestJson(result));
+        File.WriteAllText(outputForbiddenGuardJson, builder.RenderForbiddenOutputGuardJson(result));
     }
 
     WriteOutputs();

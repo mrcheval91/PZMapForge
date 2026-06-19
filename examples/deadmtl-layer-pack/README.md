@@ -1676,6 +1676,48 @@ for check list, operation plan, and claim boundary.
 
 ---
 
+## MAP-27K WorldBuilder Minimal Concrete Geometry Sandbox Writer Locked Replay Backend Dry-Run Emitter
+
+MAP-27K consumes the MAP-27J backend plan output and emits deterministic backend dry-run operation
+artifacts for the 5 locked replay material buckets. This is NOT a runtime writer, NOT a lotpack
+writer, and NOT a Project Zomboid export. Unlike MAP-27J, this step emits concrete dry-run backend
+write records from the MAP-27J operation plan. Emitted records are sandbox-only dry-run artifacts;
+no runtime files, binary files, Lua files, or install paths are produced.
+
+**Input:** 5 MAP-27J canonical output files (backend plan JSON, operation plan JSON/CSV, source
+manifest JSON, forbidden output guard JSON).
+
+**Output:** 9 files:
+
+| File | Description |
+|------|-------------|
+| `map_00.minimal_concrete_geometry_sandbox_writer_locked_replay_backend_dry_run_emitter.json` | Full result JSON |
+| `map_00.minimal_concrete_geometry_sandbox_writer_locked_replay_backend_dry_run_emitter.md` | Markdown summary |
+| `map_00.minimal_concrete_geometry_sandbox_writer_locked_replay_backend_dry_run_emitter.csv` | Checks CSV |
+| `map_00.minimal_concrete_geometry_sandbox_writer_locked_replay_backend_dry_run_emitter.summary.txt` | Summary text |
+| `map_00.sandbox_writer_locked_replay_backend_dry_run_operations.json` | Emitted operations JSON |
+| `map_00.sandbox_writer_locked_replay_backend_dry_run_operations.csv` | Emitted operations CSV |
+| `map_00.sandbox_writer_locked_replay_backend_dry_run_source_manifest.json` | Source manifest JSON |
+| `map_00.sandbox_writer_locked_replay_backend_dry_run_digest.json` | Emission digest JSON |
+| `map_00.sandbox_writer_locked_replay_backend_dry_run_forbidden_output_guard.json` | Forbidden output guard |
+
+49 checks. `emitter_stage: SANDBOX_WRITER_LOCKED_REPLAY_BACKEND_DRY_RUN_EMITTER`.
+`emitter_status: BACKEND_DRY_RUN_EMITTER_COMPLETE`. 5 emitted dry-run records
+(WALL/FLOOR/ACCESS/LOT/COMPONENT), all `requires_locked_replay_digest=true`,
+`emission_status=DRY_RUN_EMITTED_SANDBOX_RECORD_ONLY`, none emitting runtime/binary/Lua/install artifacts.
+Emission digest computed over protocol tag + source plan SHA-256 + locked replay digest + operation records.
+
+Claim boundary: `sandbox_only=true`, `sandbox_backend_dry_run_emitter_only=true`, `writer_ready=false`,
+`runtime_valid=false`, `materialized=false`, `pz_runtime_materialized=false`,
+`runtime_proof_claimed=false`, `public_playable_packaging_claimed=false`.
+
+Next allowed experiment: `MAP-27L_SANDBOX_WRITER_LOCKED_REPLAY_BACKEND_DRY_RUN_AUDIT` (SANDBOX_ONLY_NOT_RUNTIME).
+
+See `docs/authoring/DEADMTL_WORLDBUILDER_MINIMAL_CONCRETE_GEOMETRY_SANDBOX_WRITER_LOCKED_REPLAY_BACKEND_DRY_RUN_EMITTER.md`
+for check list, emitted records, and claim boundary.
+
+---
+
 ## System 2 static road filtered tile candidate shortlist
 
 MAP-22P ranks and shortlists candidates from the MAP-22O filtered local tile survey.
