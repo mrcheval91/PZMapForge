@@ -667,4 +667,39 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         var r = BuildResult();
         Assert.Equal("map_00", r.MapId);
     }
+
+    [Fact]
+    public void Build_WithMissingForbiddenStep_ForbidddenStepsListedCheckFails()
+    {
+        WriteMap27gOutput();
+        string lockPath = Path.Combine(_map27gDir,
+            "map_00.minimal_concrete_geometry_sandbox_writer_tile_materialization_replay_lock.json");
+        var text = File.ReadAllText(lockPath, System.Text.Encoding.UTF8);
+        text = text.Replace("\"RUNTIME_PROOF_CLAIM\"", "\"BOGUS_ENTRY\"");
+        File.WriteAllText(lockPath, text, System.Text.Encoding.UTF8);
+
+        var builder = new DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationLockedReplayAuditBuilder();
+        var r = builder.Build(_map27gDir, _outputDir);
+
+        var check = r.Checks.Single(c => c.CheckId == "FORBIDDEN_STEPS_LISTED");
+        Assert.Equal("FAIL", check.CheckStatus);
+        Assert.False(r.IsValid);
+        Assert.Contains("INVALID", r.Verdict);
+    }
+
+    [Fact]
+    public void Build_WithSteamappsDirectoryInOutputRoot_PostAuditForbiddenScanFails()
+    {
+        WriteMap27gOutput();
+        Directory.CreateDirectory(Path.Combine(_outputDir, "steamapps"));
+
+        var builder = new DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileMaterializationLockedReplayAuditBuilder();
+        var r = builder.Build(_map27gDir, _outputDir);
+
+        var check = r.Checks.Single(c => c.CheckId == "POST_AUDIT_FORBIDDEN_SCAN_PASS");
+        Assert.Equal("FAIL", check.CheckStatus);
+        Assert.Contains("FAIL", r.ForbiddenArtifactScan);
+        Assert.False(r.IsValid);
+        Assert.Contains("INVALID", r.Verdict);
+    }
 }

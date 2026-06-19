@@ -1591,7 +1591,9 @@ Key checks: `MAP27G_REPLAY_LOCK_ROOT_EXISTS`, `MAP27G_VERDICT_COMPLETE`, `MAP27G
 
 Output fields include: `target_component_id`, `sandbox_materialized_source`, `visual_qa_overlay_written`,
 count fields (materialized/rendered/wall/floor/access/lot/residual/material_kind/layer_kind),
-`next_forbidden_steps` (11 entries), `forbidden_artifact_scan`, `claim_boundary_audit`.
+`next_forbidden_steps` (11 required categories verified by presence, not only count),
+`forbidden_artifact_scan` (scans output root for forbidden files and directories including `steamapps`),
+`claim_boundary_audit`.
 
 Next allowed experiment: `MAP-27I_SANDBOX_WRITER_LOCKED_MATERIALIZATION_REPLAY_DRY_RUN` (SANDBOX_ONLY_NOT_RUNTIME).
 

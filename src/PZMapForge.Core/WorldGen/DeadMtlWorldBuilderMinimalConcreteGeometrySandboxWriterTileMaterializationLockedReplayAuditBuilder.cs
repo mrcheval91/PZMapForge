@@ -39,6 +39,21 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         });
     }
 
+    private static readonly string[] s_requiredForbiddenSteps = new[]
+    {
+        "LOT_PACK_RUNTIME_BINARY",
+        "LOT_HEADER_RUNTIME_BINARY",
+        "WORLDGEN_OVERRIDE_LUA",
+        "RUNTIME_LUA",
+        "PROJECT_ZOMBOID_INSTALL_PATH",
+        "STEAM_WORKSHOP_OUTPUT",
+        "COMPILE_WORLDGEN_INVOCATION",
+        "MAP_00_PNG_MUTATION",
+        "RUNTIME_PROOF_CLAIM",
+        "WRITER_READY_CLAIM",
+        "PUBLIC_PLAYABLE_PACKAGING_CLAIM",
+    };
+
     private static string ScanOutputRoot(string outputRoot)
     {
         if (!Directory.Exists(outputRoot))
@@ -48,9 +63,12 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         int count = patterns.Sum(p =>
             Directory.GetFiles(outputRoot, p, SearchOption.AllDirectories).Length);
 
-        bool hasMediaMaps = Directory.GetDirectories(outputRoot, "*", SearchOption.AllDirectories)
-            .Any(d => { var di = new DirectoryInfo(d); return di.Name == "maps" && di.Parent?.Name == "media"; });
+        var allDirs = Directory.GetDirectories(outputRoot, "*", SearchOption.AllDirectories);
+        bool hasMediaMaps = allDirs.Any(d => { var di = new DirectoryInfo(d); return di.Name == "maps" && di.Parent?.Name == "media"; });
         if (hasMediaMaps) count++;
+
+        bool hasSteamapps = allDirs.Any(d => string.Equals(new DirectoryInfo(d).Name, "steamapps", StringComparison.OrdinalIgnoreCase));
+        if (hasSteamapps) count++;
 
         return count == 0
             ? "POST_AUDIT_FORBIDDEN_SCAN PASS (0 forbidden artifacts in output root)"
@@ -444,9 +462,13 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterTileM
         // 40-45: Final checks
         MakeCheck(checks, "NEXT_ALLOWED_EXPERIMENT_SANDBOX_ONLY",
             "Next allowed experiment is sandbox-only, not runtime");
+        var missingForbiddenSteps = s_requiredForbiddenSteps.Where(r => !storedNextForbiddenSteps.Contains(r)).ToList();
+        string forbiddenStepsActual = missingForbiddenSteps.Count == 0
+            ? "REQUIRED_11_PRESENT"
+            : "MISSING:" + string.Join(",", missingForbiddenSteps);
         AddCheck(checks, "FORBIDDEN_STEPS_LISTED",
-            "next_forbidden_steps lists exactly 11 entries",
-            "11", storedNextForbiddenSteps.Count.ToString());
+            "next_forbidden_steps contains all 11 required forbidden categories",
+            "REQUIRED_11_PRESENT", forbiddenStepsActual);
         AddCheck(checks, "POST_AUDIT_FORBIDDEN_SCAN_PASS",
             "Post-audit forbidden artifact scan passes in output root",
             "PASS", forbiddenScanPasses ? "PASS" : "FAIL");
