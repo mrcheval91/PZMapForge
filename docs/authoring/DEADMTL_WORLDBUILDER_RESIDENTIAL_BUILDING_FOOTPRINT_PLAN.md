@@ -25,7 +25,25 @@ Source map_00.png is not mutated.
 - Source parcel count : 16 (from MAP-28A)
 - Source valid        : true when MAP-28A checks all pass
 
-## Footprint geometry
+## Footprint geometry (MAP-28B1: full-lot occupancy)
+
+Every footprint exactly equals its parent parcel bounds. All setbacks are 0.
+These are full-lot occupancy footprints (N/S) and full-lot massing footprints (E),
+not final Project Zomboid buildings.
+
+| Field             | Value                |
+|-------------------|----------------------|
+| x1                | parcel.x1            |
+| y1                | parcel.y1            |
+| x2                | parcel.x2            |
+| y2                | parcel.y2            |
+| width             | parcel.width         |
+| height            | parcel.height        |
+| tile_count        | parcel.tile_count    |
+| setback_front     | 0                    |
+| setback_rear      | 0                    |
+| setback_side_left | 0                    |
+| setback_side_right| 0                    |
 
 ### North-facing lots (6 footprints)
 
@@ -33,15 +51,8 @@ Parent parcel: 13 wide x 27 deep (Y 12-38)
 
 | Field             | Value |
 |-------------------|-------|
-| x1                | parcel.x1 + 1 |
-| x2                | parcel.x2 - 1 |
-| y1                | parcel.y1 + 3 |
-| y2                | y1 + 15       |
-| width             | 11 tiles      |
-| depth             | 16 tiles      |
-| setback_front     | 3 (from north street edge) |
-| setback_rear      | 8 (to rear boundary) |
-| setback_side      | 1 each side |
+| width             | 13 tiles (full-lot) |
+| depth             | 27 tiles (full-lot) |
 | building_kind     | ROWHOUSE_MAIN_VOLUME |
 
 ### South-facing lots (6 footprints)
@@ -50,15 +61,8 @@ Parent parcel: 13 wide x 27 deep (Y 41-67)
 
 | Field             | Value |
 |-------------------|-------|
-| x1                | parcel.x1 + 1 |
-| x2                | parcel.x2 - 1 |
-| y2                | parcel.y2 - 3 |
-| y1                | y2 - 15       |
-| width             | 11 tiles      |
-| depth             | 16 tiles      |
-| setback_front     | 3 (from south street edge) |
-| setback_rear      | 8 (to rear boundary) |
-| setback_side      | 1 each side |
+| width             | 13 tiles (full-lot) |
+| depth             | 27 tiles (full-lot) |
 | building_kind     | ROWHOUSE_MAIN_VOLUME |
 
 ### East-facing lots (4 footprints)
@@ -67,32 +71,28 @@ Parent parcel: 9 wide x 15 tall (X 202-210)
 
 | Field             | Value |
 |-------------------|-------|
-| x1                | parcel.x1 + 1 = 203 |
-| x2                | parcel.x2 - 2 = 208 |
-| y1                | parcel.y1 + 1 |
-| y2                | parcel.y2 - 1 |
-| width             | 6 tiles       |
-| height            | 13 tiles      |
-| setback_front     | 2 (from east edge) |
-| setback_rear      | 1 (from west edge) |
-| setback_side      | 1 each (top/bottom) |
+| width             | 9 tiles (full-lot)  |
+| height            | 15 tiles (full-lot) |
 | building_kind     | EAST_EDGE_RESIDENTIAL_VOLUME |
 
 ## Topology rules
 
 - One footprint per parcel (16 total)
+- Every footprint exactly equals its parent parcel bounds
 - No footprint overlaps a sidewalk strip
 - No footprint overlaps REAR_BOUNDARY (Y 39-40)
-- No footprint exceeds its parent parcel bounds
 - No inter-footprint overlaps
 - No invented alley access (invented_alleys_enabled=false)
 - No footprint is runtime or materialized
 
-## Checks (34 total)
+## Checks (35 total)
 
-Checks 1-22 and 30-34: resolved during Build().
-Checks 23-29: resolved in FinalizeAfterOutputs() after output files are written.
-Expected: 34 PASS / 0 FAIL when all outputs are valid.
+Checks 1-23 and 31-35: resolved during Build().
+Checks 24-30: resolved in FinalizeAfterOutputs() after output files are written.
+Expected: 35 PASS / 0 FAIL when all outputs are valid.
+
+Key checks:
+- `MAP28B_EVERY_FOOTPRINT_EQUALS_PARENT_PARCEL_BOUNDS` (check 23): every footprint x1/y1/x2/y2 exactly matches its parent parcel.
 
 ## Output files (10)
 
@@ -100,7 +100,7 @@ Expected: 34 PASS / 0 FAIL when all outputs are valid.
 |------|-------------|
 | `map_00.residential_building_footprint_plan.json` | Full result JSON |
 | `map_00.residential_building_footprint_plan_footprints.csv` | Footprint records (16 rows) |
-| `map_00.residential_building_footprint_plan_checks.csv` | Check results (34 rows) |
+| `map_00.residential_building_footprint_plan_checks.csv` | Check results (35 rows) |
 | `map_00.residential_building_footprint_plan.summary.txt` | Human-readable summary |
 | `README_MAP28B_RESIDENTIAL_BUILDING_FOOTPRINT_PLAN.md` | ASCII-only planning README |
 | `map_00_residential_building_footprints_clean_native_256.png` | 256x256 clean footprint view |
@@ -149,5 +149,5 @@ examples\deadmtl-layer-pack\scripts\run-deadmtl-worldbuilder-residential-buildin
 
 | Project | Filter | Tests |
 |---------|--------|-------|
-| Core | `ResidentialBuildingFootprintPlan` | Footprint counts, geometry, overlaps, claim boundary, PNGs, renders |
+| Core | `ResidentialBuildingFootprintPlan` | Footprint counts, geometry, full-lot bounds, overlaps, claim boundary, PNGs, renders |
 | CLI | `ResidentialBuildingFootprintPlan` | Exit codes, 10 output files, JSON fields, PNGs, ASCII, helper script |
