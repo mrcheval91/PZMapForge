@@ -1,8 +1,10 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-MAP-29A: Detect residential blue quadrilateral shapes in map_00.png and replace
-with calculated beige lot fills. Produces JSON/CSV proof and a replacement PNG.
+MAP-29A/MAP-29B/MAP-29B1: Detect residential blue and red quadrilateral shapes in
+map_00.png and replace with calculated lot fills. Blue shapes become beige lots; red
+shapes become deterministic red shades. Sector-aware minimum lot sizing with
+deterministic undersized-lot merge pass. Produces JSON/CSV proof and a replacement PNG.
 
 Outputs under:
   .local\deadmtl-authoring\worldbuilder-residential-blue-quadrilateral-lot-fill\map_00\
@@ -33,7 +35,7 @@ if (-not (Test-Path $SourcePng)) {
     exit 1
 }
 
-Write-Host "MAP-29A: Running residential blue quadrilateral lot fill..."
+Write-Host "MAP-29A/MAP-29B: Running residential blue+red quadrilateral lot fill..."
 Write-Host "  Source PNG : $SourcePng"
 Write-Host "  Output root: $OutputRoot"
 
@@ -62,9 +64,9 @@ if ($LASTEXITCODE -eq 0) {
         }
     }
     Write-Host ""
-    Write-Host "MAP-29A: PASS"
+    Write-Host "MAP-29B1: PASS"
 } else {
-    Write-Host "MAP-29A: FAIL (exit code $LASTEXITCODE)"
+    Write-Host "MAP-29B1: FAIL (exit code $LASTEXITCODE)"
 }
 
 exit $LASTEXITCODE

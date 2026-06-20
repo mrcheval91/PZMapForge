@@ -308,6 +308,84 @@ $bmp.Dispose()
     }
 
     // -----------------------------------------------------------------------
+    // MAP-29B — JSON includes red summary fields
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void OutputJson_ContainsRedSummaryFields()
+    {
+        EnsureFixture();
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var root = doc.RootElement;
+        // All red fields must be present (fixture has no red, so counts are 0)
+        Assert.True(root.TryGetProperty("detected_red_component_count", out _),
+            "missing detected_red_component_count");
+        Assert.True(root.TryGetProperty("red_lot_count", out _),
+            "missing red_lot_count");
+        Assert.True(root.TryGetProperty("red_facade_edge_count", out _),
+            "missing red_facade_edge_count");
+        Assert.True(root.TryGetProperty("source_red_pixels_replaced", out _),
+            "missing source_red_pixels_replaced");
+        Assert.True(root.TryGetProperty("source_red_pixels_remaining", out _),
+            "missing source_red_pixels_remaining");
+    }
+
+    [Fact]
+    public void OutputJson_BlueLotCount_MatchesTotalLotCount_WhenNoRed()
+    {
+        EnsureFixture();
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var root = doc.RootElement;
+        int blueLots  = root.GetProperty("blue_lot_count").GetInt32();
+        int totalLots = root.GetProperty("total_lot_count").GetInt32();
+        int redLots   = root.GetProperty("red_lot_count").GetInt32();
+        Assert.Equal(0, redLots);
+        Assert.Equal(totalLots, blueLots);
+    }
+
+    [Fact]
+    public void OutputJson_SourceRedPixelsRemaining_IsZero_WhenNoRed()
+    {
+        EnsureFixture();
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        Assert.Equal(0, doc.RootElement.GetProperty("source_red_pixels_remaining").GetInt32());
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-29B1 — JSON includes merge summary fields
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void OutputJson_ContainsMergeSummaryFields()
+    {
+        EnsureFixture();
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var root = doc.RootElement;
+        Assert.True(root.TryGetProperty("lot_sizing_policy_version", out _),
+            "missing lot_sizing_policy_version");
+        Assert.True(root.TryGetProperty("undersized_lot_merge_count", out _),
+            "missing undersized_lot_merge_count");
+        Assert.True(root.TryGetProperty("blue_undersized_lot_merge_count", out _),
+            "missing blue_undersized_lot_merge_count");
+        Assert.True(root.TryGetProperty("red_undersized_lot_merge_count", out _),
+            "missing red_undersized_lot_merge_count");
+    }
+
+    [Fact]
+    public void OutputJson_LotSizingPolicyVersion_IsNonEmpty()
+    {
+        EnsureFixture();
+        RunCli(MakeFullArgs());
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var version = doc.RootElement.GetProperty("lot_sizing_policy_version").GetString();
+        Assert.False(string.IsNullOrEmpty(version), "lot_sizing_policy_version should be non-empty");
+    }
+
+    // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
 

@@ -22,6 +22,57 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         (152, 116,  76),
     };
 
+    private static readonly (byte R, byte G, byte B)[] s_redShades =
+    {
+        (166,  0,  0),
+        (196, 20, 20),
+        (226, 40, 40),
+    };
+
+    private const string ParcelClassBlue = "BLUE_RESIDENTIAL";
+    private const string ParcelClassRed  = "RED_RESIDENTIAL_OR_COMMERCIAL";
+
+    private const string LotSizingPolicyVersion = "MAP29B1_DEFAULT_V1";
+
+    private sealed record LotSizingPolicy(
+        string ParcelClass,
+        string NeighborhoodSector,
+        int    TargetFrontageTiles,
+        int    MinFrontageTiles,
+        int    MinDepthTiles,
+        int    MinAreaTiles,
+        bool   MergeUndersizedLots);
+
+    private static LotSizingPolicy GetLotSizingPolicy(string parcelClass, string sector = "DEFAULT")
+        => parcelClass == ParcelClassRed
+            ? new(parcelClass, sector, 18, 12, 10, 160, true)
+            : new(parcelClass, sector, 15,  8,  8,  96, true);
+
+    private static bool IsUndersized(QuadrilateralLot lot, LotSizingPolicy policy)
+    {
+        bool isNS    = lot.FrontageDirection == "NORTH" || lot.FrontageDirection == "SOUTH";
+        int  frontage = isNS ? lot.Width  : lot.Height;
+        int  depth    = isNS ? lot.Height : lot.Width;
+        return frontage < policy.MinFrontageTiles
+            || depth    < policy.MinDepthTiles
+            || lot.TileCount < policy.MinAreaTiles;
+    }
+
+    private static int SharedEdgeLength(QuadrilateralLot a, QuadrilateralLot b)
+    {
+        if (a.X2 + 1 == b.X1 || b.X2 + 1 == a.X1)
+        {
+            int oy = Math.Min(a.Y2, b.Y2) - Math.Max(a.Y1, b.Y1) + 1;
+            return oy > 0 ? oy : 0;
+        }
+        if (a.Y2 + 1 == b.Y1 || b.Y2 + 1 == a.Y1)
+        {
+            int ox = Math.Min(a.X2, b.X2) - Math.Max(a.X1, b.X1) + 1;
+            return ox > 0 ? ox : 0;
+        }
+        return 0;
+    }
+
     // -----------------------------------------------------------------------
     // Color classifiers (documented, deterministic)
     // -----------------------------------------------------------------------
@@ -48,12 +99,30 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
     private static bool IsStreetAccessOrange(byte r, byte g, byte b)
         => r >= 180 && g >= 80 && g <= 180 && b <= 80 && r >= g + 40 && g >= b + 20;
 
+    // IsSourceRed: broad parcelable red classifier for BFS component extraction.
+    // Excludes orange street/access (g >= 80).
+    private static bool IsSourceRed(byte r, byte g, byte b)
+    {
+        if (r == 206 && g == 0 && b == 0) return true;
+        if (r < 140) return false;
+        if (g > 40)  return false;
+        if (b > 40)  return false;
+        if (IsStreetAccessOrange(r, g, b)) return false;
+        return true;
+    }
+
+    // IsOriginalSourceRed: tight classifier for FinalizeAfterOutputs scan only.
+    // Must NOT match output shades (166,0,0), (196,20,20), (226,40,40):
+    //   shade 0 excluded by r < 180, shades 1+2 excluded by g > 5 / b > 5.
+    private static bool IsOriginalSourceRed(byte r, byte g, byte b)
+        => r >= 180 && g <= 5 && b <= 5;
+
     // -----------------------------------------------------------------------
     // Connected-component extraction (4-connectivity BFS)
     // -----------------------------------------------------------------------
 
     private static List<(int X1, int Y1, int X2, int Y2, int PixelCount, HashSet<(int x, int y)> Pixels)>
-        ExtractComponents(System.Drawing.Bitmap bmp)
+        ExtractComponents(System.Drawing.Bitmap bmp, Func<byte, byte, byte, bool> classifier)
     {
         int w = bmp.Width, h = bmp.Height;
         var visited = new bool[w, h];
@@ -64,7 +133,7 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         {
             if (visited[sx, sy]) continue;
             var px = bmp.GetPixel(sx, sy);
-            if (!IsResidentialBlue(px.R, px.G, px.B)) continue;
+            if (!classifier(px.R, px.G, px.B)) continue;
 
             var pixels = new HashSet<(int, int)>();
             var queue  = new Queue<(int, int)>();
@@ -85,7 +154,7 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
                     if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
                     if (visited[nx, ny]) continue;
                     var npx = bmp.GetPixel(nx, ny);
-                    if (!IsResidentialBlue(npx.R, npx.G, npx.B)) continue;
+                    if (!classifier(npx.R, npx.G, npx.B)) continue;
                     visited[nx, ny] = true;
                     queue.Enqueue((nx, ny));
                 }
@@ -142,11 +211,175 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         return ranges;
     }
 
-    private static int CalculateLotCount(int frontageSpan)
-        => Math.Max(1, (int)Math.Round((double)frontageSpan / TargetFrontageTiles));
+    private static int CalculateLotCount(int frontageSpan, int targetFrontageTiles)
+        => Math.Max(1, (int)Math.Round((double)frontageSpan / targetFrontageTiles));
 
-    private static (byte R, byte G, byte B) GetShade(int componentOrder, int primaryIndex, int secondaryIndex)
-        => s_shades[(componentOrder * 7 + primaryIndex + secondaryIndex) % s_shades.Length];
+    private static (byte R, byte G, byte B) GetShadeFromPalette(
+        (byte R, byte G, byte B)[] palette,
+        int componentOrder, int primaryIndex, int secondaryIndex)
+        => palette[(componentOrder * 7 + primaryIndex + secondaryIndex) % palette.Length];
+
+    private static void ReassignShades(
+        List<QuadrilateralLot> lots, int compOrder, (byte R, byte G, byte B)[] shades)
+    {
+        if (lots.Count == 0) return;
+        bool isNS = lots[0].FrontageDirection == "NORTH" || lots[0].FrontageDirection == "SOUTH";
+        if (isNS)
+        {
+            var groups = lots.GroupBy(l => l.FrontageDirection)
+                             .OrderBy(g => g.Key == "NORTH" ? 0 : 1);
+            int rowOffset = 0;
+            foreach (var grp in groups)
+            {
+                var ordered = grp.OrderBy(l => l.X1).ToList();
+                for (int ci = 0; ci < ordered.Count; ci++)
+                {
+                    var shade = GetShadeFromPalette(shades, compOrder, ci, rowOffset);
+                    var lot   = ordered[ci];
+                    lot.ShadeR = shade.R; lot.ShadeG = shade.G; lot.ShadeB = shade.B;
+                    lot.ShadeRgb = $"{shade.R},{shade.G},{shade.B}";
+                }
+                rowOffset++;
+            }
+        }
+        else
+        {
+            var groups = lots.GroupBy(l => l.FrontageDirection)
+                             .OrderBy(g => g.Key == "WEST" ? 0 : 1);
+            int colOffset = 0;
+            foreach (var grp in groups)
+            {
+                var ordered = grp.OrderBy(l => l.Y1).ToList();
+                for (int ri = 0; ri < ordered.Count; ri++)
+                {
+                    var shade = GetShadeFromPalette(shades, compOrder, ri, colOffset);
+                    var lot   = ordered[ri];
+                    lot.ShadeR = shade.R; lot.ShadeG = shade.G; lot.ShadeB = shade.B;
+                    lot.ShadeRgb = $"{shade.R},{shade.G},{shade.B}";
+                }
+                colOffset++;
+            }
+        }
+    }
+
+    private static List<QuadrilateralFacadeEdge> RebuildFacadeEdges(
+        List<QuadrilateralLot> lots, DetectedBlueComponent comp, int compOrder)
+    {
+        var edges = new List<QuadrilateralFacadeEdge>();
+        if (lots.Count == 0) return edges;
+        bool isNS = lots[0].FrontageDirection == "NORTH" || lots[0].FrontageDirection == "SOUTH";
+        int frontageSpan = isNS ? comp.BboxWidth : comp.BboxHeight;
+
+        foreach (var lot in lots)
+        {
+            string edgeId = $"{lot.LotId}_FACADE_EDGE";
+            lot.PrimaryFacadeEdgeId = edgeId;
+
+            int x1, y1, x2, y2, length, contactCount;
+            switch (lot.FrontageDirection)
+            {
+                case "NORTH":
+                    x1 = lot.X1; y1 = lot.Y1; x2 = lot.X2; y2 = lot.Y1;
+                    length = lot.Width; contactCount = comp.NorthStreetContactCount;
+                    break;
+                case "SOUTH":
+                    x1 = lot.X1; y1 = lot.Y2; x2 = lot.X2; y2 = lot.Y2;
+                    length = lot.Width; contactCount = comp.SouthStreetContactCount;
+                    break;
+                case "EAST":
+                    x1 = lot.X2; y1 = lot.Y1; x2 = lot.X2; y2 = lot.Y2;
+                    length = lot.Height; contactCount = comp.EastStreetContactCount;
+                    break;
+                default: // WEST
+                    x1 = lot.X1; y1 = lot.Y1; x2 = lot.X1; y2 = lot.Y2;
+                    length = lot.Height; contactCount = comp.WestStreetContactCount;
+                    break;
+            }
+
+            edges.Add(new QuadrilateralFacadeEdge
+            {
+                ComponentId        = comp.ComponentId,
+                LotId              = lot.LotId,
+                FacadeEdgeId       = edgeId,
+                FrontageDirection  = lot.FrontageDirection,
+                X1 = x1, Y1 = y1, X2 = x2, Y2 = y2,
+                LengthTiles        = length,
+                StreetContactCount = contactCount,
+                StreetContactRatio = Math.Round((double)contactCount / frontageSpan, 4),
+            });
+        }
+        return edges;
+    }
+
+    private static (List<QuadrilateralLot> Lots, List<QuadrilateralFacadeEdge> Edges, int MergeCount)
+        MergeUndersizedLots(
+            List<QuadrilateralLot>        inputLots,
+            List<QuadrilateralFacadeEdge> inputEdges,
+            DetectedBlueComponent         comp,
+            int                           compOrder,
+            (byte R, byte G, byte B)[]    shades,
+            LotSizingPolicy               policy)
+    {
+        var working    = new List<QuadrilateralLot>(inputLots);
+        int mergeCount = 0;
+
+        bool anyMerged;
+        do
+        {
+            anyMerged = false;
+            var undersizedList = working
+                .Where(l => IsUndersized(l, policy))
+                .OrderBy(l => l.LotId)
+                .ToList();
+
+            foreach (var undersized in undersizedList)
+            {
+                if (!working.Contains(undersized)) continue;
+                if (working.Count == 1) break;
+
+                QuadrilateralLot? best    = null;
+                int bestSameDir = -1, bestEdge = -1, bestArea = -1, bestIdx = int.MaxValue;
+
+                for (int i = 0; i < working.Count; i++)
+                {
+                    var candidate = working[i];
+                    if (ReferenceEquals(candidate, undersized)) continue;
+                    int edgeLen = SharedEdgeLength(undersized, candidate);
+                    if (edgeLen <= 0) continue;
+                    int sameDir = candidate.FrontageDirection == undersized.FrontageDirection ? 1 : 0;
+                    int area    = candidate.TileCount;
+                    bool isBetter =
+                        best is null
+                        || sameDir  > bestSameDir
+                        || (sameDir == bestSameDir && edgeLen >  bestEdge)
+                        || (sameDir == bestSameDir && edgeLen == bestEdge && area >  bestArea)
+                        || (sameDir == bestSameDir && edgeLen == bestEdge && area == bestArea && i < bestIdx);
+                    if (isBetter)
+                    { best = candidate; bestSameDir = sameDir; bestEdge = edgeLen; bestArea = area; bestIdx = i; }
+                }
+
+                if (best is null) continue;
+
+                best.X1 = Math.Min(undersized.X1, best.X1);
+                best.Y1 = Math.Min(undersized.Y1, best.Y1);
+                best.X2 = Math.Max(undersized.X2, best.X2);
+                best.Y2 = Math.Max(undersized.Y2, best.Y2);
+                best.Width     = best.X2 - best.X1 + 1;
+                best.Height    = best.Y2 - best.Y1 + 1;
+                best.TileCount = best.Width * best.Height;
+                working.Remove(undersized);
+                mergeCount++;
+                anyMerged = true;
+            }
+        } while (anyMerged && working.Count > 1);
+
+        if (mergeCount > 0)
+        {
+            ReassignShades(working, compOrder, shades);
+            return (working, RebuildFacadeEdges(working, comp, compOrder), mergeCount);
+        }
+        return (working, inputEdges, 0);
+    }
 
     // -----------------------------------------------------------------------
     // Build
@@ -198,7 +431,7 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         }
 
         // Extract connected blue components
-        var rawComponents = ExtractComponents(srcBmp);
+        var rawComponents = ExtractComponents(srcBmp, IsResidentialBlue);
 
         result.DetectedBlueComponentCount = rawComponents.Count;
         AddCheck(checks, "MAP29A_DETECTED_BLUE_COMPONENT_COUNT_GT0",
@@ -211,6 +444,8 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         var components = new List<DetectedBlueComponent>();
         // pixel → lot shade mapping for output PNG
         var pixelShadeMap = new Dictionary<(int x, int y), (byte R, byte G, byte B)>();
+        int totalBlueMergeCount = 0;
+        int totalRedMergeCount  = 0;
 
         for (int ci = 0; ci < rawComponents.Count; ci++)
         {
@@ -248,6 +483,7 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
             var comp = new DetectedBlueComponent
             {
                 ComponentId             = compId,
+                ParcelClass             = ParcelClassBlue,
                 BboxX1                  = bx1, BboxY1 = by1, BboxX2 = bx2, BboxY2 = by2,
                 BboxWidth               = bboxW,
                 BboxHeight              = bboxH,
@@ -272,7 +508,8 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
 
             if (processable)
             {
-                var (lots, edges, orientCase, frontageGroup, primarySides) = CalculateLots(comp, ci);
+                var (lots, edges, orientCase, frontageGroup, primarySides, mergeBlue) = CalculateLots(comp, ci, s_shades, ParcelClassBlue);
+                totalBlueMergeCount   += mergeBlue;
                 comp.OrientationCase       = orientCase;
                 comp.SelectedFrontageGroup = frontageGroup;
                 comp.SelectedPrimarySides  = primarySides;
@@ -294,14 +531,126 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
             components.Add(comp);
         }
 
+        // -----------------------------------------------------------------------
+        // Red component extraction and processing
+        // -----------------------------------------------------------------------
+
+        var rawRedComponents = ExtractComponents(srcBmp, IsSourceRed);
+        result.DetectedRedComponentCount = rawRedComponents.Count;
+        int totalSourceRedPixels = 0;
+
+        for (int rci = 0; rci < rawRedComponents.Count; rci++)
+        {
+            var (bx1r, by1r, bx2r, by2r, pixCountR, pixelsR) = rawRedComponents[rci];
+            string compIdR = $"MAP29B_RED_COMPONENT_{rci:000}";
+
+            totalSourceRedPixels += pixCountR;
+
+            int bboxWR    = bx2r - bx1r + 1;
+            int bboxHR    = by2r - by1r + 1;
+            double ratioR = (double)pixCountR / (bboxWR * bboxHR);
+
+            bool processableR   = ratioR >= FillRatioThreshold;
+            string unsupReasonR = string.Empty;
+
+            int nContactR = CountOrangeOnSide(srcBmp, bx1r, by1r - 1, bx2r, by1r - 1);
+            int sContactR = CountOrangeOnSide(srcBmp, bx1r, by2r + 1, bx2r, by2r + 1);
+            int eContactR = CountOrangeOnSide(srcBmp, bx2r + 1, by1r, bx2r + 1, by2r);
+            int wContactR = CountOrangeOnSide(srcBmp, bx1r - 1, by1r, bx1r - 1, by2r);
+
+            bool nAdjR = MeetsAdjacencyThreshold(nContactR, bboxWR);
+            bool sAdjR = MeetsAdjacencyThreshold(sContactR, bboxWR);
+            bool eAdjR = MeetsAdjacencyThreshold(eContactR, bboxHR);
+            bool wAdjR = MeetsAdjacencyThreshold(wContactR, bboxHR);
+
+            if (processableR && !nAdjR && !sAdjR && !eAdjR && !wAdjR)
+            {
+                processableR = false;
+                unsupReasonR = "no street/access adjacency found on any side";
+            }
+            else if (!processableR)
+            {
+                unsupReasonR = $"fill_ratio={ratioR:F2} below threshold {FillRatioThreshold:F2}";
+            }
+
+            var compR = new DetectedBlueComponent
+            {
+                ComponentId             = compIdR,
+                ParcelClass             = ParcelClassRed,
+                BboxX1                  = bx1r, BboxY1 = by1r, BboxX2 = bx2r, BboxY2 = by2r,
+                BboxWidth               = bboxWR,
+                BboxHeight              = bboxHR,
+                PixelCount              = pixCountR,
+                FillRatio               = Math.Round(ratioR, 4),
+                Processable             = processableR,
+                UnsupportedReason       = unsupReasonR,
+                NorthStreetAdjacency    = nAdjR,
+                SouthStreetAdjacency    = sAdjR,
+                EastStreetAdjacency     = eAdjR,
+                WestStreetAdjacency     = wAdjR,
+                NorthStreetContactCount = nContactR,
+                SouthStreetContactCount = sContactR,
+                EastStreetContactCount  = eContactR,
+                WestStreetContactCount  = wContactR,
+            };
+
+            compR.NorthStreetContactRatio = bboxWR > 0 ? Math.Round((double)nContactR / bboxWR, 4) : 0;
+            compR.SouthStreetContactRatio = bboxWR > 0 ? Math.Round((double)sContactR / bboxWR, 4) : 0;
+            compR.EastStreetContactRatio  = bboxHR > 0 ? Math.Round((double)eContactR / bboxHR, 4) : 0;
+            compR.WestStreetContactRatio  = bboxHR > 0 ? Math.Round((double)wContactR / bboxHR, 4) : 0;
+
+            if (processableR)
+            {
+                var (lotsR, edgesR, orientCaseR, frontageGroupR, primarySidesR, mergeRed) = CalculateLots(compR, rci, s_redShades, ParcelClassRed);
+                totalRedMergeCount    += mergeRed;
+                compR.OrientationCase       = orientCaseR;
+                compR.SelectedFrontageGroup = frontageGroupR;
+                compR.SelectedPrimarySides  = primarySidesR;
+                compR.LotCount        = lotsR.Count;
+                compR.FacadeEdgeCount = edgesR.Count;
+                compR.LotIds          = lotsR.Select(l => l.LotId).ToList();
+                compR.FacadeEdgeIds   = edgesR.Select(e => e.FacadeEdgeId).ToList();
+
+                foreach (var lot in lotsR)
+                    foreach (var (px, py) in pixelsR
+                        .Where(p => p.x >= lot.X1 && p.x <= lot.X2 && p.y >= lot.Y1 && p.y <= lot.Y2))
+                        pixelShadeMap[(px, py)] = ((byte)lot.ShadeR, (byte)lot.ShadeG, (byte)lot.ShadeB);
+
+                allLots.AddRange(lotsR);
+                allEdges.AddRange(edgesR);
+            }
+
+            components.Add(compR);
+        }
+
+        _lastTotalSourceRedPixelCount = totalSourceRedPixels;
+
+        // -----------------------------------------------------------------------
+        // Populate result totals
+        // -----------------------------------------------------------------------
+
         result.Components   = components;
         result.Lots         = allLots;
         result.FacadeEdges  = allEdges;
 
-        result.ProcessedQuadrilateralComponentCount = components.Count(c => c.Processable);
-        result.UnsupportedBlueComponentCount        = components.Count(c => !c.Processable);
+        var blueComps = components.Where(c => c.ParcelClass == ParcelClassBlue).ToList();
+        var redComps  = components.Where(c => c.ParcelClass == ParcelClassRed).ToList();
+
+        result.ProcessedQuadrilateralComponentCount = blueComps.Count(c => c.Processable);
+        result.UnsupportedBlueComponentCount        = blueComps.Count(c => !c.Processable);
+        result.BlueLotCount                         = allLots.Count(l => l.ComponentId.StartsWith("MAP29A_BLUE_"));
+        result.BlueFacadeEdgeCount                  = allEdges.Count(e => e.ComponentId.StartsWith("MAP29A_BLUE_"));
+        result.ProcessedRedComponentCount           = redComps.Count(c => c.Processable);
+        result.UnsupportedRedComponentCount         = redComps.Count(c => !c.Processable);
+        result.RedLotCount                          = allLots.Count(l => l.ComponentId.StartsWith("MAP29B_RED_"));
+        result.RedFacadeEdgeCount                   = allEdges.Count(e => e.ComponentId.StartsWith("MAP29B_RED_"));
         result.TotalLotCount                        = allLots.Count;
         result.TotalFacadeEdgeCount                 = allEdges.Count;
+
+        result.LotSizingPolicyVersion        = LotSizingPolicyVersion;
+        result.BlueUndersizedLotMergeCount   = totalBlueMergeCount;
+        result.RedUndersizedLotMergeCount    = totalRedMergeCount;
+        result.UndersizedLotMergeCount       = totalBlueMergeCount + totalRedMergeCount;
 
         // Store pixel map for RenderOutputPngBytes
         _lastSourceBytes  = sourceBytes;
@@ -368,6 +717,60 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
             "Lots cover each processable component with no gaps (edge-to-edge)",
             "PASS", fullCoverage ? "PASS" : "FAIL");
 
+        // Red quality checks — only emitted if red components were detected
+        if (result.DetectedRedComponentCount > 0)
+        {
+            bool redAllProcessed = result.UnsupportedRedComponentCount == 0;
+            AddCheck(checks, "MAP29B_EVERY_RED_COMPONENT_PROCESSED",
+                "Every detected red component is processable",
+                "PASS", redAllProcessed ? "PASS" : "FAIL");
+
+            bool redAllHaveStreet = components
+                .Where(c => c.ParcelClass == ParcelClassRed && c.Processable)
+                .All(c => c.NorthStreetAdjacency || c.SouthStreetAdjacency
+                       || c.EastStreetAdjacency  || c.WestStreetAdjacency);
+            AddCheck(checks, "MAP29B_ALL_PROCESSED_RED_HAVE_STREET_ADJACENCY",
+                "All processed red components have at least one street/access adjacency",
+                "PASS", redAllHaveStreet ? "PASS" : "FAIL");
+        }
+
+        // MAP29B output check (PENDING, resolved in FinalizeAfterOutputs)
+        AddPendingCheck(checks, "MAP29B_OUTPUT_PNG_ZERO_SOURCE_RED",
+            "Output PNG contains zero source-red pixels after processing");
+
+        // MAP29B1 undersized-lot checks
+        var blueLotSizingPolicy = GetLotSizingPolicy(ParcelClassBlue);
+        bool noUndersizedBlueMultiLot = !allLots
+            .Where(l => l.ComponentId.StartsWith("MAP29A_BLUE_"))
+            .GroupBy(l => l.ComponentId)
+            .Where(g => g.Count() > 1)
+            .SelectMany(g => g)
+            .Any(l => IsUndersized(l, blueLotSizingPolicy));
+        AddCheck(checks, "MAP29B1_NO_UNDERSIZED_BLUE_LOTS",
+            "No blue lots are undersized in multi-lot components after merge pass",
+            "PASS", noUndersizedBlueMultiLot ? "PASS" : "FAIL");
+
+        if (result.DetectedRedComponentCount > 0)
+        {
+            var redLotSizingPolicy = GetLotSizingPolicy(ParcelClassRed);
+            bool noUndersizedRedMultiLot = !allLots
+                .Where(l => l.ComponentId.StartsWith("MAP29B_RED_"))
+                .GroupBy(l => l.ComponentId)
+                .Where(g => g.Count() > 1)
+                .SelectMany(g => g)
+                .Any(l => IsUndersized(l, redLotSizingPolicy));
+            AddCheck(checks, "MAP29B1_NO_UNDERSIZED_RED_LOTS",
+                "No red lots are undersized in multi-lot components after merge pass",
+                "PASS", noUndersizedRedMultiLot ? "PASS" : "FAIL");
+        }
+
+        if (result.UndersizedLotMergeCount > 0)
+        {
+            AddCheck(checks, "MAP29B1_UNDERSIZED_LOTS_MERGED",
+                $"Undersized lots merged: blue={totalBlueMergeCount} red={totalRedMergeCount} total={result.UndersizedLotMergeCount}",
+                "PASS", "PASS");
+        }
+
         // Checks 10-12: PENDING (require output PNG)
         AddPendingCheck(checks, "MAP29A_EVERY_BLUE_PIXEL_REPLACED",
             "Every original residential-blue pixel is replaced in output PNG");
@@ -401,6 +804,7 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
     // Cache for RenderOutputPngBytes (populated during Build)
     private byte[]? _lastSourceBytes;
     private Dictionary<(int x, int y), (byte R, byte G, byte B)>? _lastPixelShadeMap;
+    private int _lastTotalSourceRedPixelCount;
 
     // -----------------------------------------------------------------------
     // FinalizeAfterOutputs
@@ -414,6 +818,8 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         bool zeroBluePng = false;
         bool dimOk = false;
 
+        int sourceRedRemaining = 0;
+
         if (File.Exists(outputPngPath))
         {
             var outBytes = File.ReadAllBytes(outputPngPath);
@@ -423,18 +829,20 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
             zeroBluePng = true;
             pngOk  = true;
 
-            for (int x = 0; x < outBmp.Width && (zeroBluePng || pngOk); x++)
-            for (int y = 0; y < outBmp.Height && (zeroBluePng || pngOk); y++)
+            for (int x = 0; x < outBmp.Width; x++)
+            for (int y = 0; y < outBmp.Height; y++)
             {
                 var px = outBmp.GetPixel(x, y);
-                if (IsResidentialBlue(px.R, px.G, px.B))
-                {
-                    zeroBluePng = false;
-                    pngOk = false;
-                }
+                if (IsResidentialBlue(px.R, px.G, px.B)) { zeroBluePng = false; pngOk = false; }
+                if (IsOriginalSourceRed(px.R, px.G, px.B)) sourceRedRemaining++;
             }
         }
 
+        result.SourceRedPixelsRemaining = sourceRedRemaining;
+        result.SourceRedPixelsReplaced  = _lastTotalSourceRedPixelCount - sourceRedRemaining;
+
+        SetCheck(result, "MAP29B_OUTPUT_PNG_ZERO_SOURCE_RED",
+            sourceRedRemaining == 0 ? "PASS" : "FAIL");
         SetCheck(result, "MAP29A_EVERY_BLUE_PIXEL_REPLACED",
             pngOk ? "PASS" : "FAIL");
         SetCheck(result, "MAP29A_OUTPUT_PNG_ZERO_BLUE",
@@ -499,9 +907,10 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         return "VERTICAL"; // deterministic tie-breaker: EAST > WEST > NORTH > SOUTH
     }
 
-    private static (List<QuadrilateralLot> Lots, List<QuadrilateralFacadeEdge> Edges, string OrientCase, string FrontageGroup, List<string> PrimarySides)
-        CalculateLots(DetectedBlueComponent comp, int compOrder)
+    private static (List<QuadrilateralLot> Lots, List<QuadrilateralFacadeEdge> Edges, string OrientCase, string FrontageGroup, List<string> PrimarySides, int MergeCount)
+        CalculateLots(DetectedBlueComponent comp, int compOrder, (byte R, byte G, byte B)[] shades, string parcelClass)
     {
+        var policy = GetLotSizingPolicy(parcelClass);
         bool nAdj = comp.NorthStreetAdjacency;
         bool sAdj = comp.SouthStreetAdjacency;
         bool eAdj = comp.EastStreetAdjacency;
@@ -509,41 +918,47 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
 
         string group = SelectFrontageGroup(comp);
 
+        List<QuadrilateralLot>        lots;
+        List<QuadrilateralFacadeEdge> edges;
+        string                        orientCase;
+        List<string>                  primarySides;
+
         if (group == "HORIZONTAL")
         {
-            string orientCase;
-            List<string> primarySides;
             if (nAdj && sAdj) { orientCase = "A_NS"; primarySides = new() { "NORTH", "SOUTH" }; }
             else if (nAdj)    { orientCase = "B_N";  primarySides = new() { "NORTH" }; }
             else              { orientCase = "C_S";  primarySides = new() { "SOUTH" }; }
 
-            var (lots, edges) = BuildNSCase(comp, compOrder, nAdj, sAdj,
-                cornerFromEast: eAdj, cornerFromWest: wAdj);
-            return (lots, edges, orientCase, "HORIZONTAL", primarySides);
+            (lots, edges) = BuildNSCase(comp, compOrder, nAdj, sAdj,
+                cornerFromEast: eAdj, cornerFromWest: wAdj, shades, policy.TargetFrontageTiles);
         }
         else
         {
-            string orientCase;
-            List<string> primarySides;
             if (eAdj && wAdj) { orientCase = "D_EW"; primarySides = new() { "EAST", "WEST" }; }
             else if (eAdj)    { orientCase = "E_E";  primarySides = new() { "EAST" }; }
             else              { orientCase = "F_W";  primarySides = new() { "WEST" }; }
 
-            var (lots, edges) = BuildEWCase(comp, compOrder, eAdj, wAdj,
-                cornerFromNorth: nAdj, cornerFromSouth: sAdj);
-            return (lots, edges, orientCase, "VERTICAL", primarySides);
+            (lots, edges) = BuildEWCase(comp, compOrder, eAdj, wAdj,
+                cornerFromNorth: nAdj, cornerFromSouth: sAdj, shades, policy.TargetFrontageTiles);
         }
+
+        int mergeCount = 0;
+        if (policy.MergeUndersizedLots && lots.Count > 1)
+            (lots, edges, mergeCount) = MergeUndersizedLots(lots, edges, comp, compOrder, shades, policy);
+
+        return (lots, edges, orientCase, group, primarySides, mergeCount);
     }
 
     private static (List<QuadrilateralLot> Lots, List<QuadrilateralFacadeEdge> Edges)
         BuildNSCase(DetectedBlueComponent comp, int compOrder, bool nAdj, bool sAdj,
-            bool cornerFromEast, bool cornerFromWest)
+            bool cornerFromEast, bool cornerFromWest, (byte R, byte G, byte B)[] shades,
+            int targetFrontageTiles)
     {
         var lots  = new List<QuadrilateralLot>();
         var edges = new List<QuadrilateralFacadeEdge>();
 
         int frontageSpan = comp.BboxX2 - comp.BboxX1 + 1;
-        int lotCount     = CalculateLotCount(frontageSpan);
+        int lotCount     = CalculateLotCount(frontageSpan, targetFrontageTiles);
         var columns      = SplitInclusiveSpan(comp.BboxX1, comp.BboxX2, lotCount);
 
         IReadOnlyList<(int S1, int S2, int Span)> rows;
@@ -580,7 +995,7 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
                 var (cx1, cx2, cw) = columns[ci];
                 bool isCorner = (cornerFromWest && cx1 == comp.BboxX1) ||
                                 (cornerFromEast && cx2 == comp.BboxX2);
-                var  shade    = GetShade(compOrder, ci, rowOffset);
+                var  shade    = GetShadeFromPalette(shades, compOrder, ci, rowOffset);
 
                 string lotId  = $"{comp.ComponentId}_{dir}_LOT_{ci:00}";
                 string edgeId = $"{lotId}_FACADE_EDGE";
@@ -623,13 +1038,14 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
 
     private static (List<QuadrilateralLot> Lots, List<QuadrilateralFacadeEdge> Edges)
         BuildEWCase(DetectedBlueComponent comp, int compOrder, bool eAdj, bool wAdj,
-            bool cornerFromNorth, bool cornerFromSouth)
+            bool cornerFromNorth, bool cornerFromSouth, (byte R, byte G, byte B)[] shades,
+            int targetFrontageTiles)
     {
         var lots  = new List<QuadrilateralLot>();
         var edges = new List<QuadrilateralFacadeEdge>();
 
         int frontageSpan = comp.BboxY2 - comp.BboxY1 + 1;
-        int lotCount     = CalculateLotCount(frontageSpan);
+        int lotCount     = CalculateLotCount(frontageSpan, targetFrontageTiles);
         var rows         = SplitInclusiveSpan(comp.BboxY1, comp.BboxY2, lotCount);
 
         IReadOnlyList<(int S1, int S2, int Span)> cols;
@@ -666,7 +1082,7 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
                 var (ry1, ry2, rh) = rows[ri];
                 bool isCorner = (cornerFromNorth && ry1 == comp.BboxY1) ||
                                 (cornerFromSouth && ry2 == comp.BboxY2);
-                var  shade    = GetShade(compOrder, ri, colOffset);
+                var  shade    = GetShadeFromPalette(shades, compOrder, ri, colOffset);
 
                 string lotId  = $"{comp.ComponentId}_{dir}_LOT_{ri:00}";
                 string edgeId = $"{lotId}_FACADE_EDGE";
@@ -814,17 +1230,24 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         var map = new Dictionary<(int, int), (byte, byte, byte)>();
         if (!File.Exists(result.SourcePng)) return map;
 
+        var classMap = result.Components.ToDictionary(c => c.ComponentId, c => c.ParcelClass);
+
         var sourceBytes = File.ReadAllBytes(result.SourcePng);
         using var bmp = LoadBitmap(sourceBytes);
 
         foreach (var lot in result.Lots)
         {
             byte r = (byte)lot.ShadeR, g = (byte)lot.ShadeG, b = (byte)lot.ShadeB;
+            bool isRed = classMap.TryGetValue(lot.ComponentId, out var cls)
+                      && cls == ParcelClassRed;
             for (int x = lot.X1; x <= lot.X2; x++)
             for (int y = lot.Y1; y <= lot.Y2; y++)
             {
                 var px = bmp.GetPixel(x, y);
-                if (IsResidentialBlue(px.R, px.G, px.B))
+                bool isTarget = isRed
+                    ? IsSourceRed(px.R, px.G, px.B)
+                    : IsResidentialBlue(px.R, px.G, px.B);
+                if (isTarget)
                     map[(x, y)] = (r, g, b);
             }
         }
@@ -868,19 +1291,27 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
     public string RenderSummary(DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillResult r)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("MAP-29A WORLDBUILDER RESIDENTIAL BLUE QUADRILATERAL LOT FILL");
-        sb.AppendLine($"Generated UTC      : {r.GeneratedUtc}");
-        sb.AppendLine($"Source PNG         : {r.SourcePng}");
-        sb.AppendLine($"Source SHA256      : {r.SourcePngSha256[..16]}...");
-        sb.AppendLine($"Map ID             : {r.MapId}");
-        sb.AppendLine($"Blue components    : {r.DetectedBlueComponentCount} detected / {r.ProcessedQuadrilateralComponentCount} processed / {r.UnsupportedBlueComponentCount} unsupported");
-        sb.AppendLine($"Total lots         : {r.TotalLotCount}");
-        sb.AppendLine($"Total facade edges : {r.TotalFacadeEdgeCount}");
-        sb.AppendLine($"Checks             : {r.CheckCount} total / {r.PassedCheckCount} PASS / {r.FailedCheckCount} FAIL");
-        sb.AppendLine($"Is Valid           : {r.IsValid}");
-        sb.AppendLine($"Verdict            : {r.Verdict}");
-        sb.AppendLine($"Forbidden Scan     : {r.ForbiddenArtifactScan}");
-        sb.AppendLine($"Claim boundary     : sandbox_only=true | writer_ready=false | runtime_valid=false | materialized=false");
+        sb.AppendLine("MAP-29A/MAP-29B WORLDBUILDER RESIDENTIAL QUADRILATERAL LOT FILL");
+        sb.AppendLine($"Generated UTC           : {r.GeneratedUtc}");
+        sb.AppendLine($"Source PNG              : {r.SourcePng}");
+        sb.AppendLine($"Source SHA256           : {r.SourcePngSha256[..16]}...");
+        sb.AppendLine($"Map ID                  : {r.MapId}");
+        sb.AppendLine($"Blue components         : {r.DetectedBlueComponentCount} detected / {r.ProcessedQuadrilateralComponentCount} processed / {r.UnsupportedBlueComponentCount} unsupported");
+        sb.AppendLine($"Blue lots               : {r.BlueLotCount}");
+        sb.AppendLine($"Blue facade edges       : {r.BlueFacadeEdgeCount}");
+        sb.AppendLine($"Red components          : {r.DetectedRedComponentCount} detected / {r.ProcessedRedComponentCount} processed / {r.UnsupportedRedComponentCount} unsupported");
+        sb.AppendLine($"Red lots                : {r.RedLotCount}");
+        sb.AppendLine($"Red facade edges        : {r.RedFacadeEdgeCount}");
+        sb.AppendLine($"Source red replaced     : {r.SourceRedPixelsReplaced} / remaining {r.SourceRedPixelsRemaining}");
+        sb.AppendLine($"Total lots              : {r.TotalLotCount}");
+        sb.AppendLine($"Total facade edges      : {r.TotalFacadeEdgeCount}");
+        sb.AppendLine($"Lot sizing policy       : {r.LotSizingPolicyVersion}");
+        sb.AppendLine($"Merges (MAP29B1)        : total={r.UndersizedLotMergeCount} blue={r.BlueUndersizedLotMergeCount} red={r.RedUndersizedLotMergeCount}");
+        sb.AppendLine($"Checks                  : {r.CheckCount} total / {r.PassedCheckCount} PASS / {r.FailedCheckCount} FAIL");
+        sb.AppendLine($"Is Valid                : {r.IsValid}");
+        sb.AppendLine($"Verdict                 : {r.Verdict}");
+        sb.AppendLine($"Forbidden Scan          : {r.ForbiddenArtifactScan}");
+        sb.AppendLine($"Claim boundary          : sandbox_only=true | writer_ready=false | runtime_valid=false | materialized=false");
         if (r.Errors.Count > 0) { sb.AppendLine("Errors:"); foreach (var e in r.Errors) sb.AppendLine($"  {e}"); }
         return sb.ToString();
     }
@@ -900,6 +1331,9 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         sb.AppendLine("<p class=\"warn\">NOT a playable Project Zomboid export. NOT .lotpack/.lotheader/.lua/.bin.</p>");
         sb.AppendLine($"<p>Source: {r.SourcePng}<br>");
         sb.AppendLine($"Blue components: {r.DetectedBlueComponentCount} detected / {r.ProcessedQuadrilateralComponentCount} processed / {r.UnsupportedBlueComponentCount} unsupported<br>");
+        sb.AppendLine($"Blue lots: {r.BlueLotCount} | Blue facade edges: {r.BlueFacadeEdgeCount}<br>");
+        sb.AppendLine($"Red components: {r.DetectedRedComponentCount} detected / {r.ProcessedRedComponentCount} processed / {r.UnsupportedRedComponentCount} unsupported<br>");
+        sb.AppendLine($"Red lots: {r.RedLotCount} | Red facade edges: {r.RedFacadeEdgeCount} | Source red replaced: {r.SourceRedPixelsReplaced} / remaining: {r.SourceRedPixelsRemaining}<br>");
         sb.AppendLine($"Total lots: {r.TotalLotCount} | Total facade edges: {r.TotalFacadeEdgeCount}</p>");
         sb.AppendLine("<div class=\"card\">");
         sb.AppendLine("  <img src=\"map_00_residential_blue_lot_fill_output_native_256.png\" alt=\"lot fill output\">");

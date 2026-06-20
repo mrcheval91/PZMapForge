@@ -13,8 +13,23 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillResult
     [JsonPropertyName("detected_blue_component_count")]           public int DetectedBlueComponentCount          { get; set; }
     [JsonPropertyName("processed_quadrilateral_component_count")] public int ProcessedQuadrilateralComponentCount { get; set; }
     [JsonPropertyName("unsupported_blue_component_count")]        public int UnsupportedBlueComponentCount        { get; set; }
+    [JsonPropertyName("blue_lot_count")]                          public int BlueLotCount                         { get; set; }
+    [JsonPropertyName("blue_facade_edge_count")]                  public int BlueFacadeEdgeCount                  { get; set; }
     [JsonPropertyName("total_lot_count")]                         public int TotalLotCount                        { get; set; }
     [JsonPropertyName("total_facade_edge_count")]                 public int TotalFacadeEdgeCount                 { get; set; }
+
+    [JsonPropertyName("detected_red_component_count")]           public int DetectedRedComponentCount          { get; set; }
+    [JsonPropertyName("processed_red_component_count")]          public int ProcessedRedComponentCount         { get; set; }
+    [JsonPropertyName("unsupported_red_component_count")]        public int UnsupportedRedComponentCount       { get; set; }
+    [JsonPropertyName("red_lot_count")]                          public int RedLotCount                        { get; set; }
+    [JsonPropertyName("red_facade_edge_count")]                  public int RedFacadeEdgeCount                 { get; set; }
+    [JsonPropertyName("source_red_pixels_replaced")]             public int SourceRedPixelsReplaced            { get; set; }
+    [JsonPropertyName("source_red_pixels_remaining")]           public int SourceRedPixelsRemaining           { get; set; }
+
+    [JsonPropertyName("lot_sizing_policy_version")]             public string LotSizingPolicyVersion          { get; set; } = string.Empty;
+    [JsonPropertyName("undersized_lot_merge_count")]            public int    UndersizedLotMergeCount         { get; set; }
+    [JsonPropertyName("blue_undersized_lot_merge_count")]       public int    BlueUndersizedLotMergeCount     { get; set; }
+    [JsonPropertyName("red_undersized_lot_merge_count")]        public int    RedUndersizedLotMergeCount      { get; set; }
 
     [JsonPropertyName("components")]    public List<DetectedBlueComponent>           Components   { get; set; } = new();
     [JsonPropertyName("lots")]          public List<QuadrilateralLot>                Lots         { get; set; } = new();
@@ -41,6 +56,7 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillResult
 public sealed class DetectedBlueComponent
 {
     [JsonPropertyName("component_id")]         public string ComponentId        { get; set; } = string.Empty;
+    [JsonPropertyName("parcel_class")]         public string ParcelClass        { get; set; } = string.Empty;
     [JsonPropertyName("bbox_x1")]              public int    BboxX1             { get; set; }
     [JsonPropertyName("bbox_y1")]              public int    BboxY1             { get; set; }
     [JsonPropertyName("bbox_x2")]              public int    BboxX2             { get; set; }
