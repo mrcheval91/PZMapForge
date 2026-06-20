@@ -12,6 +12,14 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
     private const string ParcelClassBlue = "BLUE_RESIDENTIAL";
     private const string ParcelClassRed  = "RED_RESIDENTIAL_OR_COMMERCIAL";
 
+    // Skipped-lot preview color: muted amber/brown.
+    // Not cyan (40,192,192), not pure black, not source-blue (r<100 && b>140 && b>r+50),
+    // not source-red (r>=180 && g<=5 && b<=5).
+    private static readonly (int R, int G, int B) SkippedLotColor = (152, 112, 52);
+    public  static (int R, int G, int B) SkippedLotPreviewColor => SkippedLotColor;
+    public  static string SkippedLotPreviewColorRgbString =>
+        $"rgb({SkippedLotColor.R},{SkippedLotColor.G},{SkippedLotColor.B})";
+
     // -----------------------------------------------------------------------
     // Internal models
     // -----------------------------------------------------------------------
@@ -66,6 +74,15 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
     }
 
     // -----------------------------------------------------------------------
+    // Pixel map cache — built during Build(), consumed by RenderOutputPngBytes()
+    // -----------------------------------------------------------------------
+
+    private string                    _cachedSourcePng  = string.Empty;
+    private (int R, int G, int B)[,]? _cachedPixelMap;
+    private int                       _cachedMapWidth;
+    private int                       _cachedMapHeight;
+
+    // -----------------------------------------------------------------------
     // Check helpers
     // -----------------------------------------------------------------------
 
@@ -85,7 +102,6 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
     private static void FinalizeResult(
         DeadMtlWorldBuilderParcelBuildingFootprintCandidatesResult result,
         List<ParcelBuildingFootprintCheck> checks,
-        string outputRoot,
         bool valid,
         string verdict)
     {
@@ -109,6 +125,21 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
             ? $"{prefix} PASS (0 forbidden artifacts in output root)"
             : $"{prefix} FAIL ({count} forbidden artifacts found)";
     }
+
+    // -----------------------------------------------------------------------
+    // Pixel color classifiers
+    // -----------------------------------------------------------------------
+
+    private static bool IsCyanDebug(int r, int g, int b)  => r < 60 && g > 180 && b > 180;
+    private static bool IsPureBlack(int r, int g, int b)  => r == 0 && g == 0 && b == 0;
+
+    // Source-blue: matches original blue residential parcel pixels (~58,94,174)
+    // Does NOT match: lot shades (beige R>=150), background (18,18,24 B=24<140), skipped-lot color (R=152>100)
+    private static bool IsSourceBlue(int r, int g, int b) => r < 100 && b > 140 && b > r + 50;
+
+    // Source-red: matches original source red parcel pixels (r>=180, g<=5, b<=5)
+    // Does NOT match: red lot shades (196,20,20 g=20>5) or (226,40,40 g=40>5)
+    private static bool IsSourceRed(int r, int g, int b)  => r >= 180 && g <= 5 && b <= 5;
 
     // -----------------------------------------------------------------------
     // JSON loaders
@@ -244,7 +275,6 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
             return (0, 0, 0, 0, true,
                 $"Footprint depth {fpDepth} < min_footprint_depth_tiles {policy.MinFootprintDepthTiles}");
 
-        // Enforce max coverage ratio — reduce depth from rear side
         int fpArea    = (fpX2 - fpX1 + 1) * (fpY2 - fpY1 + 1);
         double coverage = (double)fpArea / lot.TileCount;
 
@@ -277,10 +307,79 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
     }
 
     // -----------------------------------------------------------------------
-    // Cache for RenderOutputPngBytes
+    // Preview paint map — builds pixel-level representation for checks + PNG
     // -----------------------------------------------------------------------
 
-    private string _cachedSourcePng = string.Empty;
+    private (int PaintedLotCount, int PaintedSkippedLotCount) BuildPreviewPaintMap(
+        List<LotEntry> allLots,
+        HashSet<string> skippedLotIds,
+        List<ParcelBuildingFootprintCandidate> footprints)
+    {
+        const int DefaultSize = 256;
+        int w, h;
+        (int R, int G, int B)[,] map;
+
+        if (!string.IsNullOrEmpty(_cachedSourcePng) && File.Exists(_cachedSourcePng))
+        {
+            using var src = new System.Drawing.Bitmap(_cachedSourcePng);
+            w = src.Width;
+            h = src.Height;
+            map = new (int R, int G, int B)[w, h];
+            for (int x = 0; x < w; x++)
+                for (int y = 0; y < h; y++)
+                {
+                    var c = src.GetPixel(x, y);
+                    map[x, y] = (c.R, c.G, c.B);
+                }
+        }
+        else
+        {
+            w = DefaultSize;
+            h = DefaultSize;
+            map = new (int R, int G, int B)[w, h];
+            for (int x = 0; x < w; x++)
+                for (int y = 0; y < h; y++)
+                    map[x, y] = (18, 18, 24);
+        }
+
+        // Pass 1: paint ALL lot bases (including skipped) with lot shade
+        int paintedLotCount = 0;
+        foreach (var lot in allLots)
+        {
+            for (int x = Math.Max(0, lot.X1); x <= Math.Min(w - 1, lot.X2); x++)
+                for (int y = Math.Max(0, lot.Y1); y <= Math.Min(h - 1, lot.Y2); y++)
+                    map[x, y] = (lot.ShadeR, lot.ShadeG, lot.ShadeB);
+            paintedLotCount++;
+        }
+
+        // Pass 2: paint skipped lots with muted amber override so they are distinctly visible
+        int paintedSkippedLotCount = 0;
+        foreach (var lot in allLots)
+        {
+            if (!skippedLotIds.Contains(lot.LotId)) continue;
+            for (int x = Math.Max(0, lot.X1); x <= Math.Min(w - 1, lot.X2); x++)
+                for (int y = Math.Max(0, lot.Y1); y <= Math.Min(h - 1, lot.Y2); y++)
+                    map[x, y] = SkippedLotColor;
+            paintedSkippedLotCount++;
+        }
+
+        // Pass 3: paint footprint overlays (lighter shade) on top
+        foreach (var fp in footprints)
+        {
+            int fr = Math.Min(255, fp.ShadeR + 45);
+            int fg = Math.Min(255, fp.ShadeG + 45);
+            int fb = Math.Min(255, fp.ShadeB + 45);
+            for (int x = Math.Max(0, fp.FpX1); x <= Math.Min(w - 1, fp.FpX2); x++)
+                for (int y = Math.Max(0, fp.FpY1); y <= Math.Min(h - 1, fp.FpY2); y++)
+                    map[x, y] = (fr, fg, fb);
+        }
+
+        _cachedPixelMap  = map;
+        _cachedMapWidth  = w;
+        _cachedMapHeight = h;
+
+        return (paintedLotCount, paintedSkippedLotCount);
+    }
 
     // -----------------------------------------------------------------------
     // Build
@@ -289,6 +388,9 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
     public DeadMtlWorldBuilderParcelBuildingFootprintCandidatesResult Build(
         string lotFillJsonPath, string buildingFootprintPolicyPath, string outputRoot)
     {
+        _cachedPixelMap  = null;
+        _cachedSourcePng = string.Empty;
+
         var result = new DeadMtlWorldBuilderParcelBuildingFootprintCandidatesResult
         {
             Format            = "MAP-30A_WORLDBUILDER_PARCEL_BUILDING_FOOTPRINT_CANDIDATES",
@@ -298,29 +400,26 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         };
         var checks = new List<ParcelBuildingFootprintCheck>();
 
-        // Check 1 — lot fill JSON exists
         bool jsonExists = File.Exists(lotFillJsonPath);
         AddCheck(checks, "MAP30A_LOT_FILL_JSON_EXISTS", "Lot fill JSON exists",
             "PASS", jsonExists ? "PASS" : "FAIL");
         if (!jsonExists)
         {
             result.Errors.Add($"Lot fill JSON not found: {lotFillJsonPath}");
-            FinalizeResult(result, checks, outputRoot, valid: false, verdict: "MAP30A_LOT_FILL_JSON_NOT_FOUND");
+            FinalizeResult(result, checks, valid: false, verdict: "MAP30A_LOT_FILL_JSON_NOT_FOUND");
             return result;
         }
 
-        // Check 2 — policy JSON exists
         bool policyExists = File.Exists(buildingFootprintPolicyPath);
         AddCheck(checks, "MAP30A_POLICY_JSON_EXISTS", "Building footprint policy JSON exists",
             "PASS", policyExists ? "PASS" : "FAIL");
         if (!policyExists)
         {
             result.Errors.Add($"Building footprint policy not found: {buildingFootprintPolicyPath}");
-            FinalizeResult(result, checks, outputRoot, valid: false, verdict: "MAP30A_POLICY_JSON_NOT_FOUND");
+            FinalizeResult(result, checks, valid: false, verdict: "MAP30A_POLICY_JSON_NOT_FOUND");
             return result;
         }
 
-        // Load policy
         FootprintPolicyStore? policyStore;
         try
         {
@@ -330,7 +429,7 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         {
             result.Errors.Add($"Building footprint policy invalid: {ex.Message}");
             AddCheck(checks, "MAP30A_POLICY_LOADED", "Footprint policy loaded", "PASS", "FAIL");
-            FinalizeResult(result, checks, outputRoot, valid: false, verdict: "MAP30A_POLICY_INVALID");
+            FinalizeResult(result, checks, valid: false, verdict: "MAP30A_POLICY_INVALID");
             return result;
         }
         AddCheck(checks, "MAP30A_POLICY_LOADED", "Footprint policy loaded", "PASS", "PASS");
@@ -341,7 +440,6 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         result.PolicyVersion    = policyStore.Version;
         result.PolicyEntryCount = policyStore.EntryCount;
 
-        // Parse lot-fill JSON
         List<LotEntry> lots;
         string sourcePng, lotFillPolicyVersion;
         try
@@ -351,7 +449,7 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         catch (Exception ex)
         {
             result.Errors.Add($"Lot fill JSON parse error: {ex.Message}");
-            FinalizeResult(result, checks, outputRoot, valid: false, verdict: "MAP30A_LOT_FILL_JSON_INVALID");
+            FinalizeResult(result, checks, valid: false, verdict: "MAP30A_LOT_FILL_JSON_INVALID");
             return result;
         }
 
@@ -359,7 +457,6 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         result.TotalLotCount        = lots.Count;
         _cachedSourcePng            = sourcePng;
 
-        // Compute footprints
         var footprints  = new List<ParcelBuildingFootprintCandidate>();
         var skippedLots = new List<SkippedFootprintLot>();
         int eligibleCount = 0;
@@ -426,7 +523,18 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         result.BlueFootprintCount = footprints.Count(f => f.ParcelClass == ParcelClassBlue);
         result.RedFootprintCount  = footprints.Count(f => f.ParcelClass == ParcelClassRed);
 
-        // Check 4 — footprints inside lots (conditional)
+        // Build the preview pixel map now — checks B3/B4 scan it directly
+        var skippedLotIds = new HashSet<string>(skippedLots.Select(s => s.LotId));
+        var (paintedLotCount, paintedSkippedLotCount) = BuildPreviewPaintMap(lots, skippedLotIds, footprints);
+
+        result.PreviewPaintedLotCount        = paintedLotCount;
+        result.PreviewPaintedSkippedLotCount = paintedSkippedLotCount;
+        result.SkippedLotPreviewColorRgb     = SkippedLotPreviewColorRgbString;
+
+        // -----------------------------------------------------------------------
+        // MAP-30A checks (preserved)
+        // -----------------------------------------------------------------------
+
         if (footprints.Count > 0)
         {
             bool allInside = footprints.All(f =>
@@ -437,7 +545,6 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
                 "PASS", allInside ? "PASS" : "FAIL");
         }
 
-        // Check 5 — no runtime artifacts
         result.ForbiddenArtifactScan = ScanOutputRoot(outputRoot);
         bool scanPasses = result.ForbiddenArtifactScan.Contains("PASS", StringComparison.Ordinal)
                        && !result.ForbiddenArtifactScan.Contains("FAIL", StringComparison.Ordinal);
@@ -445,12 +552,6 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
             "No forbidden runtime artifacts in output root",
             "PASS", scanPasses ? "PASS" : "FAIL");
 
-        // Check 6 — clean preview (guaranteed by construction)
-        AddCheck(checks, "MAP30A_CLEAN_PREVIEW_NO_CYAN_BLACK",
-            "Preview PNG uses no cyan or pure-black debug lines",
-            "PASS", "PASS");
-
-        // Claim boundary checks
         AddCheck(checks, "MAP30A_SANDBOX_ONLY_TRUE",  "SandboxOnly is true",  "True",  result.SandboxOnly.ToString());
         AddCheck(checks, "MAP30A_WRITER_READY_FALSE",  "WriterReady is false", "False", result.WriterReady.ToString());
         AddCheck(checks, "MAP30A_RUNTIME_VALID_FALSE", "RuntimeValid is false","False", result.RuntimeValid.ToString());
@@ -458,7 +559,75 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         AddCheck(checks, "MAP30A_NO_RUNTIME_PROOF",    "RuntimeProofClaimed is false",           "False", result.RuntimeProofClaimed.ToString());
         AddCheck(checks, "MAP30A_NO_PUBLIC_PLAYABLE",  "PublicPlayablePackagingClaimed is false", "False", result.PublicPlayablePackagingClaimed.ToString());
 
-        FinalizeResult(result, checks, outputRoot,
+        // -----------------------------------------------------------------------
+        // MAP-30B checks (new)
+        // -----------------------------------------------------------------------
+
+        // B1 — all lots painted in preview (including skipped)
+        AddCheck(checks, "MAP30B_ALL_LOTS_PAINTED_IN_PREVIEW",
+            "All lots including skipped are painted in preview",
+            result.TotalLotCount.ToString(), paintedLotCount.ToString());
+
+        // B2 — skipped lots visible (conditional)
+        if (skippedLots.Count > 0)
+        {
+            AddCheck(checks, "MAP30B_SKIPPED_LOTS_VISIBLE_IN_PREVIEW",
+                "Skipped lots painted with skipped-lot color in preview",
+                skippedLots.Count.ToString(), paintedSkippedLotCount.ToString());
+        }
+
+        // B3 — no debug cyan or pure black inside lot bounds (outside bounds may come from source PNG)
+        bool noCyanBlack = true;
+        if (_cachedPixelMap != null)
+        {
+            foreach (var lot in lots)
+            {
+                for (int x = Math.Max(0, lot.X1); x <= Math.Min(_cachedMapWidth - 1, lot.X2) && noCyanBlack; x++)
+                    for (int y = Math.Max(0, lot.Y1); y <= Math.Min(_cachedMapHeight - 1, lot.Y2) && noCyanBlack; y++)
+                    {
+                        var (r, g, b) = _cachedPixelMap[x, y];
+                        if (IsCyanDebug(r, g, b) || IsPureBlack(r, g, b))
+                            noCyanBlack = false;
+                    }
+            }
+        }
+        AddCheck(checks, "MAP30B_OUTPUT_PNG_NO_DEBUG_CYAN_OR_BLACK",
+            "No debug cyan or pure black pixels inside lot bounds",
+            "PASS", noCyanBlack ? "PASS" : "FAIL");
+
+        // B4 — no source-blue or source-red inside lot bounds after painting
+        bool noSourceColorInLots = true;
+        if (_cachedPixelMap != null)
+        {
+            foreach (var lot in lots)
+            {
+                for (int x = Math.Max(0, lot.X1); x <= Math.Min(_cachedMapWidth - 1, lot.X2) && noSourceColorInLots; x++)
+                    for (int y = Math.Max(0, lot.Y1); y <= Math.Min(_cachedMapHeight - 1, lot.Y2) && noSourceColorInLots; y++)
+                    {
+                        var (r, g, b) = _cachedPixelMap[x, y];
+                        if (IsSourceBlue(r, g, b) || IsSourceRed(r, g, b))
+                            noSourceColorInLots = false;
+                    }
+            }
+        }
+        AddCheck(checks, "MAP30B_OUTPUT_PNG_NO_SOURCE_BLUE_RED_INSIDE_LOTS",
+            "No source parcel colors remain inside lot bounds after painting",
+            "PASS", noSourceColorInLots ? "PASS" : "FAIL");
+
+        // B5 — no runtime artifacts (MAP30B prefix)
+        AddCheck(checks, "MAP30B_NO_RUNTIME_ARTIFACTS_WRITTEN",
+            "No forbidden runtime artifacts in output root (MAP30B)",
+            "PASS", scanPasses ? "PASS" : "FAIL");
+
+        // B6 — claim boundary compound
+        bool claimBoundaryOk = result.SandboxOnly && !result.WriterReady && !result.RuntimeValid
+                            && !result.Materialized && !result.RuntimeProofClaimed
+                            && !result.PublicPlayablePackagingClaimed;
+        AddCheck(checks, "MAP30B_CLAIM_BOUNDARY_FALSE",
+            "All runtime/public claim flags are false",
+            "PASS", claimBoundaryOk ? "PASS" : "FAIL");
+
+        FinalizeResult(result, checks,
             valid: !checks.Any(c => c.CheckStatus == "FAIL") && result.Errors.Count == 0,
             verdict: "MAP30A_WORLDBUILDER_PARCEL_BUILDING_FOOTPRINT_CANDIDATES_COMPLETE");
 
@@ -466,50 +635,63 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
     }
 
     // -----------------------------------------------------------------------
-    // PNG rendering
+    // PNG rendering — uses cached pixel map (same data scanned by checks)
     // -----------------------------------------------------------------------
 
     public byte[] RenderOutputPngBytes(DeadMtlWorldBuilderParcelBuildingFootprintCandidatesResult result)
     {
+        if (_cachedPixelMap != null)
+        {
+            using var bmp = new System.Drawing.Bitmap(_cachedMapWidth, _cachedMapHeight);
+            for (int x = 0; x < _cachedMapWidth; x++)
+                for (int y = 0; y < _cachedMapHeight; y++)
+                {
+                    var (r, g, b) = _cachedPixelMap[x, y];
+                    bmp.SetPixel(x, y, System.Drawing.Color.FromArgb(r, g, b));
+                }
+            using var ms = new System.IO.MemoryStream();
+            bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            return ms.ToArray();
+        }
+
+        // Fallback path (shouldn't normally execute if Build() was called first)
         const int Size = 256;
-        System.Drawing.Bitmap bmp;
+        System.Drawing.Bitmap bmpFb;
 
         if (!string.IsNullOrEmpty(_cachedSourcePng) && File.Exists(_cachedSourcePng))
         {
             var bytes = File.ReadAllBytes(_cachedSourcePng);
             using var ms2 = new System.IO.MemoryStream(bytes);
             using var tmp = new System.Drawing.Bitmap(ms2);
-            bmp = tmp.Clone(
+            bmpFb = tmp.Clone(
                 new System.Drawing.Rectangle(0, 0, tmp.Width, tmp.Height),
                 tmp.PixelFormat);
         }
         else
         {
-            bmp = new System.Drawing.Bitmap(Size, Size);
-            using var g = System.Drawing.Graphics.FromImage(bmp);
+            bmpFb = new System.Drawing.Bitmap(Size, Size);
+            using var g = System.Drawing.Graphics.FromImage(bmpFb);
             g.Clear(System.Drawing.Color.FromArgb(18, 18, 24));
         }
 
         foreach (var fp in result.Footprints)
         {
-            // Paint lot background with shade
-            for (int x = Math.Max(0, fp.LotX1); x <= Math.Min(bmp.Width - 1, fp.LotX2); x++)
-                for (int y = Math.Max(0, fp.LotY1); y <= Math.Min(bmp.Height - 1, fp.LotY2); y++)
-                    bmp.SetPixel(x, y, System.Drawing.Color.FromArgb(fp.ShadeR, fp.ShadeG, fp.ShadeB));
+            for (int x = Math.Max(0, fp.LotX1); x <= Math.Min(bmpFb.Width - 1, fp.LotX2); x++)
+                for (int y = Math.Max(0, fp.LotY1); y <= Math.Min(bmpFb.Height - 1, fp.LotY2); y++)
+                    bmpFb.SetPixel(x, y, System.Drawing.Color.FromArgb(fp.ShadeR, fp.ShadeG, fp.ShadeB));
 
-            // Paint footprint fill lighter
             int fr = Math.Min(255, fp.ShadeR + 45);
             int fg = Math.Min(255, fp.ShadeG + 45);
             int fb = Math.Min(255, fp.ShadeB + 45);
-            for (int x = Math.Max(0, fp.FpX1); x <= Math.Min(bmp.Width - 1, fp.FpX2); x++)
-                for (int y = Math.Max(0, fp.FpY1); y <= Math.Min(bmp.Height - 1, fp.FpY2); y++)
-                    bmp.SetPixel(x, y, System.Drawing.Color.FromArgb(fr, fg, fb));
+            for (int x = Math.Max(0, fp.FpX1); x <= Math.Min(bmpFb.Width - 1, fp.FpX2); x++)
+                for (int y = Math.Max(0, fp.FpY1); y <= Math.Min(bmpFb.Height - 1, fp.FpY2); y++)
+                    bmpFb.SetPixel(x, y, System.Drawing.Color.FromArgb(fr, fg, fb));
         }
 
-        using var ms = new System.IO.MemoryStream();
-        bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-        bmp.Dispose();
-        return ms.ToArray();
+        using var msFb = new System.IO.MemoryStream();
+        bmpFb.Save(msFb, System.Drawing.Imaging.ImageFormat.Png);
+        bmpFb.Dispose();
+        return msFb.ToArray();
     }
 
     // -----------------------------------------------------------------------
@@ -557,9 +739,9 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
     {
         var sb = new StringBuilder();
         sb.AppendLine("<!DOCTYPE html>");
-        sb.AppendLine("<html><head><meta charset=\"utf-8\"><title>MAP-30A Parcel Building Footprint Candidates</title></head>");
+        sb.AppendLine("<html><head><meta charset=\"utf-8\"><title>MAP-30A/B Parcel Building Footprint Candidates</title></head>");
         sb.AppendLine("<body style=\"font-family:monospace;background:#12121a;color:#ccc;padding:16px\">");
-        sb.AppendLine("<h2 style=\"color:#e8c870\">MAP-30A Parcel Building Footprint Candidates</h2>");
+        sb.AppendLine("<h2 style=\"color:#e8c870\">MAP-30A/B Parcel Building Footprint Candidates</h2>");
 
         sb.AppendLine("<h3>Summary</h3><table border=\"1\" cellpadding=\"4\">");
         sb.AppendLine($"<tr><td>Total lots</td><td>{result.TotalLotCount}</td></tr>");
@@ -568,6 +750,9 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         sb.AppendLine($"<tr><td>Skipped lots</td><td>{result.SkippedLotCount}</td></tr>");
         sb.AppendLine($"<tr><td>Blue footprints</td><td>{result.BlueFootprintCount}</td></tr>");
         sb.AppendLine($"<tr><td>Red footprints</td><td>{result.RedFootprintCount}</td></tr>");
+        sb.AppendLine($"<tr><td>Preview painted lots</td><td>{result.PreviewPaintedLotCount}</td></tr>");
+        sb.AppendLine($"<tr><td>Preview painted skipped lots</td><td>{result.PreviewPaintedSkippedLotCount}</td></tr>");
+        sb.AppendLine($"<tr><td>Skipped lot preview color</td><td style=\"background:{result.SkippedLotPreviewColorRgb}\">&nbsp;{result.SkippedLotPreviewColorRgb}&nbsp;</td></tr>");
         sb.AppendLine($"<tr><td>Policy version</td><td>{result.PolicyVersion}</td></tr>");
         sb.AppendLine($"<tr><td>Lot fill policy</td><td>{result.LotFillPolicyVersion}</td></tr>");
         sb.AppendLine($"<tr><td>Checks</td><td>{result.PassedCheckCount}/{result.CheckCount} PASS</td></tr>");
@@ -609,12 +794,14 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
     public string RenderSummary(DeadMtlWorldBuilderParcelBuildingFootprintCandidatesResult r)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("MAP-30A WORLDBUILDER PARCEL BUILDING FOOTPRINT CANDIDATES");
+        sb.AppendLine("MAP-30A/B WORLDBUILDER PARCEL BUILDING FOOTPRINT CANDIDATES");
         sb.AppendLine(new string('-', 60));
         sb.AppendLine($"Total lots              : {r.TotalLotCount}");
         sb.AppendLine($"Eligible lots           : {r.EligibleLotCount}");
         sb.AppendLine($"Footprints              : {r.FootprintCount} (blue={r.BlueFootprintCount} red={r.RedFootprintCount})");
         sb.AppendLine($"Skipped lots            : {r.SkippedLotCount}");
+        sb.AppendLine($"Preview painted lots    : {r.PreviewPaintedLotCount} (skipped={r.PreviewPaintedSkippedLotCount})");
+        sb.AppendLine($"Skipped lot color       : {r.SkippedLotPreviewColorRgb}");
         sb.AppendLine($"Footprint policy        : {r.PolicyVersion} source={r.PolicySource} entries={r.PolicyEntryCount}");
         sb.AppendLine($"Lot fill policy         : {r.LotFillPolicyVersion}");
         sb.AppendLine($"Checks                  : {r.CheckCount} total / {r.PassedCheckCount} PASS / {r.FailedCheckCount} FAIL");

@@ -22,6 +22,10 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesResult
     [JsonPropertyName("blue_footprint_count")]      public int BlueFootprintCount      { get; set; }
     [JsonPropertyName("red_footprint_count")]       public int RedFootprintCount       { get; set; }
 
+    [JsonPropertyName("preview_painted_lot_count")]         public int    PreviewPaintedLotCount        { get; set; }
+    [JsonPropertyName("preview_painted_skipped_lot_count")] public int    PreviewPaintedSkippedLotCount { get; set; }
+    [JsonPropertyName("skipped_lot_preview_color_rgb")]     public string SkippedLotPreviewColorRgb     { get; set; } = string.Empty;
+
     [JsonPropertyName("footprints")]    public List<ParcelBuildingFootprintCandidate> Footprints   { get; set; } = new();
     [JsonPropertyName("skipped_lots")]  public List<SkippedFootprintLot>              SkippedLots  { get; set; } = new();
 

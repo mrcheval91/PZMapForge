@@ -410,4 +410,236 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilderT
         var fp = r.Footprints[0];
         Assert.Equal(0 + 2, fp.FpX1);  // lotX1 + front_setback
     }
+
+    // -----------------------------------------------------------------------
+    // MAP-30B fixture helper: one valid lot + one skipped lot
+    // Valid: 14×27 NORTH BLUE at (0,0)→(13,26), shade (200,168,120)
+    //   Footprint: x1=1,y1=2,x2=12,y2=19 (after clip)  shade+45=(245,213,165)
+    // Skipped: 9×9 NORTH BLUE at (30,0)→(38,8), tile_count=81 < 96 min → skipped
+    //   Painted with SkippedLotColor (152,112,52)
+    // -----------------------------------------------------------------------
+
+    private string MakeTwoLotFillJson()
+    {
+        const string compId = "COMP_MULTI30B";
+        return $$"""
+        {
+          "lot_sizing_policy_version": "MAP29C_V1",
+          "components": [
+            { "component_id": "{{compId}}", "parcel_class": "BLUE_RESIDENTIAL" }
+          ],
+          "lots": [
+            {
+              "component_id": "{{compId}}",
+              "lot_id": "LOT_VALID",
+              "frontage_direction": "NORTH",
+              "x1": 0, "y1": 0, "x2": 13, "y2": 26,
+              "width": 14, "height": 27, "tile_count": 378,
+              "shade_r": 200, "shade_g": 168, "shade_b": 120
+            },
+            {
+              "component_id": "{{compId}}",
+              "lot_id": "LOT_SKIPPED",
+              "frontage_direction": "NORTH",
+              "x1": 30, "y1": 0, "x2": 38, "y2": 8,
+              "width": 9, "height": 9, "tile_count": 81,
+              "shade_r": 200, "shade_g": 168, "shade_b": 120
+            }
+          ]
+        }
+        """;
+    }
+
+    private System.Drawing.Bitmap RenderToBitmap(string lf, string pol)
+    {
+        var builder = NewBuilder();
+        var r       = builder.Build(lf, pol, _tempDir);
+        var bytes   = builder.RenderOutputPngBytes(r);
+        using var ms = new System.IO.MemoryStream(bytes);
+        return new System.Drawing.Bitmap(ms);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-30B 15. Skipped lot is painted with SkippedLotColor in preview
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map30B_SkippedLot_IsPaintedWithSkippedLotColor()
+    {
+        var (lf, pol) = WriteFixtures(MakeTwoLotFillJson());
+        using var bmp = RenderToBitmap(lf, pol);
+
+        var (sr, sg, sb) = DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder.SkippedLotPreviewColor;
+        // Pixel at (30,0) is inside the skipped lot (30,0)→(38,8)
+        var p = bmp.GetPixel(30, 0);
+        Assert.Equal(sr, (int)p.R);
+        Assert.Equal(sg, (int)p.G);
+        Assert.Equal(sb, (int)p.B);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-30B 16. Valid lot base color painted outside footprint region
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map30B_ValidLot_BasePaintedOutsideFootprint()
+    {
+        var (lf, pol) = WriteFixtures(MakeTwoLotFillJson());
+        using var bmp = RenderToBitmap(lf, pol);
+
+        // Lot (0,0)→(13,26), fpY1=2, fpX1=1. Pixel at (0,0) is in side-setback region → lot base
+        var p = bmp.GetPixel(0, 0);
+        Assert.Equal(200, (int)p.R);
+        Assert.Equal(168, (int)p.G);
+        Assert.Equal(120, (int)p.B);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-30B 17. Footprint overlay is lighter than lot base
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map30B_FootprintOverlay_IsLighterThanLotBase()
+    {
+        var (lf, pol) = WriteFixtures(MakeTwoLotFillJson());
+        using var bmp = RenderToBitmap(lf, pol);
+
+        // Inside footprint: (1,2) → should be lot shade + 45
+        var fpPx   = bmp.GetPixel(1, 2);
+        // Lot base: (0,0) → should be lot shade
+        var basePx = bmp.GetPixel(0, 0);
+        Assert.True(fpPx.R >= basePx.R, "Footprint R should be >= lot base R");
+        Assert.True(fpPx.G >= basePx.G, "Footprint G should be >= lot base G");
+        Assert.True(fpPx.B >= basePx.B, "Footprint B should be >= lot base B");
+        Assert.True(fpPx.R > basePx.R || fpPx.G > basePx.G || fpPx.B > basePx.B,
+            "Footprint pixel should be strictly lighter than lot base in at least one channel");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-30B 18. Output PNG has no debug cyan pixels
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map30B_OutputPng_NoCyanDebugPixels()
+    {
+        var (lf, pol) = WriteFixtures(MakeTwoLotFillJson());
+        using var bmp = RenderToBitmap(lf, pol);
+
+        bool foundCyan = false;
+        for (int x = 0; x < bmp.Width && !foundCyan; x++)
+            for (int y = 0; y < bmp.Height && !foundCyan; y++)
+            {
+                var c = bmp.GetPixel(x, y);
+                if (c.R < 60 && c.G > 180 && c.B > 180)
+                    foundCyan = true;
+            }
+        Assert.False(foundCyan, "Output PNG must contain no debug cyan pixels");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-30B 19. Output PNG has no pure black pixels
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map30B_OutputPng_NoPureBlackPixels()
+    {
+        var (lf, pol) = WriteFixtures(MakeTwoLotFillJson());
+        using var bmp = RenderToBitmap(lf, pol);
+
+        bool foundBlack = false;
+        for (int x = 0; x < bmp.Width && !foundBlack; x++)
+            for (int y = 0; y < bmp.Height && !foundBlack; y++)
+            {
+                var c = bmp.GetPixel(x, y);
+                if (c.R == 0 && c.G == 0 && c.B == 0)
+                    foundBlack = true;
+            }
+        Assert.False(foundBlack, "Output PNG must contain no pure black pixels");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-30B 20. Source-blue is not inside lot bounds after painting
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map30B_OutputPng_NoSourceBlueInsideLotBounds()
+    {
+        // Inject a source-blue pixel at (5,5) inside the valid lot, to verify the builder paints over it.
+        // We can't inject into the source PNG easily, but we can verify that after painting,
+        // the pixel at a lot-interior coordinate is NOT source-blue (r<100, b>140, b>r+50).
+        var (lf, pol) = WriteFixtures(MakeTwoLotFillJson());
+        using var bmp = RenderToBitmap(lf, pol);
+
+        // Check representative interior pixels of both lots
+        var lotBounds = new[] { (0, 0, 13, 26), (30, 0, 38, 8) };
+        foreach (var (x1, y1, x2, y2) in lotBounds)
+        {
+            for (int x = x1; x <= x2; x++)
+                for (int y = y1; y <= y2; y++)
+                {
+                    var c = bmp.GetPixel(x, y);
+                    bool isSourceBlue = c.R < 100 && c.B > 140 && c.B > c.R + 50;
+                    bool isSourceRed  = c.R >= 180 && c.G <= 5 && c.B <= 5;
+                    Assert.False(isSourceBlue || isSourceRed,
+                        $"Pixel at ({x},{y}) has source parcel color rgb({c.R},{c.G},{c.B})");
+                }
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-30B 21. PreviewPaintedLotCount == TotalLotCount
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map30B_AllLots_PaintedInPreview()
+    {
+        var (lf, pol) = WriteFixtures(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir);
+        Assert.Equal(r.TotalLotCount, r.PreviewPaintedLotCount);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-30B 22. Skipped lot preview color in result JSON
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map30B_SkippedLotPreviewColor_InResult()
+    {
+        var (lf, pol) = WriteFixtures(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir);
+        Assert.False(string.IsNullOrEmpty(r.SkippedLotPreviewColorRgb));
+        Assert.StartsWith("rgb(", r.SkippedLotPreviewColorRgb);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-30B 23. MAP30B checks present in result
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map30B_Checks_ArePresent()
+    {
+        var (lf, pol) = WriteFixtures(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir);
+        Assert.Contains(r.Checks, c => c.CheckId == "MAP30B_ALL_LOTS_PAINTED_IN_PREVIEW");
+        Assert.Contains(r.Checks, c => c.CheckId == "MAP30B_SKIPPED_LOTS_VISIBLE_IN_PREVIEW");
+        Assert.Contains(r.Checks, c => c.CheckId == "MAP30B_OUTPUT_PNG_NO_DEBUG_CYAN_OR_BLACK");
+        Assert.Contains(r.Checks, c => c.CheckId == "MAP30B_OUTPUT_PNG_NO_SOURCE_BLUE_RED_INSIDE_LOTS");
+        Assert.Contains(r.Checks, c => c.CheckId == "MAP30B_NO_RUNTIME_ARTIFACTS_WRITTEN");
+        Assert.Contains(r.Checks, c => c.CheckId == "MAP30B_CLAIM_BOUNDARY_FALSE");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-30B 24. All MAP30B checks PASS
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map30B_AllNewChecks_Pass()
+    {
+        var (lf, pol) = WriteFixtures(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir);
+        var map30bChecks = r.Checks.Where(c => c.CheckId.StartsWith("MAP30B")).ToList();
+        Assert.True(map30bChecks.Count > 0, "No MAP30B checks found");
+        foreach (var c in map30bChecks)
+            Assert.True(c.CheckStatus == "PASS", $"Check {c.CheckId} FAILED: expected={c.Expected} actual={c.Actual}");
+    }
 }

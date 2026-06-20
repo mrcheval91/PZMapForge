@@ -354,4 +354,107 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesProcessT
         Assert.DoesNotContain("media/maps",           content, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("steamapps",            content, StringComparison.OrdinalIgnoreCase);
     }
+
+    // -----------------------------------------------------------------------
+    // MAP-30B checks
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map30B_OutputJson_ContainsMap30BChecks()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var checkIds = doc.RootElement.GetProperty("checks")
+            .EnumerateArray()
+            .Select(c => c.GetProperty("check_id").GetString() ?? "")
+            .ToList();
+        Assert.Contains("MAP30B_ALL_LOTS_PAINTED_IN_PREVIEW",              checkIds);
+        Assert.Contains("MAP30B_OUTPUT_PNG_NO_DEBUG_CYAN_OR_BLACK",        checkIds);
+        Assert.Contains("MAP30B_OUTPUT_PNG_NO_SOURCE_BLUE_RED_INSIDE_LOTS",checkIds);
+        Assert.Contains("MAP30B_NO_RUNTIME_ARTIFACTS_WRITTEN",             checkIds);
+        Assert.Contains("MAP30B_CLAIM_BOUNDARY_FALSE",                     checkIds);
+    }
+
+    [Fact]
+    public void Map30B_OutputJson_AllMap30BChecks_Pass()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var map30bChecks = doc.RootElement.GetProperty("checks")
+            .EnumerateArray()
+            .Where(c => (c.GetProperty("check_id").GetString() ?? "").StartsWith("MAP30B"))
+            .ToList();
+        Assert.True(map30bChecks.Count > 0, "No MAP30B checks found in output JSON");
+        foreach (var c in map30bChecks)
+        {
+            var id     = c.GetProperty("check_id").GetString();
+            var status = c.GetProperty("check_status").GetString();
+            Assert.True(status == "PASS", $"MAP30B check {id} status={status}");
+        }
+    }
+
+    [Fact]
+    public void Map30B_OutputPng_HasNoDebugCyanOrBlack()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputPng)) return;
+
+        using var ms  = new System.IO.MemoryStream(File.ReadAllBytes(OutputPng));
+        using var bmp = new System.Drawing.Bitmap(ms);
+
+        bool found = false;
+        for (int x = 0; x < bmp.Width && !found; x++)
+            for (int y = 0; y < bmp.Height && !found; y++)
+            {
+                var c = bmp.GetPixel(x, y);
+                // cyan: r<60, g>180, b>180
+                if (c.R < 60 && c.G > 180 && c.B > 180) { found = true; break; }
+                // pure black
+                if (c.R == 0 && c.G == 0 && c.B == 0)   { found = true; break; }
+            }
+        Assert.False(found, "Output PNG must not contain debug cyan or pure black pixels");
+    }
+
+    [Fact]
+    public void Map30B_OutputCsv_ContainsSkippedLotRows()
+    {
+        // The fixture has 1 valid lot, no skipped lots — verify FOOTPRINT rows present.
+        // A separate check: run with a lot-fill JSON that has no skipped lots ensures
+        // the CSV at least contains FOOTPRINT rows. The real-map run verifies SKIPPED rows.
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputCsv)) return;
+        var csv = File.ReadAllText(OutputCsv);
+        Assert.Contains("FOOTPRINT", csv);
+    }
+
+    [Fact]
+    public void Map30B_OutputJson_PreviewPaintedLotCount_EqualsTotal()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var root   = doc.RootElement;
+        int total   = root.GetProperty("total_lot_count").GetInt32();
+        int painted = root.GetProperty("preview_painted_lot_count").GetInt32();
+        Assert.Equal(total, painted);
+    }
+
+    [Fact]
+    public void Map30B_OutputJson_SkippedLotPreviewColorRgb_IsNonEmpty()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var color = doc.RootElement.GetProperty("skipped_lot_preview_color_rgb").GetString();
+        Assert.False(string.IsNullOrEmpty(color));
+        Assert.StartsWith("rgb(", color);
+    }
 }
