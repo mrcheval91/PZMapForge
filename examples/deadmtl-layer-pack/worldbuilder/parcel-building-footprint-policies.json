@@ -1,0 +1,30 @@
+{
+  "policy_version": "MAP30A_V1",
+  "default_sector": "DEFAULT",
+  "policies": [
+    {
+      "parcel_class": "BLUE_RESIDENTIAL",
+      "neighborhood_sector": "DEFAULT",
+      "min_lot_area_tiles": 96,
+      "front_setback_tiles": 2,
+      "rear_setback_tiles": 3,
+      "side_setback_tiles": 1,
+      "min_footprint_width_tiles": 6,
+      "min_footprint_depth_tiles": 6,
+      "max_lot_coverage_ratio": 0.60,
+      "preferred_footprint_kind": "RESIDENTIAL_RECTANGLE"
+    },
+    {
+      "parcel_class": "RED_RESIDENTIAL_OR_COMMERCIAL",
+      "neighborhood_sector": "DEFAULT",
+      "min_lot_area_tiles": 120,
+      "front_setback_tiles": 0,
+      "rear_setback_tiles": 2,
+      "side_setback_tiles": 0,
+      "min_footprint_width_tiles": 6,
+      "min_footprint_depth_tiles": 6,
+      "max_lot_coverage_ratio": 0.85,
+      "preferred_footprint_kind": "COMMERCIAL_RECTANGLE"
+    }
+  ]
+}

@@ -226,6 +226,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-residential-parcel-topology"                  => DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(args[1..]),
     "deadmtl-build-worldbuilder-residential-building-footprint-plan"          => DeadMtlBuildWorldBuilderResidentialBuildingFootprintPlanCommand(args[1..]),
     "deadmtl-build-worldbuilder-residential-blue-quadrilateral-lot-fill"      => DeadMtlBuildWorldBuilderResidentialBlueQuadrilateralLotFillCommand(args[1..]),
+    "deadmtl-build-worldbuilder-parcel-building-footprint-candidates"         => DeadMtlBuildWorldBuilderParcelBuildingFootprintCandidatesCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -9443,6 +9444,97 @@ static int DeadMtlBuildWorldBuilderResidentialBlueQuadrilateralLotFillCommand(st
         Console.Error.WriteLine($"ERROR: source PNG was mutated (hash changed)");
         return 1;
     }
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return 0;
+}
+
+static int DeadMtlBuildWorldBuilderParcelBuildingFootprintCandidatesCommand(string[] args)
+{
+    var lotFillJson        = string.Empty;
+    var footprintPolicy    = string.Empty;
+    var outputRoot         = string.Empty;
+    var outputJson         = string.Empty;
+    var outputCsv          = string.Empty;
+    var outputChecksCsv    = string.Empty;
+    var outputPng          = string.Empty;
+    var outputHtml         = string.Empty;
+    var summaryPath        = string.Empty;
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--lot-fill-json":            lotFillJson     = args[i + 1]; break;
+            case "--building-footprint-policy": footprintPolicy = args[i + 1]; break;
+            case "--output-root":              outputRoot      = args[i + 1]; break;
+            case "--output-json":              outputJson      = args[i + 1]; break;
+            case "--output-csv":               outputCsv       = args[i + 1]; break;
+            case "--output-checks-csv":        outputChecksCsv = args[i + 1]; break;
+            case "--output-png":               outputPng       = args[i + 1]; break;
+            case "--output-html":              outputHtml      = args[i + 1]; break;
+            case "--summary":                  summaryPath     = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(lotFillJson)    || string.IsNullOrEmpty(footprintPolicy) ||
+        string.IsNullOrEmpty(outputRoot)     || string.IsNullOrEmpty(outputJson)      ||
+        string.IsNullOrEmpty(outputCsv)      || string.IsNullOrEmpty(outputChecksCsv) ||
+        string.IsNullOrEmpty(outputPng)      || string.IsNullOrEmpty(outputHtml)      ||
+        string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-parcel-building-footprint-candidates " +
+            "--lot-fill-json <json> --building-footprint-policy <json> --output-root <.local dir> " +
+            "--output-json <json> --output-csv <csv> --output-checks-csv <csv> " +
+            "--output-png <png> --output-html <html> --summary <txt>");
+        return 1;
+    }
+
+    foreach (var (flag, value) in new[]
+    {
+        ("--output-root",       outputRoot),
+        ("--output-json",       outputJson),
+        ("--output-csv",        outputCsv),
+        ("--output-checks-csv", outputChecksCsv),
+        ("--output-png",        outputPng),
+        ("--output-html",       outputHtml),
+        ("--summary",           summaryPath),
+    })
+    {
+        if (!value.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"ERROR: {flag} must contain .local to prevent accidental output outside sandbox: {value}");
+            return 1;
+        }
+    }
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder();
+    var result  = builder.Build(lotFillJson, footprintPolicy, outputRoot);
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputJson)!);
+
+    File.WriteAllText(outputJson,     builder.RenderJson(result));
+    File.WriteAllText(outputCsv,      builder.RenderCsv(result));
+    File.WriteAllText(outputChecksCsv,builder.RenderChecksCsv(result));
+    File.WriteAllText(outputHtml,     builder.RenderHtml(result));
+    File.WriteAllText(summaryPath,    builder.RenderSummary(result));
+    File.WriteAllBytes(outputPng,     builder.RenderOutputPngBytes(result));
 
     Console.WriteLine(builder.RenderSummary(result));
 
