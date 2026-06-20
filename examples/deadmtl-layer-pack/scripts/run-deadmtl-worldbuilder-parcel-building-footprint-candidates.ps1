@@ -18,8 +18,9 @@ $RepoRoot        = (Resolve-Path (Join-Path $ScriptDir "..\..\..\")).Path
 $CliProject      = Join-Path $RepoRoot "src\PZMapForge.Cli\PZMapForge.Cli.csproj"
 $OutputRoot      = Join-Path $RepoRoot ".local\deadmtl-authoring\worldbuilder-parcel-building-footprint-candidates\map_00"
 
-$LotFillJson     = Join-Path $RepoRoot ".local\deadmtl-authoring\worldbuilder-residential-blue-quadrilateral-lot-fill\map_00\map_00.blue_lot_fill.json"
-$FootprintPolicy = Join-Path $RepoRoot "examples\deadmtl-layer-pack\worldbuilder\parcel-building-footprint-policies.json"
+$LotFillJson       = Join-Path $RepoRoot ".local\deadmtl-authoring\worldbuilder-residential-blue-quadrilateral-lot-fill\map_00\map_00.blue_lot_fill.json"
+$FootprintPolicy   = Join-Path $RepoRoot "examples\deadmtl-layer-pack\worldbuilder\parcel-building-footprint-policies.json"
+$SectorOverrides   = Join-Path $RepoRoot "examples\deadmtl-layer-pack\worldbuilder\parcel-neighborhood-sector-overrides.json"
 
 $OutputJson      = Join-Path $OutputRoot "deadmtl-worldbuilder-parcel-building-footprint-candidates.json"
 $OutputCsv       = Join-Path $OutputRoot "deadmtl-worldbuilder-parcel-building-footprint-candidates.csv"
@@ -39,6 +40,7 @@ dotnet run --project $CliProject -- `
     deadmtl-build-worldbuilder-parcel-building-footprint-candidates `
     --lot-fill-json             $LotFillJson `
     --building-footprint-policy $FootprintPolicy `
+    --sector-overrides          $SectorOverrides `
     --output-root               $OutputRoot `
     --output-json               $OutputJson `
     --output-csv                $OutputCsv `

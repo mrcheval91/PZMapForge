@@ -642,4 +642,220 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilderT
         foreach (var c in map30bChecks)
             Assert.True(c.CheckStatus == "PASS", $"Check {c.CheckId} FAILED: expected={c.Expected} actual={c.Actual}");
     }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A fixture helpers
+    // Sector JSON: DENSE_CORE bbox (0..50, 0..50), FRINGE bbox (200..255, 200..255)
+    // Sector-aware policy: DEFAULT front=2 side=1; DENSE_CORE front=0 side=0 coverage=0.80
+    // -----------------------------------------------------------------------
+
+    private string MakeSectorJson() => """
+        {
+          "sector_overrides_version": "MAP31A_TEST_V1",
+          "sectors": [
+            {
+              "sector_id": "DENSE_CORE",
+              "label": "Dense Core Test",
+              "bbox_x1": 0, "bbox_y1": 0, "bbox_x2": 50, "bbox_y2": 50,
+              "gameplay_role": "COMMERCIAL_DENSE",
+              "tone_note": "Test dense sector"
+            },
+            {
+              "sector_id": "FRINGE",
+              "label": "Fringe Test",
+              "bbox_x1": 200, "bbox_y1": 200, "bbox_x2": 255, "bbox_y2": 255,
+              "gameplay_role": "RESIDENTIAL_LOW",
+              "tone_note": "Test fringe sector"
+            }
+          ]
+        }
+        """;
+
+    private string MakeSectorJsonFringeOnly() => """
+        {
+          "sector_overrides_version": "MAP31A_TEST_FRINGE_V1",
+          "sectors": [
+            {
+              "sector_id": "FRINGE",
+              "label": "Fringe Test",
+              "bbox_x1": 0, "bbox_y1": 0, "bbox_x2": 255, "bbox_y2": 255,
+              "gameplay_role": "RESIDENTIAL_LOW",
+              "tone_note": "Covers all - no matching policy entry"
+            }
+          ]
+        }
+        """;
+
+    private string MakeSectorAwarePolicyJson() => """
+        {
+          "policy_version": "MAP31A_TEST_V1",
+          "default_sector": "DEFAULT",
+          "policies": [
+            {
+              "parcel_class": "BLUE_RESIDENTIAL",
+              "neighborhood_sector": "DEFAULT",
+              "min_lot_area_tiles": 96,
+              "front_setback_tiles": 2,
+              "rear_setback_tiles": 3,
+              "side_setback_tiles": 1,
+              "min_footprint_width_tiles": 6,
+              "min_footprint_depth_tiles": 6,
+              "max_lot_coverage_ratio": 0.60,
+              "preferred_footprint_kind": "RESIDENTIAL_RECTANGLE"
+            },
+            {
+              "parcel_class": "BLUE_RESIDENTIAL",
+              "neighborhood_sector": "DENSE_CORE",
+              "min_lot_area_tiles": 96,
+              "front_setback_tiles": 0,
+              "rear_setback_tiles": 2,
+              "side_setback_tiles": 0,
+              "min_footprint_width_tiles": 6,
+              "min_footprint_depth_tiles": 6,
+              "max_lot_coverage_ratio": 0.80,
+              "preferred_footprint_kind": "URBAN_ROWHOUSE_RECTANGLE"
+            },
+            {
+              "parcel_class": "RED_RESIDENTIAL_OR_COMMERCIAL",
+              "neighborhood_sector": "DEFAULT",
+              "min_lot_area_tiles": 120,
+              "front_setback_tiles": 0,
+              "rear_setback_tiles": 2,
+              "side_setback_tiles": 0,
+              "min_footprint_width_tiles": 6,
+              "min_footprint_depth_tiles": 6,
+              "max_lot_coverage_ratio": 0.85,
+              "preferred_footprint_kind": "COMMERCIAL_RECTANGLE"
+            }
+          ]
+        }
+        """;
+
+    private (string lf, string pol, string sec) WriteFixturesWithSector(
+        string lotFillJson, string? sectorJson = null, string? policyJson = null)
+    {
+        var lf  = Path.Combine(_tempDir, $"lot-fill-31a-{Guid.NewGuid():N}.json");
+        var pol = Path.Combine(_tempDir, $"policy-31a-{Guid.NewGuid():N}.json");
+        var sec = Path.Combine(_tempDir, $"sectors-31a-{Guid.NewGuid():N}.json");
+        File.WriteAllText(lf,  lotFillJson);
+        File.WriteAllText(pol, policyJson ?? MakeSectorAwarePolicyJson());
+        File.WriteAllText(sec, sectorJson ?? MakeSectorJson());
+        return (lf, pol, sec);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A 25. Lot center inside bbox gets expected sector
+    // Lot (0,0)→(13,26) center=(6,13) inside DENSE_CORE (0..50, 0..50)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31A_LotCenterInsideBbox_GetsExpectedSector()
+    {
+        var (lf, pol, sec) = WriteFixturesWithSector(
+            MakeLotFillJson("COMP_31A", "BLUE_RESIDENTIAL", "LOT_31A", "NORTH", 0, 0, 13, 26));
+        var r = NewBuilder().Build(lf, pol, _tempDir, sec);
+        Assert.Equal(1, r.FootprintCount);
+        Assert.Equal("DENSE_CORE", r.Footprints[0].NeighborhoodSector);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A 26. Lot outside all bboxes gets DEFAULT
+    // Lot (100,100)→(113,126) center=(106,113) outside DENSE_CORE (0..50) and FRINGE (200..255)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31A_LotOutsideAllBboxes_GetsDefault()
+    {
+        var (lf, pol, sec) = WriteFixturesWithSector(
+            MakeLotFillJson("COMP_31A_OUT", "BLUE_RESIDENTIAL", "LOT_31A_OUT", "NORTH", 100, 100, 113, 126));
+        var r = NewBuilder().Build(lf, pol, _tempDir, sec);
+        Assert.Equal(1, r.FootprintCount);
+        Assert.Equal("DEFAULT", r.Footprints[0].NeighborhoodSector);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A 27. Footprint candidate has non-empty NeighborhoodSector (no sector file → DEFAULT)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31A_FootprintCandidate_HasNeighborhoodSector()
+    {
+        var (lf, pol) = WriteFixtures(
+            MakeLotFillJson("COMP_31A_S", "BLUE_RESIDENTIAL", "LOT_31A_S", "NORTH", 0, 0, 13, 26));
+        var r = NewBuilder().Build(lf, pol, _tempDir);
+        Assert.Equal(1, r.FootprintCount);
+        Assert.False(string.IsNullOrEmpty(r.Footprints[0].NeighborhoodSector));
+        Assert.Equal("DEFAULT", r.Footprints[0].NeighborhoodSector);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A 28. Skipped lot has non-empty NeighborhoodSector (no sector file → DEFAULT)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31A_SkippedLot_HasNeighborhoodSector()
+    {
+        var (lf, pol) = WriteFixtures(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir);
+        // MakeTwoLotFillJson has 1 skipped lot (LOT_SKIPPED, tile_count=81 < 96)
+        Assert.Equal(1, r.SkippedLotCount);
+        Assert.False(string.IsNullOrEmpty(r.SkippedLots[0].NeighborhoodSector));
+        Assert.Equal("DEFAULT", r.SkippedLots[0].NeighborhoodSector);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A 29. Sector-specific policy changes footprint vs DEFAULT
+    // Lot (0,0)→(13,26) NORTH BLUE, DENSE_CORE: front=0 → fpY1=0 (not 2)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31A_SectorSpecificPolicy_ChangesFootprint()
+    {
+        // Default policy: front=2 → fpY1=2
+        var (lf, pol) = WriteFixtures(
+            MakeLotFillJson("COMP_31A_POL", "BLUE_RESIDENTIAL", "LOT_31A_POL", "NORTH", 0, 0, 13, 26));
+        var rDefault = NewBuilder().Build(lf, pol, _tempDir);
+        Assert.Equal(2, rDefault.Footprints[0].FpY1); // DEFAULT front_setback=2
+
+        // Sector-aware policy with DENSE_CORE: front=0 → fpY1=0
+        var (lf2, pol2, sec2) = WriteFixturesWithSector(
+            MakeLotFillJson("COMP_31A_POL2", "BLUE_RESIDENTIAL", "LOT_31A_POL2", "NORTH", 0, 0, 13, 26));
+        var rSector = NewBuilder().Build(lf2, pol2, _tempDir, sec2);
+        Assert.Equal("DENSE_CORE", rSector.Footprints[0].NeighborhoodSector);
+        Assert.Equal(0, rSector.Footprints[0].FpY1); // DENSE_CORE front_setback=0
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A 30. Policy fallback to DEFAULT when sector-specific entry missing
+    // Lot (0,0)→(13,26) NORTH BLUE, sector FRINGE (no FRINGE policy) → DEFAULT params applied
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31A_PolicyFallback_WhenSectorSpecificMissing()
+    {
+        // FRINGE sector covers all (0..255), but MakeSectorAwarePolicyJson has no FRINGE entry
+        // → falls back to DEFAULT/BLUE: front_setback=2
+        var (lf, pol, sec) = WriteFixturesWithSector(
+            MakeLotFillJson("COMP_31A_FB", "BLUE_RESIDENTIAL", "LOT_31A_FB", "NORTH", 0, 0, 13, 26),
+            sectorJson: MakeSectorJsonFringeOnly());
+        var r = NewBuilder().Build(lf, pol, _tempDir, sec);
+        Assert.Equal(1, r.FootprintCount);
+        Assert.Equal("FRINGE", r.Footprints[0].NeighborhoodSector);
+        Assert.Equal(2, r.Footprints[0].FpY1); // DEFAULT fallback: front_setback=2
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A 31. All MAP31A checks pass
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31A_AllNewChecks_Pass()
+    {
+        var (lf, pol, sec) = WriteFixturesWithSector(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir, sec);
+        var map31aChecks = r.Checks.Where(c => c.CheckId.StartsWith("MAP31A")).ToList();
+        Assert.True(map31aChecks.Count > 0, "No MAP31A checks found");
+        foreach (var c in map31aChecks)
+            Assert.True(c.CheckStatus == "PASS", $"Check {c.CheckId} FAILED: expected={c.Expected} actual={c.Actual}");
+    }
 }

@@ -1,0 +1,26 @@
+{
+  "sector_overrides_version": "MAP31A_V1",
+  "description": "Neighborhood sector bboxes for MAP-31A sector-aware footprint policy resolution. Lot sector is determined by lot center point (cx, cy) falling inside a bbox. First match wins. Unmatched lots fall back to DEFAULT.",
+  "sectors": [
+    {
+      "sector_id": "DOWNTOWN_CORE",
+      "label": "Downtown Commercial Core",
+      "bbox_x1": 0,
+      "bbox_y1": 0,
+      "bbox_x2": 120,
+      "bbox_y2": 120,
+      "gameplay_role": "COMMERCIAL_DENSE",
+      "tone_note": "High-density mixed-use: tighter setbacks, higher coverage ratio"
+    },
+    {
+      "sector_id": "OPEN_RESIDENTIAL",
+      "label": "Open Residential Fringe",
+      "bbox_x1": 121,
+      "bbox_y1": 101,
+      "bbox_x2": 255,
+      "bbox_y2": 255,
+      "gameplay_role": "RESIDENTIAL_LOW",
+      "tone_note": "Lower-density detached residential: wider setbacks, lower coverage ratio"
+    }
+  ]
+}

@@ -22,6 +22,12 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesResult
     [JsonPropertyName("blue_footprint_count")]      public int BlueFootprintCount      { get; set; }
     [JsonPropertyName("red_footprint_count")]       public int RedFootprintCount       { get; set; }
 
+    [JsonPropertyName("sector_assignment_source")]  public string SectorAssignmentSource { get; set; } = string.Empty;
+    [JsonPropertyName("sector_assignment_path")]    public string SectorAssignmentPath   { get; set; } = string.Empty;
+    [JsonPropertyName("sector_assignment_loaded")]  public bool   SectorAssignmentLoaded { get; set; }
+    [JsonPropertyName("sector_count")]              public int    SectorCount            { get; set; }
+    [JsonPropertyName("sector_counts")]             public List<SectorCountEntry> SectorCounts { get; set; } = new();
+
     [JsonPropertyName("preview_painted_lot_count")]         public int    PreviewPaintedLotCount        { get; set; }
     [JsonPropertyName("preview_painted_skipped_lot_count")] public int    PreviewPaintedSkippedLotCount { get; set; }
     [JsonPropertyName("skipped_lot_preview_color_rgb")]     public string SkippedLotPreviewColorRgb     { get; set; } = string.Empty;
@@ -71,14 +77,22 @@ public sealed class ParcelBuildingFootprintCandidate
     [JsonPropertyName("shade_r")]            public int    ShadeR            { get; set; }
     [JsonPropertyName("shade_g")]            public int    ShadeG            { get; set; }
     [JsonPropertyName("shade_b")]            public int    ShadeB            { get; set; }
+    [JsonPropertyName("neighborhood_sector")] public string NeighborhoodSector { get; set; } = string.Empty;
 }
 
 public sealed class SkippedFootprintLot
 {
-    [JsonPropertyName("lot_id")]       public string LotId      { get; set; } = string.Empty;
-    [JsonPropertyName("component_id")] public string ComponentId { get; set; } = string.Empty;
-    [JsonPropertyName("parcel_class")] public string ParcelClass { get; set; } = string.Empty;
-    [JsonPropertyName("reason")]       public string Reason     { get; set; } = string.Empty;
+    [JsonPropertyName("lot_id")]              public string LotId             { get; set; } = string.Empty;
+    [JsonPropertyName("component_id")]        public string ComponentId       { get; set; } = string.Empty;
+    [JsonPropertyName("parcel_class")]        public string ParcelClass       { get; set; } = string.Empty;
+    [JsonPropertyName("reason")]              public string Reason            { get; set; } = string.Empty;
+    [JsonPropertyName("neighborhood_sector")] public string NeighborhoodSector { get; set; } = string.Empty;
+}
+
+public sealed class SectorCountEntry
+{
+    [JsonPropertyName("sector_id")]  public string SectorId  { get; set; } = string.Empty;
+    [JsonPropertyName("lot_count")]  public int    LotCount  { get; set; }
 }
 
 public sealed class ParcelBuildingFootprintCheck

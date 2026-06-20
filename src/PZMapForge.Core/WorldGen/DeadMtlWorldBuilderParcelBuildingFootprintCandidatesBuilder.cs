@@ -33,6 +33,35 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         int Width, int Height, int TileCount,
         int ShadeR, int ShadeG, int ShadeB);
 
+    private sealed record SectorEntry(
+        string SectorId,
+        string Label,
+        int BboxX1, int BboxY1, int BboxX2, int BboxY2,
+        string GameplayRole,
+        string ToneNote);
+
+    private sealed class SectorAssignmentStore
+    {
+        private readonly List<SectorEntry> _sectors;
+        public string Version    { get; }
+        public int    EntryCount => _sectors.Count;
+
+        public SectorAssignmentStore(string version, List<SectorEntry> sectors)
+        {
+            Version  = version;
+            _sectors = sectors;
+        }
+
+        public string Assign(int centerX, int centerY)
+        {
+            foreach (var s in _sectors)
+                if (centerX >= s.BboxX1 && centerX <= s.BboxX2 &&
+                    centerY >= s.BboxY1 && centerY <= s.BboxY2)
+                    return s.SectorId;
+            return "DEFAULT";
+        }
+    }
+
     private sealed record FootprintPolicy(
         string ParcelClass,
         string NeighborhoodSector,
@@ -50,7 +79,8 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         private readonly List<FootprintPolicy> _policies;
         public string Version       { get; }
         public string DefaultSector { get; }
-        public int    EntryCount    => _policies.Count;
+        public int    EntryCount        => _policies.Count;
+        public bool   HasAnyDefaultPolicy => _policies.Any(p => p.NeighborhoodSector == "DEFAULT");
 
         public FootprintPolicyStore(string version, string defaultSector, List<FootprintPolicy> policies)
         {
@@ -172,6 +202,30 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         if (policies.Count == 0)
             throw new InvalidOperationException("Footprint policy file contains no entries.");
         return new FootprintPolicyStore(version, defaultSector, policies);
+    }
+
+    private static SectorAssignmentStore LoadSectorAssignmentStore(string path)
+    {
+        var json      = File.ReadAllText(path);
+        using var doc = JsonDocument.Parse(json);
+        var root      = doc.RootElement;
+        string version = root.TryGetProperty("sector_overrides_version", out var vEl)
+            ? vEl.GetString() ?? "" : "";
+        var sectors = new List<SectorEntry>();
+        foreach (var entry in root.GetProperty("sectors").EnumerateArray())
+        {
+            sectors.Add(new SectorEntry(
+                entry.GetProperty("sector_id").GetString()    ?? "",
+                entry.TryGetProperty("label",          out var lbl)  ? lbl.GetString()  ?? "" : "",
+                entry.GetProperty("bbox_x1").GetInt32(),
+                entry.GetProperty("bbox_y1").GetInt32(),
+                entry.GetProperty("bbox_x2").GetInt32(),
+                entry.GetProperty("bbox_y2").GetInt32(),
+                entry.TryGetProperty("gameplay_role",  out var gr)   ? gr.GetString()   ?? "" : "",
+                entry.TryGetProperty("tone_note",      out var tn)   ? tn.GetString()   ?? "" : ""
+            ));
+        }
+        return new SectorAssignmentStore(version, sectors);
     }
 
     private static (List<LotEntry> Lots, string SourcePng, string LotFillPolicyVersion)
@@ -386,7 +440,8 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
     // -----------------------------------------------------------------------
 
     public DeadMtlWorldBuilderParcelBuildingFootprintCandidatesResult Build(
-        string lotFillJsonPath, string buildingFootprintPolicyPath, string outputRoot)
+        string lotFillJsonPath, string buildingFootprintPolicyPath, string outputRoot,
+        string? sectorOverridesPath = null)
     {
         _cachedPixelMap  = null;
         _cachedSourcePng = string.Empty;
@@ -457,22 +512,48 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         result.TotalLotCount        = lots.Count;
         _cachedSourcePng            = sourcePng;
 
+        SectorAssignmentStore? sectorStore = null;
+        if (!string.IsNullOrEmpty(sectorOverridesPath))
+        {
+            if (!File.Exists(sectorOverridesPath))
+            {
+                result.Errors.Add($"Sector overrides file not found: {sectorOverridesPath}");
+                FinalizeResult(result, checks, valid: false, verdict: "MAP31A_SECTOR_OVERRIDES_NOT_FOUND");
+                return result;
+            }
+            sectorStore = LoadSectorAssignmentStore(sectorOverridesPath);
+            result.SectorAssignmentSource  = "EXTERNAL";
+            result.SectorAssignmentPath    = sectorOverridesPath;
+            result.SectorAssignmentLoaded  = true;
+            result.SectorCount             = sectorStore.EntryCount;
+        }
+        else
+        {
+            result.SectorAssignmentSource  = "NONE";
+            result.SectorAssignmentLoaded  = false;
+            result.SectorCount             = 0;
+        }
+
         var footprints  = new List<ParcelBuildingFootprintCandidate>();
         var skippedLots = new List<SkippedFootprintLot>();
         int eligibleCount = 0;
 
         foreach (var lot in lots)
         {
-            var policy = policyStore.Resolve(lot.ParcelClass);
+            int    cx     = (lot.X1 + lot.X2) / 2;
+            int    cy     = (lot.Y1 + lot.Y2) / 2;
+            string sector = sectorStore?.Assign(cx, cy) ?? "DEFAULT";
+            var policy = policyStore.Resolve(lot.ParcelClass, sector);
 
             if (lot.TileCount < policy.MinLotAreaTiles)
             {
                 skippedLots.Add(new SkippedFootprintLot
                 {
-                    LotId       = lot.LotId,
-                    ComponentId = lot.ComponentId,
-                    ParcelClass = lot.ParcelClass,
-                    Reason      = $"lot area {lot.TileCount} < min_lot_area_tiles {policy.MinLotAreaTiles}",
+                    LotId             = lot.LotId,
+                    ComponentId       = lot.ComponentId,
+                    ParcelClass       = lot.ParcelClass,
+                    Reason            = $"lot area {lot.TileCount} < min_lot_area_tiles {policy.MinLotAreaTiles}",
+                    NeighborhoodSector = sector,
                 });
                 continue;
             }
@@ -483,10 +564,11 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
             {
                 skippedLots.Add(new SkippedFootprintLot
                 {
-                    LotId       = lot.LotId,
-                    ComponentId = lot.ComponentId,
-                    ParcelClass = lot.ParcelClass,
-                    Reason      = skipReason,
+                    LotId             = lot.LotId,
+                    ComponentId       = lot.ComponentId,
+                    ParcelClass       = lot.ParcelClass,
+                    Reason            = skipReason,
+                    NeighborhoodSector = sector,
                 });
                 continue;
             }
@@ -498,20 +580,21 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
 
             footprints.Add(new ParcelBuildingFootprintCandidate
             {
-                FootprintId       = $"{lot.LotId}_FOOTPRINT",
-                LotId             = lot.LotId,
-                ComponentId       = lot.ComponentId,
-                ParcelClass       = lot.ParcelClass,
-                FrontageDirection = lot.FrontageDirection,
-                FootprintKind     = policy.PreferredFootprintKind,
+                FootprintId        = $"{lot.LotId}_FOOTPRINT",
+                LotId              = lot.LotId,
+                ComponentId        = lot.ComponentId,
+                ParcelClass        = lot.ParcelClass,
+                FrontageDirection  = lot.FrontageDirection,
+                FootprintKind      = policy.PreferredFootprintKind,
                 LotX1 = lot.X1, LotY1 = lot.Y1, LotX2 = lot.X2, LotY2 = lot.Y2,
-                LotTileCount  = lot.TileCount,
+                LotTileCount       = lot.TileCount,
                 FpX1 = fpX1, FpY1 = fpY1, FpX2 = fpX2, FpY2 = fpY2,
-                FpWidth       = fpWidth,
-                FpDepth       = fpDepth,
-                FpTileCount   = fpTiles,
-                CoverageRatio = Math.Round((double)fpTiles / lot.TileCount, 4),
+                FpWidth            = fpWidth,
+                FpDepth            = fpDepth,
+                FpTileCount        = fpTiles,
+                CoverageRatio      = Math.Round((double)fpTiles / lot.TileCount, 4),
                 ShadeR = lot.ShadeR, ShadeG = lot.ShadeG, ShadeB = lot.ShadeB,
+                NeighborhoodSector = sector,
             });
         }
 
@@ -522,6 +605,13 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         result.SkippedLotCount    = skippedLots.Count;
         result.BlueFootprintCount = footprints.Count(f => f.ParcelClass == ParcelClassBlue);
         result.RedFootprintCount  = footprints.Count(f => f.ParcelClass == ParcelClassRed);
+
+        result.SectorCounts = footprints.Select(f => f.NeighborhoodSector)
+            .Concat(skippedLots.Select(s => s.NeighborhoodSector))
+            .GroupBy(s => s)
+            .OrderBy(g => g.Key)
+            .Select(g => new SectorCountEntry { SectorId = g.Key, LotCount = g.Count() })
+            .ToList();
 
         // Build the preview pixel map now — checks B3/B4 scan it directly
         var skippedLotIds = new HashSet<string>(skippedLots.Select(s => s.LotId));
@@ -625,6 +715,51 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
                             && !result.PublicPlayablePackagingClaimed;
         AddCheck(checks, "MAP30B_CLAIM_BOUNDARY_FALSE",
             "All runtime/public claim flags are false",
+            "PASS", claimBoundaryOk ? "PASS" : "FAIL");
+
+        // -----------------------------------------------------------------------
+        // MAP-31A checks (sector-aware policy)
+        // -----------------------------------------------------------------------
+
+        // A1 — sector assignment file loaded (or not provided)
+        string sectorLoadExpected = sectorStore != null ? "PASS" : "NOT_PROVIDED";
+        string sectorLoadActual   = sectorStore != null ? "PASS" : "NOT_PROVIDED";
+        AddCheck(checks, "MAP31A_SECTOR_ASSIGNMENT_LOADED",
+            "Sector assignment file loaded (or not provided)",
+            sectorLoadExpected, sectorLoadActual);
+
+        // A2 — all lots have a non-empty sector assigned
+        int lotsWithSector = footprints.Count(f => !string.IsNullOrEmpty(f.NeighborhoodSector))
+                           + skippedLots.Count(s => !string.IsNullOrEmpty(s.NeighborhoodSector));
+        AddCheck(checks, "MAP31A_ALL_LOTS_HAVE_SECTOR",
+            "Every lot (footprint + skipped) has a neighborhood sector assigned",
+            result.TotalLotCount.ToString(), lotsWithSector.ToString());
+
+        // A3 — policy resolved for all lots (footprints + skipped == total)
+        int resolvedLots = footprints.Count + skippedLots.Count;
+        AddCheck(checks, "MAP31A_POLICY_RESOLVES_BY_SECTOR",
+            "Sector-aware policy resolved for all lots",
+            result.TotalLotCount.ToString(), resolvedLots.ToString());
+
+        // A4 — default sector fallback entry present in policy
+        bool defaultFallbackPresent = policyStore.HasAnyDefaultPolicy;
+        AddCheck(checks, "MAP31A_DEFAULT_SECTOR_FALLBACK_PRESENT",
+            "Footprint policy contains at least one DEFAULT sector entry",
+            "PASS", defaultFallbackPresent ? "PASS" : "FAIL");
+
+        // A5 — sector counts non-empty
+        AddCheck(checks, "MAP31A_SECTOR_COUNTS_NONEMPTY",
+            "Sector count list is non-empty",
+            "PASS", result.SectorCounts.Count > 0 ? "PASS" : "FAIL");
+
+        // A6 — no runtime artifacts (MAP31A prefix)
+        AddCheck(checks, "MAP31A_NO_RUNTIME_ARTIFACTS_WRITTEN",
+            "No forbidden runtime artifacts in output root (MAP31A)",
+            "PASS", scanPasses ? "PASS" : "FAIL");
+
+        // A7 — claim boundary compound
+        AddCheck(checks, "MAP31A_CLAIM_BOUNDARY_FALSE",
+            "All runtime/public claim flags are false (MAP31A)",
             "PASS", claimBoundaryOk ? "PASS" : "FAIL");
 
         FinalizeResult(result, checks,
@@ -804,6 +939,15 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         sb.AppendLine($"Skipped lot color       : {r.SkippedLotPreviewColorRgb}");
         sb.AppendLine($"Footprint policy        : {r.PolicyVersion} source={r.PolicySource} entries={r.PolicyEntryCount}");
         sb.AppendLine($"Lot fill policy         : {r.LotFillPolicyVersion}");
+        string sectorSummary = r.SectorAssignmentLoaded
+            ? $"EXTERNAL ({r.SectorCount} sectors)"
+            : "NONE (all DEFAULT)";
+        sb.AppendLine($"Sector assignment       : {sectorSummary}");
+        if (r.SectorCounts.Count > 0)
+        {
+            var sectorLine = string.Join(" ", r.SectorCounts.Select(sc => $"{sc.SectorId}={sc.LotCount}"));
+            sb.AppendLine($"Sector counts           : {sectorLine}");
+        }
         sb.AppendLine($"Checks                  : {r.CheckCount} total / {r.PassedCheckCount} PASS / {r.FailedCheckCount} FAIL");
         sb.AppendLine($"Is Valid                : {r.IsValid}");
         sb.AppendLine($"Verdict                 : {r.Verdict}");

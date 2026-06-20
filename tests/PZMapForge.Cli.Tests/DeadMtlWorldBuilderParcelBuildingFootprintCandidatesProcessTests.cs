@@ -457,4 +457,146 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesProcessT
         Assert.False(string.IsNullOrEmpty(color));
         Assert.StartsWith("rgb(", color);
     }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A CLI fixtures
+    // -----------------------------------------------------------------------
+
+    private string SectorJson => Path.Combine(_tempDir, "sectors.local.json");
+
+    private void WriteSectorFixture()
+    {
+        File.WriteAllText(SectorJson, """
+        {
+          "sector_overrides_version": "MAP31A_CLI_TEST_V1",
+          "sectors": [
+            {
+              "sector_id": "DENSE_CORE",
+              "label": "Dense Core CLI Test",
+              "bbox_x1": 0, "bbox_y1": 0, "bbox_x2": 100, "bbox_y2": 100,
+              "gameplay_role": "COMMERCIAL_DENSE",
+              "tone_note": "CLI test dense sector"
+            }
+          ]
+        }
+        """);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A 1. No sector flag preserves valid DEFAULT behavior
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31A_NoSectorFlag_ExitsZero()
+    {
+        WriteFixtures();
+        var (code, _, err) = RunCli(MakeFullArgs());
+        Assert.True(code == 0, $"Exit={code} stderr={err}");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A 2. Output JSON contains MAP31A check IDs
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31A_OutputJson_ContainsMap31AChecks()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var checkIds = doc.RootElement.GetProperty("checks")
+            .EnumerateArray()
+            .Select(c => c.GetProperty("check_id").GetString() ?? "")
+            .ToList();
+        Assert.Contains("MAP31A_SECTOR_ASSIGNMENT_LOADED",       checkIds);
+        Assert.Contains("MAP31A_ALL_LOTS_HAVE_SECTOR",           checkIds);
+        Assert.Contains("MAP31A_POLICY_RESOLVES_BY_SECTOR",      checkIds);
+        Assert.Contains("MAP31A_DEFAULT_SECTOR_FALLBACK_PRESENT",checkIds);
+        Assert.Contains("MAP31A_SECTOR_COUNTS_NONEMPTY",         checkIds);
+        Assert.Contains("MAP31A_NO_RUNTIME_ARTIFACTS_WRITTEN",   checkIds);
+        Assert.Contains("MAP31A_CLAIM_BOUNDARY_FALSE",           checkIds);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A 3. All MAP31A checks PASS (no sector file → DEFAULT path)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31A_OutputJson_AllMap31AChecks_Pass()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var map31aChecks = doc.RootElement.GetProperty("checks")
+            .EnumerateArray()
+            .Where(c => (c.GetProperty("check_id").GetString() ?? "").StartsWith("MAP31A"))
+            .ToList();
+        Assert.True(map31aChecks.Count > 0, "No MAP31A checks in output JSON");
+        foreach (var c in map31aChecks)
+        {
+            var id     = c.GetProperty("check_id").GetString();
+            var status = c.GetProperty("check_status").GetString();
+            Assert.True(status == "PASS", $"MAP31A check {id} status={status}");
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A 4. Footprints have neighborhood_sector field
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31A_OutputJson_FootprintsHaveNeighborhoodSector()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        foreach (var fp in doc.RootElement.GetProperty("footprints").EnumerateArray())
+        {
+            var sector = fp.GetProperty("neighborhood_sector").GetString();
+            Assert.False(string.IsNullOrEmpty(sector),
+                "Footprint neighborhood_sector must be non-empty");
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A 5. Explicit sector file loads and applies sector assignment
+    // Fixture lot at (0,0)→(13,26) center=(6,13) inside DENSE_CORE bbox (0..100)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31A_ExplicitSectorFile_LoadsAndApplies()
+    {
+        WriteFixtures();
+        WriteSectorFixture();
+        var args = MakeFullArgs().Concat(new[] { "--sector-overrides", SectorJson }).ToArray();
+        var (code, _, err) = RunCli(args);
+        Assert.True(code == 0, $"Exit={code} stderr={err}");
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        Assert.True(doc.RootElement.GetProperty("sector_assignment_loaded").GetBoolean(),
+            "sector_assignment_loaded should be true");
+        var sector = doc.RootElement.GetProperty("footprints")
+            .EnumerateArray().First()
+            .GetProperty("neighborhood_sector").GetString();
+        Assert.Equal("DENSE_CORE", sector);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31A 6. Missing sector file exits nonzero when explicitly supplied
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31A_MissingSectorFile_ExitsOne_WhenExplicitlyProvided()
+    {
+        WriteFixtures();
+        var args = MakeFullArgs().Concat(new[]
+        {
+            "--sector-overrides", Path.Combine(_tempDir, "no_such_sectors.json")
+        }).ToArray();
+        var (code, _, _) = RunCli(args);
+        Assert.Equal(1, code);
+    }
 }

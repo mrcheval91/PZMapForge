@@ -9461,6 +9461,7 @@ static int DeadMtlBuildWorldBuilderParcelBuildingFootprintCandidatesCommand(stri
 {
     var lotFillJson        = string.Empty;
     var footprintPolicy    = string.Empty;
+    var sectorOverrides    = string.Empty;
     var outputRoot         = string.Empty;
     var outputJson         = string.Empty;
     var outputCsv          = string.Empty;
@@ -9473,15 +9474,16 @@ static int DeadMtlBuildWorldBuilderParcelBuildingFootprintCandidatesCommand(stri
     {
         switch (args[i])
         {
-            case "--lot-fill-json":            lotFillJson     = args[i + 1]; break;
-            case "--building-footprint-policy": footprintPolicy = args[i + 1]; break;
-            case "--output-root":              outputRoot      = args[i + 1]; break;
-            case "--output-json":              outputJson      = args[i + 1]; break;
-            case "--output-csv":               outputCsv       = args[i + 1]; break;
-            case "--output-checks-csv":        outputChecksCsv = args[i + 1]; break;
-            case "--output-png":               outputPng       = args[i + 1]; break;
-            case "--output-html":              outputHtml      = args[i + 1]; break;
-            case "--summary":                  summaryPath     = args[i + 1]; break;
+            case "--lot-fill-json":            lotFillJson      = args[i + 1]; break;
+            case "--building-footprint-policy": footprintPolicy  = args[i + 1]; break;
+            case "--sector-overrides":         sectorOverrides  = args[i + 1]; break;
+            case "--output-root":              outputRoot       = args[i + 1]; break;
+            case "--output-json":              outputJson       = args[i + 1]; break;
+            case "--output-csv":               outputCsv        = args[i + 1]; break;
+            case "--output-checks-csv":        outputChecksCsv  = args[i + 1]; break;
+            case "--output-png":               outputPng        = args[i + 1]; break;
+            case "--output-html":              outputHtml       = args[i + 1]; break;
+            case "--summary":                  summaryPath      = args[i + 1]; break;
         }
     }
 
@@ -9495,7 +9497,8 @@ static int DeadMtlBuildWorldBuilderParcelBuildingFootprintCandidatesCommand(stri
             "Usage: deadmtl-build-worldbuilder-parcel-building-footprint-candidates " +
             "--lot-fill-json <json> --building-footprint-policy <json> --output-root <.local dir> " +
             "--output-json <json> --output-csv <csv> --output-checks-csv <csv> " +
-            "--output-png <png> --output-html <html> --summary <txt>");
+            "--output-png <png> --output-html <html> --summary <txt> " +
+            "[--sector-overrides <json>]");
         return 1;
     }
 
@@ -9518,7 +9521,8 @@ static int DeadMtlBuildWorldBuilderParcelBuildingFootprintCandidatesCommand(stri
     }
 
     var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder();
-    var result  = builder.Build(lotFillJson, footprintPolicy, outputRoot);
+    var result  = builder.Build(lotFillJson, footprintPolicy, outputRoot,
+        string.IsNullOrEmpty(sectorOverrides) ? null : sectorOverrides);
 
     if (result.Errors.Count > 0)
     {
