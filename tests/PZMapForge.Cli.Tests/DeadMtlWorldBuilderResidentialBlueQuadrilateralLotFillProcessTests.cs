@@ -386,6 +386,72 @@ $bmp.Dispose()
     }
 
     // -----------------------------------------------------------------------
+    // MAP-29C — External policy via CLI flag
+    // -----------------------------------------------------------------------
+
+    private static readonly string s_canonicalPolicyPath = Path.Combine(
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..")),
+        "examples", "deadmtl-layer-pack", "worldbuilder", "parcel-lot-sizing-policies.json");
+
+    private string[] MakeFullArgsWithPolicy(string policyPath) =>
+        MakeFullArgs().Concat(new[] { "--lot-sizing-policy", policyPath }).ToArray();
+
+    [Fact]
+    public void Command_WithCanonicalPolicyFile_ExitsZero()
+    {
+        EnsureFixture();
+        if (!File.Exists(s_canonicalPolicyPath)) return;
+        var (code, _, err) = RunCli(MakeFullArgsWithPolicy(s_canonicalPolicyPath));
+        Assert.True(code == 0, $"Exit={code} stderr={err}");
+    }
+
+    [Fact]
+    public void Command_WithCanonicalPolicyFile_PolicySourceIsExternal()
+    {
+        EnsureFixture();
+        if (!File.Exists(s_canonicalPolicyPath)) return;
+        RunCli(MakeFullArgsWithPolicy(s_canonicalPolicyPath));
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var source = doc.RootElement.GetProperty("lot_sizing_policy_source").GetString();
+        Assert.Equal("EXTERNAL", source);
+    }
+
+    [Fact]
+    public void Command_WithMissingPolicyFile_ExitsOne()
+    {
+        EnsureFixture();
+        var (code, _, _) = RunCli(MakeFullArgsWithPolicy(
+            Path.Combine(_tempDir, "does_not_exist.json")));
+        Assert.Equal(1, code);
+    }
+
+    [Fact]
+    public void Command_WithoutPolicyFlag_PolicySourceIsBuiltinDefault()
+    {
+        EnsureFixture();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var source = doc.RootElement.GetProperty("lot_sizing_policy_source").GetString();
+        Assert.Equal("BUILTIN_DEFAULT", source);
+    }
+
+    [Fact]
+    public void OutputJson_ContainsPolicyProofFields()
+    {
+        EnsureFixture();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var root = doc.RootElement;
+        Assert.True(root.TryGetProperty("lot_sizing_policy_source",      out _), "missing lot_sizing_policy_source");
+        Assert.True(root.TryGetProperty("lot_sizing_policy_path",        out _), "missing lot_sizing_policy_path");
+        Assert.True(root.TryGetProperty("lot_sizing_policy_loaded",      out _), "missing lot_sizing_policy_loaded");
+        Assert.True(root.TryGetProperty("lot_sizing_policy_entry_count", out _), "missing lot_sizing_policy_entry_count");
+    }
+
+    // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
 

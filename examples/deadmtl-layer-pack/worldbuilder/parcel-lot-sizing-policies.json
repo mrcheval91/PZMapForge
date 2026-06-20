@@ -1,0 +1,24 @@
+{
+  "policy_version": "MAP29C_V1",
+  "default_sector": "DEFAULT",
+  "policies": [
+    {
+      "parcel_class": "BLUE_RESIDENTIAL",
+      "neighborhood_sector": "DEFAULT",
+      "target_frontage_tiles": 15,
+      "min_frontage_tiles": 8,
+      "min_depth_tiles": 8,
+      "min_area_tiles": 96,
+      "merge_undersized_lots": true
+    },
+    {
+      "parcel_class": "RED_RESIDENTIAL_OR_COMMERCIAL",
+      "neighborhood_sector": "DEFAULT",
+      "target_frontage_tiles": 18,
+      "min_frontage_tiles": 12,
+      "min_depth_tiles": 10,
+      "min_area_tiles": 160,
+      "merge_undersized_lots": true
+    }
+  ]
+}

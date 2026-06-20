@@ -1222,6 +1222,185 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
     // Helpers
     // -----------------------------------------------------------------------
 
+    // -----------------------------------------------------------------------
+    // MAP-29C — External lot sizing policy
+    // -----------------------------------------------------------------------
+
+    private static readonly string s_policyJson = Path.Combine(
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..")),
+        "examples", "deadmtl-layer-pack", "worldbuilder", "parcel-lot-sizing-policies.json");
+
+    private string MakeExternalPolicyJson(
+        int blueTarget = 15, int blueMinFront = 8, int blueMinDepth = 8, int blueMinArea = 96,
+        int redTarget  = 18, int redMinFront  = 12, int redMinDepth = 10, int redMinArea  = 160)
+    {
+        var path = Path.Combine(_tempDir, "test_policy.json");
+        File.WriteAllText(path, $$"""
+{
+  "policy_version": "TEST_V1",
+  "default_sector": "DEFAULT",
+  "policies": [
+    {
+      "parcel_class": "BLUE_RESIDENTIAL",
+      "neighborhood_sector": "DEFAULT",
+      "target_frontage_tiles": {{blueTarget}},
+      "min_frontage_tiles": {{blueMinFront}},
+      "min_depth_tiles": {{blueMinDepth}},
+      "min_area_tiles": {{blueMinArea}},
+      "merge_undersized_lots": true
+    },
+    {
+      "parcel_class": "RED_RESIDENTIAL_OR_COMMERCIAL",
+      "neighborhood_sector": "DEFAULT",
+      "target_frontage_tiles": {{redTarget}},
+      "min_frontage_tiles": {{redMinFront}},
+      "min_depth_tiles": {{redMinDepth}},
+      "min_area_tiles": {{redMinArea}},
+      "merge_undersized_lots": true
+    }
+  ]
+}
+""");
+        return path;
+    }
+
+    [Fact]
+    public void NoExternalPolicy_LotSizingPolicySource_IsBuiltinDefault()
+    {
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir);
+        Assert.Equal("BUILTIN_DEFAULT", r.LotSizingPolicySource);
+    }
+
+    [Fact]
+    public void NoExternalPolicy_LotSizingPolicyLoaded_IsFalse()
+    {
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir);
+        Assert.False(r.LotSizingPolicyLoaded);
+    }
+
+    [Fact]
+    public void NoExternalPolicy_LotSizingPolicyVersion_IsNonEmpty()
+    {
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir);
+        Assert.False(string.IsNullOrEmpty(r.LotSizingPolicyVersion));
+    }
+
+    [Fact]
+    public void NoExternalPolicy_LotSizingPolicyEntryCount_Gt0()
+    {
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir);
+        Assert.True(r.LotSizingPolicyEntryCount > 0,
+            $"Expected EntryCount > 0, got {r.LotSizingPolicyEntryCount}");
+    }
+
+    [Fact]
+    public void ExternalPolicy_SameValues_LotCountUnchanged()
+    {
+        var rBuiltin  = MakeBuilder().Build(MakeNsFixturePng(), _tempDir);
+        var policyPath = MakeExternalPolicyJson();
+        var rExternal = MakeBuilder().Build(MakeNsFixturePng(), _tempDir, policyPath);
+        Assert.Equal(rBuiltin.TotalLotCount, rExternal.TotalLotCount);
+    }
+
+    [Fact]
+    public void ExternalPolicy_SameValues_PolicySourceIsExternal()
+    {
+        var policyPath = MakeExternalPolicyJson();
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir, policyPath);
+        Assert.Equal("EXTERNAL", r.LotSizingPolicySource);
+    }
+
+    [Fact]
+    public void ExternalPolicy_PolicyLoaded_IsTrue()
+    {
+        var policyPath = MakeExternalPolicyJson();
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir, policyPath);
+        Assert.True(r.LotSizingPolicyLoaded);
+    }
+
+    [Fact]
+    public void ExternalPolicy_PolicyPath_MatchesArgument()
+    {
+        var policyPath = MakeExternalPolicyJson();
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir, policyPath);
+        Assert.Equal(policyPath, r.LotSizingPolicyPath);
+    }
+
+    [Fact]
+    public void ExternalPolicy_ChangedBlueTarget_ProducesDifferentLotCount()
+    {
+        // NS fixture: frontageSpan=89 tiles. target=15→6 lots. target=30→3 lots.
+        var rBuiltin = MakeBuilder().Build(MakeNsFixturePng(), _tempDir);
+        var policyPath = MakeExternalPolicyJson(blueTarget: 30);
+        var rExternal = MakeBuilder().Build(MakeNsFixturePng(), _tempDir, policyPath);
+        Assert.NotEqual(rBuiltin.TotalLotCount, rExternal.TotalLotCount);
+    }
+
+    [Fact]
+    public void MissingPolicyFile_IsValid_IsFalse()
+    {
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir,
+            Path.Combine(_tempDir, "does_not_exist.json"));
+        Assert.False(r.IsValid);
+    }
+
+    [Fact]
+    public void MissingPolicyFile_Error_ContainsNotFound()
+    {
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir,
+            Path.Combine(_tempDir, "does_not_exist.json"));
+        Assert.Contains(r.Errors, e => e.Contains("not found", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void InvalidPolicyJson_IsValid_IsFalse()
+    {
+        var badPath = Path.Combine(_tempDir, "bad_policy.json");
+        File.WriteAllText(badPath, "{ this is not valid json }}}");
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir, badPath);
+        Assert.False(r.IsValid);
+    }
+
+    [Fact]
+    public void InvalidPolicyJson_Error_IsPresent()
+    {
+        var badPath = Path.Combine(_tempDir, "bad_policy.json");
+        File.WriteAllText(badPath, "{ this is not valid json }}}");
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir, badPath);
+        Assert.NotEmpty(r.Errors);
+    }
+
+    [Fact]
+    public void ExternalPolicyFile_CanonicalFile_Exists()
+    {
+        Assert.True(File.Exists(s_policyJson),
+            $"Canonical policy file not found: {s_policyJson}");
+    }
+
+    [Fact]
+    public void ExternalPolicyFile_CanonicalFile_ProducesSameLotCount()
+    {
+        if (!File.Exists(s_policyJson)) return;
+        var rBuiltin  = MakeBuilder().Build(MakeNsFixturePng(), _tempDir);
+        var rExternal = MakeBuilder().Build(MakeNsFixturePng(), _tempDir, s_policyJson);
+        Assert.Equal(rBuiltin.TotalLotCount, rExternal.TotalLotCount);
+    }
+
+    [Fact]
+    public void CheckRow_MAP29C_PolicyActive_Exists()
+    {
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir);
+        Assert.Contains(r.Checks, c => c.CheckId == "MAP29C_LOT_SIZING_POLICY_ACTIVE");
+    }
+
+    [Fact]
+    public void CheckRow_MAP29C_PolicyActive_IsPass()
+    {
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir);
+        var chk = r.Checks.First(c => c.CheckId == "MAP29C_LOT_SIZING_POLICY_ACTIVE");
+        Assert.Equal("PASS", chk.CheckStatus);
+    }
+
     private static System.Drawing.Bitmap LoadBitmap(byte[] pngBytes)
     {
         using var ms  = new System.IO.MemoryStream(pngBytes);

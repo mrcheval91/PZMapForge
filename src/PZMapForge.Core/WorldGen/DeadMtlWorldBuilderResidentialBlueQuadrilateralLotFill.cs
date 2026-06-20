@@ -26,10 +26,14 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillResult
     [JsonPropertyName("source_red_pixels_replaced")]             public int SourceRedPixelsReplaced            { get; set; }
     [JsonPropertyName("source_red_pixels_remaining")]           public int SourceRedPixelsRemaining           { get; set; }
 
-    [JsonPropertyName("lot_sizing_policy_version")]             public string LotSizingPolicyVersion          { get; set; } = string.Empty;
-    [JsonPropertyName("undersized_lot_merge_count")]            public int    UndersizedLotMergeCount         { get; set; }
-    [JsonPropertyName("blue_undersized_lot_merge_count")]       public int    BlueUndersizedLotMergeCount     { get; set; }
-    [JsonPropertyName("red_undersized_lot_merge_count")]        public int    RedUndersizedLotMergeCount      { get; set; }
+    [JsonPropertyName("lot_sizing_policy_source")]               public string LotSizingPolicySource           { get; set; } = string.Empty;
+    [JsonPropertyName("lot_sizing_policy_path")]                 public string LotSizingPolicyPath             { get; set; } = string.Empty;
+    [JsonPropertyName("lot_sizing_policy_loaded")]               public bool   LotSizingPolicyLoaded           { get; set; }
+    [JsonPropertyName("lot_sizing_policy_version")]              public string LotSizingPolicyVersion          { get; set; } = string.Empty;
+    [JsonPropertyName("lot_sizing_policy_entry_count")]          public int    LotSizingPolicyEntryCount       { get; set; }
+    [JsonPropertyName("undersized_lot_merge_count")]             public int    UndersizedLotMergeCount         { get; set; }
+    [JsonPropertyName("blue_undersized_lot_merge_count")]        public int    BlueUndersizedLotMergeCount     { get; set; }
+    [JsonPropertyName("red_undersized_lot_merge_count")]         public int    RedUndersizedLotMergeCount      { get; set; }
 
     [JsonPropertyName("components")]    public List<DetectedBlueComponent>           Components   { get; set; } = new();
     [JsonPropertyName("lots")]          public List<QuadrilateralLot>                Lots         { get; set; } = new();

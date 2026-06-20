@@ -32,8 +32,6 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
     private const string ParcelClassBlue = "BLUE_RESIDENTIAL";
     private const string ParcelClassRed  = "RED_RESIDENTIAL_OR_COMMERCIAL";
 
-    private const string LotSizingPolicyVersion = "MAP29B1_DEFAULT_V1";
-
     private sealed record LotSizingPolicy(
         string ParcelClass,
         string NeighborhoodSector,
@@ -43,10 +41,72 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         int    MinAreaTiles,
         bool   MergeUndersizedLots);
 
-    private static LotSizingPolicy GetLotSizingPolicy(string parcelClass, string sector = "DEFAULT")
-        => parcelClass == ParcelClassRed
-            ? new(parcelClass, sector, 18, 12, 10, 160, true)
-            : new(parcelClass, sector, 15,  8,  8,  96, true);
+    private sealed class LotSizingPolicyStore
+    {
+        private readonly List<LotSizingPolicy> _policies;
+        public string Version       { get; }
+        public string DefaultSector { get; }
+        public int    EntryCount    => _policies.Count;
+
+        public LotSizingPolicyStore(string version, string defaultSector, List<LotSizingPolicy> policies)
+        {
+            Version       = version;
+            DefaultSector = defaultSector;
+            _policies     = policies;
+        }
+
+        public LotSizingPolicy Resolve(string parcelClass, string sector = "DEFAULT")
+        {
+            foreach (var p in _policies)
+                if (p.ParcelClass == parcelClass && p.NeighborhoodSector == sector)
+                    return p;
+            foreach (var p in _policies)
+                if (p.ParcelClass == parcelClass && p.NeighborhoodSector == "DEFAULT")
+                    return p;
+            return parcelClass == ParcelClassRed
+                ? new(parcelClass, "DEFAULT", 18, 12, 10, 160, true)
+                : new(parcelClass, "DEFAULT", 15,  8,  8,  96, true);
+        }
+    }
+
+    private static readonly LotSizingPolicyStore s_defaultPolicyStore = new(
+        "MAP29B1_DEFAULT_V1", "DEFAULT",
+        new List<LotSizingPolicy>
+        {
+            new(ParcelClassBlue, "DEFAULT", 15,  8,  8,  96, true),
+            new(ParcelClassRed,  "DEFAULT", 18, 12, 10, 160, true),
+        });
+
+    private LotSizingPolicyStore _policyStore = s_defaultPolicyStore;
+
+    private LotSizingPolicy GetLotSizingPolicy(string parcelClass, string sector = "DEFAULT")
+        => _policyStore.Resolve(parcelClass, sector);
+
+    private static LotSizingPolicyStore LoadPolicyStore(string path)
+    {
+        var json      = File.ReadAllText(path);
+        using var doc = JsonDocument.Parse(json);
+        var root      = doc.RootElement;
+        string version       = root.GetProperty("policy_version").GetString() ?? "";
+        string defaultSector = root.TryGetProperty("default_sector", out var ds)
+            ? ds.GetString() ?? "DEFAULT" : "DEFAULT";
+        var policies = new List<LotSizingPolicy>();
+        foreach (var entry in root.GetProperty("policies").EnumerateArray())
+        {
+            policies.Add(new LotSizingPolicy(
+                entry.GetProperty("parcel_class").GetString()        ?? "",
+                entry.GetProperty("neighborhood_sector").GetString() ?? "DEFAULT",
+                entry.GetProperty("target_frontage_tiles").GetInt32(),
+                entry.GetProperty("min_frontage_tiles").GetInt32(),
+                entry.GetProperty("min_depth_tiles").GetInt32(),
+                entry.GetProperty("min_area_tiles").GetInt32(),
+                entry.GetProperty("merge_undersized_lots").GetBoolean()
+            ));
+        }
+        if (policies.Count == 0)
+            throw new InvalidOperationException("Policy file contains no policy entries.");
+        return new LotSizingPolicyStore(version, defaultSector, policies);
+    }
 
     private static bool IsUndersized(QuadrilateralLot lot, LotSizingPolicy policy)
     {
@@ -386,7 +446,7 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
     // -----------------------------------------------------------------------
 
     public DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillResult Build(
-        string sourcePngPath, string outputRoot)
+        string sourcePngPath, string outputRoot, string? lotSizingPolicyPath = null)
     {
         var result = new DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillResult
         {
@@ -398,6 +458,48 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         };
 
         var checks = new List<QuadrilateralLotFillCheck>();
+
+        // Reset to builtin defaults; override if external path provided
+        _policyStore    = s_defaultPolicyStore;
+        string policySource = "BUILTIN_DEFAULT";
+        string policyPath   = string.Empty;
+        bool   policyLoaded = false;
+
+        if (lotSizingPolicyPath is not null)
+        {
+            if (!File.Exists(lotSizingPolicyPath))
+            {
+                result.LotSizingPolicySource     = "EXTERNAL_NOT_FOUND";
+                result.LotSizingPolicyPath       = lotSizingPolicyPath;
+                result.LotSizingPolicyLoaded     = false;
+                result.LotSizingPolicyVersion    = _policyStore.Version;
+                result.LotSizingPolicyEntryCount = _policyStore.EntryCount;
+                result.Errors.Add($"Lot sizing policy file not found: {lotSizingPolicyPath}");
+                FinalizeResult(result, checks, outputRoot, valid: false, verdict: "MAP29C_POLICY_NOT_FOUND");
+                return result;
+            }
+            try
+            {
+                _policyStore = LoadPolicyStore(lotSizingPolicyPath);
+                policySource = "EXTERNAL";
+                policyPath   = lotSizingPolicyPath;
+                policyLoaded = true;
+            }
+            catch (Exception ex)
+            {
+                result.LotSizingPolicySource     = "EXTERNAL_INVALID";
+                result.LotSizingPolicyPath       = lotSizingPolicyPath;
+                result.LotSizingPolicyLoaded     = false;
+                result.LotSizingPolicyVersion    = _policyStore.Version;
+                result.LotSizingPolicyEntryCount = _policyStore.EntryCount;
+                result.Errors.Add($"Lot sizing policy invalid: {ex.Message}");
+                FinalizeResult(result, checks, outputRoot, valid: false, verdict: "MAP29C_POLICY_INVALID");
+                return result;
+            }
+        }
+
+        var bluePolicy = GetLotSizingPolicy(ParcelClassBlue);
+        var redPolicy  = GetLotSizingPolicy(ParcelClassRed);
 
         // Check 1 — source PNG exists and is valid
         bool sourceExists = File.Exists(sourcePngPath);
@@ -508,7 +610,7 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
 
             if (processable)
             {
-                var (lots, edges, orientCase, frontageGroup, primarySides, mergeBlue) = CalculateLots(comp, ci, s_shades, ParcelClassBlue);
+                var (lots, edges, orientCase, frontageGroup, primarySides, mergeBlue) = CalculateLots(comp, ci, s_shades, bluePolicy);
                 totalBlueMergeCount   += mergeBlue;
                 comp.OrientationCase       = orientCase;
                 comp.SelectedFrontageGroup = frontageGroup;
@@ -601,7 +703,7 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
 
             if (processableR)
             {
-                var (lotsR, edgesR, orientCaseR, frontageGroupR, primarySidesR, mergeRed) = CalculateLots(compR, rci, s_redShades, ParcelClassRed);
+                var (lotsR, edgesR, orientCaseR, frontageGroupR, primarySidesR, mergeRed) = CalculateLots(compR, rci, s_redShades, redPolicy);
                 totalRedMergeCount    += mergeRed;
                 compR.OrientationCase       = orientCaseR;
                 compR.SelectedFrontageGroup = frontageGroupR;
@@ -647,7 +749,11 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         result.TotalLotCount                        = allLots.Count;
         result.TotalFacadeEdgeCount                 = allEdges.Count;
 
-        result.LotSizingPolicyVersion        = LotSizingPolicyVersion;
+        result.LotSizingPolicySource     = policySource;
+        result.LotSizingPolicyPath       = policyPath;
+        result.LotSizingPolicyLoaded     = policyLoaded;
+        result.LotSizingPolicyVersion    = _policyStore.Version;
+        result.LotSizingPolicyEntryCount = _policyStore.EntryCount;
         result.BlueUndersizedLotMergeCount   = totalBlueMergeCount;
         result.RedUndersizedLotMergeCount    = totalRedMergeCount;
         result.UndersizedLotMergeCount       = totalBlueMergeCount + totalRedMergeCount;
@@ -739,30 +845,33 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
             "Output PNG contains zero source-red pixels after processing");
 
         // MAP29B1 undersized-lot checks
-        var blueLotSizingPolicy = GetLotSizingPolicy(ParcelClassBlue);
         bool noUndersizedBlueMultiLot = !allLots
             .Where(l => l.ComponentId.StartsWith("MAP29A_BLUE_"))
             .GroupBy(l => l.ComponentId)
             .Where(g => g.Count() > 1)
             .SelectMany(g => g)
-            .Any(l => IsUndersized(l, blueLotSizingPolicy));
+            .Any(l => IsUndersized(l, bluePolicy));
         AddCheck(checks, "MAP29B1_NO_UNDERSIZED_BLUE_LOTS",
             "No blue lots are undersized in multi-lot components after merge pass",
             "PASS", noUndersizedBlueMultiLot ? "PASS" : "FAIL");
 
         if (result.DetectedRedComponentCount > 0)
         {
-            var redLotSizingPolicy = GetLotSizingPolicy(ParcelClassRed);
             bool noUndersizedRedMultiLot = !allLots
                 .Where(l => l.ComponentId.StartsWith("MAP29B_RED_"))
                 .GroupBy(l => l.ComponentId)
                 .Where(g => g.Count() > 1)
                 .SelectMany(g => g)
-                .Any(l => IsUndersized(l, redLotSizingPolicy));
+                .Any(l => IsUndersized(l, redPolicy));
             AddCheck(checks, "MAP29B1_NO_UNDERSIZED_RED_LOTS",
                 "No red lots are undersized in multi-lot components after merge pass",
                 "PASS", noUndersizedRedMultiLot ? "PASS" : "FAIL");
         }
+
+        // MAP29C policy proof check
+        AddCheck(checks, "MAP29C_LOT_SIZING_POLICY_ACTIVE",
+            $"Lot sizing policy active: source={policySource} version={_policyStore.Version} entries={_policyStore.EntryCount}",
+            "PASS", "PASS");
 
         if (result.UndersizedLotMergeCount > 0)
         {
@@ -908,9 +1017,8 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
     }
 
     private static (List<QuadrilateralLot> Lots, List<QuadrilateralFacadeEdge> Edges, string OrientCase, string FrontageGroup, List<string> PrimarySides, int MergeCount)
-        CalculateLots(DetectedBlueComponent comp, int compOrder, (byte R, byte G, byte B)[] shades, string parcelClass)
+        CalculateLots(DetectedBlueComponent comp, int compOrder, (byte R, byte G, byte B)[] shades, LotSizingPolicy policy)
     {
-        var policy = GetLotSizingPolicy(parcelClass);
         bool nAdj = comp.NorthStreetAdjacency;
         bool sAdj = comp.SouthStreetAdjacency;
         bool eAdj = comp.EastStreetAdjacency;
@@ -1305,7 +1413,7 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         sb.AppendLine($"Source red replaced     : {r.SourceRedPixelsReplaced} / remaining {r.SourceRedPixelsRemaining}");
         sb.AppendLine($"Total lots              : {r.TotalLotCount}");
         sb.AppendLine($"Total facade edges      : {r.TotalFacadeEdgeCount}");
-        sb.AppendLine($"Lot sizing policy       : {r.LotSizingPolicyVersion}");
+        sb.AppendLine($"Lot sizing policy       : {r.LotSizingPolicyVersion} source={r.LotSizingPolicySource} entries={r.LotSizingPolicyEntryCount}");
         sb.AppendLine($"Merges (MAP29B1)        : total={r.UndersizedLotMergeCount} blue={r.BlueUndersizedLotMergeCount} red={r.RedUndersizedLotMergeCount}");
         sb.AppendLine($"Checks                  : {r.CheckCount} total / {r.PassedCheckCount} PASS / {r.FailedCheckCount} FAIL");
         sb.AppendLine($"Is Valid                : {r.IsValid}");

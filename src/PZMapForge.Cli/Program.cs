@@ -9331,29 +9331,31 @@ static int DeadMtlBuildWorldBuilderResidentialBuildingFootprintPlanCommand(strin
 
 static int DeadMtlBuildWorldBuilderResidentialBlueQuadrilateralLotFillCommand(string[] args)
 {
-    var sourcePng      = string.Empty;
-    var outputRoot     = string.Empty;
-    var outputJson     = string.Empty;
-    var outputLotsCsv  = string.Empty;
-    var outputFacCsv   = string.Empty;
-    var outputChkCsv   = string.Empty;
-    var outputPng      = string.Empty;
-    var outputHtml     = string.Empty;
-    var summaryPath    = string.Empty;
+    var sourcePng            = string.Empty;
+    var outputRoot           = string.Empty;
+    var outputJson           = string.Empty;
+    var outputLotsCsv        = string.Empty;
+    var outputFacCsv         = string.Empty;
+    var outputChkCsv         = string.Empty;
+    var outputPng            = string.Empty;
+    var outputHtml           = string.Empty;
+    var summaryPath          = string.Empty;
+    var lotSizingPolicyPath  = (string?)null;
 
     for (int i = 0; i < args.Length - 1; i++)
     {
         switch (args[i])
         {
-            case "--source-png":        sourcePng     = args[i + 1]; break;
-            case "--output-root":       outputRoot    = args[i + 1]; break;
-            case "--output-json":       outputJson    = args[i + 1]; break;
-            case "--output-lots-csv":   outputLotsCsv = args[i + 1]; break;
-            case "--output-facades-csv": outputFacCsv = args[i + 1]; break;
-            case "--output-checks-csv": outputChkCsv  = args[i + 1]; break;
-            case "--output-png":        outputPng     = args[i + 1]; break;
-            case "--output-html":       outputHtml    = args[i + 1]; break;
-            case "--summary":           summaryPath   = args[i + 1]; break;
+            case "--source-png":          sourcePng           = args[i + 1]; break;
+            case "--output-root":         outputRoot          = args[i + 1]; break;
+            case "--output-json":         outputJson          = args[i + 1]; break;
+            case "--output-lots-csv":     outputLotsCsv       = args[i + 1]; break;
+            case "--output-facades-csv":  outputFacCsv        = args[i + 1]; break;
+            case "--output-checks-csv":   outputChkCsv        = args[i + 1]; break;
+            case "--output-png":          outputPng           = args[i + 1]; break;
+            case "--output-html":         outputHtml          = args[i + 1]; break;
+            case "--summary":             summaryPath         = args[i + 1]; break;
+            case "--lot-sizing-policy":   lotSizingPolicyPath = args[i + 1]; break;
         }
     }
 
@@ -9403,7 +9405,14 @@ static int DeadMtlBuildWorldBuilderResidentialBlueQuadrilateralLotFillCommand(st
         hashBefore = Convert.ToHexString(sha256.ComputeHash(fs)).ToLowerInvariant();
 
     var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilder();
-    var result  = builder.Build(sourcePng, outputRoot);
+    var result  = builder.Build(sourcePng, outputRoot, lotSizingPolicyPath);
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
 
     Directory.CreateDirectory(Path.GetDirectoryName(outputJson)!);
 
