@@ -207,11 +207,11 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
     }
 
     [Fact]
-    public void OutputJson_RearBoundaryStripCount_Is1()
+    public void OutputJson_RearBoundaryStripCount_IsZero()
     {
         RunCli(MakeFullArgs());
         using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
-        Assert.Equal(1, doc.RootElement.GetProperty("rear_boundary_strip_count").GetInt32());
+        Assert.Equal(0, doc.RootElement.GetProperty("rear_boundary_strip_count").GetInt32());
     }
 
     [Fact]

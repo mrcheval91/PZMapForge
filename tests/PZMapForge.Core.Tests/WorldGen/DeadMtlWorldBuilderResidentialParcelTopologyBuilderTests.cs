@@ -153,10 +153,10 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilderTests : I
     }
 
     [Fact]
-    public void Build_RearBoundaryStripCount_Is1()
+    public void Build_RearBoundaryStripCount_IsZero()
     {
         var r = RunBuild();
-        Assert.Equal(1, r.RearBoundaryStripCount);
+        Assert.Equal(0, r.RearBoundaryStripCount);
     }
 
     [Fact]
@@ -167,12 +167,14 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilderTests : I
     }
 
     [Fact]
-    public void Build_RearBoundaryStrip_KindIsNotAlley()
+    public void Build_NorthSouthRowsAreAdjacentNoGap()
     {
-        var r    = RunBuild();
-        var rear = r.SidewalkStrips.FirstOrDefault(s => s.StripKind == "REAR_BOUNDARY");
-        Assert.NotNull(rear);
-        Assert.NotEqual("ALLEY", rear.StripKind);
+        var r         = RunBuild();
+        var northLots = r.ResidentialParcels.Where(p => p.FrontageDirection == "NORTH").ToList();
+        var southLots = r.ResidentialParcels.Where(p => p.FrontageDirection == "SOUTH").ToList();
+        Assert.True(northLots.Any() && southLots.Any(), "Expected north and south lots");
+        Assert.True(northLots.All(p => p.Y2 == 39), "All north lots must end at Y2=39");
+        Assert.True(southLots.All(p => p.Y1 == 40), "All south lots must start at Y1=40");
     }
 
     [Fact]
@@ -274,6 +276,47 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilderTests : I
     // -----------------------------------------------------------------------
     // PNG pixel correctness
     // -----------------------------------------------------------------------
+
+    [Fact]
+    public void RenderCleanParcelPng_AllPixelsInBlockAreAllowedLotShades()
+    {
+        var r   = RunBuild();
+        var png = MakeBuilder().RenderCleanParcelPngBytes(r);
+        using var bmp = LoadBitmap(png);
+        var allowed = new HashSet<(byte R, byte G, byte B)>
+        {
+            (200, 168, 120),
+            (176, 140,  96),
+            (152, 116,  76),
+        };
+        for (int x = 124; x <= 212; x++)
+            for (int y = 10; y <= 69; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.True(allowed.Contains((px.R, px.G, px.B)),
+                    $"Non-lot pixel ({px.R},{px.G},{px.B}) at ({x},{y}) in clean PNG");
+            }
+    }
+
+    [Fact]
+    public void RenderCleanParcelPng_RowBoundaryY39Y40_AreLotShades()
+    {
+        var r   = RunBuild();
+        var png = MakeBuilder().RenderCleanParcelPngBytes(r);
+        using var bmp = LoadBitmap(png);
+        var allowed = new HashSet<(byte R, byte G, byte B)>
+        {
+            (200, 168, 120), (176, 140, 96), (152, 116, 76),
+        };
+        int midX = (124 + 212) / 2;
+        var p39 = bmp.GetPixel(midX, 39);
+        var p40 = bmp.GetPixel(midX, 40);
+        Assert.True(allowed.Contains((p39.R, p39.G, p39.B)),
+            $"Y=39 at x={midX} is not a lot shade: ({p39.R},{p39.G},{p39.B})");
+        Assert.True(allowed.Contains((p40.R, p40.G, p40.B)),
+            $"Y=40 at x={midX} is not a lot shade: ({p40.R},{p40.G},{p40.B})");
+        Assert.NotEqual(p39.ToArgb(), p40.ToArgb());
+    }
 
     [Fact]
     public void RenderCleanParcelPng_NoBackgroundPixelInsideBbox()

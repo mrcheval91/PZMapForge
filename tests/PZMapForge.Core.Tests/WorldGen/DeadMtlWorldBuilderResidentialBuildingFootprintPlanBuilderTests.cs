@@ -172,11 +172,11 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilderTe
     }
 
     [Fact]
-    public void Build_NSFootprints_Depth29()
+    public void Build_NSFootprints_Depth30()
     {
         var r = RunBuild();
         Assert.All(r.BuildingFootprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH"),
-            f => Assert.Equal(29, f.Height));
+            f => Assert.Equal(30, f.Height));
     }
 
     [Fact]
@@ -270,6 +270,51 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilderTe
     // -----------------------------------------------------------------------
     // PNG pixel correctness
     // -----------------------------------------------------------------------
+
+    [Fact]
+    public void RenderCleanFootprintPng_AllPixelsInBlockAreAllowedLotShades()
+    {
+        var b        = MakeBuilder();
+        var r        = RunBuild();
+        var topology = MakeTopologyBuilder().Build(_tempDir);
+        var png      = b.RenderCleanFootprintPngBytes(r, topology);
+        using var bmp = LoadBitmap(png);
+        var allowed = new HashSet<(byte R, byte G, byte B)>
+        {
+            (200, 168, 120),
+            (176, 140,  96),
+            (152, 116,  76),
+        };
+        for (int x = 124; x <= 212; x++)
+            for (int y = 10; y <= 69; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.True(allowed.Contains((px.R, px.G, px.B)),
+                    $"Non-lot pixel ({px.R},{px.G},{px.B}) at ({x},{y}) in clean footprint PNG");
+            }
+    }
+
+    [Fact]
+    public void RenderCleanFootprintPng_RowBoundaryY39Y40_AreLotShades()
+    {
+        var b        = MakeBuilder();
+        var r        = RunBuild();
+        var topology = MakeTopologyBuilder().Build(_tempDir);
+        var png      = b.RenderCleanFootprintPngBytes(r, topology);
+        using var bmp = LoadBitmap(png);
+        var allowed = new HashSet<(byte R, byte G, byte B)>
+        {
+            (200, 168, 120), (176, 140, 96), (152, 116, 76),
+        };
+        int midX = (124 + 212) / 2;
+        var p39 = bmp.GetPixel(midX, 39);
+        var p40 = bmp.GetPixel(midX, 40);
+        Assert.True(allowed.Contains((p39.R, p39.G, p39.B)),
+            $"Y=39 at x={midX}: ({p39.R},{p39.G},{p39.B}) not a lot shade");
+        Assert.True(allowed.Contains((p40.R, p40.G, p40.B)),
+            $"Y=40 at x={midX}: ({p40.R},{p40.G},{p40.B}) not a lot shade");
+        Assert.NotEqual(p39.ToArgb(), p40.ToArgb());
+    }
 
     [Fact]
     public void RenderCleanFootprintPng_NoBackgroundPixelInsideBbox()

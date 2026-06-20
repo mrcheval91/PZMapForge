@@ -368,13 +368,13 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
             "N/S footprint width balance: max-min <= 1 (full-lot columns 15/14)",
             "PASS", nsWidthBalanced ? "PASS" : "FAIL");
 
-        // 20 — N/S footprint depth = 29 (full-lot rows)
-        bool nsDepth29 = footprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH")
-            .All(f => f.Height == 29);
+        // 20 — N/S footprint depth = 30 (full-lot rows, no rear boundary gap)
+        bool nsDepth30 = footprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH")
+            .All(f => f.Height == 30);
         AddCheck(checks,
-            "MAP28B_NS_FOOTPRINT_DEPTH_29",
-            "All N/S footprints have depth = 29 tiles (full-lot rows)",
-            "PASS", nsDepth29 ? "PASS" : "FAIL");
+            "MAP28B_NS_FOOTPRINT_DEPTH_30",
+            "All N/S footprints have depth = 30 tiles (full-lot rows, no rear boundary gap)",
+            "PASS", nsDepth30 ? "PASS" : "FAIL");
 
         // 21 — North footprint row covers full bbox width X 124-212
         var nFps = footprints.Where(f => f.FrontageDirection == "NORTH").OrderBy(f => f.X1).ToList();
@@ -531,12 +531,10 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         DeadMtlWorldBuilderResidentialBuildingFootprintPlanResult result,
         DeadMtlWorldBuilderResidentialParcelTopologyResult topology)
     {
+        // Strict lot-fill-only: no bbox, no ticks, no rear-boundary, no helper artifacts
         using var bmp = CreateBackground();
         using var g   = System.Drawing.Graphics.FromImage(bmp);
-        FillParcelAreas(topology, g);
-        FillSidewalkAreas(topology, g);
         FillFootprints(result, g);
-        DrawBbox(bmp);
         return BitmapToBytes(bmp);
     }
 
@@ -757,10 +755,10 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         sb.AppendLine("<p>");
         sb.AppendLine($"Component: {result.ComponentId}<br>");
         sb.AppendLine($"Footprints: {result.TotalFootprintCount} total ({result.NorthFootprintCount} north + {result.SouthFootprintCount} south + 0 east)<br>");
-        sb.AppendLine("N/S full-lot occupancy footprints: widths 15/14 tiles, depth 29 tiles (ROWHOUSE_MAIN_VOLUME). No east residential row.<br>");
+        sb.AppendLine("N/S full-lot occupancy footprints: widths 15/14 tiles, depth 30 tiles (ROWHOUSE_MAIN_VOLUME). North Y 10-39, south Y 40-69. No east residential row.<br>");
         sb.AppendLine("No sidewalk overlap. No REAR_BOUNDARY overlap. No inter-footprint overlap.<br>");
-        sb.AppendLine("Adjacent footprints use deterministic shade alternation (3-shade rotation per row).<br>");
-        sb.AppendLine("Boundaries by adjacent shade change, no black internal gutters or stroke lines. Planning artifact only.");
+        sb.AppendLine("Adjacent footprints use deterministic 3-shade rotation per row.<br>");
+        sb.AppendLine("Clean view: strict lot fill only, no bbox/ticks. Debug/overlay: diagnostic helpers. Boundaries by adjacent shade change. Planning artifact only.");
         sb.AppendLine("</p>");
         sb.AppendLine("<div class=\"pal\"><b>Palette:</b>");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#c8a878;\"></span>Footprint shade A (light tan) &nbsp;");
@@ -772,7 +770,7 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         sb.AppendLine("<div class=\"row\">");
         sb.AppendLine("  <div class=\"card\">");
         sb.AppendLine("    <img src=\"map_00_residential_building_footprints_clean_native_256.png\" alt=\"clean footprint view\">");
-        sb.AppendLine("    <div class=\"lbl\">clean footprint view (256x256)</div>");
+        sb.AppendLine("    <div class=\"lbl\">clean view: strict residential lot fill only, no bbox/ticks/rear-boundary (256x256)</div>");
         sb.AppendLine("  </div>");
         sb.AppendLine("  <div class=\"card\">");
         sb.AppendLine("    <img src=\"map_00_residential_building_footprints_debug_native_256.png\" alt=\"debug view\">");
@@ -813,8 +811,8 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         sb.AppendLine("## Footprints");
         sb.AppendLine();
         sb.AppendLine($"- Total footprints   : {result.TotalFootprintCount}");
-        sb.AppendLine($"- North-facing       : {result.NorthFootprintCount} (ROWHOUSE_MAIN_VOLUME, full-lot occupancy, widths 15/14, depth 29)");
-        sb.AppendLine($"- South-facing       : {result.SouthFootprintCount} (ROWHOUSE_MAIN_VOLUME, full-lot occupancy, widths 15/14, depth 29)");
+        sb.AppendLine($"- North-facing       : {result.NorthFootprintCount} (ROWHOUSE_MAIN_VOLUME, full-lot occupancy, widths 15/14, depth 30, Y 10-39)");
+        sb.AppendLine($"- South-facing       : {result.SouthFootprintCount} (ROWHOUSE_MAIN_VOLUME, full-lot occupancy, widths 15/14, depth 30, Y 40-69)");
         sb.AppendLine($"- East-facing        : 0 (no east residential row)");
         sb.AppendLine();
         sb.AppendLine("## Claim boundary");

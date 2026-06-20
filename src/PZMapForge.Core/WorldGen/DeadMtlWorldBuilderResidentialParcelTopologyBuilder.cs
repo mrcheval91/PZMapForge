@@ -21,10 +21,9 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
     private const int RearFenceWidth     = 2;
     private const int MinFrontageTiles   = 14;
 
-    private const int NorthY1     = 10, NorthY2 = 38;
-    private const int RearFenceY1 = 39, RearFenceY2 = 40;
-    private const int SouthY1     = 41, SouthY2 = 69;
-    private const int MainX1      = 124, MainX2  = 212;
+    private const int NorthY1 = 10, NorthY2 = 39;
+    private const int SouthY1 = 40, SouthY2 = 69;
+    private const int MainX1  = 124, MainX2  = 212;
 
     private static readonly int[] s_lotWidths = { 15, 15, 15, 15, 15, 14 };
 
@@ -167,18 +166,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         var edges    = new List<DeadMtlResidentialFrontageEdge>();
         var strips   = new List<DeadMtlResidentialSidewalkStrip>();
 
-        // Only the mid-block rear boundary strip; sidewalk context not rendered in planning view
-        strips.Add(new DeadMtlResidentialSidewalkStrip
-        {
-            StripId    = "MAP28A_REAR_BOUNDARY",
-            StripKind  = "REAR_BOUNDARY",
-            Direction  = "NONE",
-            X1 = MainX1, Y1 = RearFenceY1, X2 = MainX2, Y2 = RearFenceY2,
-            WidthTiles = RearFenceWidth,
-            Notes      = "Mid-block rear boundary (fence/property line), NOT a service alley",
-        });
-
-        // North and South lots (6 each, widths 15/15/15/15/15/14, full-lot rows)
+        // North and South lots (6 each, widths 15/15/15/15/15/14, full-lot rows; no rear boundary strip)
         int xCur = MainX1;
         for (int i = 0; i < s_lotWidths.Length; i++)
         {
@@ -348,15 +336,15 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
             "South lot row covers full bbox width X 124-212 with no gaps",
             "PASS", southRowCoverage ? "PASS" : "FAIL");
 
-        // 14 — No lot overlaps REAR_BOUNDARY (Y 39-40)
-        var rearBoundary = strips.First(s => s.StripKind == "REAR_BOUNDARY");
-        bool noLotRearOverlap = parcels.All(p =>
-            !(p.X1 <= rearBoundary.X2 && p.X2 >= rearBoundary.X1
-           && p.Y1 <= rearBoundary.Y2 && p.Y2 >= rearBoundary.Y1));
+        // 14 — North and south rows are adjacent with no gap
+        bool rowsAdjacent = northLots.Any() && southLots.Any()
+            && northLots.All(p => p.Y2 == NorthY2)
+            && southLots.All(p => p.Y1 == SouthY1)
+            && NorthY2 + 1 == SouthY1;
         AddCheck(checks,
-            "MAP28A_NO_LOT_OVERLAPS_REAR_BOUNDARY",
-            "No residential lot overlaps the REAR_BOUNDARY strip (Y 39-40)",
-            "PASS", noLotRearOverlap ? "PASS" : "FAIL");
+            "MAP28A_NORTH_SOUTH_ROWS_ADJACENT_NO_GAP",
+            $"North row (Y {NorthY1}-{NorthY2}) and south row (Y {SouthY1}-{SouthY2}) are adjacent with no gap",
+            "PASS", rowsAdjacent ? "PASS" : "FAIL");
 
         // 15 — Lot width balance: max width - min width <= 1
         var nsParcels = parcels.Where(p => p.FrontageDirection is "NORTH" or "SOUTH").ToList();
@@ -499,11 +487,10 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
     public byte[] RenderCleanParcelPngBytes(
         DeadMtlWorldBuilderResidentialParcelTopologyResult result)
     {
+        // Strict lot-fill-only: no bbox, no ticks, no rear-boundary, no helper artifacts
         using var bmp = CreateBackground();
         using var g   = System.Drawing.Graphics.FromImage(bmp);
-        FillAllStripsBrush(result, g);
         FillAllParcelsBrush(result, g);
-        DrawBbox(bmp);
         return BitmapToBytes(bmp);
     }
 
@@ -744,10 +731,9 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         sb.AppendLine("</p>");
         sb.AppendLine("<p>");
         sb.AppendLine($"Component: {result.ComponentId} | Bbox X:{result.BboxX1}-{result.BboxX2} Y:{result.BboxY1}-{result.BboxY2} ({result.BboxWidth} by {result.BboxHeight} tiles)<br>");
-        sb.AppendLine($"Layout: {result.NorthFacingLotCount} north + {result.SouthFacingLotCount} south full-lot rows (widths 15/14 tiles). 0 east lots.<br>");
-        sb.AppendLine("Mid-block separator: REAR_BOUNDARY (dark brown, NOT alley). Bbox: CYAN.<br>");
-        sb.AppendLine("No invented alleys. No double-frontage. No through-lots.<br>");
-        sb.AppendLine("Adjacent lots differ by shade. Boundaries by shade change, no black stroke lines. Planning artifact only.");
+        sb.AppendLine($"Layout: {result.NorthFacingLotCount} north (Y 10-39) + {result.SouthFacingLotCount} south (Y 40-69) full-lot rows. 0 east lots. No rear boundary strip.<br>");
+        sb.AppendLine("North and south rows are adjacent with no gap. No invented alleys. No double-frontage. No through-lots.<br>");
+        sb.AppendLine("Clean view: strict lot fill only, no bbox/ticks. Debug: bbox + ticks. Boundaries by adjacent shade change. Planning artifact only.");
         sb.AppendLine("</p>");
         sb.AppendLine("<div class=\"pal\"><b>Palette:</b>");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#c8a878;\"></span>Lot shade A (light tan) &nbsp;");
@@ -759,7 +745,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         sb.AppendLine("<div class=\"row\">");
         sb.AppendLine("  <div class=\"card\">");
         sb.AppendLine("    <img src=\"map_00_residential_parcels_topology_clean_native_256.png\" alt=\"clean parcel view\">");
-        sb.AppendLine("    <div class=\"lbl\">clean parcel view (256x256)</div>");
+        sb.AppendLine("    <div class=\"lbl\">clean view: strict residential lot fill only, no bbox/ticks/rear-boundary (256x256)</div>");
         sb.AppendLine("  </div>");
         sb.AppendLine("  <div class=\"card\">");
         sb.AppendLine("    <img src=\"map_00_residential_parcels_topology_debug_native_256.png\" alt=\"debug view\">");
@@ -803,7 +789,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         sb.AppendLine($"- East-facing lots  : 0 (no east residential row)");
         sb.AppendLine($"- Total lots        : {result.TotalResidentialLotCount}");
         sb.AppendLine($"- Sidewalk strips   : 0 (sidewalk context not rendered in planning view)");
-        sb.AppendLine($"- Rear boundary     : {result.RearBoundaryStripCount} (REAR_BOUNDARY Y 39-40, NOT alley)");
+        sb.AppendLine($"- Rear boundary     : {result.RearBoundaryStripCount} (no rear boundary strip; rows adjacent Y {NorthY2} / Y {SouthY1})");
         sb.AppendLine($"- Invented alleys   : {result.InventedAlleyCount} (invented_alleys_enabled=false)");
         sb.AppendLine();
         sb.AppendLine("## Claim boundary");
