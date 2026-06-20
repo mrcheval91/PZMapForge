@@ -25,13 +25,18 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
     private const int SouthY1 = 40, SouthY2 = 69;
     private const int MainX1  = 124, MainX2  = 212;
 
-    private static readonly int[] s_lotWidths = { 15, 15, 15, 15, 15, 14 };
+    private const int ColumnCount = 6;
+
+    // Street adjacency for map_00_component_0001: north and south sides face streets; east does not.
+    private const bool NorthStreetAdj = true;
+    private const bool SouthStreetAdj = true;
+    private const bool EastStreetAdj  = false;
 
     // Warm neutral shade palette for residential lots (light → medium → darker tan)
     private static readonly (byte R, byte G, byte B) s_sidew  = (184, 184, 192);
     private static readonly (byte R, byte G, byte B) s_rear   = (74,  56,  40);
     private static readonly (byte R, byte G, byte B) s_bg     = (18,  18,  24);
-    private static readonly (byte R, byte G, byte B) s_tick   = (210, 230, 255);
+    private static readonly (byte R, byte G, byte B) s_tick   = (240, 200, 140); // warm amber tick
 
     private static readonly (byte R, byte G, byte B)[] s_lotShades =
     {
@@ -165,13 +170,12 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         var edges    = new List<DeadMtlResidentialFrontageEdge>();
         var strips   = new List<DeadMtlResidentialSidewalkStrip>();
 
-        // North and South lots (6 each, widths 15/15/15/15/15/14, full-lot rows; no rear boundary strip)
-        int xCur = MainX1;
-        for (int i = 0; i < s_lotWidths.Length; i++)
+        // Columns calculated automatically from area X bounds and column count.
+        var columns = SplitInclusiveSpan(MainX1, MainX2, ColumnCount);
+        for (int i = 0; i < columns.Count; i++)
         {
-            int w   = s_lotWidths[i];
-            int lx1 = xCur, lx2 = xCur + w - 1;
-            xCur += w;
+            var (lx1, lx2, w) = columns[i];
+            bool isCorner      = i == 0 || i == columns.Count - 1;
 
             string nId  = $"MAP28A_NORTH_LOT_{i:00}";
             string sId  = $"MAP28A_SOUTH_LOT_{i:00}";
@@ -188,7 +192,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
                 Width               = w,
                 Height              = NorthY2 - NorthY1 + 1,
                 TileCount           = w * (NorthY2 - NorthY1 + 1),
-                IsCornerLot         = i == 0 || i == s_lotWidths.Length - 1,
+                IsCornerLot         = isCorner,
                 IsThroughLot        = false,
                 PrimaryFrontageEdgeId = neId,
             });
@@ -212,7 +216,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
                 Width               = w,
                 Height              = SouthY2 - SouthY1 + 1,
                 TileCount           = w * (SouthY2 - SouthY1 + 1),
-                IsCornerLot         = i == 0 || i == s_lotWidths.Length - 1,
+                IsCornerLot         = isCorner,
                 IsThroughLot        = false,
                 PrimaryFrontageEdgeId = seId,
             });
@@ -226,6 +230,10 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
                 LengthTiles       = w,
             });
         }
+
+        result.NorthStreetAdjacency = NorthStreetAdj;
+        result.SouthStreetAdjacency = SouthStreetAdj;
+        result.EastStreetAdjacency  = EastStreetAdj;
 
         result.ResidentialParcels    = parcels;
         result.FrontageEdges         = edges;
@@ -553,7 +561,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
                 {
                     var (r, gb, b) = GetLotColor(p.ParcelId, p.FrontageDirection);
                     using var brush = new System.Drawing.SolidBrush(
-                        System.Drawing.Color.FromArgb(150, r, gb, b));
+                        System.Drawing.Color.FromArgb(255, r, gb, b));
                     gOvl.FillRectangle(brush, p.X1, p.Y1, p.X2 - p.X1 + 1, p.Y2 - p.Y1 + 1);
                 }
             }
@@ -603,6 +611,24 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
                 System.Drawing.Color.FromArgb(r, gb, b));
             g.FillRectangle(brush, p.X1, p.Y1, p.X2 - p.X1 + 1, p.Y2 - p.Y1 + 1);
         }
+    }
+
+    private static IReadOnlyList<(int X1, int X2, int Width)> SplitInclusiveSpan(int start, int end, int count)
+    {
+        int total     = end - start + 1;
+        int baseWidth = total / count;
+        int remainder = total % count;
+        var ranges    = new List<(int X1, int X2, int Width)>(count);
+        int cursor    = start;
+        for (int i = 0; i < count; i++)
+        {
+            int width = baseWidth + (i < remainder ? 1 : 0);
+            int x1    = cursor;
+            int x2    = cursor + width - 1;
+            ranges.Add((x1, x2, width));
+            cursor = x2 + 1;
+        }
+        return ranges;
     }
 
     private static byte[] BitmapToBytes(System.Drawing.Bitmap bmp)

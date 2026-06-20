@@ -40,6 +40,10 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyResult
     [JsonPropertyName("frontage_edges")]      public List<DeadMtlResidentialFrontageEdge>  FrontageEdges { get; set; } = new();
     [JsonPropertyName("sidewalk_strips")]     public List<DeadMtlResidentialSidewalkStrip> SidewalkStrips { get; set; } = new();
 
+    [JsonPropertyName("north_street_adjacency")] public bool NorthStreetAdjacency { get; set; }
+    [JsonPropertyName("south_street_adjacency")] public bool SouthStreetAdjacency { get; set; }
+    [JsonPropertyName("east_street_adjacency")]  public bool EastStreetAdjacency { get; set; }
+
     [JsonPropertyName("sandbox_only")]                       public bool SandboxOnly { get; set; } = true;
     [JsonPropertyName("parcel_topology_planning_only")]      public bool ParcelTopologyPlanningOnly { get; set; } = true;
     [JsonPropertyName("writer_ready")]                       public bool WriterReady { get; set; }

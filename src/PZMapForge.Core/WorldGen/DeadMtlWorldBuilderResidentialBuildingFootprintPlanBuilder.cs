@@ -149,64 +149,23 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
 
         foreach (var parcel in topology.ResidentialParcels)
         {
-            DeadMtlResidentialBuildingFootprint fp;
+            if (parcel.FrontageDirection is not ("NORTH" or "SOUTH")) continue;
 
-            if (parcel.FrontageDirection == "NORTH")
+            footprints.Add(new DeadMtlResidentialBuildingFootprint
             {
-                fp = new DeadMtlResidentialBuildingFootprint
-                {
-                    FootprintId       = parcel.ParcelId.Replace("MAP28A_", "MAP28B_") + "_FOOTPRINT",
-                    ParentParcelId    = parcel.ParcelId,
-                    FrontageDirection = "NORTH",
-                    BuildingKind      = "ROWHOUSE_MAIN_VOLUME",
-                    X1 = parcel.X1, Y1 = parcel.Y1, X2 = parcel.X2, Y2 = parcel.Y2,
-                    Width            = parcel.Width,
-                    Height           = parcel.Height,
-                    TileCount        = parcel.TileCount,
-                    SetbackFront     = 0,
-                    SetbackRear      = 0,
-                    SetbackSideLeft  = 0,
-                    SetbackSideRight = 0,
-                };
-            }
-            else if (parcel.FrontageDirection == "SOUTH")
-            {
-                fp = new DeadMtlResidentialBuildingFootprint
-                {
-                    FootprintId       = parcel.ParcelId.Replace("MAP28A_", "MAP28B_") + "_FOOTPRINT",
-                    ParentParcelId    = parcel.ParcelId,
-                    FrontageDirection = "SOUTH",
-                    BuildingKind      = "ROWHOUSE_MAIN_VOLUME",
-                    X1 = parcel.X1, Y1 = parcel.Y1, X2 = parcel.X2, Y2 = parcel.Y2,
-                    Width            = parcel.Width,
-                    Height           = parcel.Height,
-                    TileCount        = parcel.TileCount,
-                    SetbackFront     = 0,
-                    SetbackRear      = 0,
-                    SetbackSideLeft  = 0,
-                    SetbackSideRight = 0,
-                };
-            }
-            else // EAST
-            {
-                fp = new DeadMtlResidentialBuildingFootprint
-                {
-                    FootprintId       = parcel.ParcelId.Replace("MAP28A_", "MAP28B_") + "_FOOTPRINT",
-                    ParentParcelId    = parcel.ParcelId,
-                    FrontageDirection = "EAST",
-                    BuildingKind      = "EAST_EDGE_RESIDENTIAL_VOLUME",
-                    X1 = parcel.X1, Y1 = parcel.Y1, X2 = parcel.X2, Y2 = parcel.Y2,
-                    Width            = parcel.Width,
-                    Height           = parcel.Height,
-                    TileCount        = parcel.TileCount,
-                    SetbackFront     = 0,
-                    SetbackRear      = 0,
-                    SetbackSideLeft  = 0,
-                    SetbackSideRight = 0,
-                };
-            }
-
-            footprints.Add(fp);
+                FootprintId       = parcel.ParcelId.Replace("MAP28A_", "MAP28B_") + "_FOOTPRINT",
+                ParentParcelId    = parcel.ParcelId,
+                FrontageDirection = parcel.FrontageDirection,
+                BuildingKind      = "ROWHOUSE_MAIN_VOLUME",
+                X1 = parcel.X1, Y1 = parcel.Y1, X2 = parcel.X2, Y2 = parcel.Y2,
+                Width            = parcel.Width,
+                Height           = parcel.Height,
+                TileCount        = parcel.TileCount,
+                SetbackFront     = 0,
+                SetbackRear      = 0,
+                SetbackSideLeft  = 0,
+                SetbackSideRight = 0,
+            });
         }
 
         result.BuildingFootprints  = footprints;
@@ -588,16 +547,10 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
             using (var gOvl = System.Drawing.Graphics.FromImage(overlay))
             {
                 gOvl.Clear(System.Drawing.Color.Transparent);
-                foreach (var p in topology.ResidentialParcels)
-                {
-                    using var brush = new System.Drawing.SolidBrush(
-                        System.Drawing.Color.FromArgb(80, s_parcel.R, s_parcel.G, s_parcel.B));
-                    gOvl.FillRectangle(brush, p.X1, p.Y1, p.X2 - p.X1 + 1, p.Y2 - p.Y1 + 1);
-                }
                 foreach (var f in result.BuildingFootprints)
                 {
                     var (fr, fg, fb) = PickFootprintShade(f.ParentParcelId, f.FrontageDirection);
-                    using var brush  = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(180, fr, fg, fb));
+                    using var brush  = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, fr, fg, fb));
                     gOvl.FillRectangle(brush, f.X1, f.Y1, f.X2 - f.X1 + 1, f.Y2 - f.Y1 + 1);
                 }
             }

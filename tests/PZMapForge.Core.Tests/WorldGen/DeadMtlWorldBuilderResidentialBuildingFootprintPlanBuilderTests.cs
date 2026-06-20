@@ -433,6 +433,103 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilderTe
         Assert.DoesNotContain("#28c0c0", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Bbox",    html, StringComparison.Ordinal);
         Assert.DoesNotContain("bbox",    html, StringComparison.Ordinal);
+        Assert.DoesNotContain("blue",    html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("#3a5eae", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("#4a6ebe", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("#2a4e9e", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("EAST_EDGE_RESIDENTIAL_VOLUME", html, StringComparison.Ordinal);
+    }
+
+    // -----------------------------------------------------------------------
+    // No east footprint kind
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Build_NoEastFootprintKind()
+    {
+        Assert.DoesNotContain(RunBuild().BuildingFootprints,
+            f => f.BuildingKind == "EAST_EDGE_RESIDENTIAL_VOLUME");
+    }
+
+    [Fact]
+    public void Build_AllFootprintKinds_AreRowhouseMainVolume()
+    {
+        var r = RunBuild();
+        Assert.All(r.BuildingFootprints, f =>
+            Assert.Equal("ROWHOUSE_MAIN_VOLUME", f.BuildingKind));
+    }
+
+    [Fact]
+    public void Build_NorthAndSouthFootprints_UseIdenticalXRanges()
+    {
+        var r     = RunBuild();
+        var nFps  = r.BuildingFootprints.Where(f => f.FrontageDirection == "NORTH").OrderBy(f => f.X1).ToList();
+        var sFps  = r.BuildingFootprints.Where(f => f.FrontageDirection == "SOUTH").OrderBy(f => f.X1).ToList();
+        Assert.Equal(nFps.Count, sFps.Count);
+        for (int i = 0; i < nFps.Count; i++)
+        {
+            Assert.Equal(nFps[i].X1, sFps[i].X1);
+            Assert.Equal(nFps[i].X2, sFps[i].X2);
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Forbidden color pixel tests (all 3 PNGs)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void RenderCleanFootprintPng_NoForbiddenColors()
+    {
+        var b        = MakeBuilder();
+        var r        = RunBuild();
+        var topology = MakeTopologyBuilder().Build(_tempDir);
+        var png      = b.RenderCleanFootprintPngBytes(r, topology);
+        using var bmp = LoadBitmap(png);
+        AssertNoForbiddenPixels(bmp, "clean footprint PNG");
+    }
+
+    [Fact]
+    public void RenderDebugFootprintPng_NoForbiddenColors()
+    {
+        var b        = MakeBuilder();
+        var r        = RunBuild();
+        var topology = MakeTopologyBuilder().Build(_tempDir);
+        var png      = b.RenderDebugFootprintPngBytes(r, topology);
+        using var bmp = LoadBitmap(png);
+        AssertNoForbiddenPixels(bmp, "debug footprint PNG");
+    }
+
+    [Fact]
+    public void RenderOverlayFootprintPng_NoForbiddenColors()
+    {
+        var b        = MakeBuilder();
+        var r        = RunBuild();
+        var topology = MakeTopologyBuilder().Build(_tempDir);
+        var png      = b.RenderOverlayFootprintPngBytes(r, topology, null);
+        using var bmp = LoadBitmap(png);
+        AssertNoForbiddenPixels(bmp, "overlay footprint PNG");
+    }
+
+    private static void AssertNoForbiddenPixels(System.Drawing.Bitmap bmp, string label)
+    {
+        var forbidden = new HashSet<(byte R, byte G, byte B)>
+        {
+            (58,  94,  174),
+            (74,  110, 190),
+            (42,  78,  158),
+            (40,  192, 192),
+            (210, 230, 255),
+        };
+        for (int x = 0; x < bmp.Width; x++)
+            for (int y = 0; y < bmp.Height; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.False(forbidden.Contains((px.R, px.G, px.B)),
+                    $"Forbidden color ({px.R},{px.G},{px.B}) at ({x},{y}) in {label}");
+                bool blueish = px.B >= 80 && px.B >= px.R + 25 && px.B >= px.G + 10;
+                Assert.False(blueish,
+                    $"Blue-ish pixel ({px.R},{px.G},{px.B}) at ({x},{y}) in {label}");
+            }
     }
 
     // -----------------------------------------------------------------------

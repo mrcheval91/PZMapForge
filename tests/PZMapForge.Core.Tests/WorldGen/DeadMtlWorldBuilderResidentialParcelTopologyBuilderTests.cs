@@ -439,6 +439,160 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilderTests : I
         Assert.DoesNotContain("#28c0c0", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Bbox",    html, StringComparison.Ordinal);
         Assert.DoesNotContain("bbox",    html, StringComparison.Ordinal);
+        Assert.DoesNotContain("blue",    html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("#3a5eae", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("#4a6ebe", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("#2a4e9e", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // -----------------------------------------------------------------------
+    // Street adjacency
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Build_NorthStreetAdjacency_IsTrue()
+    {
+        Assert.True(RunBuild().NorthStreetAdjacency);
+    }
+
+    [Fact]
+    public void Build_SouthStreetAdjacency_IsTrue()
+    {
+        Assert.True(RunBuild().SouthStreetAdjacency);
+    }
+
+    [Fact]
+    public void Build_EastStreetAdjacency_IsFalse()
+    {
+        Assert.False(RunBuild().EastStreetAdjacency);
+    }
+
+    // -----------------------------------------------------------------------
+    // Frontage edge geometry
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Build_FrontageEdges_NoEastFacing()
+    {
+        Assert.DoesNotContain(RunBuild().FrontageEdges, e => e.FrontageDirection == "EAST");
+    }
+
+    [Fact]
+    public void Build_NorthFrontageEdges_OnNorthY()
+    {
+        var r          = RunBuild();
+        var northEdges = r.FrontageEdges.Where(e => e.FrontageDirection == "NORTH").ToList();
+        Assert.True(northEdges.Any(), "Expected north frontage edges");
+        Assert.All(northEdges, e =>
+        {
+            Assert.Equal(10, e.Y1);
+            Assert.Equal(10, e.Y2);
+        });
+    }
+
+    [Fact]
+    public void Build_SouthFrontageEdges_OnSouthY()
+    {
+        var r          = RunBuild();
+        var southEdges = r.FrontageEdges.Where(e => e.FrontageDirection == "SOUTH").ToList();
+        Assert.True(southEdges.Any(), "Expected south frontage edges");
+        Assert.All(southEdges, e =>
+        {
+            Assert.Equal(69, e.Y1);
+            Assert.Equal(69, e.Y2);
+        });
+    }
+
+    [Fact]
+    public void Build_FrontageEdges_LengthEqualsParentLotWidth()
+    {
+        var r = RunBuild();
+        foreach (var edge in r.FrontageEdges)
+        {
+            var parcel = r.ResidentialParcels.First(p => p.ParcelId == edge.ParcelId);
+            Assert.Equal(parcel.Width, edge.LengthTiles);
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Calculated column geometry
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Build_ColumnWidths_MatchExpected_15x5and14x1()
+    {
+        var r       = RunBuild();
+        var nLots   = r.ResidentialParcels.Where(p => p.FrontageDirection == "NORTH")
+                                          .OrderBy(p => p.X1).ToList();
+        var widths  = nLots.Select(p => p.Width).ToList();
+        Assert.Equal(new[] { 15, 15, 15, 15, 15, 14 }, widths);
+    }
+
+    [Fact]
+    public void Build_NorthAndSouthRows_UseIdenticalXRanges()
+    {
+        var r     = RunBuild();
+        var nLots = r.ResidentialParcels.Where(p => p.FrontageDirection == "NORTH").OrderBy(p => p.X1).ToList();
+        var sLots = r.ResidentialParcels.Where(p => p.FrontageDirection == "SOUTH").OrderBy(p => p.X1).ToList();
+        Assert.Equal(nLots.Count, sLots.Count);
+        for (int i = 0; i < nLots.Count; i++)
+        {
+            Assert.Equal(nLots[i].X1, sLots[i].X1);
+            Assert.Equal(nLots[i].X2, sLots[i].X2);
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Forbidden color pixel tests (all 3 PNGs)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void RenderCleanParcelPng_NoForbiddenColors()
+    {
+        var r   = RunBuild();
+        var png = MakeBuilder().RenderCleanParcelPngBytes(r);
+        using var bmp = LoadBitmap(png);
+        AssertNoForbiddenPixels(bmp, "clean parcel PNG");
+    }
+
+    [Fact]
+    public void RenderDebugParcelPng_NoForbiddenColors()
+    {
+        var r   = RunBuild();
+        var png = MakeBuilder().RenderDebugParcelPngBytes(r);
+        using var bmp = LoadBitmap(png);
+        AssertNoForbiddenPixels(bmp, "debug parcel PNG");
+    }
+
+    [Fact]
+    public void RenderOverlayParcelPng_NoForbiddenColors()
+    {
+        var r   = RunBuild();
+        var png = MakeBuilder().RenderOverlayParcelPngBytes(r, null);
+        using var bmp = LoadBitmap(png);
+        AssertNoForbiddenPixels(bmp, "overlay parcel PNG");
+    }
+
+    private static void AssertNoForbiddenPixels(System.Drawing.Bitmap bmp, string label)
+    {
+        var forbidden = new HashSet<(byte R, byte G, byte B)>
+        {
+            (58,  94,  174),
+            (74,  110, 190),
+            (42,  78,  158),
+            (40,  192, 192),
+            (210, 230, 255),
+        };
+        for (int x = 0; x < bmp.Width; x++)
+            for (int y = 0; y < bmp.Height; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.False(forbidden.Contains((px.R, px.G, px.B)),
+                    $"Forbidden color ({px.R},{px.G},{px.B}) at ({x},{y}) in {label}");
+                bool blueish = px.B >= 80 && px.B >= px.R + 25 && px.B >= px.G + 10;
+                Assert.False(blueish,
+                    $"Blue-ish pixel ({px.R},{px.G},{px.B}) at ({x},{y}) in {label}");
+            }
     }
 
     // -----------------------------------------------------------------------
