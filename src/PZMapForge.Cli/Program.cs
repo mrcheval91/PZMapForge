@@ -223,8 +223,9 @@ return args[0] switch
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-materialization-replay-dry-run"   => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedMaterializationReplayDryRunCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-replay-backend-plan"              => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendPlanCommand(args[1..]),
     "deadmtl-build-worldbuilder-minimal-concrete-geometry-sandbox-writer-locked-replay-backend-dry-run-emitter"  => DeadMtlBuildWorldBuilderMinimalConcreteGeometrySandboxWriterLockedReplayBackendDryRunEmitterCommand(args[1..]),
-    "deadmtl-build-worldbuilder-residential-parcel-topology"           => DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(args[1..]),
-    "deadmtl-build-worldbuilder-residential-building-footprint-plan"   => DeadMtlBuildWorldBuilderResidentialBuildingFootprintPlanCommand(args[1..]),
+    "deadmtl-build-worldbuilder-residential-parcel-topology"                  => DeadMtlBuildWorldBuilderResidentialParcelTopologyCommand(args[1..]),
+    "deadmtl-build-worldbuilder-residential-building-footprint-plan"          => DeadMtlBuildWorldBuilderResidentialBuildingFootprintPlanCommand(args[1..]),
+    "deadmtl-build-worldbuilder-residential-blue-quadrilateral-lot-fill"      => DeadMtlBuildWorldBuilderResidentialBlueQuadrilateralLotFillCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -9315,6 +9316,124 @@ static int DeadMtlBuildWorldBuilderResidentialBuildingFootprintPlanCommand(strin
         outputCleanPng, outputDebugPng, outputOverlayPng, outputHtml, outputReadme);
 
     WriteOutputs();
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (!result.IsValid)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return 0;
+}
+
+static int DeadMtlBuildWorldBuilderResidentialBlueQuadrilateralLotFillCommand(string[] args)
+{
+    var sourcePng      = string.Empty;
+    var outputRoot     = string.Empty;
+    var outputJson     = string.Empty;
+    var outputLotsCsv  = string.Empty;
+    var outputFacCsv   = string.Empty;
+    var outputChkCsv   = string.Empty;
+    var outputPng      = string.Empty;
+    var outputHtml     = string.Empty;
+    var summaryPath    = string.Empty;
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--source-png":        sourcePng     = args[i + 1]; break;
+            case "--output-root":       outputRoot    = args[i + 1]; break;
+            case "--output-json":       outputJson    = args[i + 1]; break;
+            case "--output-lots-csv":   outputLotsCsv = args[i + 1]; break;
+            case "--output-facades-csv": outputFacCsv = args[i + 1]; break;
+            case "--output-checks-csv": outputChkCsv  = args[i + 1]; break;
+            case "--output-png":        outputPng     = args[i + 1]; break;
+            case "--output-html":       outputHtml    = args[i + 1]; break;
+            case "--summary":           summaryPath   = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(sourcePng)   || string.IsNullOrEmpty(outputRoot)   ||
+        string.IsNullOrEmpty(outputJson)  || string.IsNullOrEmpty(outputLotsCsv) ||
+        string.IsNullOrEmpty(outputFacCsv)|| string.IsNullOrEmpty(outputChkCsv) ||
+        string.IsNullOrEmpty(outputPng)   || string.IsNullOrEmpty(outputHtml)   ||
+        string.IsNullOrEmpty(summaryPath))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-residential-blue-quadrilateral-lot-fill " +
+            "--source-png <map.png> --output-root <.local dir> --output-json <json> " +
+            "--output-lots-csv <csv> --output-facades-csv <csv> --output-checks-csv <csv> " +
+            "--output-png <png> --output-html <html> --summary <txt>");
+        return 1;
+    }
+
+    foreach (var (flag, value) in new[]
+    {
+        ("--output-root",        outputRoot),
+        ("--output-json",        outputJson),
+        ("--output-lots-csv",    outputLotsCsv),
+        ("--output-facades-csv", outputFacCsv),
+        ("--output-checks-csv",  outputChkCsv),
+        ("--output-png",         outputPng),
+        ("--output-html",        outputHtml),
+        ("--summary",            summaryPath),
+    })
+    {
+        if (!value.Contains(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"ERROR: {flag} must contain .local to prevent accidental output outside sandbox: {value}");
+            return 1;
+        }
+    }
+
+    if (!File.Exists(sourcePng))
+    {
+        Console.Error.WriteLine($"ERROR: source PNG not found: {sourcePng}");
+        return 1;
+    }
+
+    // Record source hash before any writes
+    using var sha256    = System.Security.Cryptography.SHA256.Create();
+    string hashBefore;
+    using (var fs = File.OpenRead(sourcePng))
+        hashBefore = Convert.ToHexString(sha256.ComputeHash(fs)).ToLowerInvariant();
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilder();
+    var result  = builder.Build(sourcePng, outputRoot);
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputJson)!);
+
+    void WriteOutputs()
+    {
+        File.WriteAllText(outputJson,     builder.RenderJson(result));
+        File.WriteAllText(outputLotsCsv,  builder.RenderLotsCsv(result));
+        File.WriteAllText(outputFacCsv,   builder.RenderFacadesCsv(result));
+        File.WriteAllText(outputChkCsv,   builder.RenderChecksCsv(result));
+        File.WriteAllText(outputHtml,     builder.RenderHtml(result));
+        File.WriteAllText(summaryPath,    builder.RenderSummary(result));
+        File.WriteAllBytes(outputPng,     builder.RenderOutputPngBytes(result));
+    }
+
+    WriteOutputs();
+
+    result = builder.FinalizeAfterOutputs(result, outputRoot, outputPng, outputHtml);
+
+    WriteOutputs();
+
+    // Verify source PNG was not mutated
+    string hashAfter;
+    using (var fs = File.OpenRead(sourcePng))
+        hashAfter = Convert.ToHexString(sha256.ComputeHash(fs)).ToLowerInvariant();
+
+    if (hashBefore != hashAfter)
+    {
+        Console.Error.WriteLine($"ERROR: source PNG was mutated (hash changed)");
+        return 1;
+    }
 
     Console.WriteLine(builder.RenderSummary(result));
 
