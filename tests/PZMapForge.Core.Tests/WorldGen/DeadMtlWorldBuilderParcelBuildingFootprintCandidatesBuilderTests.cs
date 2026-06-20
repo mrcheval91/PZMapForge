@@ -858,4 +858,242 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilderT
         foreach (var c in map31aChecks)
             Assert.True(c.CheckStatus == "PASS", $"Check {c.CheckId} FAILED: expected={c.Expected} actual={c.Actual}");
     }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B fixture helpers
+    // Sector JSON: DOWNTOWN_CORE bbox (0..15, 0..30), OPEN_RESIDENTIAL bbox (25..50, 0..50)
+    // LOT_VALID center=(6,13) → DOWNTOWN_CORE; LOT_SKIPPED center=(34,4) → OPEN_RESIDENTIAL
+    // -----------------------------------------------------------------------
+
+    private static string MakeSectorJsonDowntownAndOpen() => """
+        {
+          "sector_overrides_version": "MAP31B_TEST_V1",
+          "sectors": [
+            {
+              "sector_id": "DOWNTOWN_CORE",
+              "label": "Downtown Core Test",
+              "bbox_x1": 0, "bbox_y1": 0, "bbox_x2": 15, "bbox_y2": 30,
+              "gameplay_role": "COMMERCIAL_DENSE",
+              "tone_note": "Test"
+            },
+            {
+              "sector_id": "OPEN_RESIDENTIAL",
+              "label": "Open Residential Test",
+              "bbox_x1": 25, "bbox_y1": 0, "bbox_x2": 50, "bbox_y2": 50,
+              "gameplay_role": "RESIDENTIAL_LOW",
+              "tone_note": "Test"
+            }
+          ]
+        }
+        """;
+
+    private static string MakePolicyJsonWithDowntownAndOpen() => """
+        {
+          "policy_version": "MAP31B_TEST_V1",
+          "default_sector": "DEFAULT",
+          "policies": [
+            {
+              "parcel_class": "BLUE_RESIDENTIAL",
+              "neighborhood_sector": "DEFAULT",
+              "min_lot_area_tiles": 96,
+              "front_setback_tiles": 2,
+              "rear_setback_tiles": 3,
+              "side_setback_tiles": 1,
+              "min_footprint_width_tiles": 6,
+              "min_footprint_depth_tiles": 6,
+              "max_lot_coverage_ratio": 0.60,
+              "preferred_footprint_kind": "RESIDENTIAL_RECTANGLE"
+            },
+            {
+              "parcel_class": "BLUE_RESIDENTIAL",
+              "neighborhood_sector": "DOWNTOWN_CORE",
+              "min_lot_area_tiles": 96,
+              "front_setback_tiles": 0,
+              "rear_setback_tiles": 2,
+              "side_setback_tiles": 0,
+              "min_footprint_width_tiles": 6,
+              "min_footprint_depth_tiles": 6,
+              "max_lot_coverage_ratio": 0.80,
+              "preferred_footprint_kind": "URBAN_ROWHOUSE_RECTANGLE"
+            },
+            {
+              "parcel_class": "BLUE_RESIDENTIAL",
+              "neighborhood_sector": "OPEN_RESIDENTIAL",
+              "min_lot_area_tiles": 96,
+              "front_setback_tiles": 3,
+              "rear_setback_tiles": 3,
+              "side_setback_tiles": 2,
+              "min_footprint_width_tiles": 6,
+              "min_footprint_depth_tiles": 6,
+              "max_lot_coverage_ratio": 0.45,
+              "preferred_footprint_kind": "RESIDENTIAL_RECTANGLE"
+            },
+            {
+              "parcel_class": "RED_RESIDENTIAL_OR_COMMERCIAL",
+              "neighborhood_sector": "DEFAULT",
+              "min_lot_area_tiles": 120,
+              "front_setback_tiles": 0,
+              "rear_setback_tiles": 2,
+              "side_setback_tiles": 0,
+              "min_footprint_width_tiles": 6,
+              "min_footprint_depth_tiles": 6,
+              "max_lot_coverage_ratio": 0.85,
+              "preferred_footprint_kind": "COMMERCIAL_RECTANGLE"
+            }
+          ]
+        }
+        """;
+
+    private (string lf, string pol, string sec) WriteFixturesWithDowntownSectors(string lotFillJson)
+    {
+        var lf  = Path.Combine(_tempDir, $"lot-fill-31b-{Guid.NewGuid():N}.json");
+        var pol = Path.Combine(_tempDir, $"policy-31b-{Guid.NewGuid():N}.json");
+        var sec = Path.Combine(_tempDir, $"sectors-31b-{Guid.NewGuid():N}.json");
+        File.WriteAllText(lf,  lotFillJson);
+        File.WriteAllText(pol, MakePolicyJsonWithDowntownAndOpen());
+        File.WriteAllText(sec, MakeSectorJsonDowntownAndOpen());
+        return (lf, pol, sec);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 32. Sector footprint summaries are non-empty
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_SectorFootprintSummaries_NonEmpty()
+    {
+        var (lf, pol, sec) = WriteFixturesWithDowntownSectors(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir, sec);
+        Assert.True(r.SectorFootprintSummaries.Count > 0, "SectorFootprintSummaries must be non-empty");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 33. Sum of sector summary lot counts equals TotalLotCount
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_SectorSummaries_CoverAllLots()
+    {
+        var (lf, pol, sec) = WriteFixturesWithDowntownSectors(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir, sec);
+        int total = r.SectorFootprintSummaries.Sum(s => s.LotCount);
+        Assert.Equal(r.TotalLotCount, total);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 34. Sum of per-sector footprint counts equals FootprintCount
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_SectorSummary_FootprintCounts_Match()
+    {
+        var (lf, pol, sec) = WriteFixturesWithDowntownSectors(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir, sec);
+        int total = r.SectorFootprintSummaries.Sum(s => s.FootprintCount);
+        Assert.Equal(r.FootprintCount, total);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 35. Sum of per-sector skipped counts equals SkippedLotCount
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_SectorSummary_SkippedCounts_Match()
+    {
+        var (lf, pol, sec) = WriteFixturesWithDowntownSectors(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir, sec);
+        int total = r.SectorFootprintSummaries.Sum(s => s.SkippedLotCount);
+        Assert.Equal(r.SkippedLotCount, total);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 36. DEFAULT legend color is rgb(120,120,120) — no sector file
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_SectorLegend_Default_HasExpectedColor()
+    {
+        var (lf, pol) = WriteFixtures(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir);
+        // No sector file → all lots get DEFAULT sector
+        var entry = r.SectorPreviewLegendEntries.FirstOrDefault(e => e.SectorId == "DEFAULT");
+        Assert.NotNull(entry);
+        Assert.Equal("rgb(120,120,120)", entry.PreviewColorRgb);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 37. DOWNTOWN_CORE legend color is rgb(210,170,80)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_SectorLegend_DowntownCore_HasExpectedColor()
+    {
+        var (lf, pol, sec) = WriteFixturesWithDowntownSectors(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir, sec);
+        var entry = r.SectorPreviewLegendEntries.FirstOrDefault(e => e.SectorId == "DOWNTOWN_CORE");
+        Assert.NotNull(entry);
+        Assert.Equal("rgb(210,170,80)", entry.PreviewColorRgb);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 38. OPEN_RESIDENTIAL legend color is rgb(90,150,90)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_SectorLegend_OpenResidential_HasExpectedColor()
+    {
+        var (lf, pol, sec) = WriteFixturesWithDowntownSectors(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir, sec);
+        var entry = r.SectorPreviewLegendEntries.FirstOrDefault(e => e.SectorId == "OPEN_RESIDENTIAL");
+        Assert.NotNull(entry);
+        Assert.Equal("rgb(90,150,90)", entry.PreviewColorRgb);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 39. Legend count equals SectorCounts count
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_SectorLegend_CoversAllUsedSectors()
+    {
+        var (lf, pol, sec) = WriteFixturesWithDowntownSectors(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir, sec);
+        Assert.Equal(r.SectorCounts.Count, r.SectorPreviewLegendEntries.Count);
+        Assert.Equal(r.SectorCounts.Count, r.SectorPreviewLegendCount);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 40. DOWNTOWN_CORE coverage ratio stats are deterministic
+    // LOT_VALID (0,0)→(13,26) NORTH BLUE, DOWNTOWN_CORE policy: front=0 rear=2 side=0 coverage=0.80
+    // area=378; raw fp area=14×25=350 (0.926>0.80); clip: maxArea=302, maxDepth=21
+    // final fp area=14×21=294; coverageRatio=Math.Round(294/378,4)=0.7778
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_CoverageRatioStats_DowntownCore_Deterministic()
+    {
+        var (lf, pol, sec) = WriteFixturesWithDowntownSectors(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir, sec);
+        var summary = r.SectorFootprintSummaries.FirstOrDefault(s => s.SectorId == "DOWNTOWN_CORE");
+        Assert.NotNull(summary);
+        Assert.Equal(1, summary.FootprintCount);
+        Assert.Equal(0.7778, summary.AverageCoverageRatio);
+        Assert.Equal(0.7778, summary.MinCoverageRatio);
+        Assert.Equal(0.7778, summary.MaxCoverageRatio);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 41. All MAP31B checks pass
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_AllNewChecks_Pass()
+    {
+        var (lf, pol, sec) = WriteFixturesWithDowntownSectors(MakeTwoLotFillJson());
+        var r = NewBuilder().Build(lf, pol, _tempDir, sec);
+        var map31bChecks = r.Checks.Where(c => c.CheckId.StartsWith("MAP31B")).ToList();
+        Assert.True(map31bChecks.Count > 0, "No MAP31B checks found");
+        foreach (var c in map31bChecks)
+            Assert.True(c.CheckStatus == "PASS", $"Check {c.CheckId} FAILED: expected={c.Expected} actual={c.Actual}");
+    }
 }

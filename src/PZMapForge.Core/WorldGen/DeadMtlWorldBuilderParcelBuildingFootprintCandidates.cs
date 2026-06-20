@@ -28,6 +28,10 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesResult
     [JsonPropertyName("sector_count")]              public int    SectorCount            { get; set; }
     [JsonPropertyName("sector_counts")]             public List<SectorCountEntry> SectorCounts { get; set; } = new();
 
+    [JsonPropertyName("sector_footprint_summaries")]    public List<SectorFootprintSummaryEntry> SectorFootprintSummaries   { get; set; } = new();
+    [JsonPropertyName("sector_preview_legend_entries")] public List<SectorPreviewLegendEntry>    SectorPreviewLegendEntries { get; set; } = new();
+    [JsonPropertyName("sector_preview_legend_count")]   public int                               SectorPreviewLegendCount   { get; set; }
+
     [JsonPropertyName("preview_painted_lot_count")]         public int    PreviewPaintedLotCount        { get; set; }
     [JsonPropertyName("preview_painted_skipped_lot_count")] public int    PreviewPaintedSkippedLotCount { get; set; }
     [JsonPropertyName("skipped_lot_preview_color_rgb")]     public string SkippedLotPreviewColorRgb     { get; set; } = string.Empty;
@@ -93,6 +97,27 @@ public sealed class SectorCountEntry
 {
     [JsonPropertyName("sector_id")]  public string SectorId  { get; set; } = string.Empty;
     [JsonPropertyName("lot_count")]  public int    LotCount  { get; set; }
+}
+
+public sealed class SectorFootprintSummaryEntry
+{
+    [JsonPropertyName("sector_id")]               public string SectorId             { get; set; } = string.Empty;
+    [JsonPropertyName("lot_count")]               public int    LotCount             { get; set; }
+    [JsonPropertyName("footprint_count")]         public int    FootprintCount       { get; set; }
+    [JsonPropertyName("skipped_lot_count")]       public int    SkippedLotCount      { get; set; }
+    [JsonPropertyName("blue_footprint_count")]    public int    BlueFootprintCount   { get; set; }
+    [JsonPropertyName("red_footprint_count")]     public int    RedFootprintCount    { get; set; }
+    [JsonPropertyName("average_coverage_ratio")]  public double AverageCoverageRatio { get; set; }
+    [JsonPropertyName("min_coverage_ratio")]      public double MinCoverageRatio     { get; set; }
+    [JsonPropertyName("max_coverage_ratio")]      public double MaxCoverageRatio     { get; set; }
+}
+
+public sealed class SectorPreviewLegendEntry
+{
+    [JsonPropertyName("sector_id")]          public string SectorId        { get; set; } = string.Empty;
+    [JsonPropertyName("lot_count")]          public int    LotCount        { get; set; }
+    [JsonPropertyName("preview_color_rgb")]  public string PreviewColorRgb { get; set; } = string.Empty;
+    [JsonPropertyName("description")]        public string Description     { get; set; } = string.Empty;
 }
 
 public sealed class ParcelBuildingFootprintCheck

@@ -613,6 +613,43 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
             .Select(g => new SectorCountEntry { SectorId = g.Key, LotCount = g.Count() })
             .ToList();
 
+        // Sector footprint summaries (MAP-31B)
+        var sectorSummaries = new List<SectorFootprintSummaryEntry>();
+        foreach (var sid in result.SectorCounts.Select(sc => sc.SectorId))
+        {
+            var sF = footprints.Where(f => f.NeighborhoodSector == sid).ToList();
+            var sS = skippedLots.Where(s => s.NeighborhoodSector == sid).ToList();
+            sectorSummaries.Add(new SectorFootprintSummaryEntry
+            {
+                SectorId             = sid,
+                LotCount             = sF.Count + sS.Count,
+                FootprintCount       = sF.Count,
+                SkippedLotCount      = sS.Count,
+                BlueFootprintCount   = sF.Count(f => f.ParcelClass == ParcelClassBlue),
+                RedFootprintCount    = sF.Count(f => f.ParcelClass == ParcelClassRed),
+                AverageCoverageRatio = sF.Count > 0 ? Math.Round(sF.Average(f => f.CoverageRatio), 4) : 0,
+                MinCoverageRatio     = sF.Count > 0 ? Math.Round(sF.Min(f => f.CoverageRatio), 4) : 0,
+                MaxCoverageRatio     = sF.Count > 0 ? Math.Round(sF.Max(f => f.CoverageRatio), 4) : 0,
+            });
+        }
+        result.SectorFootprintSummaries = sectorSummaries;
+
+        // Sector preview legend (MAP-31B) — deterministic colors
+        var sectorLegend = new List<SectorPreviewLegendEntry>();
+        int legendFallbackIdx = 0;
+        foreach (var sc in result.SectorCounts)
+        {
+            sectorLegend.Add(new SectorPreviewLegendEntry
+            {
+                SectorId        = sc.SectorId,
+                LotCount        = sc.LotCount,
+                PreviewColorRgb = GetSectorLegendColor(sc.SectorId, ref legendFallbackIdx),
+                Description     = GetSectorLegendDescription(sc.SectorId),
+            });
+        }
+        result.SectorPreviewLegendEntries = sectorLegend;
+        result.SectorPreviewLegendCount   = sectorLegend.Count;
+
         // Build the preview pixel map now — checks B3/B4 scan it directly
         var skippedLotIds = new HashSet<string>(skippedLots.Select(s => s.LotId));
         var (paintedLotCount, paintedSkippedLotCount) = BuildPreviewPaintMap(lots, skippedLotIds, footprints);
@@ -762,6 +799,53 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
             "All runtime/public claim flags are false (MAP31A)",
             "PASS", claimBoundaryOk ? "PASS" : "FAIL");
 
+        // -----------------------------------------------------------------------
+        // MAP-31B checks (sector footprint summary and preview legend)
+        // -----------------------------------------------------------------------
+
+        // S1 — sector summaries present
+        AddCheck(checks, "MAP31B_SECTOR_SUMMARIES_PRESENT",
+            "Sector footprint summaries are non-empty",
+            "PASS", result.SectorFootprintSummaries.Count > 0 ? "PASS" : "FAIL");
+
+        // S2 — sector summaries cover all lots
+        int summariedLots = result.SectorFootprintSummaries.Sum(s => s.LotCount);
+        AddCheck(checks, "MAP31B_SECTOR_SUMMARIES_COVER_ALL_LOTS",
+            "Sum of sector summary lot counts equals total lot count",
+            result.TotalLotCount.ToString(), summariedLots.ToString());
+
+        // S3 — sector legend present
+        AddCheck(checks, "MAP31B_SECTOR_LEGEND_PRESENT",
+            "Sector preview legend is non-empty",
+            "PASS", result.SectorPreviewLegendEntries.Count > 0 ? "PASS" : "FAIL");
+
+        // S4 — legend covers all used sectors
+        AddCheck(checks, "MAP31B_SECTOR_LEGEND_COVERS_USED_SECTORS",
+            "Legend entry count equals distinct sector count",
+            result.SectorCounts.Count.ToString(), result.SectorPreviewLegendEntries.Count.ToString());
+
+        // S5 — sector summary footprint counts match total
+        int summaryFpTotal = result.SectorFootprintSummaries.Sum(s => s.FootprintCount);
+        AddCheck(checks, "MAP31B_SECTOR_SUMMARY_FOOTPRINT_COUNTS_MATCH",
+            "Sum of per-sector footprint counts equals total footprint count",
+            result.FootprintCount.ToString(), summaryFpTotal.ToString());
+
+        // S6 — sector summary skipped counts match total
+        int summarySkTotal = result.SectorFootprintSummaries.Sum(s => s.SkippedLotCount);
+        AddCheck(checks, "MAP31B_SECTOR_SUMMARY_SKIPPED_COUNTS_MATCH",
+            "Sum of per-sector skipped counts equals total skipped lot count",
+            result.SkippedLotCount.ToString(), summarySkTotal.ToString());
+
+        // S7 — no runtime artifacts (MAP31B prefix)
+        AddCheck(checks, "MAP31B_NO_RUNTIME_ARTIFACTS_WRITTEN",
+            "No forbidden runtime artifacts in output root (MAP31B)",
+            "PASS", scanPasses ? "PASS" : "FAIL");
+
+        // S8 — claim boundary compound
+        AddCheck(checks, "MAP31B_CLAIM_BOUNDARY_FALSE",
+            "All runtime/public claim flags are false (MAP31B)",
+            "PASS", claimBoundaryOk ? "PASS" : "FAIL");
+
         FinalizeResult(result, checks,
             valid: !checks.Any(c => c.CheckStatus == "FAIL") && result.Errors.Count == 0,
             verdict: "MAP30A_WORLDBUILDER_PARCEL_BUILDING_FOOTPRINT_CANDIDATES_COMPLETE");
@@ -894,6 +978,39 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         sb.AppendLine($"<tr><td>Is valid</td><td>{result.IsValid}</td></tr>");
         sb.AppendLine("</table>");
 
+        sb.AppendLine("<h3>Sector Assignment</h3><table border=\"1\" cellpadding=\"4\">");
+        sb.AppendLine($"<tr><td>Assignment source</td><td>{result.SectorAssignmentSource}</td></tr>");
+        sb.AppendLine($"<tr><td>Loaded</td><td>{result.SectorAssignmentLoaded}</td></tr>");
+        sb.AppendLine($"<tr><td>Sector count</td><td>{result.SectorCount}</td></tr>");
+        sb.AppendLine("</table>");
+
+        if (result.SectorCounts.Count > 0)
+        {
+            sb.AppendLine("<h4>Sector Counts</h4><table border=\"1\" cellpadding=\"4\">");
+            sb.AppendLine("<tr><th>sector_id</th><th>lot_count</th></tr>");
+            foreach (var sc in result.SectorCounts)
+                sb.AppendLine($"<tr><td>{sc.SectorId}</td><td>{sc.LotCount}</td></tr>");
+            sb.AppendLine("</table>");
+        }
+
+        if (result.SectorFootprintSummaries.Count > 0)
+        {
+            sb.AppendLine("<h4>Sector Footprint Summary</h4><table border=\"1\" cellpadding=\"4\">");
+            sb.AppendLine("<tr><th>sector_id</th><th>lots</th><th>footprints</th><th>skipped</th><th>blue_fp</th><th>red_fp</th><th>avg_coverage</th><th>min_coverage</th><th>max_coverage</th></tr>");
+            foreach (var ss in result.SectorFootprintSummaries)
+                sb.AppendLine($"<tr><td>{ss.SectorId}</td><td>{ss.LotCount}</td><td>{ss.FootprintCount}</td><td>{ss.SkippedLotCount}</td><td>{ss.BlueFootprintCount}</td><td>{ss.RedFootprintCount}</td><td>{ss.AverageCoverageRatio:F4}</td><td>{ss.MinCoverageRatio:F4}</td><td>{ss.MaxCoverageRatio:F4}</td></tr>");
+            sb.AppendLine("</table>");
+        }
+
+        if (result.SectorPreviewLegendEntries.Count > 0)
+        {
+            sb.AppendLine("<h4>Sector Preview Legend</h4><table border=\"1\" cellpadding=\"4\">");
+            sb.AppendLine("<tr><th>sector_id</th><th>lots</th><th>color</th><th>description</th></tr>");
+            foreach (var le in result.SectorPreviewLegendEntries)
+                sb.AppendLine($"<tr><td>{le.SectorId}</td><td>{le.LotCount}</td><td style=\"background:{le.PreviewColorRgb}\">&nbsp;{le.PreviewColorRgb}&nbsp;</td><td>{le.Description}</td></tr>");
+            sb.AppendLine("</table>");
+        }
+
         sb.AppendLine("<h3>Checks</h3><table border=\"1\" cellpadding=\"4\">");
         sb.AppendLine("<tr><th>check_id</th><th>status</th><th>expected</th><th>actual</th></tr>");
         foreach (var c in result.Checks)
@@ -948,6 +1065,12 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
             var sectorLine = string.Join(" ", r.SectorCounts.Select(sc => $"{sc.SectorId}={sc.LotCount}"));
             sb.AppendLine($"Sector counts           : {sectorLine}");
         }
+        if (r.SectorFootprintSummaries.Count > 0)
+        {
+            foreach (var ss in r.SectorFootprintSummaries)
+                sb.AppendLine($"  {ss.SectorId,-22}: lots={ss.LotCount} fp={ss.FootprintCount} skipped={ss.SkippedLotCount} blue={ss.BlueFootprintCount} red={ss.RedFootprintCount} avg_cov={ss.AverageCoverageRatio:F4}");
+        }
+        sb.AppendLine($"Sector legend entries   : {r.SectorPreviewLegendCount}");
         sb.AppendLine($"Checks                  : {r.CheckCount} total / {r.PassedCheckCount} PASS / {r.FailedCheckCount} FAIL");
         sb.AppendLine($"Is Valid                : {r.IsValid}");
         sb.AppendLine($"Verdict                 : {r.Verdict}");
@@ -955,4 +1078,32 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesBuilder
         sb.AppendLine($"Claim boundary          : sandbox_only=true | writer_ready=false | runtime_valid=false | materialized=false");
         return sb.ToString();
     }
+
+    // -----------------------------------------------------------------------
+    // Sector legend helpers (MAP-31B)
+    // -----------------------------------------------------------------------
+
+    private static readonly string[] s_legendFallbackColors =
+    {
+        "rgb(180,130,200)",
+        "rgb(80,160,200)",
+        "rgb(200,100,100)",
+        "rgb(100,200,180)",
+    };
+
+    private static string GetSectorLegendColor(string sectorId, ref int fallbackIdx)
+    {
+        if (sectorId == "DEFAULT")          return "rgb(120,120,120)";
+        if (sectorId == "DOWNTOWN_CORE")    return "rgb(210,170,80)";
+        if (sectorId == "OPEN_RESIDENTIAL") return "rgb(90,150,90)";
+        return s_legendFallbackColors[fallbackIdx++ % s_legendFallbackColors.Length];
+    }
+
+    private static string GetSectorLegendDescription(string sectorId) => sectorId switch
+    {
+        "DEFAULT"          => "Unassigned sector — applies base footprint policy",
+        "DOWNTOWN_CORE"    => "Downtown commercial core — high-density setbacks, high coverage",
+        "OPEN_RESIDENTIAL" => "Open residential fringe — wide setbacks, low coverage",
+        _                  => $"Custom sector: {sectorId}",
+    };
 }

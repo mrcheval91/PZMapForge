@@ -599,4 +599,190 @@ public sealed class DeadMtlWorldBuilderParcelBuildingFootprintCandidatesProcessT
         var (code, _, _) = RunCli(args);
         Assert.Equal(1, code);
     }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B CLI fixtures
+    // Lot (0,0)→(13,26) center=(6,13) → DOWNTOWN_CORE bbox (0..15, 0..30)
+    // -----------------------------------------------------------------------
+
+    private string SectorJsonDT => Path.Combine(_tempDir, "sectors-dt.local.json");
+    private string PolicyJsonDT => Path.Combine(_tempDir, "policy-dt.local.json");
+
+    private void WriteDowntownSectorFixtures()
+    {
+        File.WriteAllText(SectorJsonDT, """
+        {
+          "sector_overrides_version": "MAP31B_CLI_TEST_V1",
+          "sectors": [
+            {
+              "sector_id": "DOWNTOWN_CORE",
+              "label": "Downtown Core CLI Test",
+              "bbox_x1": 0, "bbox_y1": 0, "bbox_x2": 100, "bbox_y2": 100,
+              "gameplay_role": "COMMERCIAL_DENSE",
+              "tone_note": "CLI test"
+            }
+          ]
+        }
+        """);
+
+        File.WriteAllText(PolicyJsonDT, """
+        {
+          "policy_version": "MAP31B_CLI_TEST_V1",
+          "default_sector": "DEFAULT",
+          "policies": [
+            {
+              "parcel_class": "BLUE_RESIDENTIAL",
+              "neighborhood_sector": "DEFAULT",
+              "min_lot_area_tiles": 96,
+              "front_setback_tiles": 2,
+              "rear_setback_tiles": 3,
+              "side_setback_tiles": 1,
+              "min_footprint_width_tiles": 6,
+              "min_footprint_depth_tiles": 6,
+              "max_lot_coverage_ratio": 0.60,
+              "preferred_footprint_kind": "RESIDENTIAL_RECTANGLE"
+            },
+            {
+              "parcel_class": "BLUE_RESIDENTIAL",
+              "neighborhood_sector": "DOWNTOWN_CORE",
+              "min_lot_area_tiles": 96,
+              "front_setback_tiles": 0,
+              "rear_setback_tiles": 2,
+              "side_setback_tiles": 0,
+              "min_footprint_width_tiles": 6,
+              "min_footprint_depth_tiles": 6,
+              "max_lot_coverage_ratio": 0.80,
+              "preferred_footprint_kind": "URBAN_ROWHOUSE_RECTANGLE"
+            },
+            {
+              "parcel_class": "RED_RESIDENTIAL_OR_COMMERCIAL",
+              "neighborhood_sector": "DEFAULT",
+              "min_lot_area_tiles": 120,
+              "front_setback_tiles": 0,
+              "rear_setback_tiles": 2,
+              "side_setback_tiles": 0,
+              "min_footprint_width_tiles": 6,
+              "min_footprint_depth_tiles": 6,
+              "max_lot_coverage_ratio": 0.85,
+              "preferred_footprint_kind": "COMMERCIAL_RECTANGLE"
+            }
+          ]
+        }
+        """);
+    }
+
+    private string[] MakeFullArgsDT() => new[]
+    {
+        "--lot-fill-json",            LotFillJson,
+        "--building-footprint-policy", PolicyJsonDT,
+        "--sector-overrides",          SectorJsonDT,
+        "--output-root",              OutputRoot,
+        "--output-json",              OutputJson,
+        "--output-csv",               OutputCsv,
+        "--output-checks-csv",        OutputChkCsv,
+        "--output-png",               OutputPng,
+        "--output-html",              OutputHtml,
+        "--summary",                  Summary,
+    };
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 1. Output JSON contains sector_footprint_summaries (non-empty)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_OutputJson_ContainsSectorFootprintSummaries()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var summaries = doc.RootElement.GetProperty("sector_footprint_summaries");
+        Assert.True(summaries.GetArrayLength() > 0, "sector_footprint_summaries must be non-empty");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 2. Output JSON contains sector_preview_legend_entries (non-empty)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_OutputJson_ContainsSectorPreviewLegendEntries()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var legend = doc.RootElement.GetProperty("sector_preview_legend_entries");
+        Assert.True(legend.GetArrayLength() > 0, "sector_preview_legend_entries must be non-empty");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 3. All MAP31B checks present and PASS
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_OutputJson_AllMap31BChecks_Pass()
+    {
+        WriteFixtures();
+        WriteDowntownSectorFixtures();
+        RunCli(MakeFullArgsDT());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var map31bChecks = doc.RootElement.GetProperty("checks")
+            .EnumerateArray()
+            .Where(c => (c.GetProperty("check_id").GetString() ?? "").StartsWith("MAP31B"))
+            .ToList();
+        Assert.True(map31bChecks.Count > 0, "No MAP31B checks found");
+        foreach (var c in map31bChecks)
+        {
+            var id     = c.GetProperty("check_id").GetString();
+            var status = c.GetProperty("check_status").GetString();
+            Assert.True(status == "PASS", $"MAP31B check {id} status={status}");
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 4. Output HTML contains Sector Assignment section
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_OutputHtml_ContainsSectorAssignmentSection()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputHtml)) return;
+        var html = File.ReadAllText(OutputHtml);
+        Assert.Contains("Sector Assignment", html);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 5. No sector file → DEFAULT entry in sector_footprint_summaries
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_NoSectorFile_DefaultSummaryInJson()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        var summaries = doc.RootElement.GetProperty("sector_footprint_summaries").EnumerateArray().ToList();
+        Assert.True(summaries.Any(s => s.GetProperty("sector_id").GetString() == "DEFAULT"),
+            "Expected DEFAULT entry in sector_footprint_summaries when no sector file provided");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-31B 6. SectorPreviewLegendCount matches SectorCounts count
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map31B_SectorLegendCount_MatchesSectorCountsCount()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        if (!File.Exists(OutputJson)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
+        int legendCount  = doc.RootElement.GetProperty("sector_preview_legend_count").GetInt32();
+        int sectorCounts = doc.RootElement.GetProperty("sector_counts").GetArrayLength();
+        Assert.Equal(sectorCounts, legendCount);
+    }
 }
