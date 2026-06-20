@@ -219,11 +219,11 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
             "Source parcel topology is valid",
             "PASS", topology.IsValid ? "PASS" : "FAIL");
 
-        // 3 — Footprint count = 16
+        // 3 — Footprint count = 12
         AddCheck(checks,
-            "MAP28B_FOOTPRINT_COUNT_16",
-            "Total building footprint count is 16",
-            "16", result.TotalFootprintCount.ToString());
+            "MAP28B_FOOTPRINT_COUNT_12",
+            "Total building footprint count is 12",
+            "12", result.TotalFootprintCount.ToString());
 
         // 4 — One footprint per parcel (footprint count == source parcel count)
         AddCheck(checks,
@@ -243,11 +243,11 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
             "South-facing footprint count is 6",
             "6", result.SouthFootprintCount.ToString());
 
-        // 7 — East footprint count = 4
+        // 7 — East footprint count = 0
         AddCheck(checks,
-            "MAP28B_EAST_FOOTPRINT_COUNT_4",
-            "East-facing footprint count is 4",
-            "4", result.EastFootprintCount.ToString());
+            "MAP28B_EAST_FOOTPRINT_COUNT_0",
+            "East-facing footprint count is 0",
+            "0", result.EastFootprintCount.ToString());
 
         // 8 — Every footprint has parent parcel id
         bool allHaveParent = footprints.All(f => !string.IsNullOrEmpty(f.ParentParcelId));
@@ -338,45 +338,52 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
             "South footprints use SOUTH frontage direction",
             "PASS", southFrontage ? "PASS" : "FAIL");
 
-        // 18 — East footprints use EAST frontage
-        bool eastFrontage = footprints.Where(f => f.FrontageDirection == "EAST")
-            .All(f => f.FrontageDirection == "EAST");
+        // 18 — No footprint has EAST frontage direction
+        bool noEastFrontage = !footprints.Any(f => f.FrontageDirection == "EAST");
         AddCheck(checks,
-            "MAP28B_EAST_FOOTPRINTS_USE_EAST_FRONTAGE",
-            "East footprints use EAST frontage direction",
-            "PASS", eastFrontage ? "PASS" : "FAIL");
+            "MAP28B_NO_EAST_FACING_FOOTPRINT",
+            "No footprint has EAST frontage direction (right edge is not residential frontage)",
+            "PASS", noEastFrontage ? "PASS" : "FAIL");
 
-        // 19 — N/S footprint width = 13 (full-lot)
-        bool nsWidth13 = footprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH")
-            .All(f => f.Width == 13);
+        // 19 — N/S footprint width balance: max-min <= 1
+        var nsFps  = footprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH").ToList();
+        int fpMaxW = nsFps.Any() ? nsFps.Max(f => f.Width) : 0;
+        int fpMinW = nsFps.Any() ? nsFps.Min(f => f.Width) : 0;
+        bool nsWidthBalanced = fpMaxW - fpMinW <= 1;
         AddCheck(checks,
-            "MAP28B_NS_FOOTPRINT_WIDTH_13",
-            "All N/S footprints have width = 13 tiles (full-lot)",
-            "PASS", nsWidth13 ? "PASS" : "FAIL");
+            "MAP28B_NS_FOOTPRINT_WIDTH_BALANCED",
+            "N/S footprint width balance: max-min <= 1 (full-lot columns 15/14)",
+            "PASS", nsWidthBalanced ? "PASS" : "FAIL");
 
-        // 20 — N/S footprint depth = 27 (full-lot)
-        bool nsDepth27 = footprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH")
-            .All(f => f.Height == 27);
+        // 20 — N/S footprint depth = 29 (full-lot rows)
+        bool nsDepth29 = footprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH")
+            .All(f => f.Height == 29);
         AddCheck(checks,
-            "MAP28B_NS_FOOTPRINT_DEPTH_27",
-            "All N/S footprints have depth = 27 tiles (full-lot)",
-            "PASS", nsDepth27 ? "PASS" : "FAIL");
+            "MAP28B_NS_FOOTPRINT_DEPTH_29",
+            "All N/S footprints have depth = 29 tiles (full-lot rows)",
+            "PASS", nsDepth29 ? "PASS" : "FAIL");
 
-        // 21 — E footprint width = 9 (full-lot)
-        bool eWidth9 = footprints.Where(f => f.FrontageDirection == "EAST")
-            .All(f => f.Width == 9);
+        // 21 — North footprint row covers full bbox width X 124-212
+        var nFps = footprints.Where(f => f.FrontageDirection == "NORTH").OrderBy(f => f.X1).ToList();
+        bool northRowCoverage = nFps.Count == 6
+            && nFps.First().X1 == 124
+            && nFps.Last().X2  == 212
+            && nFps.Zip(nFps.Skip(1), (a, b) => a.X2 + 1 == b.X1).All(x => x);
         AddCheck(checks,
-            "MAP28B_E_FOOTPRINT_WIDTH_9",
-            "All E footprints have width = 9 tiles (full-lot)",
-            "PASS", eWidth9 ? "PASS" : "FAIL");
+            "MAP28B_NORTH_ROW_FULL_X_COVERAGE",
+            "North footprint row covers full bbox width X 124-212 with no gaps",
+            "PASS", northRowCoverage ? "PASS" : "FAIL");
 
-        // 22 — E footprint height = 15 (full-lot)
-        bool eHeight15 = footprints.Where(f => f.FrontageDirection == "EAST")
-            .All(f => f.Height == 15);
+        // 22 — South footprint row covers full bbox width X 124-212
+        var sFps = footprints.Where(f => f.FrontageDirection == "SOUTH").OrderBy(f => f.X1).ToList();
+        bool southRowCoverage = sFps.Count == 6
+            && sFps.First().X1 == 124
+            && sFps.Last().X2  == 212
+            && sFps.Zip(sFps.Skip(1), (a, b) => a.X2 + 1 == b.X1).All(x => x);
         AddCheck(checks,
-            "MAP28B_E_FOOTPRINT_HEIGHT_15",
-            "All E footprints have height = 15 tiles (full-lot)",
-            "PASS", eHeight15 ? "PASS" : "FAIL");
+            "MAP28B_SOUTH_ROW_FULL_X_COVERAGE",
+            "South footprint row covers full bbox width X 124-212 with no gaps",
+            "PASS", southRowCoverage ? "PASS" : "FAIL");
 
         // 23 — Every footprint exactly equals parent parcel bounds
         bool allExact = footprints.All(f =>
@@ -742,8 +749,8 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         sb.AppendLine("</p>");
         sb.AppendLine("<p>");
         sb.AppendLine($"Component: {result.ComponentId}<br>");
-        sb.AppendLine($"Footprints: {result.TotalFootprintCount} total ({result.NorthFootprintCount} north + {result.SouthFootprintCount} south + {result.EastFootprintCount} east)<br>");
-        sb.AppendLine("N/S full-lot occupancy footprints: 13 wide x 27 deep (ROWHOUSE_MAIN_VOLUME). E full-lot massing footprints: 9 wide x 15 tall (EAST_EDGE_RESIDENTIAL_VOLUME).<br>");
+        sb.AppendLine($"Footprints: {result.TotalFootprintCount} total ({result.NorthFootprintCount} north + {result.SouthFootprintCount} south + 0 east)<br>");
+        sb.AppendLine("N/S full-lot occupancy footprints: widths 15/14 tiles, depth 29 tiles (ROWHOUSE_MAIN_VOLUME). No east residential row.<br>");
         sb.AppendLine("No sidewalk overlap. No REAR_BOUNDARY overlap. No inter-footprint overlap.");
         sb.AppendLine("</p>");
         sb.AppendLine("<div class=\"pal\"><b>Palette:</b>");
@@ -796,9 +803,9 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         sb.AppendLine("## Footprints");
         sb.AppendLine();
         sb.AppendLine($"- Total footprints   : {result.TotalFootprintCount}");
-        sb.AppendLine($"- North-facing       : {result.NorthFootprintCount} (ROWHOUSE_MAIN_VOLUME, full-lot occupancy, 13 wide x 27 deep)");
-        sb.AppendLine($"- South-facing       : {result.SouthFootprintCount} (ROWHOUSE_MAIN_VOLUME, full-lot occupancy, 13 wide x 27 deep)");
-        sb.AppendLine($"- East-facing        : {result.EastFootprintCount} (EAST_EDGE_RESIDENTIAL_VOLUME, full-lot massing, 9 wide x 15 tall)");
+        sb.AppendLine($"- North-facing       : {result.NorthFootprintCount} (ROWHOUSE_MAIN_VOLUME, full-lot occupancy, widths 15/14, depth 29)");
+        sb.AppendLine($"- South-facing       : {result.SouthFootprintCount} (ROWHOUSE_MAIN_VOLUME, full-lot occupancy, widths 15/14, depth 29)");
+        sb.AppendLine($"- East-facing        : 0 (no east residential row)");
         sb.AppendLine();
         sb.AppendLine("## Claim boundary");
         sb.AppendLine();

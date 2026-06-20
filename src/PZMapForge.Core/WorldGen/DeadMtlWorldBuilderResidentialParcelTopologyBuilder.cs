@@ -18,21 +18,15 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
 
     private const int SidewalkWidthNorth = 2;
     private const int SidewalkWidthSouth = 2;
-    private const int SidewalkWidthEast  = 2;
     private const int RearFenceWidth     = 2;
-    private const int MinFrontageTiles   = 12;
+    private const int MinFrontageTiles   = 14;
 
-    private const int NSidewalkY1 = 10, NSidewalkY2 = 11;
-    private const int NorthY1     = 12, NorthY2     = 38;
+    private const int NorthY1     = 10, NorthY2 = 38;
     private const int RearFenceY1 = 39, RearFenceY2 = 40;
-    private const int SouthY1     = 41, SouthY2     = 67;
-    private const int SSidewalkY1 = 68, SSidewalkY2 = 69;
-    private const int MainX1      = 124, MainX2     = 201;
-    private const int ELotX1      = 202, ELotX2     = 210;
-    private const int ESidewalkX1 = 211, ESidewalkX2 = 212;
+    private const int SouthY1     = 41, SouthY2 = 69;
+    private const int MainX1      = 124, MainX2  = 212;
 
-    private static readonly int[] s_lotWidths      = { 13, 13, 13, 13, 13, 13 };
-    private static readonly int[] s_eastLotHeights = { 15, 15, 15, 15 };
+    private static readonly int[] s_lotWidths = { 15, 15, 15, 15, 15, 14 };
 
     // Blue-family palette for residential lots
     private static readonly (byte R, byte G, byte B) s_blueA  = (58,  94,  174);
@@ -166,7 +160,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
             BboxHeight                     = BboxY2 - BboxY1 + 1,
             SidewalkWidthNorth             = SidewalkWidthNorth,
             SidewalkWidthSouth             = SidewalkWidthSouth,
-            SidewalkWidthEast              = SidewalkWidthEast,
+            SidewalkWidthEast              = 0,
             RearFenceWidth                 = RearFenceWidth,
             MinResidentialFrontageTiles    = MinFrontageTiles,
             ThroughLotsEnabled             = false,
@@ -186,34 +180,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         var edges    = new List<DeadMtlResidentialFrontageEdge>();
         var strips   = new List<DeadMtlResidentialSidewalkStrip>();
 
-        // Sidewalk strips
-        strips.Add(new DeadMtlResidentialSidewalkStrip
-        {
-            StripId    = "MAP28A_SIDEWALK_NORTH",
-            StripKind  = "SIDEWALK",
-            Direction  = "NORTH",
-            X1 = MainX1, Y1 = NSidewalkY1, X2 = MainX2, Y2 = NSidewalkY2,
-            WidthTiles = SidewalkWidthNorth,
-            Notes      = "North street-facing access strip",
-        });
-        strips.Add(new DeadMtlResidentialSidewalkStrip
-        {
-            StripId    = "MAP28A_SIDEWALK_SOUTH",
-            StripKind  = "SIDEWALK",
-            Direction  = "SOUTH",
-            X1 = MainX1, Y1 = SSidewalkY1, X2 = MainX2, Y2 = SSidewalkY2,
-            WidthTiles = SidewalkWidthSouth,
-            Notes      = "South street-facing access strip",
-        });
-        strips.Add(new DeadMtlResidentialSidewalkStrip
-        {
-            StripId    = "MAP28A_SIDEWALK_EAST",
-            StripKind  = "SIDEWALK",
-            Direction  = "EAST",
-            X1 = ESidewalkX1, Y1 = BboxY1, X2 = ESidewalkX2, Y2 = BboxY2,
-            WidthTiles = SidewalkWidthEast,
-            Notes      = "East street-facing access strip",
-        });
+        // Only the mid-block rear boundary strip; sidewalk context not rendered in planning view
         strips.Add(new DeadMtlResidentialSidewalkStrip
         {
             StripId    = "MAP28A_REAR_BOUNDARY",
@@ -224,7 +191,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
             Notes      = "Mid-block rear boundary (fence/property line), NOT a service alley",
         });
 
-        // North and South lots (6 each, 13 tiles wide)
+        // North and South lots (6 each, widths 15/15/15/15/15/14, full-lot rows)
         int xCur = MainX1;
         for (int i = 0; i < s_lotWidths.Length; i++)
         {
@@ -253,12 +220,12 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
             });
             edges.Add(new DeadMtlResidentialFrontageEdge
             {
-                FrontageEdgeId   = neId,
-                ParcelId         = nId,
+                FrontageEdgeId    = neId,
+                ParcelId          = nId,
                 FrontageDirection = "NORTH",
-                EdgeKind         = "STREET_FRONTAGE_NORTH",
+                EdgeKind          = "STREET_FRONTAGE_NORTH",
                 X1 = lx1, Y1 = NorthY1, X2 = lx2, Y2 = NorthY1,
-                LengthTiles      = w,
+                LengthTiles       = w,
             });
 
             parcels.Add(new DeadMtlResidentialParcel
@@ -283,42 +250,6 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
                 EdgeKind          = "STREET_FRONTAGE_SOUTH",
                 X1 = lx1, Y1 = SouthY2, X2 = lx2, Y2 = SouthY2,
                 LengthTiles       = w,
-            });
-        }
-
-        // East lots (4, 15 tiles tall)
-        int yCur = BboxY1;
-        for (int i = 0; i < s_eastLotHeights.Length; i++)
-        {
-            int h   = s_eastLotHeights[i];
-            int ly1 = yCur, ly2 = yCur + h - 1;
-            yCur += h;
-
-            string eId  = $"MAP28A_EAST_LOT_{i:00}";
-            string eeId = $"MAP28A_EAST_LOT_{i:00}_FRONTAGE_EDGE";
-
-            parcels.Add(new DeadMtlResidentialParcel
-            {
-                ParcelId            = eId,
-                ComponentId         = ComponentId,
-                ParcelKind          = "RESIDENTIAL_LOT",
-                FrontageDirection   = "EAST",
-                X1 = ELotX1, Y1 = ly1, X2 = ELotX2, Y2 = ly2,
-                Width               = ELotX2 - ELotX1 + 1,
-                Height              = h,
-                TileCount           = (ELotX2 - ELotX1 + 1) * h,
-                IsCornerLot         = i == 0 || i == s_eastLotHeights.Length - 1,
-                IsThroughLot        = false,
-                PrimaryFrontageEdgeId = eeId,
-            });
-            edges.Add(new DeadMtlResidentialFrontageEdge
-            {
-                FrontageEdgeId    = eeId,
-                ParcelId          = eId,
-                FrontageDirection = "EAST",
-                EdgeKind          = "STREET_FRONTAGE_EAST",
-                X1 = ELotX2, Y1 = ly1, X2 = ELotX2, Y2 = ly2,
-                LengthTiles       = h,
             });
         }
 
@@ -357,9 +288,9 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
 
         // 4 — Total lot count
         AddCheck(checks,
-            "MAP28A_TOTAL_RESIDENTIAL_LOT_COUNT_16",
-            "Total residential lot count is 16",
-            "16", result.TotalResidentialLotCount.ToString());
+            "MAP28A_TOTAL_RESIDENTIAL_LOT_COUNT_12",
+            "Total residential lot count is 12",
+            "12", result.TotalResidentialLotCount.ToString());
 
         // 5 — North count
         AddCheck(checks,
@@ -375,9 +306,9 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
 
         // 7 — East count
         AddCheck(checks,
-            "MAP28A_EAST_FACING_LOT_COUNT_4",
-            "East-facing lot count is 4",
-            "4", result.EastFacingLotCount.ToString());
+            "MAP28A_EAST_FACING_LOT_COUNT_0",
+            "East-facing lot count is 0",
+            "0", result.EastFacingLotCount.ToString());
 
         // 8 — No through lots
         AddCheck(checks,
@@ -393,50 +324,62 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
             "No lot spans both north and south lot zones",
             "PASS", noDoubleFrontage ? "PASS" : "FAIL");
 
-        // 10 — Every lot has one primary frontage
-        bool allHaveFrontage = parcels.All(p =>
-            p.FrontageDirection is "NORTH" or "SOUTH" or "EAST");
+        // 10 — Every lot has NORTH or SOUTH frontage only (no EAST)
+        bool allNorthSouth = parcels.All(p =>
+            p.FrontageDirection is "NORTH" or "SOUTH");
         AddCheck(checks,
-            "MAP28A_EVERY_LOT_HAS_ONE_PRIMARY_FRONTAGE",
-            "Every lot has exactly one primary frontage (N/S/E)",
-            "PASS", allHaveFrontage ? "PASS" : "FAIL");
+            "MAP28A_EVERY_LOT_HAS_NORTH_OR_SOUTH_FRONTAGE",
+            "Every lot has exactly one primary frontage (N or S, no EAST)",
+            "PASS", allNorthSouth ? "PASS" : "FAIL");
 
-        // 11 — East lots X range doesn't overlap main block X range
-        var eastParcels = parcels.Where(p => p.FrontageDirection == "EAST").ToList();
-        var mainParcels = parcels.Where(p => p.FrontageDirection is "NORTH" or "SOUTH").ToList();
-        bool eastSeparate = eastParcels.All(e => mainParcels.All(m => e.X2 < m.X1 || e.X1 > m.X2));
+        // 11 — No east-facing residential lot exists
+        bool noEastLots = !parcels.Any(p => p.FrontageDirection == "EAST");
         AddCheck(checks,
-            "MAP28A_EAST_LOTS_SEPARATE_FROM_NORTH_SOUTH_LOTS",
-            "East lot X range does not overlap north/south lot X range",
-            "PASS", eastSeparate ? "PASS" : "FAIL");
+            "MAP28A_NO_EAST_FACING_RESIDENTIAL_LOTS",
+            "No east-facing residential lot exists (right edge is not residential frontage)",
+            "PASS", noEastLots ? "PASS" : "FAIL");
 
-        // 12 — North and south counts match
+        // 12 — North row covers full bbox width X 124-212 with no gaps
+        var northLots = parcels.Where(p => p.FrontageDirection == "NORTH").OrderBy(p => p.X1).ToList();
+        bool northRowCoverage = northLots.Count > 0
+            && northLots.First().X1 == BboxX1
+            && northLots.Last().X2  == BboxX2
+            && northLots.Zip(northLots.Skip(1), (a, b) => a.X2 + 1 == b.X1).All(x => x);
         AddCheck(checks,
-            "MAP28A_NORTH_SOUTH_LOT_COUNTS_MATCH",
-            "North-facing lot count equals south-facing lot count",
-            "PASS", result.NorthFacingLotCount == result.SouthFacingLotCount ? "PASS" : "FAIL");
+            "MAP28A_NORTH_ROW_COVERS_FULL_BBOX_WIDTH",
+            "North lot row covers full bbox width X 124-212 with no gaps",
+            "PASS", northRowCoverage ? "PASS" : "FAIL");
 
-        // 13 — Sidewalk strip count
+        // 13 — South row covers full bbox width X 124-212 with no gaps
+        var southLots = parcels.Where(p => p.FrontageDirection == "SOUTH").OrderBy(p => p.X1).ToList();
+        bool southRowCoverage = southLots.Count > 0
+            && southLots.First().X1 == BboxX1
+            && southLots.Last().X2  == BboxX2
+            && southLots.Zip(southLots.Skip(1), (a, b) => a.X2 + 1 == b.X1).All(x => x);
         AddCheck(checks,
-            "MAP28A_SIDEWALK_STRIP_COUNT_3",
-            "Sidewalk strip count is 3 (N/S/E)",
-            "3", result.SidewalkStripCount.ToString());
+            "MAP28A_SOUTH_ROW_COVERS_FULL_BBOX_WIDTH",
+            "South lot row covers full bbox width X 124-212 with no gaps",
+            "PASS", southRowCoverage ? "PASS" : "FAIL");
 
-        // 14 — Rear boundary count (not alley)
+        // 14 — No lot overlaps REAR_BOUNDARY (Y 39-40)
+        var rearBoundary = strips.First(s => s.StripKind == "REAR_BOUNDARY");
+        bool noLotRearOverlap = parcels.All(p =>
+            !(p.X1 <= rearBoundary.X2 && p.X2 >= rearBoundary.X1
+           && p.Y1 <= rearBoundary.Y2 && p.Y2 >= rearBoundary.Y1));
         AddCheck(checks,
-            "MAP28A_REAR_BOUNDARY_STRIP_COUNT_1",
-            "Rear boundary strip count is 1 (REAR_BOUNDARY, not alley)",
-            "1", result.RearBoundaryStripCount.ToString());
+            "MAP28A_NO_LOT_OVERLAPS_REAR_BOUNDARY",
+            "No residential lot overlaps the REAR_BOUNDARY strip (Y 39-40)",
+            "PASS", noLotRearOverlap ? "PASS" : "FAIL");
 
-        // 15 — Blue-family colors only
-        bool blueOnly = s_allowedLotColors.Count == 3
-            && s_allowedLotColors.Contains(s_blueA)
-            && s_allowedLotColors.Contains(s_blueB)
-            && s_allowedLotColors.Contains(s_blueC);
+        // 15 — Lot width balance: max width - min width <= 1
+        var nsParcels = parcels.Where(p => p.FrontageDirection is "NORTH" or "SOUTH").ToList();
+        int maxW = nsParcels.Any() ? nsParcels.Max(p => p.Width) : 0;
+        int minW = nsParcels.Any() ? nsParcels.Min(p => p.Width) : 0;
+        bool widthBalanced = maxW - minW <= 1;
         AddCheck(checks,
-            "MAP28A_RESIDENTIAL_LOT_COLORS_BLUE_FAMILY_ONLY",
-            "Residential lot palette contains only blue-family colors (3 tones)",
-            "PASS", blueOnly ? "PASS" : "FAIL");
+            "MAP28A_LOT_WIDTH_BALANCE_MAX_MINUS_MIN_LEQ_1",
+            "Lot width balance: max width - min width <= 1 (widths 15/14)",
+            "PASS", widthBalanced ? "PASS" : "FAIL");
 
         // 16-20: post-output checks (PENDING until FinalizeAfterOutputs)
         AddPendingCheck(checks, "MAP28A_OUTPUT_PNGS_256X256",
@@ -828,7 +771,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         sb.AppendLine("</p>");
         sb.AppendLine("<p>");
         sb.AppendLine($"Component: {result.ComponentId} | Bbox X:{result.BboxX1}-{result.BboxX2} Y:{result.BboxY1}-{result.BboxY2} ({result.BboxWidth} by {result.BboxHeight} tiles)<br>");
-        sb.AppendLine($"Layout: {result.NorthFacingLotCount} north + {result.SouthFacingLotCount} south lots (13-tile frontage) + {result.EastFacingLotCount} east lots (15-tile height)<br>");
+        sb.AppendLine($"Layout: {result.NorthFacingLotCount} north + {result.SouthFacingLotCount} south full-lot rows (widths 15/14 tiles). 0 east lots.<br>");
         sb.AppendLine("Mid-block separator: REAR_BOUNDARY (dark brown, NOT alley). Sidewalks: 2 tiles. Bbox: CYAN.<br>");
         sb.AppendLine("No invented alleys. No double-frontage. No through-lots. Blue-family palette only.");
         sb.AppendLine("</p>");
@@ -881,12 +824,12 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         sb.AppendLine();
         sb.AppendLine("## Geometry");
         sb.AppendLine();
-        sb.AppendLine($"- North-facing lots : {result.NorthFacingLotCount} (Y {NorthY1}-{NorthY2}, 13-tile frontage)");
-        sb.AppendLine($"- South-facing lots : {result.SouthFacingLotCount} (Y {SouthY1}-{SouthY2}, 13-tile frontage)");
-        sb.AppendLine($"- East-facing lots  : {result.EastFacingLotCount}  (X {ELotX1}-{ELotX2}, 15-tile height)");
+        sb.AppendLine($"- North-facing lots : {result.NorthFacingLotCount} (Y {NorthY1}-{NorthY2}, widths 15/14, full-lot rows)");
+        sb.AppendLine($"- South-facing lots : {result.SouthFacingLotCount} (Y {SouthY1}-{SouthY2}, widths 15/14, full-lot rows)");
+        sb.AppendLine($"- East-facing lots  : 0 (no east residential row)");
         sb.AppendLine($"- Total lots        : {result.TotalResidentialLotCount}");
-        sb.AppendLine($"- Sidewalk strips   : {result.SidewalkStripCount} (N/S/E, 2 tiles each)");
-        sb.AppendLine($"- Rear boundary     : {result.RearBoundaryStripCount} (REAR_BOUNDARY, NOT alley)");
+        sb.AppendLine($"- Sidewalk strips   : 0 (sidewalk context not rendered in planning view)");
+        sb.AppendLine($"- Rear boundary     : {result.RearBoundaryStripCount} (REAR_BOUNDARY Y 39-40, NOT alley)");
         sb.AppendLine($"- Invented alleys   : {result.InventedAlleyCount} (invented_alleys_enabled=false)");
         sb.AppendLine();
         sb.AppendLine("## Claim boundary");

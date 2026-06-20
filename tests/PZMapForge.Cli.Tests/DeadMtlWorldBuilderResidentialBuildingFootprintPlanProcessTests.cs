@@ -153,11 +153,11 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanProcessTe
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void OutputJson_TotalFootprintCount_Is16()
+    public void OutputJson_TotalFootprintCount_Is12()
     {
         RunCli(MakeFullArgs());
         using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
-        Assert.Equal(16, doc.RootElement.GetProperty("total_footprint_count").GetInt32());
+        Assert.Equal(12, doc.RootElement.GetProperty("total_footprint_count").GetInt32());
     }
 
     [Fact]
@@ -177,11 +177,11 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanProcessTe
     }
 
     [Fact]
-    public void OutputJson_EastFootprintCount_Is4()
+    public void OutputJson_EastFootprintCount_IsZero()
     {
         RunCli(MakeFullArgs());
         using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
-        Assert.Equal(4, doc.RootElement.GetProperty("east_footprint_count").GetInt32());
+        Assert.Equal(0, doc.RootElement.GetProperty("east_footprint_count").GetInt32());
     }
 
     [Fact]

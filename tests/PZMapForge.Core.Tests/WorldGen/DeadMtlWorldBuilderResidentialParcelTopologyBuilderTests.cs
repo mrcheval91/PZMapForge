@@ -50,10 +50,10 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilderTests : I
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void Build_TotalLotCount_Is16()
+    public void Build_TotalLotCount_Is12()
     {
         var r = RunBuild();
-        Assert.Equal(16, r.TotalResidentialLotCount);
+        Assert.Equal(12, r.TotalResidentialLotCount);
     }
 
     [Fact]
@@ -71,10 +71,10 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilderTests : I
     }
 
     [Fact]
-    public void Build_EastLotCount_Is4()
+    public void Build_EastLotCount_IsZero()
     {
         var r = RunBuild();
-        Assert.Equal(4, r.EastFacingLotCount);
+        Assert.Equal(0, r.EastFacingLotCount);
     }
 
     [Fact]
@@ -97,24 +97,19 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilderTests : I
     }
 
     [Fact]
-    public void Build_EveryLotHasOnePrimaryFrontage()
+    public void Build_EveryLotHasNorthOrSouthFrontage()
     {
         var r = RunBuild();
         Assert.All(r.ResidentialParcels, p =>
-            Assert.True(p.FrontageDirection is "NORTH" or "SOUTH" or "EAST",
-                $"Lot {p.ParcelId} has invalid frontage: {p.FrontageDirection}"));
+            Assert.True(p.FrontageDirection is "NORTH" or "SOUTH",
+                $"Lot {p.ParcelId} has unexpected frontage: {p.FrontageDirection}"));
     }
 
     [Fact]
-    public void Build_EastLotsDoNotOverlapMainBlockXRange()
+    public void Build_NoEastFacingLots()
     {
-        var r    = RunBuild();
-        var main = r.ResidentialParcels.Where(p => p.FrontageDirection is "NORTH" or "SOUTH").ToList();
-        var east = r.ResidentialParcels.Where(p => p.FrontageDirection == "EAST").ToList();
-        foreach (var e in east)
-            foreach (var m in main)
-                Assert.True(e.X2 < m.X1 || e.X1 > m.X2,
-                    $"East lot {e.ParcelId} overlaps main lot {m.ParcelId}");
+        var r = RunBuild();
+        Assert.DoesNotContain(r.ResidentialParcels, p => p.FrontageDirection == "EAST");
     }
 
     [Fact]
@@ -125,21 +120,25 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilderTests : I
     }
 
     [Fact]
-    public void Build_NorthLotFrontageWidth_AtLeast12Tiles()
+    public void Build_LotWidthBalance_MaxMinLeq1()
     {
-        var r = RunBuild();
-        var north = r.ResidentialParcels.Where(p => p.FrontageDirection == "NORTH");
-        Assert.All(north, p => Assert.True(p.Width >= 12,
-            $"North lot {p.ParcelId} width {p.Width} < 12"));
+        var r     = RunBuild();
+        var ns    = r.ResidentialParcels.Where(p => p.FrontageDirection is "NORTH" or "SOUTH").ToList();
+        int maxW  = ns.Max(p => p.Width);
+        int minW  = ns.Min(p => p.Width);
+        Assert.True(maxW - minW <= 1, $"Lot width spread {maxW - minW} > 1 (max={maxW}, min={minW})");
     }
 
     [Fact]
-    public void Build_EastLotHeight_AtLeast12Tiles()
+    public void Build_NorthRowCoversFullBboxWidth()
     {
-        var r = RunBuild();
-        var east = r.ResidentialParcels.Where(p => p.FrontageDirection == "EAST");
-        Assert.All(east, p => Assert.True(p.Height >= 12,
-            $"East lot {p.ParcelId} height {p.Height} < 12"));
+        var r    = RunBuild();
+        var lots = r.ResidentialParcels.Where(p => p.FrontageDirection == "NORTH")
+                                       .OrderBy(p => p.X1).ToList();
+        Assert.Equal(124, lots.First().X1);
+        Assert.Equal(212, lots.Last().X2);
+        for (int i = 0; i < lots.Count - 1; i++)
+            Assert.Equal(lots[i].X2 + 1, lots[i + 1].X1);
     }
 
     // -----------------------------------------------------------------------
@@ -147,10 +146,10 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilderTests : I
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void Build_SidewalkStripCount_Is3()
+    public void Build_SidewalkStripCount_IsZero()
     {
         var r = RunBuild();
-        Assert.Equal(3, r.SidewalkStripCount);
+        Assert.Equal(0, r.SidewalkStripCount);
     }
 
     [Fact]
@@ -350,13 +349,13 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilderTests : I
     }
 
     [Fact]
-    public void RenderParcelsCsv_Has16DataRows()
+    public void RenderParcelsCsv_Has12DataRows()
     {
         var r    = RunBuild();
         var csv  = MakeBuilder().RenderParcelsCsv(r);
         var rows = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        // 1 header + 16 data rows
-        Assert.Equal(17, rows.Length);
+        // 1 header + 12 data rows
+        Assert.Equal(13, rows.Length);
     }
 
     [Fact]

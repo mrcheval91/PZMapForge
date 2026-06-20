@@ -27,10 +27,10 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilderTe
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void Build_TotalFootprintCount_Is16()
+    public void Build_TotalFootprintCount_Is12()
     {
         var r = RunBuild();
-        Assert.Equal(16, r.TotalFootprintCount);
+        Assert.Equal(12, r.TotalFootprintCount);
     }
 
     [Fact]
@@ -48,10 +48,10 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilderTe
     }
 
     [Fact]
-    public void Build_EastFootprintCount_Is4()
+    public void Build_EastFootprintCount_IsZero()
     {
         var r = RunBuild();
-        Assert.Equal(4, r.EastFootprintCount);
+        Assert.Equal(0, r.EastFootprintCount);
     }
 
     // -----------------------------------------------------------------------
@@ -151,11 +151,10 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilderTe
     }
 
     [Fact]
-    public void Build_EastFootprints_AllUseEastFrontage()
+    public void Build_NoEastFacingFootprint()
     {
         var r = RunBuild();
-        Assert.All(r.BuildingFootprints.Where(f => f.FrontageDirection == "EAST"),
-            f => Assert.Equal("EAST", f.FrontageDirection));
+        Assert.DoesNotContain(r.BuildingFootprints, f => f.FrontageDirection == "EAST");
     }
 
     // -----------------------------------------------------------------------
@@ -163,35 +162,45 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilderTe
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void Build_NSFootprints_Width13()
+    public void Build_NSFootprints_WidthBalanced()
+    {
+        var r    = RunBuild();
+        var ns   = r.BuildingFootprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH").ToList();
+        int maxW = ns.Max(f => f.Width);
+        int minW = ns.Min(f => f.Width);
+        Assert.True(maxW - minW <= 1, $"Footprint width spread {maxW - minW} > 1 (max={maxW}, min={minW})");
+    }
+
+    [Fact]
+    public void Build_NSFootprints_Depth29()
     {
         var r = RunBuild();
         Assert.All(r.BuildingFootprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH"),
-            f => Assert.Equal(13, f.Width));
+            f => Assert.Equal(29, f.Height));
     }
 
     [Fact]
-    public void Build_NSFootprints_Depth27()
+    public void Build_NorthRowCoversFullBboxWidth()
     {
-        var r = RunBuild();
-        Assert.All(r.BuildingFootprints.Where(f => f.FrontageDirection is "NORTH" or "SOUTH"),
-            f => Assert.Equal(27, f.Height));
+        var r    = RunBuild();
+        var fps  = r.BuildingFootprints.Where(f => f.FrontageDirection == "NORTH")
+                                       .OrderBy(f => f.X1).ToList();
+        Assert.Equal(124, fps.First().X1);
+        Assert.Equal(212, fps.Last().X2);
+        for (int i = 0; i < fps.Count - 1; i++)
+            Assert.Equal(fps[i].X2 + 1, fps[i + 1].X1);
     }
 
     [Fact]
-    public void Build_EastFootprints_Width9()
+    public void Build_SouthRowCoversFullBboxWidth()
     {
-        var r = RunBuild();
-        Assert.All(r.BuildingFootprints.Where(f => f.FrontageDirection == "EAST"),
-            f => Assert.Equal(9, f.Width));
-    }
-
-    [Fact]
-    public void Build_EastFootprints_Height15()
-    {
-        var r = RunBuild();
-        Assert.All(r.BuildingFootprints.Where(f => f.FrontageDirection == "EAST"),
-            f => Assert.Equal(15, f.Height));
+        var r    = RunBuild();
+        var fps  = r.BuildingFootprints.Where(f => f.FrontageDirection == "SOUTH")
+                                       .OrderBy(f => f.X1).ToList();
+        Assert.Equal(124, fps.First().X1);
+        Assert.Equal(212, fps.Last().X2);
+        for (int i = 0; i < fps.Count - 1; i++)
+            Assert.Equal(fps[i].X2 + 1, fps[i + 1].X1);
     }
 
     [Fact]
@@ -341,12 +350,12 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilderTe
     }
 
     [Fact]
-    public void RenderFootprintsCsv_Has16DataRows()
+    public void RenderFootprintsCsv_Has12DataRows()
     {
         var r   = RunBuild();
         var csv = MakeBuilder().RenderFootprintsCsv(r);
         var rows = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        Assert.Equal(17, rows.Length); // 1 header + 16 footprints
+        Assert.Equal(13, rows.Length); // 1 header + 12 footprints
     }
 
     [Fact]

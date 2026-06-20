@@ -166,11 +166,11 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
     }
 
     [Fact]
-    public void OutputJson_TotalLotCount_Is16()
+    public void OutputJson_TotalLotCount_Is12()
     {
         RunCli(MakeFullArgs());
         using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
-        Assert.Equal(16,
+        Assert.Equal(12,
             doc.RootElement.GetProperty("total_residential_lot_count").GetInt32());
     }
 
@@ -191,19 +191,19 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
     }
 
     [Fact]
-    public void OutputJson_EastFacingLotCount_Is4()
+    public void OutputJson_EastFacingLotCount_IsZero()
     {
         RunCli(MakeFullArgs());
         using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
-        Assert.Equal(4, doc.RootElement.GetProperty("east_facing_lot_count").GetInt32());
+        Assert.Equal(0, doc.RootElement.GetProperty("east_facing_lot_count").GetInt32());
     }
 
     [Fact]
-    public void OutputJson_SidewalkStripCount_Is3()
+    public void OutputJson_SidewalkStripCount_IsZero()
     {
         RunCli(MakeFullArgs());
         using var doc = JsonDocument.Parse(File.ReadAllText(OutputJson));
-        Assert.Equal(3, doc.RootElement.GetProperty("sidewalk_strip_count").GetInt32());
+        Assert.Equal(0, doc.RootElement.GetProperty("sidewalk_strip_count").GetInt32());
     }
 
     [Fact]
@@ -299,12 +299,12 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyProcessTests : I
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void ParcelsCsv_Has16DataRows()
+    public void ParcelsCsv_Has12DataRows()
     {
         RunCli(MakeFullArgs());
         var rows = File.ReadAllLines(ParcelsCsv)
             .Where(l => !string.IsNullOrWhiteSpace(l)).ToArray();
-        Assert.Equal(17, rows.Length); // 1 header + 16 parcels
+        Assert.Equal(13, rows.Length); // 1 header + 12 parcels
     }
 
     [Fact]
