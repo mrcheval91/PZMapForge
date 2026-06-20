@@ -229,6 +229,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-parcel-building-footprint-candidates"         => DeadMtlBuildWorldBuilderParcelBuildingFootprintCandidatesCommand(args[1..]),
     "deadmtl-build-worldbuilder-materialized-runtime-candidate"              => DeadMtlBuildWorldBuilderMaterializedRuntimeCandidateCommand(args[1..]),
     "deadmtl-build-worldbuilder-binary-seeded-runtime-candidate"            => DeadMtlBuildWorldBuilderBinarySeededRuntimeCandidateCommand(args[1..]),
+    "deadmtl-build-worldbuilder-map33a-ingame-load-test"                   => DeadMtlBuildWorldBuilderMap33AInGameLoadTestCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -9600,6 +9601,94 @@ static int DeadMtlBuildWorldBuilderMaterializedRuntimeCandidateCommand(string[] 
     {
         Directory.CreateDirectory(Path.GetDirectoryName(outputManifest)!);
         File.WriteAllText(outputManifest, builder.RenderJson(result));
+    }
+    if (!string.IsNullOrEmpty(outputChecksCsv))
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(outputChecksCsv)!);
+        File.WriteAllText(outputChecksCsv, builder.RenderChecksCsv(result));
+    }
+    if (!string.IsNullOrEmpty(summaryPath))
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(summaryPath)!);
+        File.WriteAllText(summaryPath, builder.RenderSummary(result));
+    }
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return result.IsValid ? 0 : 1;
+}
+
+static int DeadMtlBuildWorldBuilderMap33AInGameLoadTestCommand(string[] args)
+{
+    var map33aManifest     = string.Empty;
+    var sourceCandidateRoot = string.Empty;
+    var localModsRoot      = string.Empty;
+    var outputRoot         = string.Empty;
+    var outputResult       = string.Empty;
+    var outputChecksCsv    = string.Empty;
+    var summaryPath        = string.Empty;
+    var zomboidUserRoot    = string.Empty;
+    bool collectLogs       = false;
+
+    for (int i = 0; i < args.Length; i++)
+    {
+        switch (args[i])
+        {
+            case "--map33a-manifest":      if (i + 1 < args.Length) map33aManifest      = args[++i]; break;
+            case "--source-candidate-root": if (i + 1 < args.Length) sourceCandidateRoot = args[++i]; break;
+            case "--local-mods-root":      if (i + 1 < args.Length) localModsRoot       = args[++i]; break;
+            case "--output-root":          if (i + 1 < args.Length) outputRoot          = args[++i]; break;
+            case "--output-result":        if (i + 1 < args.Length) outputResult        = args[++i]; break;
+            case "--output-checks-csv":    if (i + 1 < args.Length) outputChecksCsv     = args[++i]; break;
+            case "--summary":              if (i + 1 < args.Length) summaryPath         = args[++i]; break;
+            case "--zomboid-user-root":    if (i + 1 < args.Length) zomboidUserRoot      = args[++i]; break;
+            case "--collect-logs":         collectLogs = true; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(map33aManifest) || string.IsNullOrEmpty(sourceCandidateRoot) ||
+        string.IsNullOrEmpty(localModsRoot))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-map33a-ingame-load-test " +
+            "--map33a-manifest <json> --source-candidate-root <dir> --local-mods-root <dir> " +
+            "[--output-root <dir>] [--output-result <json>] [--output-checks-csv <csv>] " +
+            "[--summary <txt>] [--collect-logs] [--zomboid-user-root <dir>]");
+        return 1;
+    }
+
+    // Guard: local mods root must not be a Steam or Workshop path
+    if (localModsRoot.Contains("steamapps", StringComparison.OrdinalIgnoreCase) ||
+        localModsRoot.Contains("Workshop",  StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"ERROR: --local-mods-root must not be a Steam or Workshop path: {localModsRoot}");
+        return 1;
+    }
+
+    if (!string.IsNullOrEmpty(outputRoot))
+        Directory.CreateDirectory(outputRoot);
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderMap33AInGameLoadTestBuilder();
+    var result  = builder.Build(
+        map33aManifest,
+        sourceCandidateRoot,
+        localModsRoot,
+        outputRoot,
+        collectLogs,
+        string.IsNullOrEmpty(zomboidUserRoot) ? null : zomboidUserRoot);
+
+    if (!string.IsNullOrEmpty(outputResult))
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(outputResult)!);
+        File.WriteAllText(outputResult, builder.RenderJson(result));
     }
     if (!string.IsNullOrEmpty(outputChecksCsv))
     {
