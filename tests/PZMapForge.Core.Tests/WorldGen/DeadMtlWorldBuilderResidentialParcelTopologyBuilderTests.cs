@@ -272,6 +272,77 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilderTests : I
     }
 
     // -----------------------------------------------------------------------
+    // PNG pixel correctness
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void RenderCleanParcelPng_NoBackgroundPixelInsideBbox()
+    {
+        var r   = RunBuild();
+        var png = MakeBuilder().RenderCleanParcelPngBytes(r);
+        using var bmp = LoadBitmap(png);
+        // Interior = inside the 1px cyan bbox border: X 125-211, Y 11-68
+        for (int x = 125; x <= 211; x++)
+            for (int y = 11; y <= 68; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.False(px.R == 18 && px.G == 18 && px.B == 24,
+                    $"Background pixel (18,18,24) found at ({x},{y}) inside bbox");
+            }
+    }
+
+    [Fact]
+    public void RenderDebugParcelPng_NoBorderColorInsideBboxInterior()
+    {
+        var r   = RunBuild();
+        var png = MakeBuilder().RenderDebugParcelPngBytes(r);
+        using var bmp = LoadBitmap(png);
+        for (int x = 125; x <= 211; x++)
+            for (int y = 11; y <= 68; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.False(px.R == 10 && px.G == 10 && px.B == 18,
+                    $"Black border color (10,10,18) found at ({x},{y}) inside bbox in debug PNG");
+            }
+    }
+
+    [Fact]
+    public void RenderCleanParcelPng_AdjacentLotsInNorthRow_HaveDifferentShades()
+    {
+        var r    = RunBuild();
+        var png  = MakeBuilder().RenderCleanParcelPngBytes(r);
+        using var bmp = LoadBitmap(png);
+        var lots = r.ResidentialParcels.Where(p => p.FrontageDirection == "NORTH")
+                                       .OrderBy(p => p.X1).ToList();
+        for (int i = 0; i < lots.Count - 1; i++)
+        {
+            int sampleY = (lots[i].Y1 + lots[i].Y2) / 2 + 1; // +1 to skip center tick pixel
+            int midXA   = (lots[i].X1   + lots[i].X2)   / 2;
+            int midXB   = (lots[i+1].X1 + lots[i+1].X2) / 2;
+            var ca = bmp.GetPixel(midXA, sampleY);
+            var cb = bmp.GetPixel(midXB, sampleY);
+            Assert.False(ca.ToArgb() == cb.ToArgb(),
+                $"Adjacent north lots {i} and {i+1} have same shade at y={sampleY}");
+        }
+    }
+
+    [Fact]
+    public void RenderCleanParcelPng_AtLeast2DistinctParcelShades()
+    {
+        var r    = RunBuild();
+        var png  = MakeBuilder().RenderCleanParcelPngBytes(r);
+        using var bmp = LoadBitmap(png);
+        var shades = new HashSet<int>();
+        foreach (var lot in r.ResidentialParcels.Where(p => p.FrontageDirection == "NORTH").OrderBy(p => p.X1))
+        {
+            int midX    = (lot.X1 + lot.X2) / 2;
+            int sampleY = (lot.Y1 + lot.Y2) / 2 + 1;
+            shades.Add(bmp.GetPixel(midX, sampleY).ToArgb());
+        }
+        Assert.True(shades.Count >= 2, $"Expected >= 2 distinct parcel shades, got {shades.Count}");
+    }
+
+    // -----------------------------------------------------------------------
     // PNG rendering
     // -----------------------------------------------------------------------
 
@@ -393,5 +464,12 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilderTests : I
         int w = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
         int h = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
         return (w, h);
+    }
+
+    private static System.Drawing.Bitmap LoadBitmap(byte[] pngBytes)
+    {
+        using var ms  = new System.IO.MemoryStream(pngBytes);
+        using var tmp = new System.Drawing.Bitmap(ms);
+        return tmp.Clone(new System.Drawing.Rectangle(0, 0, tmp.Width, tmp.Height), tmp.PixelFormat);
     }
 }

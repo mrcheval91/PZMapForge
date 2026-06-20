@@ -28,19 +28,19 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
 
     private static readonly int[] s_lotWidths = { 15, 15, 15, 15, 15, 14 };
 
-    // Blue-family palette for residential lots
-    private static readonly (byte R, byte G, byte B) s_blueA  = (58,  94,  174);
-    private static readonly (byte R, byte G, byte B) s_blueB  = (74,  110, 190);
-    private static readonly (byte R, byte G, byte B) s_blueC  = (42,  78,  158);
+    // Warm neutral shade palette for residential lots (light → medium → darker tan)
     private static readonly (byte R, byte G, byte B) s_sidew  = (184, 184, 192);
     private static readonly (byte R, byte G, byte B) s_rear   = (74,  56,  40);
     private static readonly (byte R, byte G, byte B) s_bg     = (18,  18,  24);
     private static readonly (byte R, byte G, byte B) s_bbox   = (40,  192, 192); // CYAN
     private static readonly (byte R, byte G, byte B) s_tick   = (210, 230, 255);
-    private static readonly (byte R, byte G, byte B) s_border = (10,  10,  18);
 
-    private static readonly IReadOnlySet<(byte, byte, byte)> s_allowedLotColors =
-        new HashSet<(byte, byte, byte)> { s_blueA, s_blueB, s_blueC };
+    private static readonly (byte R, byte G, byte B)[] s_lotShades =
+    {
+        (200, 168, 120), // light tan
+        (176, 140,  96), // medium tan
+        (152, 116,  76), // darker tan/brown
+    };
 
     // -----------------------------------------------------------------------
     // Check helpers
@@ -112,28 +112,15 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
     }
 
     // -----------------------------------------------------------------------
-    // Color resolver
+    // Color resolver — index-based 3-shade rotation, offset by row
     // -----------------------------------------------------------------------
 
     private static (byte R, byte G, byte B) GetLotColor(string parcelId, string frontageDirection)
     {
-        // Extract trailing numeric index from parcel ID
-        int idx = 0;
-        for (int i = parcelId.Length - 1; i >= 0; i--)
-        {
-            if (char.IsDigit(parcelId[i]))
-            {
-                idx = int.Parse(parcelId[i].ToString());
-                break;
-            }
-        }
-        return frontageDirection switch
-        {
-            "NORTH" => idx % 2 == 0 ? s_blueA : s_blueB,
-            "SOUTH" => idx % 2 == 0 ? s_blueB : s_blueA,
-            "EAST"  => idx % 2 == 0 ? s_blueC : s_blueA,
-            _       => s_bg,
-        };
+        if (frontageDirection is not ("NORTH" or "SOUTH")) return s_bg;
+        int idx       = int.Parse(parcelId.Substring(parcelId.LastIndexOf('_') + 1));
+        int rowOffset = frontageDirection == "SOUTH" ? 1 : 0;
+        return s_lotShades[(idx + rowOffset) % s_lotShades.Length];
     }
 
     // -----------------------------------------------------------------------
@@ -528,29 +515,15 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         FillAllStripsBrush(result, g);
         FillAllParcelsBrush(result, g);
 
-        // 1px dark dividers + frontage ticks
+        // Frontage ticks + center dots only — boundaries shown by adjacent shade change, not black lines
+        var tick = System.Drawing.Color.FromArgb(s_tick.R, s_tick.G, s_tick.B);
         foreach (var p in result.ResidentialParcels)
         {
-            var border = System.Drawing.Color.FromArgb(s_border.R, s_border.G, s_border.B);
-            var tick   = System.Drawing.Color.FromArgb(s_tick.R,   s_tick.G,   s_tick.B);
-            switch (p.FrontageDirection)
-            {
-                case "NORTH":
-                case "SOUTH":
-                    for (int py = p.Y1; py <= p.Y2; py++) bmp.SetPixel(p.X2, py, border);
-                    int midXNS = (p.X1 + p.X2) / 2;
-                    int midYNS = (p.Y1 + p.Y2) / 2;
-                    bmp.SetPixel(midXNS, p.FrontageDirection == "NORTH" ? p.Y1 : p.Y2, tick);
-                    bmp.SetPixel(midXNS, midYNS, tick);
-                    break;
-                case "EAST":
-                    for (int px = p.X1; px <= p.X2; px++) bmp.SetPixel(px, p.Y2, border);
-                    int midXE = (p.X1 + p.X2) / 2;
-                    int midYE = (p.Y1 + p.Y2) / 2;
-                    bmp.SetPixel(p.X2, midYE, tick);
-                    bmp.SetPixel(midXE, midYE, tick);
-                    break;
-            }
+            int midX = (p.X1 + p.X2) / 2;
+            int midY = (p.Y1 + p.Y2) / 2;
+            bmp.SetPixel(midX, midY, tick);
+            if      (p.FrontageDirection == "NORTH") bmp.SetPixel(midX, p.Y1, tick);
+            else if (p.FrontageDirection == "SOUTH") bmp.SetPixel(midX, p.Y2, tick);
         }
 
         DrawBbox(bmp);
@@ -772,13 +745,14 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         sb.AppendLine("<p>");
         sb.AppendLine($"Component: {result.ComponentId} | Bbox X:{result.BboxX1}-{result.BboxX2} Y:{result.BboxY1}-{result.BboxY2} ({result.BboxWidth} by {result.BboxHeight} tiles)<br>");
         sb.AppendLine($"Layout: {result.NorthFacingLotCount} north + {result.SouthFacingLotCount} south full-lot rows (widths 15/14 tiles). 0 east lots.<br>");
-        sb.AppendLine("Mid-block separator: REAR_BOUNDARY (dark brown, NOT alley). Sidewalks: 2 tiles. Bbox: CYAN.<br>");
-        sb.AppendLine("No invented alleys. No double-frontage. No through-lots. Blue-family palette only.");
+        sb.AppendLine("Mid-block separator: REAR_BOUNDARY (dark brown, NOT alley). Bbox: CYAN.<br>");
+        sb.AppendLine("No invented alleys. No double-frontage. No through-lots.<br>");
+        sb.AppendLine("Adjacent lots differ by shade. Boundaries by shade change, no black stroke lines. Planning artifact only.");
         sb.AppendLine("</p>");
         sb.AppendLine("<div class=\"pal\"><b>Palette:</b>");
-        sb.AppendLine("<span class=\"swatch\" style=\"background:#3a5eae;\"></span>Blue A &nbsp;");
-        sb.AppendLine("<span class=\"swatch\" style=\"background:#4a6ebe;\"></span>Blue B &nbsp;");
-        sb.AppendLine("<span class=\"swatch\" style=\"background:#2a4e9e;\"></span>Blue C &nbsp;");
+        sb.AppendLine("<span class=\"swatch\" style=\"background:#c8a878;\"></span>Lot shade A (light tan) &nbsp;");
+        sb.AppendLine("<span class=\"swatch\" style=\"background:#b08c60;\"></span>Lot shade B (medium tan) &nbsp;");
+        sb.AppendLine("<span class=\"swatch\" style=\"background:#98744c;\"></span>Lot shade C (dark tan) &nbsp;");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#b8b8c0;\"></span>Sidewalk &nbsp;");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#4a3828;\"></span>Rear Boundary &nbsp;");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#28c0c0;\"></span>Bbox (cyan)</div>");
@@ -789,7 +763,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         sb.AppendLine("  </div>");
         sb.AppendLine("  <div class=\"card\">");
         sb.AppendLine("    <img src=\"map_00_residential_parcels_topology_debug_native_256.png\" alt=\"debug view\">");
-        sb.AppendLine("    <div class=\"lbl\">debug view: lot dividers + frontage ticks (256x256)</div>");
+        sb.AppendLine("    <div class=\"lbl\">debug view: frontage ticks + center dots, no black stroke lines (256x256)</div>");
         sb.AppendLine("  </div>");
         sb.AppendLine("  <div class=\"card\">");
         sb.AppendLine("    <img src=\"map_00_residential_parcels_topology_overlay_native_256.png\" alt=\"overlay\">");

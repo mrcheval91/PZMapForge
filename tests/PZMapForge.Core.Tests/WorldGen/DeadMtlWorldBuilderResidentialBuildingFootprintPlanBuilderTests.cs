@@ -268,6 +268,67 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilderTe
     }
 
     // -----------------------------------------------------------------------
+    // PNG pixel correctness
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void RenderCleanFootprintPng_NoBackgroundPixelInsideBbox()
+    {
+        var b        = MakeBuilder();
+        var r        = RunBuild();
+        var topology = MakeTopologyBuilder().Build(_tempDir);
+        var png      = b.RenderCleanFootprintPngBytes(r, topology);
+        using var bmp = LoadBitmap(png);
+        // Interior = inside the 1px cyan bbox border: X 125-211, Y 11-68
+        for (int x = 125; x <= 211; x++)
+            for (int y = 11; y <= 68; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.False(px.R == 18 && px.G == 18 && px.B == 24,
+                    $"Background pixel (18,18,24) at ({x},{y}) inside bbox in clean footprint PNG");
+            }
+    }
+
+    [Fact]
+    public void RenderDebugFootprintPng_NoBorderColorInsideBboxInterior()
+    {
+        var b        = MakeBuilder();
+        var r        = RunBuild();
+        var topology = MakeTopologyBuilder().Build(_tempDir);
+        var png      = b.RenderDebugFootprintPngBytes(r, topology);
+        using var bmp = LoadBitmap(png);
+        for (int x = 125; x <= 211; x++)
+            for (int y = 11; y <= 68; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.False(px.R == 10 && px.G == 10 && px.B == 18,
+                    $"Black border color (10,10,18) at ({x},{y}) inside bbox in debug footprint PNG");
+            }
+    }
+
+    [Fact]
+    public void RenderCleanFootprintPng_AdjacentFootprints_DifferentShades()
+    {
+        var b        = MakeBuilder();
+        var r        = RunBuild();
+        var topology = MakeTopologyBuilder().Build(_tempDir);
+        var png      = b.RenderCleanFootprintPngBytes(r, topology);
+        using var bmp = LoadBitmap(png);
+        var nFps = r.BuildingFootprints.Where(f => f.FrontageDirection == "NORTH")
+                                       .OrderBy(f => f.X1).ToList();
+        for (int i = 0; i < nFps.Count - 1; i++)
+        {
+            int sampleY = (nFps[i].Y1 + nFps[i].Y2) / 2 + 1; // +1 to skip center tick
+            int midXA   = (nFps[i].X1   + nFps[i].X2)   / 2;
+            int midXB   = (nFps[i+1].X1 + nFps[i+1].X2) / 2;
+            var ca = bmp.GetPixel(midXA, sampleY);
+            var cb = bmp.GetPixel(midXB, sampleY);
+            Assert.False(ca.ToArgb() == cb.ToArgb(),
+                $"Adjacent north footprints {i} and {i+1} have same shade at y={sampleY}");
+        }
+    }
+
+    // -----------------------------------------------------------------------
     // PNG rendering
     // -----------------------------------------------------------------------
 
@@ -401,6 +462,13 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilderTe
         int w = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
         int h = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
         return (w, h);
+    }
+
+    private static System.Drawing.Bitmap LoadBitmap(byte[] pngBytes)
+    {
+        using var ms  = new System.IO.MemoryStream(pngBytes);
+        using var tmp = new System.Drawing.Bitmap(ms);
+        return tmp.Clone(new System.Drawing.Rectangle(0, 0, tmp.Width, tmp.Height), tmp.PixelFormat);
     }
 
     private static bool Overlaps(DeadMtlResidentialBuildingFootprint f,

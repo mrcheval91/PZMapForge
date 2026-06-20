@@ -9,14 +9,27 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
 {
     private static readonly JsonSerializerOptions s_jsonOptions = new() { WriteIndented = true };
 
-    private static readonly (byte R, byte G, byte B) s_bg        = (18,  18,  24);
-    private static readonly (byte R, byte G, byte B) s_parcel    = (30,  34,  44);
-    private static readonly (byte R, byte G, byte B) s_sidewalk  = (58,  62,  74);
-    private static readonly (byte R, byte G, byte B) s_rear      = (48,  36,  26);
-    private static readonly (byte R, byte G, byte B) s_footprint = (200, 168, 120);
-    private static readonly (byte R, byte G, byte B) s_bbox      = (40,  192, 192);
-    private static readonly (byte R, byte G, byte B) s_tick      = (240, 200, 140);
-    private static readonly (byte R, byte G, byte B) s_border    = (10,  10,  18);
+    private static readonly (byte R, byte G, byte B) s_bg       = (18,  18,  24);
+    private static readonly (byte R, byte G, byte B) s_parcel   = (30,  34,  44);
+    private static readonly (byte R, byte G, byte B) s_sidewalk = (58,  62,  74);
+    private static readonly (byte R, byte G, byte B) s_rear     = (48,  36,  26);
+    private static readonly (byte R, byte G, byte B) s_bbox     = (40,  192, 192);
+    private static readonly (byte R, byte G, byte B) s_tick     = (240, 200, 140);
+
+    // Warm neutral shade palette (light → medium → darker tan); index-based rotation per row
+    private static readonly (byte R, byte G, byte B)[] s_footprintShades =
+    {
+        (200, 168, 120), // light tan
+        (176, 140,  96), // medium tan
+        (152, 116,  76), // darker tan/brown
+    };
+
+    private static (byte R, byte G, byte B) PickFootprintShade(string parentParcelId, string frontageDirection)
+    {
+        int idx       = int.Parse(parentParcelId.Substring(parentParcelId.LastIndexOf('_') + 1));
+        int rowOffset = frontageDirection == "SOUTH" ? 1 : 0;
+        return s_footprintShades[(idx + rowOffset) % s_footprintShades.Length];
+    }
 
     // -----------------------------------------------------------------------
     // Check helpers
@@ -537,24 +550,16 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         FillSidewalkAreas(topology, g);
         FillFootprints(result, g);
 
-        var border = System.Drawing.Color.FromArgb(s_border.R, s_border.G, s_border.B);
-        var tick   = System.Drawing.Color.FromArgb(s_tick.R,   s_tick.G,   s_tick.B);
-
+        // Frontage ticks + center dots only — no black separator lines between footprints
+        var tick = System.Drawing.Color.FromArgb(s_tick.R, s_tick.G, s_tick.B);
         foreach (var f in result.BuildingFootprints)
         {
-            // outline: right and bottom edges
-            for (int py = f.Y1; py <= f.Y2; py++) bmp.SetPixel(f.X2, py, border);
-            for (int px = f.X1; px <= f.X2; px++) bmp.SetPixel(px, f.Y2, border);
-            // center tick + frontage marker
             int midX = (f.X1 + f.X2) / 2;
             int midY = (f.Y1 + f.Y2) / 2;
             bmp.SetPixel(midX, midY, tick);
-            switch (f.FrontageDirection)
-            {
-                case "NORTH": bmp.SetPixel(midX, f.Y1, tick); break;
-                case "SOUTH": bmp.SetPixel(midX, f.Y2, tick); break;
-                case "EAST":  bmp.SetPixel(f.X2, midY, tick); break;
-            }
+            if      (f.FrontageDirection == "NORTH") bmp.SetPixel(midX, f.Y1, tick);
+            else if (f.FrontageDirection == "SOUTH") bmp.SetPixel(midX, f.Y2, tick);
+            else if (f.FrontageDirection == "EAST")  bmp.SetPixel(f.X2, midY, tick);
         }
 
         DrawBbox(bmp);
@@ -595,8 +600,8 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
                 }
                 foreach (var f in result.BuildingFootprints)
                 {
-                    using var brush = new System.Drawing.SolidBrush(
-                        System.Drawing.Color.FromArgb(180, s_footprint.R, s_footprint.G, s_footprint.B));
+                    var (fr, fg, fb) = PickFootprintShade(f.ParentParcelId, f.FrontageDirection);
+                    using var brush  = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(180, fr, fg, fb));
                     gOvl.FillRectangle(brush, f.X1, f.Y1, f.X2 - f.X1 + 1, f.Y2 - f.Y1 + 1);
                 }
             }
@@ -641,10 +646,12 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
     private static void FillFootprints(DeadMtlWorldBuilderResidentialBuildingFootprintPlanResult result,
         System.Drawing.Graphics g)
     {
-        using var brush = new System.Drawing.SolidBrush(
-            System.Drawing.Color.FromArgb(s_footprint.R, s_footprint.G, s_footprint.B));
         foreach (var f in result.BuildingFootprints)
+        {
+            var (fr, fg, fb) = PickFootprintShade(f.ParentParcelId, f.FrontageDirection);
+            using var brush  = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(fr, fg, fb));
             g.FillRectangle(brush, f.X1, f.Y1, f.X2 - f.X1 + 1, f.Y2 - f.Y1 + 1);
+        }
     }
 
     private static void DrawBbox(System.Drawing.Bitmap bmp)
@@ -751,12 +758,15 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         sb.AppendLine($"Component: {result.ComponentId}<br>");
         sb.AppendLine($"Footprints: {result.TotalFootprintCount} total ({result.NorthFootprintCount} north + {result.SouthFootprintCount} south + 0 east)<br>");
         sb.AppendLine("N/S full-lot occupancy footprints: widths 15/14 tiles, depth 29 tiles (ROWHOUSE_MAIN_VOLUME). No east residential row.<br>");
-        sb.AppendLine("No sidewalk overlap. No REAR_BOUNDARY overlap. No inter-footprint overlap.");
+        sb.AppendLine("No sidewalk overlap. No REAR_BOUNDARY overlap. No inter-footprint overlap.<br>");
+        sb.AppendLine("Adjacent footprints use deterministic shade alternation (3-shade rotation per row).<br>");
+        sb.AppendLine("Boundaries by adjacent shade change, no black internal gutters or stroke lines. Planning artifact only.");
         sb.AppendLine("</p>");
         sb.AppendLine("<div class=\"pal\"><b>Palette:</b>");
-        sb.AppendLine("<span class=\"swatch\" style=\"background:#c8a878;\"></span>Footprint (warm neutral) &nbsp;");
+        sb.AppendLine("<span class=\"swatch\" style=\"background:#c8a878;\"></span>Footprint shade A (light tan) &nbsp;");
+        sb.AppendLine("<span class=\"swatch\" style=\"background:#b08c60;\"></span>Footprint shade B (medium tan) &nbsp;");
+        sb.AppendLine("<span class=\"swatch\" style=\"background:#98744c;\"></span>Footprint shade C (dark tan) &nbsp;");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#1e2234;\"></span>Parcel (subdued) &nbsp;");
-        sb.AppendLine("<span class=\"swatch\" style=\"background:#3a3e4a;\"></span>Sidewalk &nbsp;");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#30241a;\"></span>Rear Boundary &nbsp;");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#28c0c0;\"></span>Bbox (cyan)</div>");
         sb.AppendLine("<div class=\"row\">");
@@ -766,7 +776,7 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         sb.AppendLine("  </div>");
         sb.AppendLine("  <div class=\"card\">");
         sb.AppendLine("    <img src=\"map_00_residential_building_footprints_debug_native_256.png\" alt=\"debug view\">");
-        sb.AppendLine("    <div class=\"lbl\">debug view: outlines + frontage ticks (256x256)</div>");
+        sb.AppendLine("    <div class=\"lbl\">debug view: frontage ticks + center dots, no black stroke lines (256x256)</div>");
         sb.AppendLine("  </div>");
         sb.AppendLine("  <div class=\"card\">");
         sb.AppendLine("    <img src=\"map_00_residential_building_footprints_overlay_native_256.png\" alt=\"overlay\">");
