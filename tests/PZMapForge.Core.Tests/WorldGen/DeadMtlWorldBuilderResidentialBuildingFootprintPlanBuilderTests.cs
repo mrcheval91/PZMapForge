@@ -373,6 +373,68 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilderTe
         }
     }
 
+    [Fact]
+    public void RenderCleanFootprintPng_NoCyanPixels()
+    {
+        var b        = MakeBuilder();
+        var r        = RunBuild();
+        var topology = MakeTopologyBuilder().Build(_tempDir);
+        var png      = b.RenderCleanFootprintPngBytes(r, topology);
+        using var bmp = LoadBitmap(png);
+        for (int x = 0; x < 256; x++)
+            for (int y = 0; y < 256; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.False(px.R == 40 && px.G == 192 && px.B == 192,
+                    $"Cyan pixel (40,192,192) at ({x},{y}) in clean footprint PNG");
+            }
+    }
+
+    [Fact]
+    public void RenderDebugFootprintPng_NoCyanPixels()
+    {
+        var b        = MakeBuilder();
+        var r        = RunBuild();
+        var topology = MakeTopologyBuilder().Build(_tempDir);
+        var png      = b.RenderDebugFootprintPngBytes(r, topology);
+        using var bmp = LoadBitmap(png);
+        for (int x = 0; x < 256; x++)
+            for (int y = 0; y < 256; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.False(px.R == 40 && px.G == 192 && px.B == 192,
+                    $"Cyan pixel (40,192,192) at ({x},{y}) in debug footprint PNG");
+            }
+    }
+
+    [Fact]
+    public void RenderOverlayFootprintPng_NoCyanPixels()
+    {
+        var b        = MakeBuilder();
+        var r        = RunBuild();
+        var topology = MakeTopologyBuilder().Build(_tempDir);
+        var png      = b.RenderOverlayFootprintPngBytes(r, topology, null);
+        using var bmp = LoadBitmap(png);
+        for (int x = 0; x < 256; x++)
+            for (int y = 0; y < 256; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.False(px.R == 40 && px.G == 192 && px.B == 192,
+                    $"Cyan pixel (40,192,192) at ({x},{y}) in overlay footprint PNG");
+            }
+    }
+
+    [Fact]
+    public void RenderHtml_NoCyanOrBboxReferences()
+    {
+        var r    = RunBuild();
+        var html = MakeBuilder().RenderHtml(r);
+        Assert.DoesNotContain("cyan",    html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("#28c0c0", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Bbox",    html, StringComparison.Ordinal);
+        Assert.DoesNotContain("bbox",    html, StringComparison.Ordinal);
+    }
+
     // -----------------------------------------------------------------------
     // PNG rendering
     // -----------------------------------------------------------------------

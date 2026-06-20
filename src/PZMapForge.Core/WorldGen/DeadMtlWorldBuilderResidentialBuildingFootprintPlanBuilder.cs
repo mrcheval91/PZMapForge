@@ -13,7 +13,6 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
     private static readonly (byte R, byte G, byte B) s_parcel   = (30,  34,  44);
     private static readonly (byte R, byte G, byte B) s_sidewalk = (58,  62,  74);
     private static readonly (byte R, byte G, byte B) s_rear     = (48,  36,  26);
-    private static readonly (byte R, byte G, byte B) s_bbox     = (40,  192, 192);
     private static readonly (byte R, byte G, byte B) s_tick     = (240, 200, 140);
 
     // Warm neutral shade palette (light → medium → darker tan); index-based rotation per row
@@ -560,7 +559,6 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
             else if (f.FrontageDirection == "EAST")  bmp.SetPixel(f.X2, midY, tick);
         }
 
-        DrawBbox(bmp);
         return BitmapToBytes(bmp);
     }
 
@@ -606,7 +604,6 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
             g.DrawImage(overlay, 0, 0);
         }
 
-        DrawBbox(img);
         return BitmapToBytes(img);
     }
 
@@ -650,14 +647,6 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
             using var brush  = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(fr, fg, fb));
             g.FillRectangle(brush, f.X1, f.Y1, f.X2 - f.X1 + 1, f.Y2 - f.Y1 + 1);
         }
-    }
-
-    private static void DrawBbox(System.Drawing.Bitmap bmp)
-    {
-        const int bx1 = 124, by1 = 10, bx2 = 212, by2 = 69;
-        var c = System.Drawing.Color.FromArgb(s_bbox.R, s_bbox.G, s_bbox.B);
-        for (int px = bx1; px <= bx2; px++) { bmp.SetPixel(px, by1, c); bmp.SetPixel(px, by2, c); }
-        for (int py = by1 + 1; py < by2; py++) { bmp.SetPixel(bx1, py, c); bmp.SetPixel(bx2, py, c); }
     }
 
     private static byte[] BitmapToBytes(System.Drawing.Bitmap bmp)
@@ -736,7 +725,7 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         sb.AppendLine("<title>DeadMTL map_00 -- Residential Building Footprint Plan (MAP-28B)</title>");
         sb.AppendLine("<style>");
         sb.AppendLine("body { background:#0e0e14; color:#ccc; font-family:monospace; padding:16px; }");
-        sb.AppendLine("h1 { font-size:1em; color:#28c0c0; }");
+        sb.AppendLine("h1 { font-size:1em; color:#a89060; }");
         sb.AppendLine("h2 { font-size:0.9em; color:#888; margin-top:20px; }");
         sb.AppendLine("p  { font-size:0.8em; line-height:1.5; }");
         sb.AppendLine(".warn { color:#c87040; }");
@@ -758,19 +747,18 @@ public sealed class DeadMtlWorldBuilderResidentialBuildingFootprintPlanBuilder
         sb.AppendLine("N/S full-lot occupancy footprints: widths 15/14 tiles, depth 30 tiles (ROWHOUSE_MAIN_VOLUME). North Y 10-39, south Y 40-69. No east residential row.<br>");
         sb.AppendLine("No sidewalk overlap. No REAR_BOUNDARY overlap. No inter-footprint overlap.<br>");
         sb.AppendLine("Adjacent footprints use deterministic 3-shade rotation per row.<br>");
-        sb.AppendLine("Clean view: strict lot fill only, no bbox/ticks. Debug/overlay: diagnostic helpers. Boundaries by adjacent shade change. Planning artifact only.");
+        sb.AppendLine("Clean view: strict lot fill only. Debug/overlay: diagnostic helpers. Boundaries by adjacent shade change. Planning artifact only.");
         sb.AppendLine("</p>");
         sb.AppendLine("<div class=\"pal\"><b>Palette:</b>");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#c8a878;\"></span>Footprint shade A (light tan) &nbsp;");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#b08c60;\"></span>Footprint shade B (medium tan) &nbsp;");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#98744c;\"></span>Footprint shade C (dark tan) &nbsp;");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#1e2234;\"></span>Parcel (subdued) &nbsp;");
-        sb.AppendLine("<span class=\"swatch\" style=\"background:#30241a;\"></span>Rear Boundary &nbsp;");
-        sb.AppendLine("<span class=\"swatch\" style=\"background:#28c0c0;\"></span>Bbox (cyan)</div>");
+        sb.AppendLine("<span class=\"swatch\" style=\"background:#30241a;\"></span>Rear Boundary</div>");
         sb.AppendLine("<div class=\"row\">");
         sb.AppendLine("  <div class=\"card\">");
         sb.AppendLine("    <img src=\"map_00_residential_building_footprints_clean_native_256.png\" alt=\"clean footprint view\">");
-        sb.AppendLine("    <div class=\"lbl\">clean view: strict residential lot fill only, no bbox/ticks/rear-boundary (256x256)</div>");
+        sb.AppendLine("    <div class=\"lbl\">clean view: strict residential lot fill only, no helper artifacts (256x256)</div>");
         sb.AppendLine("  </div>");
         sb.AppendLine("  <div class=\"card\">");
         sb.AppendLine("    <img src=\"map_00_residential_building_footprints_debug_native_256.png\" alt=\"debug view\">");

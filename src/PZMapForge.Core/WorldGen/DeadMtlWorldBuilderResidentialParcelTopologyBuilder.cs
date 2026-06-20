@@ -31,7 +31,6 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
     private static readonly (byte R, byte G, byte B) s_sidew  = (184, 184, 192);
     private static readonly (byte R, byte G, byte B) s_rear   = (74,  56,  40);
     private static readonly (byte R, byte G, byte B) s_bg     = (18,  18,  24);
-    private static readonly (byte R, byte G, byte B) s_bbox   = (40,  192, 192); // CYAN
     private static readonly (byte R, byte G, byte B) s_tick   = (210, 230, 255);
 
     private static readonly (byte R, byte G, byte B)[] s_lotShades =
@@ -513,7 +512,6 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
             else if (p.FrontageDirection == "SOUTH") bmp.SetPixel(midX, p.Y2, tick);
         }
 
-        DrawBbox(bmp);
         return BitmapToBytes(bmp);
     }
 
@@ -562,7 +560,6 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
             g3.DrawImage(overlay, 0, 0);
         }
 
-        DrawBbox(img3);
         return BitmapToBytes(img3);
     }
 
@@ -605,21 +602,6 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
             using var brush = new System.Drawing.SolidBrush(
                 System.Drawing.Color.FromArgb(r, gb, b));
             g.FillRectangle(brush, p.X1, p.Y1, p.X2 - p.X1 + 1, p.Y2 - p.Y1 + 1);
-        }
-    }
-
-    private static void DrawBbox(System.Drawing.Bitmap bmp)
-    {
-        var c = System.Drawing.Color.FromArgb(s_bbox.R, s_bbox.G, s_bbox.B);
-        for (int px = BboxX1; px <= BboxX2; px++)
-        {
-            bmp.SetPixel(px, BboxY1, c);
-            bmp.SetPixel(px, BboxY2, c);
-        }
-        for (int py = BboxY1 + 1; py < BboxY2; py++)
-        {
-            bmp.SetPixel(BboxX1, py, c);
-            bmp.SetPixel(BboxX2, py, c);
         }
     }
 
@@ -713,7 +695,7 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         sb.AppendLine("<title>DeadMTL map_00 -- Residential Parcel Topology (MAP-28A)</title>");
         sb.AppendLine("<style>");
         sb.AppendLine("body { background:#0e0e14; color:#ccc; font-family:monospace; padding:16px; }");
-        sb.AppendLine("h1 { font-size:1em; color:#28c0c0; }");
+        sb.AppendLine("h1 { font-size:1em; color:#a89060; }");
         sb.AppendLine("h2 { font-size:0.9em; color:#888; margin-top:20px; }");
         sb.AppendLine("p  { font-size:0.8em; line-height:1.5; }");
         sb.AppendLine(".warn { color:#c87040; }");
@@ -730,22 +712,21 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilder
         sb.AppendLine("All PNGs are exactly 256x256 pixels. CSS zoom only.");
         sb.AppendLine("</p>");
         sb.AppendLine("<p>");
-        sb.AppendLine($"Component: {result.ComponentId} | Bbox X:{result.BboxX1}-{result.BboxX2} Y:{result.BboxY1}-{result.BboxY2} ({result.BboxWidth} by {result.BboxHeight} tiles)<br>");
+        sb.AppendLine($"Component: {result.ComponentId} | Area X:{result.BboxX1}-{result.BboxX2} Y:{result.BboxY1}-{result.BboxY2} ({result.BboxWidth} by {result.BboxHeight} tiles)<br>");
         sb.AppendLine($"Layout: {result.NorthFacingLotCount} north (Y 10-39) + {result.SouthFacingLotCount} south (Y 40-69) full-lot rows. 0 east lots. No rear boundary strip.<br>");
         sb.AppendLine("North and south rows are adjacent with no gap. No invented alleys. No double-frontage. No through-lots.<br>");
-        sb.AppendLine("Clean view: strict lot fill only, no bbox/ticks. Debug: bbox + ticks. Boundaries by adjacent shade change. Planning artifact only.");
+        sb.AppendLine("Clean view: strict lot fill only. Debug: frontage ticks + center dots. Boundaries by adjacent shade change. Planning artifact only.");
         sb.AppendLine("</p>");
         sb.AppendLine("<div class=\"pal\"><b>Palette:</b>");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#c8a878;\"></span>Lot shade A (light tan) &nbsp;");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#b08c60;\"></span>Lot shade B (medium tan) &nbsp;");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#98744c;\"></span>Lot shade C (dark tan) &nbsp;");
         sb.AppendLine("<span class=\"swatch\" style=\"background:#b8b8c0;\"></span>Sidewalk &nbsp;");
-        sb.AppendLine("<span class=\"swatch\" style=\"background:#4a3828;\"></span>Rear Boundary &nbsp;");
-        sb.AppendLine("<span class=\"swatch\" style=\"background:#28c0c0;\"></span>Bbox (cyan)</div>");
+        sb.AppendLine("<span class=\"swatch\" style=\"background:#4a3828;\"></span>Rear Boundary</div>");
         sb.AppendLine("<div class=\"row\">");
         sb.AppendLine("  <div class=\"card\">");
         sb.AppendLine("    <img src=\"map_00_residential_parcels_topology_clean_native_256.png\" alt=\"clean parcel view\">");
-        sb.AppendLine("    <div class=\"lbl\">clean view: strict residential lot fill only, no bbox/ticks/rear-boundary (256x256)</div>");
+        sb.AppendLine("    <div class=\"lbl\">clean view: strict residential lot fill only, no helper artifacts (256x256)</div>");
         sb.AppendLine("  </div>");
         sb.AppendLine("  <div class=\"card\">");
         sb.AppendLine("    <img src=\"map_00_residential_parcels_topology_debug_native_256.png\" alt=\"debug view\">");

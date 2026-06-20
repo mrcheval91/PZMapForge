@@ -385,6 +385,62 @@ public sealed class DeadMtlWorldBuilderResidentialParcelTopologyBuilderTests : I
         Assert.True(shades.Count >= 2, $"Expected >= 2 distinct parcel shades, got {shades.Count}");
     }
 
+    [Fact]
+    public void RenderCleanParcelPng_NoCyanPixels()
+    {
+        var r   = RunBuild();
+        var png = MakeBuilder().RenderCleanParcelPngBytes(r);
+        using var bmp = LoadBitmap(png);
+        for (int x = 0; x < 256; x++)
+            for (int y = 0; y < 256; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.False(px.R == 40 && px.G == 192 && px.B == 192,
+                    $"Cyan pixel (40,192,192) at ({x},{y}) in clean parcel PNG");
+            }
+    }
+
+    [Fact]
+    public void RenderDebugParcelPng_NoCyanPixels()
+    {
+        var r   = RunBuild();
+        var png = MakeBuilder().RenderDebugParcelPngBytes(r);
+        using var bmp = LoadBitmap(png);
+        for (int x = 0; x < 256; x++)
+            for (int y = 0; y < 256; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.False(px.R == 40 && px.G == 192 && px.B == 192,
+                    $"Cyan pixel (40,192,192) at ({x},{y}) in debug parcel PNG");
+            }
+    }
+
+    [Fact]
+    public void RenderOverlayParcelPng_NoCyanPixels()
+    {
+        var r   = RunBuild();
+        var png = MakeBuilder().RenderOverlayParcelPngBytes(r, null);
+        using var bmp = LoadBitmap(png);
+        for (int x = 0; x < 256; x++)
+            for (int y = 0; y < 256; y++)
+            {
+                var px = bmp.GetPixel(x, y);
+                Assert.False(px.R == 40 && px.G == 192 && px.B == 192,
+                    $"Cyan pixel (40,192,192) at ({x},{y}) in overlay parcel PNG");
+            }
+    }
+
+    [Fact]
+    public void RenderHtml_NoCyanOrBboxReferences()
+    {
+        var r    = RunBuild();
+        var html = MakeBuilder().RenderHtml(r);
+        Assert.DoesNotContain("cyan",    html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("#28c0c0", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Bbox",    html, StringComparison.Ordinal);
+        Assert.DoesNotContain("bbox",    html, StringComparison.Ordinal);
+    }
+
     // -----------------------------------------------------------------------
     // PNG rendering
     // -----------------------------------------------------------------------
