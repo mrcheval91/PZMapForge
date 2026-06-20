@@ -227,6 +227,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-residential-building-footprint-plan"          => DeadMtlBuildWorldBuilderResidentialBuildingFootprintPlanCommand(args[1..]),
     "deadmtl-build-worldbuilder-residential-blue-quadrilateral-lot-fill"      => DeadMtlBuildWorldBuilderResidentialBlueQuadrilateralLotFillCommand(args[1..]),
     "deadmtl-build-worldbuilder-parcel-building-footprint-candidates"         => DeadMtlBuildWorldBuilderParcelBuildingFootprintCandidatesCommand(args[1..]),
+    "deadmtl-build-worldbuilder-materialized-runtime-candidate"              => DeadMtlBuildWorldBuilderMaterializedRuntimeCandidateCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -9550,6 +9551,76 @@ static int DeadMtlBuildWorldBuilderParcelBuildingFootprintCandidatesCommand(stri
     }
 
     return 0;
+}
+
+static int DeadMtlBuildWorldBuilderMaterializedRuntimeCandidateCommand(string[] args)
+{
+    var lotFillJson     = string.Empty;
+    var footprintJson   = string.Empty;
+    var outputRoot      = string.Empty;
+    var outputManifest  = string.Empty;
+    var outputChecksCsv = string.Empty;
+    var summaryPath     = string.Empty;
+
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        switch (args[i])
+        {
+            case "--lot-fill-json":     lotFillJson     = args[i + 1]; break;
+            case "--footprint-json":    footprintJson   = args[i + 1]; break;
+            case "--output-root":       outputRoot      = args[i + 1]; break;
+            case "--output-manifest":   outputManifest  = args[i + 1]; break;
+            case "--output-checks-csv": outputChecksCsv = args[i + 1]; break;
+            case "--summary":           summaryPath     = args[i + 1]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(lotFillJson) || string.IsNullOrEmpty(footprintJson) ||
+        string.IsNullOrEmpty(outputRoot))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-materialized-runtime-candidate " +
+            "--lot-fill-json <json> --footprint-json <json> --output-root <.local dir> " +
+            "[--output-manifest <json>] [--output-checks-csv <csv>] [--summary <txt>]");
+        return 1;
+    }
+
+    if (!outputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"ERROR: --output-root must contain .local to prevent accidental output outside sandbox: {outputRoot}");
+        return 1;
+    }
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderMaterializedRuntimeCandidateBuilder();
+    var result  = builder.Build(lotFillJson, footprintJson, outputRoot);
+
+    if (!string.IsNullOrEmpty(outputManifest))
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(outputManifest)!);
+        File.WriteAllText(outputManifest, builder.RenderJson(result));
+    }
+    if (!string.IsNullOrEmpty(outputChecksCsv))
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(outputChecksCsv)!);
+        File.WriteAllText(outputChecksCsv, builder.RenderChecksCsv(result));
+    }
+    if (!string.IsNullOrEmpty(summaryPath))
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(summaryPath)!);
+        File.WriteAllText(summaryPath, builder.RenderSummary(result));
+    }
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return result.IsValid ? 0 : 1;
 }
 
 sealed record SelectedLayerItem(string Bucket, string Value, string IntendedUse, string OperatorNote);
