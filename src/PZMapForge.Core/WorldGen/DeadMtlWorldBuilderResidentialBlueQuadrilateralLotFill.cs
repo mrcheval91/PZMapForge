@@ -59,6 +59,12 @@ public sealed class DetectedBlueComponent
     [JsonPropertyName("south_street_contact_count")] public int SouthStreetContactCount { get; set; }
     [JsonPropertyName("east_street_contact_count")]  public int EastStreetContactCount  { get; set; }
     [JsonPropertyName("west_street_contact_count")]  public int WestStreetContactCount  { get; set; }
+    [JsonPropertyName("north_street_contact_ratio")] public double NorthStreetContactRatio { get; set; }
+    [JsonPropertyName("south_street_contact_ratio")] public double SouthStreetContactRatio { get; set; }
+    [JsonPropertyName("east_street_contact_ratio")]  public double EastStreetContactRatio  { get; set; }
+    [JsonPropertyName("west_street_contact_ratio")]  public double WestStreetContactRatio  { get; set; }
+    [JsonPropertyName("selected_frontage_group")]    public string       SelectedFrontageGroup { get; set; } = string.Empty;
+    [JsonPropertyName("selected_primary_sides")]     public List<string> SelectedPrimarySides  { get; set; } = new();
     [JsonPropertyName("lot_count")]            public int    LotCount           { get; set; }
     [JsonPropertyName("facade_edge_count")]    public int    FacadeEdgeCount    { get; set; }
     [JsonPropertyName("lot_ids")]              public List<string> LotIds       { get; set; } = new();

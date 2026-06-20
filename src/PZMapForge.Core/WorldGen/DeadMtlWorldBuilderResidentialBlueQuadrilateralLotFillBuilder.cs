@@ -188,6 +188,8 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         bool is256 = srcBmp.Width == 256 && srcBmp.Height == 256;
         AddCheck(checks, "MAP29A_SOURCE_PNG_256x256", "Source PNG is 256x256",
             "PASS", is256 ? "PASS" : "FAIL");
+        AddPendingCheck(checks, "MAP29A_SOURCE_PNG_HASH_UNCHANGED",
+            "Source PNG SHA256 unchanged after all operations");
         if (!is256)
         {
             result.Errors.Add($"Source PNG is {srcBmp.Width}x{srcBmp.Height}, expected 256x256");
@@ -263,10 +265,17 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
                 WestStreetContactCount  = wContact,
             };
 
+            comp.NorthStreetContactRatio = bboxW > 0 ? Math.Round((double)nContact / bboxW, 4) : 0;
+            comp.SouthStreetContactRatio = bboxW > 0 ? Math.Round((double)sContact / bboxW, 4) : 0;
+            comp.EastStreetContactRatio  = bboxH > 0 ? Math.Round((double)eContact / bboxH, 4) : 0;
+            comp.WestStreetContactRatio  = bboxH > 0 ? Math.Round((double)wContact / bboxH, 4) : 0;
+
             if (processable)
             {
-                var (lots, edges, orientCase) = CalculateLots(comp, ci);
-                comp.OrientationCase  = orientCase;
+                var (lots, edges, orientCase, frontageGroup, primarySides) = CalculateLots(comp, ci);
+                comp.OrientationCase       = orientCase;
+                comp.SelectedFrontageGroup = frontageGroup;
+                comp.SelectedPrimarySides  = primarySides;
                 comp.LotCount         = lots.Count;
                 comp.FacadeEdgeCount  = edges.Count;
                 comp.LotIds           = lots.Select(l => l.LotId).ToList();
@@ -433,6 +442,14 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         SetCheck(result, "MAP29A_OUTPUT_PNG_DIMENSIONS_MATCH",
             dimOk ? "PASS" : "FAIL");
 
+        // Verify source PNG hash unchanged
+        if (File.Exists(result.SourcePng) && !string.IsNullOrEmpty(result.SourcePngSha256))
+        {
+            string afterHash = ComputeSha256(result.SourcePng);
+            bool hashOk = string.Equals(result.SourcePngSha256, afterHash, StringComparison.OrdinalIgnoreCase);
+            SetCheck(result, "MAP29A_SOURCE_PNG_HASH_UNCHANGED", hashOk ? "PASS" : "FAIL");
+        }
+
         // Re-scan forbidden artifacts
         result.ForbiddenArtifactScan = ScanOutputRoot(outputRoot);
         bool scanPasses = result.ForbiddenArtifactScan.Contains("PASS", StringComparison.Ordinal)
@@ -455,7 +472,34 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
     // Lot + facade calculation
     // -----------------------------------------------------------------------
 
-    private static (List<QuadrilateralLot> lots, List<QuadrilateralFacadeEdge> edges, string orientCase)
+    // Selects HORIZONTAL or VERTICAL primary frontage group by best single-side contact ratio.
+    // Tie-breakers: total contact count → longer frontage span → deterministic VERTICAL preference.
+    private static string SelectFrontageGroup(DetectedBlueComponent comp)
+    {
+        bool hasH = comp.NorthStreetAdjacency || comp.SouthStreetAdjacency;
+        bool hasV = comp.EastStreetAdjacency  || comp.WestStreetAdjacency;
+
+        if (!hasH) return "VERTICAL";
+        if (!hasV) return "HORIZONTAL";
+
+        double bestH = 0, bestV = 0;
+        int totalH = 0, totalV = 0;
+
+        if (comp.NorthStreetAdjacency) { double r = (double)comp.NorthStreetContactCount / comp.BboxWidth;  if (r > bestH) bestH = r; totalH += comp.NorthStreetContactCount; }
+        if (comp.SouthStreetAdjacency) { double r = (double)comp.SouthStreetContactCount / comp.BboxWidth;  if (r > bestH) bestH = r; totalH += comp.SouthStreetContactCount; }
+        if (comp.EastStreetAdjacency)  { double r = (double)comp.EastStreetContactCount  / comp.BboxHeight; if (r > bestV) bestV = r; totalV += comp.EastStreetContactCount; }
+        if (comp.WestStreetAdjacency)  { double r = (double)comp.WestStreetContactCount  / comp.BboxHeight; if (r > bestV) bestV = r; totalV += comp.WestStreetContactCount; }
+
+        if (bestV > bestH) return "VERTICAL";
+        if (bestH > bestV) return "HORIZONTAL";
+        if (totalV > totalH) return "VERTICAL";
+        if (totalH > totalV) return "HORIZONTAL";
+        if (comp.BboxHeight > comp.BboxWidth) return "VERTICAL";
+        if (comp.BboxWidth > comp.BboxHeight) return "HORIZONTAL";
+        return "VERTICAL"; // deterministic tie-breaker: EAST > WEST > NORTH > SOUTH
+    }
+
+    private static (List<QuadrilateralLot> Lots, List<QuadrilateralFacadeEdge> Edges, string OrientCase, string FrontageGroup, List<string> PrimarySides)
         CalculateLots(DetectedBlueComponent comp, int compOrder)
     {
         bool nAdj = comp.NorthStreetAdjacency;
@@ -463,25 +507,37 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         bool eAdj = comp.EastStreetAdjacency;
         bool wAdj = comp.WestStreetAdjacency;
 
-        // Priority order: N+S → E+W → N → S → E → W
-        if (nAdj && sAdj)
-            return BuildNSCase(comp, compOrder, nAdj, sAdj, "A_NS");
-        if (eAdj && wAdj)
-            return BuildEWCase(comp, compOrder, eAdj, wAdj, "D_EW");
-        if (nAdj)
-            return BuildNSCase(comp, compOrder, nAdj: true, sAdj: false, "B_N");
-        if (sAdj)
-            return BuildNSCase(comp, compOrder, nAdj: false, sAdj: true, "C_S");
-        if (eAdj)
-            return BuildEWCase(comp, compOrder, eAdj: true, wAdj: false, "E_E");
-        if (wAdj)
-            return BuildEWCase(comp, compOrder, eAdj: false, wAdj: true, "F_W");
+        string group = SelectFrontageGroup(comp);
 
-        return (new(), new(), "UNSUPPORTED");
+        if (group == "HORIZONTAL")
+        {
+            string orientCase;
+            List<string> primarySides;
+            if (nAdj && sAdj) { orientCase = "A_NS"; primarySides = new() { "NORTH", "SOUTH" }; }
+            else if (nAdj)    { orientCase = "B_N";  primarySides = new() { "NORTH" }; }
+            else              { orientCase = "C_S";  primarySides = new() { "SOUTH" }; }
+
+            var (lots, edges) = BuildNSCase(comp, compOrder, nAdj, sAdj,
+                cornerFromEast: eAdj, cornerFromWest: wAdj);
+            return (lots, edges, orientCase, "HORIZONTAL", primarySides);
+        }
+        else
+        {
+            string orientCase;
+            List<string> primarySides;
+            if (eAdj && wAdj) { orientCase = "D_EW"; primarySides = new() { "EAST", "WEST" }; }
+            else if (eAdj)    { orientCase = "E_E";  primarySides = new() { "EAST" }; }
+            else              { orientCase = "F_W";  primarySides = new() { "WEST" }; }
+
+            var (lots, edges) = BuildEWCase(comp, compOrder, eAdj, wAdj,
+                cornerFromNorth: nAdj, cornerFromSouth: sAdj);
+            return (lots, edges, orientCase, "VERTICAL", primarySides);
+        }
     }
 
-    private static (List<QuadrilateralLot>, List<QuadrilateralFacadeEdge>, string)
-        BuildNSCase(DetectedBlueComponent comp, int compOrder, bool nAdj, bool sAdj, string orientCase)
+    private static (List<QuadrilateralLot> Lots, List<QuadrilateralFacadeEdge> Edges)
+        BuildNSCase(DetectedBlueComponent comp, int compOrder, bool nAdj, bool sAdj,
+            bool cornerFromEast, bool cornerFromWest)
     {
         var lots  = new List<QuadrilateralLot>();
         var edges = new List<QuadrilateralFacadeEdge>();
@@ -490,7 +546,6 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
         int lotCount     = CalculateLotCount(frontageSpan);
         var columns      = SplitInclusiveSpan(comp.BboxX1, comp.BboxX2, lotCount);
 
-        // Y rows: split the full height into either 1 row (N-only or S-only) or 2 rows (N+S)
         IReadOnlyList<(int S1, int S2, int Span)> rows;
         string[] rowDirs;
         int[]    rowOffsets;
@@ -523,7 +578,8 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
             for (int ci = 0; ci < columns.Count; ci++)
             {
                 var (cx1, cx2, cw) = columns[ci];
-                bool isCorner = ci == 0 || ci == columns.Count - 1;
+                bool isCorner = (cornerFromWest && cx1 == comp.BboxX1) ||
+                                (cornerFromEast && cx2 == comp.BboxX2);
                 var  shade    = GetShade(compOrder, ci, rowOffset);
 
                 string lotId  = $"{comp.ComponentId}_{dir}_LOT_{ci:00}";
@@ -550,23 +606,24 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
                 int contactCount = dir == "NORTH" ? comp.NorthStreetContactCount : comp.SouthStreetContactCount;
                 edges.Add(new QuadrilateralFacadeEdge
                 {
-                    ComponentId       = comp.ComponentId,
-                    LotId             = lotId,
-                    FacadeEdgeId      = edgeId,
-                    FrontageDirection = dir,
+                    ComponentId        = comp.ComponentId,
+                    LotId              = lotId,
+                    FacadeEdgeId       = edgeId,
+                    FrontageDirection  = dir,
                     X1 = cx1, Y1 = facadeY, X2 = cx2, Y2 = facadeY,
-                    LengthTiles       = cw,
+                    LengthTiles        = cw,
                     StreetContactCount = contactCount,
                     StreetContactRatio = Math.Round((double)contactCount / frontageSpan, 4),
                 });
             }
         }
 
-        return (lots, edges, orientCase);
+        return (lots, edges);
     }
 
-    private static (List<QuadrilateralLot>, List<QuadrilateralFacadeEdge>, string)
-        BuildEWCase(DetectedBlueComponent comp, int compOrder, bool eAdj, bool wAdj, string orientCase)
+    private static (List<QuadrilateralLot> Lots, List<QuadrilateralFacadeEdge> Edges)
+        BuildEWCase(DetectedBlueComponent comp, int compOrder, bool eAdj, bool wAdj,
+            bool cornerFromNorth, bool cornerFromSouth)
     {
         var lots  = new List<QuadrilateralLot>();
         var edges = new List<QuadrilateralFacadeEdge>();
@@ -607,7 +664,8 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
             for (int ri = 0; ri < rows.Count; ri++)
             {
                 var (ry1, ry2, rh) = rows[ri];
-                bool isCorner = ri == 0 || ri == rows.Count - 1;
+                bool isCorner = (cornerFromNorth && ry1 == comp.BboxY1) ||
+                                (cornerFromSouth && ry2 == comp.BboxY2);
                 var  shade    = GetShade(compOrder, ri, colOffset);
 
                 string lotId  = $"{comp.ComponentId}_{dir}_LOT_{ri:00}";
@@ -634,19 +692,19 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
                 int contactCount = dir == "EAST" ? comp.EastStreetContactCount : comp.WestStreetContactCount;
                 edges.Add(new QuadrilateralFacadeEdge
                 {
-                    ComponentId       = comp.ComponentId,
-                    LotId             = lotId,
-                    FacadeEdgeId      = edgeId,
-                    FrontageDirection = dir,
+                    ComponentId        = comp.ComponentId,
+                    LotId              = lotId,
+                    FacadeEdgeId       = edgeId,
+                    FrontageDirection  = dir,
                     X1 = facadeX, Y1 = ry1, X2 = facadeX, Y2 = ry2,
-                    LengthTiles       = rh,
+                    LengthTiles        = rh,
                     StreetContactCount = contactCount,
                     StreetContactRatio = Math.Round((double)contactCount / frontageSpan, 4),
                 });
             }
         }
 
-        return (lots, edges, orientCase);
+        return (lots, edges);
     }
 
     // -----------------------------------------------------------------------

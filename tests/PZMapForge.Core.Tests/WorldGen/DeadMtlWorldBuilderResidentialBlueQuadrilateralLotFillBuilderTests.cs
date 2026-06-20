@@ -510,6 +510,175 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
     }
 
     // -----------------------------------------------------------------------
+    // Mixed-adjacency fixtures
+    // -----------------------------------------------------------------------
+
+    // Blue rect X50..90 Y10..60, bboxW=41 bboxH=51.
+    // North threshold=max(2,ceil(41*0.25))=11. East threshold=max(2,ceil(51*0.25))=13.
+    // Orange north Y=9 X=50..60 → 11 contacts (ratio=11/41≈0.268, just qualifies).
+    // Orange south Y=61 X=50..60 → 11 contacts (ratio 0.268).
+    // Orange east X=91 Y=10..60 → 51 contacts (ratio=1.0).
+    // Best V (1.0) > best H (0.268) → SelectFrontageGroup = VERTICAL → EAST facades.
+    private string MakeMixedEastDominantFixturePng()
+    {
+        var path = Path.Combine(_tempDir, "mixed_east_dominant_fixture.png");
+        using var bmp = new System.Drawing.Bitmap(256, 256);
+        Fill(bmp, 18, 18, 24);
+        for (int x = 50; x <= 60; x++) { bmp.SetPixel(x, 9, Orange()); bmp.SetPixel(x, 61, Orange()); }
+        for (int y = 10; y <= 60; y++) bmp.SetPixel(91, y, Orange());
+        for (int x = 50; x <= 90; x++)
+            for (int y = 10; y <= 60; y++)
+                bmp.SetPixel(x, y, Blue());
+        bmp.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+        return path;
+    }
+
+    // Same geometry X50..90 Y10..60.
+    // Orange north Y=9 X=50..90 → 41 contacts (ratio=1.0).
+    // Orange south Y=61 X=50..90 → 41 contacts (ratio=1.0).
+    // Orange east X=91 Y=10..22 → 13 contacts (ratio=13/51≈0.255, just qualifies).
+    // Best H (1.0) > best V (0.255) → SelectFrontageGroup = HORIZONTAL → N/S facades.
+    private string MakeMixedNsDominantFixturePng()
+    {
+        var path = Path.Combine(_tempDir, "mixed_ns_dominant_fixture.png");
+        using var bmp = new System.Drawing.Bitmap(256, 256);
+        Fill(bmp, 18, 18, 24);
+        for (int x = 50; x <= 90; x++) { bmp.SetPixel(x, 9, Orange()); bmp.SetPixel(x, 61, Orange()); }
+        for (int y = 10; y <= 22; y++) bmp.SetPixel(91, y, Orange());
+        for (int x = 50; x <= 90; x++)
+            for (int y = 10; y <= 60; y++)
+                bmp.SetPixel(x, y, Blue());
+        bmp.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+        return path;
+    }
+
+    // -----------------------------------------------------------------------
+    // Frontage group — existing fixtures
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void NsFixture_SelectedFrontageGroup_IsHorizontal()
+    {
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir);
+        Assert.Equal("HORIZONTAL", r.Components[0].SelectedFrontageGroup);
+    }
+
+    [Fact]
+    public void EastFixture_SelectedFrontageGroup_IsVertical()
+    {
+        var r = MakeBuilder().Build(MakeEastFixturePng(), _tempDir);
+        Assert.Equal("VERTICAL", r.Components[0].SelectedFrontageGroup);
+    }
+
+    // -----------------------------------------------------------------------
+    // Mixed east-dominant fixture
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MixedEastDominant_SelectedFrontageGroup_IsVertical()
+    {
+        var r = MakeBuilder().Build(MakeMixedEastDominantFixturePng(), _tempDir);
+        Assert.Equal("VERTICAL", r.Components[0].SelectedFrontageGroup);
+    }
+
+    [Fact]
+    public void MixedEastDominant_AllFacadeEdgesAreEast()
+    {
+        var r = MakeBuilder().Build(MakeMixedEastDominantFixturePng(), _tempDir);
+        Assert.True(r.FacadeEdges.Count > 0);
+        Assert.All(r.FacadeEdges, e => Assert.Equal("EAST", e.FrontageDirection));
+    }
+
+    [Fact]
+    public void MixedEastDominant_NoNorthOrSouthFacades()
+    {
+        var r = MakeBuilder().Build(MakeMixedEastDominantFixturePng(), _tempDir);
+        Assert.DoesNotContain(r.FacadeEdges, e => e.FrontageDirection == "NORTH");
+        Assert.DoesNotContain(r.FacadeEdges, e => e.FrontageDirection == "SOUTH");
+    }
+
+    [Fact]
+    public void MixedEastDominant_TopAndBottomEastLotsAreCorner()
+    {
+        var r    = MakeBuilder().Build(MakeMixedEastDominantFixturePng(), _tempDir);
+        var comp = r.Components[0];
+        var lots = r.Lots.ToList();
+        Assert.True(lots.Single(l => l.Y1 == comp.BboxY1).IsCornerLot,
+            "Top east lot (Y1=bboxY1) should be corner because north is also street-adjacent");
+        Assert.True(lots.Single(l => l.Y2 == comp.BboxY2).IsCornerLot,
+            "Bottom east lot (Y2=bboxY2) should be corner because south is also street-adjacent");
+        Assert.False(lots.Single(l => l.Y1 != comp.BboxY1 && l.Y2 != comp.BboxY2).IsCornerLot,
+            "Middle lot should not be corner");
+    }
+
+    [Fact]
+    public void MixedEastDominant_EastContactRatio_GreaterThan_NorthContactRatio()
+    {
+        var r    = MakeBuilder().Build(MakeMixedEastDominantFixturePng(), _tempDir);
+        var comp = r.Components[0];
+        Assert.True(comp.EastStreetContactRatio > comp.NorthStreetContactRatio,
+            $"E={comp.EastStreetContactRatio} should beat N={comp.NorthStreetContactRatio}");
+    }
+
+    // -----------------------------------------------------------------------
+    // Mixed NS-dominant fixture
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void MixedNsDominant_SelectedFrontageGroup_IsHorizontal()
+    {
+        var r = MakeBuilder().Build(MakeMixedNsDominantFixturePng(), _tempDir);
+        Assert.Equal("HORIZONTAL", r.Components[0].SelectedFrontageGroup);
+    }
+
+    [Fact]
+    public void MixedNsDominant_NorthAndSouthFacadesGenerated()
+    {
+        var r = MakeBuilder().Build(MakeMixedNsDominantFixturePng(), _tempDir);
+        Assert.Contains(r.FacadeEdges, e => e.FrontageDirection == "NORTH");
+        Assert.Contains(r.FacadeEdges, e => e.FrontageDirection == "SOUTH");
+    }
+
+    [Fact]
+    public void MixedNsDominant_NoEastFacades()
+    {
+        var r = MakeBuilder().Build(MakeMixedNsDominantFixturePng(), _tempDir);
+        Assert.DoesNotContain(r.FacadeEdges, e => e.FrontageDirection == "EAST");
+    }
+
+    [Fact]
+    public void MixedNsDominant_RightmostLotsAreCorner()
+    {
+        var r    = MakeBuilder().Build(MakeMixedNsDominantFixturePng(), _tempDir);
+        var comp = r.Components[0];
+        var rightmost    = r.Lots.Where(l => l.X2 == comp.BboxX2).ToList();
+        var nonRightmost = r.Lots.Where(l => l.X2 != comp.BboxX2).ToList();
+        Assert.True(rightmost.Count > 0, "Should have rightmost lots");
+        Assert.All(rightmost,    l => Assert.True(l.IsCornerLot,  $"Rightmost lot X2={l.X2} should be corner (east-adjacent)"));
+        Assert.All(nonRightmost, l => Assert.False(l.IsCornerLot, $"Non-rightmost lot X2={l.X2} should not be corner"));
+    }
+
+    [Fact]
+    public void MixedNsDominant_NorthContactRatio_GreaterThan_EastContactRatio()
+    {
+        var r    = MakeBuilder().Build(MakeMixedNsDominantFixturePng(), _tempDir);
+        var comp = r.Components[0];
+        Assert.True(comp.NorthStreetContactRatio > comp.EastStreetContactRatio,
+            $"N={comp.NorthStreetContactRatio} should beat E={comp.EastStreetContactRatio}");
+    }
+
+    // -----------------------------------------------------------------------
+    // Source hash check row
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Build_CheckRow_SourcePngHashUnchanged_Exists()
+    {
+        var r = MakeBuilder().Build(MakeNsFixturePng(), _tempDir);
+        Assert.Contains(r.Checks, c => c.CheckId == "MAP29A_SOURCE_PNG_HASH_UNCHANGED");
+    }
+
+    // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
 
