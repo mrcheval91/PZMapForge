@@ -232,6 +232,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-map33a-ingame-load-test"                   => DeadMtlBuildWorldBuilderMap33AInGameLoadTestCommand(args[1..]),
     "deadmtl-build-worldbuilder-visible-cell-runtime-candidate"           => DeadMtlBuildWorldBuilderVisibleCellRuntimeCandidateCommand(args[1..]),
     "deadmtl-build-worldbuilder-visible-cell-binary-anatomy-audit"       => DeadMtlBuildWorldBuilderVisibleCellBinaryAnatomyAuditCommand(args[1..]),
+    "deadmtl-build-worldbuilder-geometry-to-binary-bridge-plan"         => DeadMtlBuildWorldBuilderGeometryToBinaryBridgePlanCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -9988,6 +9989,75 @@ static int DeadMtlBuildWorldBuilderVisibleCellBinaryAnatomyAuditCommand(string[]
 
     Directory.CreateDirectory(Path.GetDirectoryName(outputResult)!);
     File.WriteAllText(outputResult, builder.RenderJson(result));
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return result.IsValid ? 0 : 1;
+}
+
+static int DeadMtlBuildWorldBuilderGeometryToBinaryBridgePlanCommand(string[] args)
+{
+    var map36a1AuditJson  = string.Empty;
+    var map31bEmitterJson = string.Empty;
+    var outputRoot        = string.Empty;
+
+    for (int i = 0; i < args.Length; i++)
+    {
+        switch (args[i])
+        {
+            case "--map36a1-audit-json":   if (i + 1 < args.Length) map36a1AuditJson  = args[++i]; break;
+            case "--map31b-emitter-json":  if (i + 1 < args.Length) map31bEmitterJson = args[++i]; break;
+            case "--output-root":          if (i + 1 < args.Length) outputRoot         = args[++i]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(outputRoot))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-geometry-to-binary-bridge-plan " +
+            "--output-root <.local dir> " +
+            "[--map36a1-audit-json <json>] [--map31b-emitter-json <json>]");
+        return 1;
+    }
+
+    if (!outputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"ERROR: --output-root must contain .local to prevent accidental output outside sandbox: {outputRoot}");
+        return 1;
+    }
+
+    Directory.CreateDirectory(outputRoot);
+
+    string resultJson       = Path.Combine(outputRoot, "deadmtl-geometry-to-binary-bridge-plan-result.json");
+    string checksCsv        = Path.Combine(outputRoot, "deadmtl-geometry-to-binary-bridge-plan-checks.csv");
+    string summaryTxt       = Path.Combine(outputRoot, "deadmtl-geometry-to-binary-bridge-plan-summary.txt");
+    string bridgePlanMd     = Path.Combine(outputRoot, "deadmtl-geometry-to-binary-bridge-plan.md");
+    string unknownsCsv      = Path.Combine(outputRoot, "deadmtl-geometry-to-binary-bridge-plan-required-unknowns.csv");
+    string experimentsCsv   = Path.Combine(outputRoot, "deadmtl-geometry-to-binary-bridge-plan-candidate-next-experiments.csv");
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderGeometryToBinaryBridgePlanBuilder();
+    var result  = builder.Build(map36a1AuditJson, map31bEmitterJson, outputRoot);
+
+    File.WriteAllText(checksCsv,      builder.RenderChecksCsv(result));
+    File.WriteAllText(summaryTxt,     builder.RenderSummary(result));
+    File.WriteAllText(bridgePlanMd,   builder.RenderBridgePlanMarkdown(result));
+    File.WriteAllText(unknownsCsv,    builder.RenderUnknownsCsv(result));
+    File.WriteAllText(experimentsCsv, builder.RenderExperimentsCsv(result));
+
+    result.OutputArtifacts.AddRange(new[]
+    {
+        resultJson, checksCsv, summaryTxt, bridgePlanMd, unknownsCsv, experimentsCsv,
+    });
+
+    File.WriteAllText(resultJson, builder.RenderJson(result));
 
     Console.WriteLine(builder.RenderSummary(result));
 
