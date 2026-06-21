@@ -291,4 +291,112 @@ public sealed class DeadMtlWorldBuilderVisibleCellRuntimeCandidateBuilderTests :
         Assert.True(r.FallbackEmptyTerrainDetected);
         Assert.False(r.VisibleTerrainDetected);
     }
+
+    // -----------------------------------------------------------------------
+    // MAP35B_CORE_1: Visible pass keeps binary_cell_materialized=true when installed binaries exist
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map35B_Core1_VisiblePass_KeepsBinaryCellMaterializedTrue()
+    {
+        WriteFixtures();
+        RunInstallOnly();
+        var zomboidRoot = WriteFakeZomboidLog(VisibleTerrainLog);
+        var r = RunCollectLogs(zomboidRoot, "visible terrain with roads and trees");
+        Assert.True(r.BinaryCellMaterialized);
+        Assert.True(r.InstalledBinaryFilesPresent);
+        Assert.Contains(r.Checks,
+            c => c.CheckId == "MAP35B_BINARY_CELL_MATERIALIZED_IN_COLLECT_MODE" && c.CheckStatus == "PASS");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP35B_CORE_2: Visible pass sets runtime_visible_cell_proof_observed=true
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map35B_Core2_VisiblePass_SetsProofObservedTrue()
+    {
+        WriteFixtures();
+        RunInstallOnly();
+        var zomboidRoot = WriteFakeZomboidLog(VisibleTerrainLog);
+        var r = RunCollectLogs(zomboidRoot, "visible terrain with textured ground, no roads or buildings observed");
+        Assert.True(r.RuntimeVisibleCellProofObserved);
+        Assert.Equal("operator_observation_and_pz_logs", r.RuntimeVisibleCellProofSource);
+        Assert.Contains(r.Checks,
+            c => c.CheckId == "MAP35B_VISIBLE_CELL_PROOF_OBSERVED" && c.CheckStatus == "PASS");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP35B_CORE_3: Collect-logs mode does not reinstall or overwrite marker
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map35B_Core3_CollectLogs_DoesNotStageOrInstall()
+    {
+        WriteFixtures();
+        RunInstallOnly();
+        string markerPath = Path.Combine(LocalModsRoot,
+            DeadMtlWorldBuilderVisibleCellRuntimeCandidateBuilder.InstalledFolderName,
+            DeadMtlWorldBuilderVisibleCellRuntimeCandidateBuilder.InstallMarkerFileName);
+        string originalContent = File.ReadAllText(markerPath);
+
+        var zomboidRoot = WriteFakeZomboidLog(VisibleTerrainLog);
+        var r = RunCollectLogs(zomboidRoot, "visible terrain");
+
+        Assert.True(r.CollectLogsModeDoesNotStageOrInstall);
+        Assert.False(r.StagePerformed);
+        Assert.False(r.InstallPerformed);
+        Assert.Equal(originalContent, File.ReadAllText(markerPath));
+        Assert.Contains(r.Checks,
+            c => c.CheckId == "MAP35B_COLLECT_MODE_DOES_NOT_STAGE_OR_INSTALL" && c.CheckStatus == "PASS");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP35B_CORE_4: Visible pass still keeps playable_export_claimed=false
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map35B_Core4_VisiblePass_KeepsPlayableExportClaimedFalse()
+    {
+        WriteFixtures();
+        RunInstallOnly();
+        var zomboidRoot = WriteFakeZomboidLog(VisibleTerrainLog);
+        var r = RunCollectLogs(zomboidRoot, "visible terrain");
+        Assert.False(r.PlayableExportClaimed);
+        Assert.Contains(r.Checks,
+            c => c.CheckId == "MAP35A_NO_PLAYABLE_EXPORT_CLAIM" && c.CheckStatus == "PASS");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP35B_CORE_5: Visible pass still keeps geometry_from_map31b_materialized=false
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map35B_Core5_VisiblePass_KeepsGeometryFromMap31bFalse()
+    {
+        WriteFixtures();
+        RunInstallOnly();
+        var zomboidRoot = WriteFakeZomboidLog(VisibleTerrainLog);
+        var r = RunCollectLogs(zomboidRoot, "visible terrain");
+        Assert.False(r.GeometryFromMap31bMaterialized);
+        Assert.Contains(r.Checks,
+            c => c.CheckId == "MAP35A_NO_MAP31B_GEOMETRY_CLAIM" && c.CheckStatus == "PASS");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP35B_CORE_6: Missing installed candidate rejects collect-log mode
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map35B_Core6_MissingInstalledCandidate_RejectsCollectLogs()
+    {
+        WriteFixtures();
+        var zomboidRoot = WriteFakeZomboidLog(VisibleTerrainLog);
+        var r = RunCollectLogs(zomboidRoot, "visible terrain");
+        Assert.False(r.IsValid);
+        Assert.False(r.InstalledCandidatePresent);
+        Assert.Equal("MAP35A_COLLECT_REJECTED_NOT_INSTALLED", r.Verdict);
+        Assert.Contains(r.Checks,
+            c => c.CheckId == "MAP35B_INSTALLED_CANDIDATE_PRESENT" && c.CheckStatus == "FAIL");
+    }
 }

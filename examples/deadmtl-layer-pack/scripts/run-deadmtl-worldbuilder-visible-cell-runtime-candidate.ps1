@@ -94,31 +94,52 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host ""
-Write-Host "=== MAP-35A Visible Cell Runtime Candidate ==="
+Write-Host "=== MAP-35B Visible Cell Runtime Candidate ==="
 
 if (Test-Path $OutputResult) {
     $result = Get-Content $OutputResult -Raw | ConvertFrom-Json
-    Write-Host "Selected source root     : $($result.selected_source_root)"
-    Write-Host "Source classification    : $($result.selected_source_classification)"
-    Write-Host "Source size advantage    : $($result.source_size_advantage_over_map33a)"
-    Write-Host "B42 layout written       : $($result.b42_layout_written)"
-    Write-Host "Staged candidate root    : $($result.staged_candidate_root)"
-    Write-Host "Installed candidate root : $($result.installed_candidate_root)"
-    Write-Host "Stage performed          : $($result.stage_performed)"
-    Write-Host "Install performed        : $($result.install_performed)"
-    Write-Host "Install marker written   : $($result.install_marker_written)"
-    Write-Host "Binary cell materialized : $($result.binary_cell_materialized)"
-    Write-Host "Visible cell candidate   : $($result.visible_cell_candidate)"
-    Write-Host "Geometry from MAP-31B    : $($result.geometry_from_map31b_materialized)"
-    Write-Host "Log collection attempted : $($result.runtime_log_collection_attempted)"
-    Write-Host "Runtime classification   : $($result.runtime_classification)"
-    Write-Host "Checks                   : $($result.passed_check_count)/$($result.check_count) PASS"
-    Write-Host "Verdict                  : $($result.verdict)"
+    Write-Host "Selected source root          : $($result.selected_source_root)"
+    Write-Host "Source classification         : $($result.selected_source_classification)"
+    Write-Host "Source size advantage         : $($result.source_size_advantage_over_map33a)"
+    Write-Host "B42 layout written            : $($result.b42_layout_written)"
+    Write-Host "Staged candidate root         : $($result.staged_candidate_root)"
+    Write-Host "Installed candidate root      : $($result.installed_candidate_root)"
+    Write-Host "Stage performed               : $($result.stage_performed)"
+    Write-Host "Install performed             : $($result.install_performed)"
+    Write-Host "Install marker written        : $($result.install_marker_written)"
+    Write-Host "Binary cell materialized      : $($result.binary_cell_materialized)"
+    Write-Host "Visible cell candidate        : $($result.visible_cell_candidate)"
+    Write-Host "Geometry from MAP-31B         : $($result.geometry_from_map31b_materialized)"
+    Write-Host "Log collection attempted      : $($result.runtime_log_collection_attempted)"
+    if ($result.runtime_log_collection_attempted) {
+        Write-Host "Installed candidate present   : $($result.installed_candidate_present)"
+        Write-Host "Installed binary files present: $($result.installed_binary_files_present)"
+        Write-Host "Installed marker present      : $($result.installed_marker_present)"
+        Write-Host "Visible-cell proof observed   : $($result.runtime_visible_cell_proof_observed)"
+        if ($result.runtime_visible_cell_proof_source) {
+            Write-Host "Visible-cell proof source     : $($result.runtime_visible_cell_proof_source)"
+        }
+    }
+    Write-Host "Runtime classification        : $($result.runtime_classification)"
+    Write-Host "Checks                        : $($result.passed_check_count)/$($result.check_count) PASS"
+    Write-Host "Verdict                       : $($result.verdict)"
 }
 
 Write-Host ""
 Write-Host "=== Claim Boundary ==="
-Write-Host "Runtime proof claimed    : FALSE - in-game visible terrain not yet confirmed"
+if (Test-Path $OutputResult) {
+    $result = Get-Content $OutputResult -Raw | ConvertFrom-Json
+    if ($result.runtime_visible_cell_proof_observed) {
+        Write-Host "Visible-cell runtime proof observed : TRUE"
+        Write-Host "Runtime proof claimed               : FALSE - not promoted to playable/final claim"
+    } else {
+        Write-Host "Visible-cell runtime proof observed : FALSE - in-game visible terrain not yet confirmed"
+        Write-Host "Runtime proof claimed               : FALSE"
+    }
+} else {
+    Write-Host "Visible-cell runtime proof observed : FALSE - result not available"
+    Write-Host "Runtime proof claimed               : FALSE"
+}
 Write-Host "Playable export claimed  : FALSE - gated until in-game visible terrain proven"
 Write-Host "Geometry from MAP-31B    : FALSE - source is PZMapForge Build 42 candidate"
 Write-Host "Live Workshop write      : NOT PERFORMED"
@@ -127,7 +148,12 @@ Write-Host "Steam install write      : NOT PERFORMED"
 if ($isCollectLogs -and (Test-Path $OutputResult)) {
     $result = Get-Content $OutputResult -Raw | ConvertFrom-Json
     Write-Host ""
-    Write-Host "=== MAP-35A Log Classification ==="
+    Write-Host "=== MAP-35B Log Classification ==="
+    Write-Host "Collect mode (no stage/install) : $($result.collect_logs_mode_does_not_stage_or_install)"
+    Write-Host "Installed candidate present     : $($result.installed_candidate_present)"
+    Write-Host "Installed binary files present  : $($result.installed_binary_files_present)"
+    Write-Host "Installed marker present        : $($result.installed_marker_present)"
+    Write-Host "Binary cell materialized        : $($result.binary_cell_materialized)"
     Write-Host "Logs found               : $($result.runtime_logs_found)"
     Write-Host "Candidate mod loaded     : $($result.candidate_mod_loaded)"
     Write-Host "Binary files mounted     : $($result.candidate_binary_files_mounted)"
@@ -140,10 +166,12 @@ if ($isCollectLogs -and (Test-Path $OutputResult)) {
     if ($result.operator_observation) {
         Write-Host "Operator observation     : $($result.operator_observation)"
     }
+    Write-Host "Visible-cell proof observed : $($result.runtime_visible_cell_proof_observed)"
     Write-Host "Classification           : $($result.runtime_classification)"
     if ($result.runtime_classification -eq "MAP35A_RUNTIME_VISIBLE_CELL_PASS") {
         Write-Host "RESULT: VISIBLE CELL PASS - terrain loaded and visible in-game."
-        Write-Host "NOTE: runtime_proof_claimed remains FALSE until operator validates and records."
+        Write-Host "NOTE: Visible-cell runtime proof observed = TRUE."
+        Write-Host "NOTE: runtime_proof_claimed remains FALSE - not promoted to playable/final claim."
         Write-Host "NOTE: geometry_from_map31b_materialized=false - source is PZMapForge Build 42 candidate."
     } elseif ($result.runtime_classification -eq "MAP35A_RUNTIME_PARTIAL_PASS_EMPTY_FALLBACK_TERRAIN") {
         Write-Host "RESULT: Partial pass - mod mounted, binary files loaded, player entered world (empty/fallback terrain)."

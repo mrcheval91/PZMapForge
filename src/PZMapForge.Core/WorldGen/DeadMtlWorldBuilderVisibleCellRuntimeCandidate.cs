@@ -39,6 +39,13 @@ public sealed class DeadMtlWorldBuilderVisibleCellRuntimeCandidateResult
     [JsonPropertyName("runtime_log_collection_attempted")] public bool RuntimeLogCollectionAttempted { get; set; }
     [JsonPropertyName("runtime_logs_found")]        public bool RuntimeLogsFound        { get; set; }
     [JsonPropertyName("runtime_log_paths")]         public List<string> RuntimeLogPaths { get; set; } = new();
+    // MAP-35B collect-logs evidence state
+    [JsonPropertyName("installed_candidate_present")]                  public bool InstalledCandidatePresent               { get; set; }
+    [JsonPropertyName("installed_binary_files_present")]               public bool InstalledBinaryFilesPresent             { get; set; }
+    [JsonPropertyName("installed_marker_present")]                     public bool InstalledMarkerPresent                  { get; set; }
+    [JsonPropertyName("runtime_visible_cell_proof_observed")]          public bool RuntimeVisibleCellProofObserved         { get; set; }
+    [JsonPropertyName("runtime_visible_cell_proof_source")]            public string RuntimeVisibleCellProofSource         { get; set; } = string.Empty;
+    [JsonPropertyName("collect_logs_mode_does_not_stage_or_install")]  public bool CollectLogsModeDoesNotStageOrInstall    { get; set; }
     // MAP-35A log analysis
     [JsonPropertyName("candidate_mod_loaded")]                  public bool CandidateModLoaded                { get; set; }
     [JsonPropertyName("candidate_binary_files_mounted")]        public bool CandidateBinaryFilesMounted       { get; set; }

@@ -226,7 +226,7 @@ public sealed class DeadMtlWorldBuilderVisibleCellRuntimeCandidateProcessTests :
         RunCli(MakeBaseArgs());
         Assert.True(File.Exists(OutputResult), "Result JSON must be written");
         using var doc = JsonDocument.Parse(File.ReadAllText(OutputResult));
-        Assert.Equal("MAP35A_VISIBLE_CELL_RUNTIME_CANDIDATE_V1", doc.RootElement.GetProperty("format").GetString());
+        Assert.Equal("MAP35B_VISIBLE_CELL_RUNTIME_CANDIDATE_V1", doc.RootElement.GetProperty("format").GetString());
         Assert.Equal("DeadMTL_MAP35A", doc.RootElement.GetProperty("map_id").GetString());
         Assert.True(doc.RootElement.GetProperty("b42_layout_written").GetBoolean());
     }
@@ -251,5 +251,144 @@ public sealed class DeadMtlWorldBuilderVisibleCellRuntimeCandidateProcessTests :
         Assert.False(root.GetProperty("steam_install_write").GetBoolean());
         Assert.True(root.GetProperty("local_user_mod_install_allowed").GetBoolean());
         Assert.True(root.GetProperty("duplicate_map_entries_possible").GetBoolean());
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP35B_CLI_1: collect-log visible pass result JSON has runtime_visible_cell_proof_observed=true
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map35B_Cli1_CollectLogs_VisiblePass_ProofObservedTrue()
+    {
+        WriteFixtures();
+        RunCli(MakeBaseArgs().Concat(new[] { "--install-only" }).ToArray());
+        WriteVisibleTerrainLog();
+
+        RunCli(MakeBaseArgs()
+            .Concat(new[]
+            {
+                "--collect-logs",
+                "--zomboid-user-root",    FakeZomboidRoot,
+                "--operator-observation", "visible terrain with textured ground, no roads or buildings observed",
+            })
+            .ToArray());
+
+        Assert.True(File.Exists(OutputResult));
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputResult));
+        Assert.True(doc.RootElement.GetProperty("runtime_visible_cell_proof_observed").GetBoolean());
+        Assert.Equal("operator_observation_and_pz_logs",
+            doc.RootElement.GetProperty("runtime_visible_cell_proof_source").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP35B_CLI_2: collect-log visible pass result JSON has binary_cell_materialized=true
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map35B_Cli2_CollectLogs_VisiblePass_BinaryCellMaterializedTrue()
+    {
+        WriteFixtures();
+        RunCli(MakeBaseArgs().Concat(new[] { "--install-only" }).ToArray());
+        WriteVisibleTerrainLog();
+
+        RunCli(MakeBaseArgs()
+            .Concat(new[]
+            {
+                "--collect-logs",
+                "--zomboid-user-root",    FakeZomboidRoot,
+                "--operator-observation", "visible terrain",
+            })
+            .ToArray());
+
+        Assert.True(File.Exists(OutputResult));
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputResult));
+        Assert.True(doc.RootElement.GetProperty("binary_cell_materialized").GetBoolean());
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP35B_CLI_3: collect-log visible pass summary contains MAP35A_RUNTIME_VISIBLE_CELL_PASS
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map35B_Cli3_CollectLogs_VisiblePass_SummaryContainsClassification()
+    {
+        WriteFixtures();
+        RunCli(MakeBaseArgs().Concat(new[] { "--install-only" }).ToArray());
+        WriteVisibleTerrainLog();
+
+        var (_, stdout, _) = RunCli(MakeBaseArgs()
+            .Concat(new[]
+            {
+                "--collect-logs",
+                "--zomboid-user-root",    FakeZomboidRoot,
+                "--operator-observation", "visible terrain",
+                "--summary",              Summary,
+            })
+            .ToArray());
+
+        Assert.True(File.Exists(Summary), "Summary file must be written");
+        string summaryText = File.ReadAllText(Summary);
+        Assert.Contains("MAP35A_RUNTIME_VISIBLE_CELL_PASS", summaryText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP35B_CLI_4: collect-log visible pass summary does not say terrain is not confirmed
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map35B_Cli4_CollectLogs_VisiblePass_SummaryDoesNotSayNotConfirmed()
+    {
+        WriteFixtures();
+        RunCli(MakeBaseArgs().Concat(new[] { "--install-only" }).ToArray());
+        WriteVisibleTerrainLog();
+
+        RunCli(MakeBaseArgs()
+            .Concat(new[]
+            {
+                "--collect-logs",
+                "--zomboid-user-root",    FakeZomboidRoot,
+                "--operator-observation", "visible terrain",
+                "--summary",              Summary,
+            })
+            .ToArray());
+
+        Assert.True(File.Exists(Summary));
+        string summaryText = File.ReadAllText(Summary);
+        Assert.DoesNotContain("visible terrain not yet confirmed", summaryText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Visible-cell runtime proof observed : TRUE", summaryText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP35B_CLI_5: collect-log mode does not reinstall
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map35B_Cli5_CollectLogs_DoesNotReinstall()
+    {
+        WriteFixtures();
+        RunCli(MakeBaseArgs().Concat(new[] { "--install-only" }).ToArray());
+
+        string markerPath = Path.Combine(LocalModsRoot,
+            "deadmtl_map35a_visible_cell_candidate",
+            "PZMAPFORGE_MAP35A_TEST_INSTALL_MARKER.txt");
+        string originalContent = File.ReadAllText(markerPath);
+
+        WriteVisibleTerrainLog();
+        RunCli(MakeBaseArgs()
+            .Concat(new[]
+            {
+                "--collect-logs",
+                "--zomboid-user-root",    FakeZomboidRoot,
+                "--operator-observation", "visible terrain",
+            })
+            .ToArray());
+
+        Assert.Equal(originalContent, File.ReadAllText(markerPath));
+        if (File.Exists(OutputResult))
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(OutputResult));
+            Assert.False(doc.RootElement.GetProperty("install_performed").GetBoolean());
+            Assert.True(doc.RootElement.GetProperty("collect_logs_mode_does_not_stage_or_install").GetBoolean());
+        }
     }
 }

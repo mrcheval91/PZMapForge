@@ -77,7 +77,7 @@ public sealed class DeadMtlWorldBuilderVisibleCellRuntimeCandidateBuilder
     {
         var result = new DeadMtlWorldBuilderVisibleCellRuntimeCandidateResult
         {
-            Format                        = "MAP35A_VISIBLE_CELL_RUNTIME_CANDIDATE_V1",
+            Format                        = "MAP35B_VISIBLE_CELL_RUNTIME_CANDIDATE_V1",
             GeneratedUtc                  = DateTime.UtcNow.ToString("o"),
             MapId                         = MapId,
             MapFolder                     = MapFolder,
@@ -244,20 +244,50 @@ public sealed class DeadMtlWorldBuilderVisibleCellRuntimeCandidateBuilder
         // -----------------------------------------------------------------------
         if (collectLogs)
         {
-            result.RuntimeLogCollectionAttempted = true;
-            result.StagePerformed   = false;
-            result.InstallPerformed = false;
+            result.RuntimeLogCollectionAttempted        = true;
+            result.StagePerformed                       = false;
+            result.InstallPerformed                     = false;
+            result.CollectLogsModeDoesNotStageOrInstall = true;
 
+            // MAP-35B: inspect installed candidate state without touching it
             bool installedExists = Directory.Exists(installedRoot);
-            AddCheck(checks, "MAP35A_COLLECT_LOGS_DOES_NOT_REINSTALL",
-                "Collect-logs mode does not reinstall or overwrite installed mod folder",
+            result.InstalledCandidatePresent = installedExists;
+
+            string markerPath = Path.Combine(installedRoot, InstallMarkerFileName);
+            result.InstalledMarkerPresent = installedExists && File.Exists(markerPath);
+
+            // Check whether required binary files are present in at least one installed layout tier
+            string[] installedMapDirs =
+            {
+                Path.Combine(installedRoot, "common", "media", "maps", MapFolder),
+                Path.Combine(installedRoot, "media",  "maps", MapFolder),
+                Path.Combine(installedRoot, "42",     "media", "maps", MapFolder),
+            };
+            result.InstalledBinaryFilesPresent = installedExists &&
+                installedMapDirs.Any(d => s_requiredCellFiles.All(f => File.Exists(Path.Combine(d, f))));
+
+            AddCheck(checks, "MAP35B_COLLECT_MODE_DOES_NOT_STAGE_OR_INSTALL",
+                "Collect-logs mode does not stage or install",
+                "True", result.CollectLogsModeDoesNotStageOrInstall.ToString());
+
+            AddCheck(checks, "MAP35B_INSTALLED_CANDIDATE_PRESENT",
+                "Installed candidate folder exists",
                 "PASS", installedExists ? "PASS" : "FAIL");
+
             if (!installedExists)
             {
                 result.Errors.Add($"Collect-logs requires prior install: {installedRoot} not found. Run -InstallOnly first.");
                 Finalize(result, checks, valid: false, "MAP35A_COLLECT_REJECTED_NOT_INSTALLED");
                 return result;
             }
+
+            AddCheck(checks, "MAP35B_INSTALLED_BINARY_FILES_PRESENT",
+                "Required binary files present in at least one installed layout tier",
+                "PASS", result.InstalledBinaryFilesPresent ? "PASS" : "FAIL");
+
+            AddCheck(checks, "MAP35B_INSTALLED_MARKER_PRESENT",
+                $"Install marker present in installed folder: {InstallMarkerFileName}",
+                "PASS", result.InstalledMarkerPresent ? "PASS" : "FAIL");
 
             var (logPaths, allLogText) = CollectLogs(zomboidUserRoot, outputRoot);
             result.RuntimeLogPaths.AddRange(logPaths);
@@ -266,21 +296,41 @@ public sealed class DeadMtlWorldBuilderVisibleCellRuntimeCandidateBuilder
             if (result.RuntimeLogsFound)
             {
                 var analysis = ClassifyLogText(allLogText, operatorObservation);
-                result.CandidateModLoaded               = analysis.modLoaded;
-                result.CandidateBinaryFilesMounted      = analysis.binaryMounted;
-                result.CandidateMapgroupRegistered      = analysis.mapgroupReg;
-                result.CandidateSpawnBlockerAbsent      = analysis.spawnBlockerAbsent;
+                result.CandidateModLoaded                = analysis.modLoaded;
+                result.CandidateBinaryFilesMounted       = analysis.binaryMounted;
+                result.CandidateMapgroupRegistered       = analysis.mapgroupReg;
+                result.CandidateSpawnBlockerAbsent       = analysis.spawnBlockerAbsent;
                 result.CandidateBinaryChunkLoadAttempted = analysis.binaryChunkLoad;
-                result.CandidateSpecificErrorsFound     = analysis.candidateErrors;
-                result.UnrelatedErrorsFound             = analysis.unrelatedErrors;
-                result.VisibleTerrainDetected           = analysis.visibleTerrain;
-                result.FallbackEmptyTerrainDetected     = analysis.fallbackTerrain;
-                result.RuntimeClassification            = analysis.classification;
+                result.CandidateSpecificErrorsFound      = analysis.candidateErrors;
+                result.UnrelatedErrorsFound              = analysis.unrelatedErrors;
+                result.VisibleTerrainDetected            = analysis.visibleTerrain;
+                result.FallbackEmptyTerrainDetected      = analysis.fallbackTerrain;
+                result.RuntimeClassification             = analysis.classification;
             }
             else
             {
                 result.RuntimeClassification = "MAP35A_RUNTIME_EVIDENCE_INSUFFICIENT";
             }
+
+            // MAP-35B: binary_cell_materialized is true if installed binaries present and logs confirm mounts
+            result.BinaryCellMaterialized =
+                result.InstalledBinaryFilesPresent && result.CandidateBinaryFilesMounted;
+
+            AddCheck(checks, "MAP35B_BINARY_CELL_MATERIALIZED_IN_COLLECT_MODE",
+                "binary_cell_materialized=true derived from installed binaries + log evidence",
+                "True", result.BinaryCellMaterialized.ToString());
+
+            // MAP-35B: record visible-cell proof observation
+            if (result.RuntimeClassification == "MAP35A_RUNTIME_VISIBLE_CELL_PASS")
+            {
+                result.RuntimeVisibleCellProofObserved = true;
+                result.RuntimeVisibleCellProofSource   = "operator_observation_and_pz_logs";
+            }
+
+            AddCheck(checks, "MAP35B_VISIBLE_CELL_PROOF_OBSERVED",
+                "runtime_visible_cell_proof_observed matches classification",
+                result.RuntimeClassification == "MAP35A_RUNTIME_VISIBLE_CELL_PASS" ? "True" : "False",
+                result.RuntimeVisibleCellProofObserved.ToString());
 
             EmitLogChecks(checks, result);
             EmitClaimChecks(checks, result);
@@ -691,6 +741,10 @@ public sealed class DeadMtlWorldBuilderVisibleCellRuntimeCandidateBuilder
         sb.AppendLine($"Log collection attempted         : {r.RuntimeLogCollectionAttempted}");
         if (r.RuntimeLogCollectionAttempted)
         {
+            sb.AppendLine($"Collect mode (no stage/install)  : {r.CollectLogsModeDoesNotStageOrInstall}");
+            sb.AppendLine($"Installed candidate present      : {r.InstalledCandidatePresent}");
+            sb.AppendLine($"Installed binary files present   : {r.InstalledBinaryFilesPresent}");
+            sb.AppendLine($"Installed marker present         : {r.InstalledMarkerPresent}");
             sb.AppendLine($"Logs found                       : {r.RuntimeLogsFound}");
             sb.AppendLine($"Candidate mod loaded             : {r.CandidateModLoaded}");
             sb.AppendLine($"Binary files mounted             : {r.CandidateBinaryFilesMounted}");
@@ -701,11 +755,21 @@ public sealed class DeadMtlWorldBuilderVisibleCellRuntimeCandidateBuilder
             sb.AppendLine($"Empty/fallback terrain           : {r.FallbackEmptyTerrainDetected}");
             if (!string.IsNullOrEmpty(r.OperatorObservation))
                 sb.AppendLine($"Operator observation             : {r.OperatorObservation}");
+            sb.AppendLine($"Visible-cell proof observed      : {r.RuntimeVisibleCellProofObserved}");
+            if (!string.IsNullOrEmpty(r.RuntimeVisibleCellProofSource))
+                sb.AppendLine($"Visible-cell proof source        : {r.RuntimeVisibleCellProofSource}");
         }
         sb.AppendLine($"Runtime classification           : {r.RuntimeClassification}");
         sb.AppendLine($"Checks                           : {r.CheckCount} total / {r.PassedCheckCount} PASS / {r.FailedCheckCount} FAIL");
         sb.AppendLine($"Is Valid                         : {r.IsValid}");
         sb.AppendLine($"Verdict                          : {r.Verdict}");
+        if (r.RuntimeVisibleCellProofObserved)
+        {
+            sb.AppendLine($"Visible-cell runtime proof observed : TRUE");
+            sb.AppendLine($"Runtime proof claimed               : FALSE - not promoted to playable/final claim");
+            sb.AppendLine($"Playable export claimed             : FALSE");
+            sb.AppendLine($"Geometry from MAP-31B              : FALSE");
+        }
         sb.AppendLine($"Claim boundary                   : {r.ClaimBoundary}");
         return sb.ToString();
     }
