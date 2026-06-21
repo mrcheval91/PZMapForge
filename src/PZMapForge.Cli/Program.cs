@@ -233,6 +233,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-visible-cell-runtime-candidate"           => DeadMtlBuildWorldBuilderVisibleCellRuntimeCandidateCommand(args[1..]),
     "deadmtl-build-worldbuilder-visible-cell-binary-anatomy-audit"       => DeadMtlBuildWorldBuilderVisibleCellBinaryAnatomyAuditCommand(args[1..]),
     "deadmtl-build-worldbuilder-geometry-to-binary-bridge-plan"         => DeadMtlBuildWorldBuilderGeometryToBinaryBridgePlanCommand(args[1..]),
+    "deadmtl-build-worldbuilder-lotheader-hex-disassembly"             => DeadMtlBuildWorldBuilderLotheaderHexDisassemblyCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -10055,6 +10056,77 @@ static int DeadMtlBuildWorldBuilderGeometryToBinaryBridgePlanCommand(string[] ar
     result.OutputArtifacts.AddRange(new[]
     {
         resultJson, checksCsv, summaryTxt, bridgePlanMd, unknownsCsv, experimentsCsv,
+    });
+
+    File.WriteAllText(resultJson, builder.RenderJson(result));
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return result.IsValid ? 0 : 1;
+}
+
+static int DeadMtlBuildWorldBuilderLotheaderHexDisassemblyCommand(string[] args)
+{
+    var minimalLotheaderPath = string.Empty;
+    var visibleLotheaderPath = string.Empty;
+    var outputRoot           = string.Empty;
+
+    for (int i = 0; i < args.Length; i++)
+    {
+        switch (args[i])
+        {
+            case "--minimal-lotheader":  if (i + 1 < args.Length) minimalLotheaderPath = args[++i]; break;
+            case "--visible-lotheader":  if (i + 1 < args.Length) visibleLotheaderPath = args[++i]; break;
+            case "--output-root":        if (i + 1 < args.Length) outputRoot            = args[++i]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(minimalLotheaderPath) || string.IsNullOrEmpty(visibleLotheaderPath)
+        || string.IsNullOrEmpty(outputRoot))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-lotheader-hex-disassembly " +
+            "--minimal-lotheader <path> --visible-lotheader <path> --output-root <.local dir>");
+        return 1;
+    }
+
+    if (!outputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"ERROR: --output-root must contain .local to prevent accidental output outside sandbox: {outputRoot}");
+        return 1;
+    }
+
+    Directory.CreateDirectory(outputRoot);
+
+    string resultJson       = Path.Combine(outputRoot, "deadmtl-lotheader-hex-disassembly-result.json");
+    string checksCsv        = Path.Combine(outputRoot, "deadmtl-lotheader-hex-disassembly-checks.csv");
+    string summaryTxt       = Path.Combine(outputRoot, "deadmtl-lotheader-hex-disassembly-summary.txt");
+    string byteRegionsCsv   = Path.Combine(outputRoot, "deadmtl-lotheader-hex-disassembly-byte-regions.csv");
+    string diffRunsCsv      = Path.Combine(outputRoot, "deadmtl-lotheader-hex-disassembly-diff-runs.csv");
+    string candidateMd      = Path.Combine(outputRoot, "deadmtl-lotheader-hex-disassembly-candidate-structure.md");
+    string hexdumpMd        = Path.Combine(outputRoot, "deadmtl-lotheader-hex-disassembly-prefix-suffix-hexdump.md");
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderLotheaderHexDisassemblyBuilder();
+    var result  = builder.Build(minimalLotheaderPath, visibleLotheaderPath, outputRoot);
+
+    File.WriteAllText(checksCsv,      builder.RenderChecksCsv(result));
+    File.WriteAllText(summaryTxt,     builder.RenderSummary(result));
+    File.WriteAllText(byteRegionsCsv, builder.RenderByteRegionsCsv(result));
+    File.WriteAllText(diffRunsCsv,    builder.RenderDiffRunsCsv(result));
+    File.WriteAllText(candidateMd,    builder.RenderCandidateStructureMarkdown(result));
+    File.WriteAllText(hexdumpMd,      builder.RenderPrefixSuffixHexdumpMarkdown(result));
+
+    result.OutputArtifacts.AddRange(new[]
+    {
+        resultJson, checksCsv, summaryTxt, byteRegionsCsv, diffRunsCsv, candidateMd, hexdumpMd,
     });
 
     File.WriteAllText(resultJson, builder.RenderJson(result));
