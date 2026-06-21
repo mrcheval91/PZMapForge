@@ -237,6 +237,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-chunkdata-hex-disassembly"           => DeadMtlBuildWorldBuilderChunkdataHexDisassemblyCommand(args[1..]),
     "deadmtl-build-worldbuilder-lotpack-tile-walk"                 => DeadMtlBuildWorldBuilderLotpackTileWalkCommand(args[1..]),
     "deadmtl-build-worldbuilder-bucket-to-tilesheet-cross-reference" => DeadMtlBuildWorldBuilderBucketToTilesheetCrossReferenceCommand(args[1..]),
+    "deadmtl-build-worldbuilder-chunkdata-record-cluster-audit"     => DeadMtlBuildWorldBuilderChunkdataRecordClusterAuditCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -10364,6 +10365,86 @@ static int DeadMtlBuildWorldBuilderBucketToTilesheetCrossReferenceCommand(string
     {
         resultJson, checksCsv, summaryTxt, crossRefMd,
         bucketIntentCsv, tilesheetCsv, candidatesCsv, tileSourceCsv,
+    });
+
+    File.WriteAllText(resultJson, builder.RenderJson(result));
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return result.IsValid ? 0 : 1;
+}
+
+static int DeadMtlBuildWorldBuilderChunkdataRecordClusterAuditCommand(string[] args)
+{
+    var minimalChunkdataPath = string.Empty;
+    var visibleChunkdataPath = string.Empty;
+    var outputRoot           = string.Empty;
+
+    for (int i = 0; i < args.Length; i++)
+    {
+        switch (args[i])
+        {
+            case "--minimal-chunkdata": if (i + 1 < args.Length) minimalChunkdataPath = args[++i]; break;
+            case "--visible-chunkdata": if (i + 1 < args.Length) visibleChunkdataPath = args[++i]; break;
+            case "--output-root":       if (i + 1 < args.Length) outputRoot            = args[++i]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(minimalChunkdataPath) || string.IsNullOrEmpty(visibleChunkdataPath)
+        || string.IsNullOrEmpty(outputRoot))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-chunkdata-record-cluster-audit " +
+            "--minimal-chunkdata <path> --visible-chunkdata <path> --output-root <.local dir>");
+        return 1;
+    }
+
+    if (!outputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"ERROR: --output-root must contain .local to prevent accidental output outside sandbox: {outputRoot}");
+        return 1;
+    }
+
+    Directory.CreateDirectory(outputRoot);
+
+    string resultJson        = Path.Combine(outputRoot, "deadmtl-chunkdata-record-cluster-audit-result.json");
+    string checksCsv         = Path.Combine(outputRoot, "deadmtl-chunkdata-record-cluster-audit-checks.csv");
+    string summaryTxt        = Path.Combine(outputRoot, "deadmtl-chunkdata-record-cluster-audit-summary.txt");
+    string widthAnalysisCsv  = Path.Combine(outputRoot, "deadmtl-chunkdata-record-width-analysis.csv");
+    string headerCandidCsv   = Path.Combine(outputRoot, "deadmtl-chunkdata-header-candidates.csv");
+    string columnStatsCsv    = Path.Combine(outputRoot, "deadmtl-chunkdata-column-statistics.csv");
+    string repeatedRecCsv    = Path.Combine(outputRoot, "deadmtl-chunkdata-repeated-records.csv");
+    string changedWinCsv     = Path.Combine(outputRoot, "deadmtl-chunkdata-changed-record-windows.csv");
+    string samplesCsv        = Path.Combine(outputRoot, "deadmtl-chunkdata-record-samples.csv");
+    string auditMd           = Path.Combine(outputRoot, "deadmtl-chunkdata-record-cluster-audit.md");
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderChunkdataRecordClusterAuditBuilder();
+    var result  = builder.Build(minimalChunkdataPath, visibleChunkdataPath, outputRoot);
+
+    File.WriteAllText(checksCsv,        builder.RenderChecksCsv(result));
+    File.WriteAllText(summaryTxt,       builder.RenderSummary(result));
+    File.WriteAllText(widthAnalysisCsv, builder.RenderWidthAnalysisCsv(result));
+    File.WriteAllText(headerCandidCsv,  builder.RenderHeaderCandidatesCsv(result));
+    File.WriteAllText(columnStatsCsv,   builder.RenderColumnStatsCsv(result));
+    File.WriteAllText(repeatedRecCsv,   builder.RenderRepeatedRecordsCsv(result));
+    File.WriteAllText(changedWinCsv,    builder.RenderChangedRecordWindowsCsv(result));
+
+    var allSamples = result.MinimalRecordSamples.Concat(result.VisibleRecordSamples).ToList();
+    File.WriteAllText(samplesCsv,       builder.RenderRecordSamplesCsv(allSamples));
+    File.WriteAllText(auditMd,          builder.RenderAuditMarkdown(result));
+
+    result.OutputArtifacts.AddRange(new[]
+    {
+        resultJson, checksCsv, summaryTxt, widthAnalysisCsv, headerCandidCsv,
+        columnStatsCsv, repeatedRecCsv, changedWinCsv, samplesCsv, auditMd,
     });
 
     File.WriteAllText(resultJson, builder.RenderJson(result));
