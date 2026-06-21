@@ -236,6 +236,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-lotheader-hex-disassembly"             => DeadMtlBuildWorldBuilderLotheaderHexDisassemblyCommand(args[1..]),
     "deadmtl-build-worldbuilder-chunkdata-hex-disassembly"           => DeadMtlBuildWorldBuilderChunkdataHexDisassemblyCommand(args[1..]),
     "deadmtl-build-worldbuilder-lotpack-tile-walk"                 => DeadMtlBuildWorldBuilderLotpackTileWalkCommand(args[1..]),
+    "deadmtl-build-worldbuilder-bucket-to-tilesheet-cross-reference" => DeadMtlBuildWorldBuilderBucketToTilesheetCrossReferenceCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -10285,6 +10286,84 @@ static int DeadMtlBuildWorldBuilderLotpackTileWalkCommand(string[] args)
     {
         resultJson, checksCsv, summaryTxt, diffRunsCsv, recordSizesCsv,
         stringTableCsv, byteFreqCsv, hexdumpMd, candidateMd, offsetSampleCsv,
+    });
+
+    File.WriteAllText(resultJson, builder.RenderJson(result));
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return result.IsValid ? 0 : 1;
+}
+
+static int DeadMtlBuildWorldBuilderBucketToTilesheetCrossReferenceCommand(string[] args)
+{
+    string? emitterJson     = null;
+    string? paletteGuide    = null;
+    string? paletteSwatches = null;
+    string? pzInstallRoot   = null;
+    string  outputRoot      = string.Empty;
+
+    for (int i = 0; i < args.Length; i++)
+    {
+        switch (args[i])
+        {
+            case "--emitter-json":      if (i + 1 < args.Length) emitterJson     = args[++i]; break;
+            case "--palette-guide":     if (i + 1 < args.Length) paletteGuide    = args[++i]; break;
+            case "--palette-swatches":  if (i + 1 < args.Length) paletteSwatches = args[++i]; break;
+            case "--pz-install-root":   if (i + 1 < args.Length) pzInstallRoot   = args[++i]; break;
+            case "--output-root":       if (i + 1 < args.Length) outputRoot      = args[++i]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(outputRoot))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-bucket-to-tilesheet-cross-reference " +
+            "--output-root <.local dir> [--emitter-json <path>] [--palette-guide <path>] " +
+            "[--palette-swatches <path>] [--pz-install-root <path>]");
+        return 1;
+    }
+
+    if (!outputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"ERROR: --output-root must contain .local to prevent accidental output outside sandbox: {outputRoot}");
+        return 1;
+    }
+
+    Directory.CreateDirectory(outputRoot);
+
+    string resultJson       = Path.Combine(outputRoot, "deadmtl-bucket-to-tilesheet-cross-reference-result.json");
+    string checksCsv        = Path.Combine(outputRoot, "deadmtl-bucket-to-tilesheet-cross-reference-checks.csv");
+    string summaryTxt       = Path.Combine(outputRoot, "deadmtl-bucket-to-tilesheet-cross-reference-summary.txt");
+    string crossRefMd       = Path.Combine(outputRoot, "deadmtl-bucket-to-tilesheet-cross-reference.md");
+    string bucketIntentCsv  = Path.Combine(outputRoot, "deadmtl-bucket-intent-inventory.csv");
+    string tilesheetCsv     = Path.Combine(outputRoot, "deadmtl-tilesheet-candidate-inventory.csv");
+    string candidatesCsv    = Path.Combine(outputRoot, "deadmtl-bucket-to-tilesheet-candidates.csv");
+    string tileSourceCsv    = Path.Combine(outputRoot, "deadmtl-local-pz-tile-source-inventory.csv");
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderBucketToTilesheetCrossReferenceBuilder();
+    var result  = builder.Build(emitterJson, paletteGuide, paletteSwatches, pzInstallRoot, outputRoot);
+
+    File.WriteAllText(checksCsv,       builder.RenderChecksCsv(result));
+    File.WriteAllText(summaryTxt,      builder.RenderSummary(result));
+    File.WriteAllText(crossRefMd,      builder.RenderCrossReferenceMarkdown(result));
+    File.WriteAllText(bucketIntentCsv, builder.RenderBucketIntentInventoryCsv(result));
+    File.WriteAllText(tilesheetCsv,    builder.RenderTilesheetCandidateInventoryCsv(result));
+    File.WriteAllText(candidatesCsv,   builder.RenderBucketToTilesheetCandidatesCsv(result));
+    File.WriteAllText(tileSourceCsv,   builder.RenderTileSourceInventoryCsv(result));
+
+    result.OutputArtifacts.AddRange(new[]
+    {
+        resultJson, checksCsv, summaryTxt, crossRefMd,
+        bucketIntentCsv, tilesheetCsv, candidatesCsv, tileSourceCsv,
     });
 
     File.WriteAllText(resultJson, builder.RenderJson(result));
