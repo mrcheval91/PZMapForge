@@ -231,6 +231,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-binary-seeded-runtime-candidate"            => DeadMtlBuildWorldBuilderBinarySeededRuntimeCandidateCommand(args[1..]),
     "deadmtl-build-worldbuilder-map33a-ingame-load-test"                   => DeadMtlBuildWorldBuilderMap33AInGameLoadTestCommand(args[1..]),
     "deadmtl-build-worldbuilder-visible-cell-runtime-candidate"           => DeadMtlBuildWorldBuilderVisibleCellRuntimeCandidateCommand(args[1..]),
+    "deadmtl-build-worldbuilder-visible-cell-binary-anatomy-audit"       => DeadMtlBuildWorldBuilderVisibleCellBinaryAnatomyAuditCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -9874,6 +9875,82 @@ static int DeadMtlBuildWorldBuilderVisibleCellRuntimeCandidateCommand(string[] a
         Directory.CreateDirectory(Path.GetDirectoryName(summaryPath)!);
         File.WriteAllText(summaryPath, builder.RenderSummary(result));
     }
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return result.IsValid ? 0 : 1;
+}
+
+static int DeadMtlBuildWorldBuilderVisibleCellBinaryAnatomyAuditCommand(string[] args)
+{
+    var map33aSeedDir      = string.Empty;
+    var map35aSourceDir    = string.Empty;
+    var map35aInstalledDir = string.Empty;
+    var map31bEmitterJson  = string.Empty;
+    var outputRoot         = string.Empty;
+    var outputResult       = string.Empty;
+    var outputChecksCsv    = string.Empty;
+    var summaryPath        = string.Empty;
+
+    for (int i = 0; i < args.Length; i++)
+    {
+        switch (args[i])
+        {
+            case "--map33a-seed-dir":       if (i + 1 < args.Length) map33aSeedDir      = args[++i]; break;
+            case "--map35a-source-dir":     if (i + 1 < args.Length) map35aSourceDir    = args[++i]; break;
+            case "--map35a-installed-dir":  if (i + 1 < args.Length) map35aInstalledDir = args[++i]; break;
+            case "--map31b-emitter-json":   if (i + 1 < args.Length) map31bEmitterJson  = args[++i]; break;
+            case "--output-root":           if (i + 1 < args.Length) outputRoot          = args[++i]; break;
+            case "--output-result":         if (i + 1 < args.Length) outputResult        = args[++i]; break;
+            case "--output-checks-csv":     if (i + 1 < args.Length) outputChecksCsv    = args[++i]; break;
+            case "--summary":               if (i + 1 < args.Length) summaryPath         = args[++i]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(map33aSeedDir) || string.IsNullOrEmpty(map35aSourceDir) || string.IsNullOrEmpty(outputRoot))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-visible-cell-binary-anatomy-audit " +
+            "--map33a-seed-dir <dir> --map35a-source-dir <dir> --output-root <.local dir> " +
+            "[--map35a-installed-dir <dir>] [--map31b-emitter-json <json>] " +
+            "[--output-result <json>] [--output-checks-csv <csv>] [--summary <txt>]");
+        return 1;
+    }
+
+    if (!outputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"ERROR: --output-root must contain .local to prevent accidental output outside sandbox: {outputRoot}");
+        return 1;
+    }
+
+    Directory.CreateDirectory(outputRoot);
+
+    if (string.IsNullOrEmpty(outputResult))
+        outputResult = Path.Combine(outputRoot, "deadmtl-visible-cell-binary-anatomy-audit-result.json");
+    if (string.IsNullOrEmpty(outputChecksCsv))
+        outputChecksCsv = Path.Combine(outputRoot, "deadmtl-visible-cell-binary-anatomy-audit-checks.csv");
+    if (string.IsNullOrEmpty(summaryPath))
+        summaryPath = Path.Combine(outputRoot, "deadmtl-visible-cell-binary-anatomy-audit-summary.txt");
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditBuilder();
+    var result  = builder.Build(map33aSeedDir, map35aSourceDir, map35aInstalledDir, map31bEmitterJson);
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputResult)!);
+    File.WriteAllText(outputResult, builder.RenderJson(result));
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputChecksCsv)!);
+    File.WriteAllText(outputChecksCsv, builder.RenderChecksCsv(result));
+
+    Directory.CreateDirectory(Path.GetDirectoryName(summaryPath)!);
+    File.WriteAllText(summaryPath, builder.RenderSummary(result));
 
     Console.WriteLine(builder.RenderSummary(result));
 

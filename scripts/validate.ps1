@@ -2478,9 +2478,9 @@ $psChecks = [ordered]@{
 }
 $psTotal = 1976  # = validation_summary.total_expected_assertions in proof-packet v0.79
 
-$dnCoreTests = 190   # PZMapForge.Core.Tests
-$dnCliTests  = 366   # PZMapForge.Cli.Tests (MAP-7D: +18 Build42 LOTH v4 no-BOM tests)
-$dnTotal     = 556   # = dotnet_validation_summary.test_total in proof-packet v0.35
+$dnCoreTests = 199   # PZMapForge.Core.Tests (MAP-36A: +9 binary anatomy audit tests)
+$dnCliTests  = 372   # PZMapForge.Cli.Tests (MAP-36A: +6 binary anatomy audit tests)
+$dnTotal     = 571   # = dotnet_validation_summary.test_total (MAP-36A: +15)
 
 Write-Output ""
 Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.79):"
