@@ -23,13 +23,14 @@ public sealed class DeadMtlWorldBuilderMap33AInGameLoadTestProcessTests : IDispo
     private static string CliProject =>
         Path.Combine(RepoRoot, "src", "PZMapForge.Cli", "PZMapForge.Cli.csproj");
 
-    private string Map33AManifest      => Path.Combine(_tempDir, "map33a-manifest.local.json");
-    private string SourceCandidateRoot => Path.Combine(_tempDir, "map33a-candidate.local");
-    private string LocalModsRoot       => Path.Combine(_tempDir, "local-mods.local");
-    private string OutputRoot          => Path.Combine(_tempDir, "output.local");
-    private string OutputResult        => Path.Combine(OutputRoot, "result.json");
-    private string ChecksCsv           => Path.Combine(OutputRoot, "checks.csv");
-    private string Summary             => Path.Combine(OutputRoot, "summary.txt");
+    private string Map33AManifest       => Path.Combine(_tempDir, "map33a-manifest.local.json");
+    private string SourceCandidateRoot  => Path.Combine(_tempDir, "map33a-candidate.local");
+    private string LocalModsRoot        => Path.Combine(_tempDir, "local-mods.local");
+    private string OutputRoot           => Path.Combine(_tempDir, "output.local");
+    private string OutputResult         => Path.Combine(OutputRoot, "result.json");
+    private string ChecksCsv            => Path.Combine(OutputRoot, "checks.csv");
+    private string Summary              => Path.Combine(OutputRoot, "summary.txt");
+    private string FakeZomboidRoot      => Path.Combine(_tempDir, "zomboid.local");
 
     private void WriteFixtures()
     {
@@ -54,6 +55,37 @@ public sealed class DeadMtlWorldBuilderMap33AInGameLoadTestProcessTests : IDispo
 
         Directory.CreateDirectory(LocalModsRoot);
         Directory.CreateDirectory(OutputRoot);
+    }
+
+    private void WritePartialPassLog()
+    {
+        Directory.CreateDirectory(FakeZomboidRoot);
+        File.WriteAllText(Path.Combine(FakeZomboidRoot, "console.txt"), """
+            loading DeadMTL_MAP33A
+            mod "DeadMTL_MAP33A" overrides media/maps/deadmtl_map33a/35_27.lotheader
+            mod "DeadMTL_MAP33A" overrides media/maps/deadmtl_map33a/chunkdata_35_27.bin
+            mod "DeadMTL_MAP33A" overrides media/maps/deadmtl_map33a/world_35_27.lotpack
+            MapGroup something DeadMTL_MAP33A registered
+            CellLoader.LoadCellBinaryChunk start
+            Looking in these map folders:
+            <End of map-folders list>
+            initSpawnBuildings: no room or building at 10746,8288,0
+            FluidContainerScript.load Sanitizing container name ERROR
+            CraftRecipeComponentScript: Recipe Piano missing UiConfigScript
+            """);
+    }
+
+    private void WriteSpawnBlockerLog()
+    {
+        Directory.CreateDirectory(FakeZomboidRoot);
+        File.WriteAllText(Path.Combine(FakeZomboidRoot, "console.txt"), """
+            loading DeadMTL_MAP33A
+            mod "DeadMTL_MAP33A" overrides media/maps/deadmtl_map33a/35_27.lotheader
+            mod "DeadMTL_MAP33A" overrides media/maps/deadmtl_map33a/chunkdata_35_27.bin
+            mod "DeadMTL_MAP33A" overrides media/maps/deadmtl_map33a/world_35_27.lotpack
+            MapGroup something DeadMTL_MAP33A registered
+            there is no spawn point table for the player's profession
+            """);
     }
 
     private string[] MakeFullArgs() => new[]
@@ -211,5 +243,173 @@ public sealed class DeadMtlWorldBuilderMap33AInGameLoadTestProcessTests : IDispo
         Assert.False(root.GetProperty("public_package_claimed").GetBoolean(),   "public_package_claimed must be false");
         Assert.False(root.GetProperty("geometry_from_map31b_materialized").GetBoolean(), "geometry_from_map31b_materialized must be false");
         Assert.Equal("MAP34A_INSTALL_ONLY_READY", root.GetProperty("runtime_classification").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-34B CLI 1. --collect-logs --operator-observation writes result JSON
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map34B_CollectLogsWithObservation_WritesResult()
+    {
+        WriteFixtures();
+        // Install first
+        RunCli(MakeFullArgs());
+        // Write partial-pass log
+        WritePartialPassLog();
+        // Collect logs with operator observation
+        var (code, _, err) = RunCli(
+            "--map33a-manifest",       Map33AManifest,
+            "--source-candidate-root", SourceCandidateRoot,
+            "--local-mods-root",       LocalModsRoot,
+            "--output-root",           OutputRoot,
+            "--output-result",         OutputResult,
+            "--output-checks-csv",     ChecksCsv,
+            "--summary",               Summary,
+            "--zomboid-user-root",     FakeZomboidRoot,
+            "--collect-logs",
+            "--operator-observation",  "loaded in a field, empty, fallback type");
+        Assert.True(code == 0, $"Exit={code} stderr={err}");
+        Assert.True(File.Exists(OutputResult), "result.json must exist after collect-logs");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-34B CLI 2. result JSON has runtime_classification = partial pass
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map34B_CollectLogs_PartialPassClassification()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        WritePartialPassLog();
+        RunCli(
+            "--map33a-manifest",       Map33AManifest,
+            "--source-candidate-root", SourceCandidateRoot,
+            "--local-mods-root",       LocalModsRoot,
+            "--output-root",           OutputRoot,
+            "--output-result",         OutputResult,
+            "--output-checks-csv",     ChecksCsv,
+            "--summary",               Summary,
+            "--zomboid-user-root",     FakeZomboidRoot,
+            "--collect-logs",
+            "--operator-observation",  "loaded in a field, empty, fallback type");
+        if (!File.Exists(OutputResult)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputResult));
+        Assert.Equal(
+            "MAP34B_RUNTIME_PARTIAL_PASS_EMPTY_FALLBACK_TERRAIN",
+            doc.RootElement.GetProperty("runtime_classification").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-34B CLI 3. Collect-logs does not overwrite installed mod marker
+    //                (install_performed=false in result)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map34B_CollectLogs_DoesNotOverwriteInstallMarker()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        WritePartialPassLog();
+        // Read marker content before collect-logs
+        string markerPath = Path.Combine(LocalModsRoot, "deadmtl_map33a_candidate",
+            "PZMAPFORGE_MAP34A_TEST_INSTALL_MARKER.txt");
+        string markerBefore = File.ReadAllText(markerPath);
+        // Run collect-logs
+        RunCli(
+            "--map33a-manifest",       Map33AManifest,
+            "--source-candidate-root", SourceCandidateRoot,
+            "--local-mods-root",       LocalModsRoot,
+            "--output-root",           OutputRoot,
+            "--output-result",         OutputResult,
+            "--zomboid-user-root",     FakeZomboidRoot,
+            "--collect-logs");
+        // Result must show install_performed=false
+        if (!File.Exists(OutputResult)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputResult));
+        Assert.False(doc.RootElement.GetProperty("install_performed").GetBoolean(),
+            "install_performed must be false in collect-logs mode");
+        // Marker must not be overwritten (content unchanged)
+        string markerAfter = File.ReadAllText(markerPath);
+        Assert.Equal(markerBefore, markerAfter);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-34B CLI 4. Unrelated vanilla errors do not force runtime fail
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map34B_CollectLogs_UnrelatedErrors_NoRuntimeFail()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        WritePartialPassLog(); // contains FluidContainerScript ERROR
+        RunCli(
+            "--map33a-manifest",       Map33AManifest,
+            "--source-candidate-root", SourceCandidateRoot,
+            "--local-mods-root",       LocalModsRoot,
+            "--output-root",           OutputRoot,
+            "--output-result",         OutputResult,
+            "--zomboid-user-root",     FakeZomboidRoot,
+            "--collect-logs",
+            "--operator-observation",  "loaded in a field, empty, fallback type");
+        if (!File.Exists(OutputResult)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputResult));
+        string classification = doc.RootElement.GetProperty("runtime_classification").GetString() ?? "";
+        Assert.NotEqual("MAP34B_RUNTIME_CANDIDATE_SPECIFIC_FAIL", classification);
+        Assert.Equal("MAP34B_RUNTIME_PARTIAL_PASS_EMPTY_FALLBACK_TERRAIN", classification);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-34B CLI 5. Spawn blocker logs force spawn-blocked classification
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map34B_CollectLogs_SpawnBlockerLogs_SpawnBlocked()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        WriteSpawnBlockerLog();
+        RunCli(
+            "--map33a-manifest",       Map33AManifest,
+            "--source-candidate-root", SourceCandidateRoot,
+            "--local-mods-root",       LocalModsRoot,
+            "--output-root",           OutputRoot,
+            "--output-result",         OutputResult,
+            "--zomboid-user-root",     FakeZomboidRoot,
+            "--collect-logs");
+        if (!File.Exists(OutputResult)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputResult));
+        Assert.Equal("MAP34B_RUNTIME_SPAWN_BLOCKED",
+            doc.RootElement.GetProperty("runtime_classification").GetString());
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP-34B CLI 6. No playable/final geometry claims become true in partial pass
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map34B_NoFinalGeometryOrPlayableClaims()
+    {
+        WriteFixtures();
+        RunCli(MakeFullArgs());
+        WritePartialPassLog();
+        RunCli(
+            "--map33a-manifest",       Map33AManifest,
+            "--source-candidate-root", SourceCandidateRoot,
+            "--local-mods-root",       LocalModsRoot,
+            "--output-root",           OutputRoot,
+            "--output-result",         OutputResult,
+            "--zomboid-user-root",     FakeZomboidRoot,
+            "--collect-logs",
+            "--operator-observation",  "loaded in a field, empty, fallback type");
+        if (!File.Exists(OutputResult)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(OutputResult));
+        var root = doc.RootElement;
+        Assert.False(root.GetProperty("playable_export_claimed").GetBoolean(),          "playable_export_claimed must be false");
+        Assert.False(root.GetProperty("runtime_proof_claimed").GetBoolean(),            "runtime_proof_claimed must be false");
+        Assert.False(root.GetProperty("geometry_from_map31b_materialized").GetBoolean(), "geometry_from_map31b_materialized must be false");
+        Assert.False(root.GetProperty("public_package_claimed").GetBoolean(),           "public_package_claimed must be false");
     }
 }

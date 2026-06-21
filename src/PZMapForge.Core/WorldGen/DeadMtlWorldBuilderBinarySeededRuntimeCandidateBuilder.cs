@@ -319,10 +319,18 @@ public sealed class DeadMtlWorldBuilderBinarySeededRuntimeCandidateBuilder
         -- PUBLIC_PLAYABLE_CLAIM_ALLOWED=false
 
         function SpawnPoints()
-            local spawnpoints = {}
-            spawnpoints["Profession_Unemployed"] = {
+            local points = {
                 { worldX = 35, worldY = 27, posX = 246, posY = 188, posZ = 0 },
             }
+
+            local spawnpoints = {}
+
+            spawnpoints["unemployed"]            = points
+            spawnpoints["Unemployed"]            = points
+            spawnpoints["Base.Unemployed"]       = points
+            spawnpoints["Profession_Unemployed"] = points
+            spawnpoints["profession_unemployed"] = points
+
             return spawnpoints
         end
         """;

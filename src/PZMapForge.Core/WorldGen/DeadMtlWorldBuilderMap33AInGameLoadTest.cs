@@ -19,6 +19,16 @@ public sealed class DeadMtlWorldBuilderMap33AInGameLoadTestResult
     [JsonPropertyName("runtime_log_collection_attempted")] public bool RuntimeLogCollectionAttempted { get; set; }
     [JsonPropertyName("runtime_logs_found")]        public bool RuntimeLogsFound         { get; set; }
     [JsonPropertyName("runtime_log_paths")]         public List<string> RuntimeLogPaths  { get; set; } = new();
+    // MAP-34B log analysis fields
+    [JsonPropertyName("candidate_mod_loaded")]                  public bool CandidateModLoaded                { get; set; }
+    [JsonPropertyName("candidate_binary_files_mounted")]        public bool CandidateBinaryFilesMounted       { get; set; }
+    [JsonPropertyName("candidate_mapgroup_registered")]         public bool CandidateMapgroupRegistered       { get; set; }
+    [JsonPropertyName("candidate_spawn_blocker_absent")]        public bool CandidateSpawnBlockerAbsent       { get; set; }
+    [JsonPropertyName("candidate_binary_chunk_load_attempted")] public bool CandidateBinaryChunkLoadAttempted { get; set; }
+    [JsonPropertyName("candidate_specific_errors_found")]       public bool CandidateSpecificErrorsFound      { get; set; }
+    [JsonPropertyName("unrelated_errors_found")]                public bool UnrelatedErrorsFound              { get; set; }
+    [JsonPropertyName("fallback_empty_terrain_detected")]       public bool FallbackEmptyTerrainDetected      { get; set; }
+    [JsonPropertyName("operator_observation")]                  public string OperatorObservation             { get; set; } = string.Empty;
     [JsonPropertyName("runtime_classification")]    public string RuntimeClassification  { get; set; } = string.Empty;
     [JsonPropertyName("runtime_valid")]             public bool RuntimeValid             { get; set; }
     [JsonPropertyName("runtime_proof_claimed")]     public bool RuntimeProofClaimed      { get; set; }

@@ -9627,29 +9627,31 @@ static int DeadMtlBuildWorldBuilderMaterializedRuntimeCandidateCommand(string[] 
 
 static int DeadMtlBuildWorldBuilderMap33AInGameLoadTestCommand(string[] args)
 {
-    var map33aManifest     = string.Empty;
+    var map33aManifest      = string.Empty;
     var sourceCandidateRoot = string.Empty;
-    var localModsRoot      = string.Empty;
-    var outputRoot         = string.Empty;
-    var outputResult       = string.Empty;
-    var outputChecksCsv    = string.Empty;
-    var summaryPath        = string.Empty;
-    var zomboidUserRoot    = string.Empty;
-    bool collectLogs       = false;
+    var localModsRoot       = string.Empty;
+    var outputRoot          = string.Empty;
+    var outputResult        = string.Empty;
+    var outputChecksCsv     = string.Empty;
+    var summaryPath         = string.Empty;
+    var zomboidUserRoot     = string.Empty;
+    var operatorObservation = string.Empty;
+    bool collectLogs        = false;
 
     for (int i = 0; i < args.Length; i++)
     {
         switch (args[i])
         {
-            case "--map33a-manifest":      if (i + 1 < args.Length) map33aManifest      = args[++i]; break;
-            case "--source-candidate-root": if (i + 1 < args.Length) sourceCandidateRoot = args[++i]; break;
-            case "--local-mods-root":      if (i + 1 < args.Length) localModsRoot       = args[++i]; break;
-            case "--output-root":          if (i + 1 < args.Length) outputRoot          = args[++i]; break;
-            case "--output-result":        if (i + 1 < args.Length) outputResult        = args[++i]; break;
-            case "--output-checks-csv":    if (i + 1 < args.Length) outputChecksCsv     = args[++i]; break;
-            case "--summary":              if (i + 1 < args.Length) summaryPath         = args[++i]; break;
-            case "--zomboid-user-root":    if (i + 1 < args.Length) zomboidUserRoot      = args[++i]; break;
-            case "--collect-logs":         collectLogs = true; break;
+            case "--map33a-manifest":        if (i + 1 < args.Length) map33aManifest      = args[++i]; break;
+            case "--source-candidate-root":  if (i + 1 < args.Length) sourceCandidateRoot = args[++i]; break;
+            case "--local-mods-root":        if (i + 1 < args.Length) localModsRoot       = args[++i]; break;
+            case "--output-root":            if (i + 1 < args.Length) outputRoot          = args[++i]; break;
+            case "--output-result":          if (i + 1 < args.Length) outputResult        = args[++i]; break;
+            case "--output-checks-csv":      if (i + 1 < args.Length) outputChecksCsv     = args[++i]; break;
+            case "--summary":                if (i + 1 < args.Length) summaryPath         = args[++i]; break;
+            case "--zomboid-user-root":      if (i + 1 < args.Length) zomboidUserRoot      = args[++i]; break;
+            case "--operator-observation":   if (i + 1 < args.Length) operatorObservation = args[++i]; break;
+            case "--collect-logs":           collectLogs = true; break;
         }
     }
 
@@ -9660,7 +9662,8 @@ static int DeadMtlBuildWorldBuilderMap33AInGameLoadTestCommand(string[] args)
             "Usage: deadmtl-build-worldbuilder-map33a-ingame-load-test " +
             "--map33a-manifest <json> --source-candidate-root <dir> --local-mods-root <dir> " +
             "[--output-root <dir>] [--output-result <json>] [--output-checks-csv <csv>] " +
-            "[--summary <txt>] [--collect-logs] [--zomboid-user-root <dir>]");
+            "[--summary <txt>] [--collect-logs] [--zomboid-user-root <dir>] " +
+            "[--operator-observation <text>]");
         return 1;
     }
 
@@ -9683,7 +9686,8 @@ static int DeadMtlBuildWorldBuilderMap33AInGameLoadTestCommand(string[] args)
         localModsRoot,
         outputRoot,
         collectLogs,
-        string.IsNullOrEmpty(zomboidUserRoot) ? null : zomboidUserRoot);
+        string.IsNullOrEmpty(zomboidUserRoot)     ? null : zomboidUserRoot,
+        string.IsNullOrEmpty(operatorObservation) ? null : operatorObservation);
 
     if (!string.IsNullOrEmpty(outputResult))
     {
