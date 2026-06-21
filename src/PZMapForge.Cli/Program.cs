@@ -230,6 +230,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-materialized-runtime-candidate"              => DeadMtlBuildWorldBuilderMaterializedRuntimeCandidateCommand(args[1..]),
     "deadmtl-build-worldbuilder-binary-seeded-runtime-candidate"            => DeadMtlBuildWorldBuilderBinarySeededRuntimeCandidateCommand(args[1..]),
     "deadmtl-build-worldbuilder-map33a-ingame-load-test"                   => DeadMtlBuildWorldBuilderMap33AInGameLoadTestCommand(args[1..]),
+    "deadmtl-build-worldbuilder-visible-cell-runtime-candidate"           => DeadMtlBuildWorldBuilderVisibleCellRuntimeCandidateCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -9763,6 +9764,105 @@ static int DeadMtlBuildWorldBuilderBinarySeededRuntimeCandidateCommand(string[] 
     {
         Directory.CreateDirectory(Path.GetDirectoryName(outputManifest)!);
         File.WriteAllText(outputManifest, builder.RenderJson(result));
+    }
+    if (!string.IsNullOrEmpty(outputChecksCsv))
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(outputChecksCsv)!);
+        File.WriteAllText(outputChecksCsv, builder.RenderChecksCsv(result));
+    }
+    if (!string.IsNullOrEmpty(summaryPath))
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(summaryPath)!);
+        File.WriteAllText(summaryPath, builder.RenderSummary(result));
+    }
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return result.IsValid ? 0 : 1;
+}
+
+static int DeadMtlBuildWorldBuilderVisibleCellRuntimeCandidateCommand(string[] args)
+{
+    var primarySourceRoot    = string.Empty;
+    var fallbackSourceRoot   = string.Empty;
+    var localModsRoot        = string.Empty;
+    var outputRoot           = string.Empty;
+    var outputResult         = string.Empty;
+    var outputChecksCsv      = string.Empty;
+    var summaryPath          = string.Empty;
+    var zomboidUserRoot      = string.Empty;
+    var operatorObservation  = string.Empty;
+    bool performInstall      = false;
+    bool collectLogs         = false;
+
+    for (int i = 0; i < args.Length; i++)
+    {
+        switch (args[i])
+        {
+            case "--primary-source-root":    if (i + 1 < args.Length) primarySourceRoot   = args[++i]; break;
+            case "--fallback-source-root":   if (i + 1 < args.Length) fallbackSourceRoot  = args[++i]; break;
+            case "--local-mods-root":        if (i + 1 < args.Length) localModsRoot       = args[++i]; break;
+            case "--output-root":            if (i + 1 < args.Length) outputRoot          = args[++i]; break;
+            case "--output-result":          if (i + 1 < args.Length) outputResult        = args[++i]; break;
+            case "--output-checks-csv":      if (i + 1 < args.Length) outputChecksCsv     = args[++i]; break;
+            case "--summary":                if (i + 1 < args.Length) summaryPath         = args[++i]; break;
+            case "--zomboid-user-root":      if (i + 1 < args.Length) zomboidUserRoot      = args[++i]; break;
+            case "--operator-observation":   if (i + 1 < args.Length) operatorObservation = args[++i]; break;
+            case "--install-only":           performInstall = true; break;
+            case "--collect-logs":           collectLogs = true; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(primarySourceRoot) || string.IsNullOrEmpty(localModsRoot) || string.IsNullOrEmpty(outputRoot))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-visible-cell-runtime-candidate " +
+            "--primary-source-root <dir> --local-mods-root <dir> --output-root <.local dir> " +
+            "[--fallback-source-root <dir>] [--output-result <json>] [--output-checks-csv <csv>] " +
+            "[--summary <txt>] [--install-only] [--collect-logs] [--zomboid-user-root <dir>] " +
+            "[--operator-observation <text>]");
+        return 1;
+    }
+
+    if (!outputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"ERROR: --output-root must contain .local to prevent accidental output outside sandbox: {outputRoot}");
+        return 1;
+    }
+
+    if (localModsRoot.Contains("steamapps", StringComparison.OrdinalIgnoreCase) ||
+        localModsRoot.Contains("Workshop",  StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"ERROR: --local-mods-root must not be a Steam or Workshop path: {localModsRoot}");
+        return 1;
+    }
+
+    Directory.CreateDirectory(outputRoot);
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderVisibleCellRuntimeCandidateBuilder();
+    var result  = builder.Build(
+        primarySourceRoot,
+        fallbackSourceRoot,
+        localModsRoot,
+        outputRoot,
+        performInstall,
+        collectLogs,
+        string.IsNullOrEmpty(zomboidUserRoot)    ? null : zomboidUserRoot,
+        string.IsNullOrEmpty(operatorObservation) ? null : operatorObservation);
+
+    if (!string.IsNullOrEmpty(outputResult))
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(outputResult)!);
+        File.WriteAllText(outputResult, builder.RenderJson(result));
     }
     if (!string.IsNullOrEmpty(outputChecksCsv))
     {
