@@ -215,9 +215,9 @@ Assert-True ([int]$p.validation_summary.total_expected_assertions              -
 Write-Output ""
 Write-Output "--- dotnet_validation_summary ---"
 $d = $p.dotnet_validation_summary
-Assert-True ([int]$d.test_total                                -eq 616)  "dotnet test_total == 616"
-Assert-True ([int]$d.core_tests -eq 222)  "dotnet core_tests == 222"
-Assert-True ([int]$d.cli_tests                                 -eq 394)  "dotnet cli_tests == 394"
+Assert-True ([int]$d.test_total                                -eq 628)  "dotnet test_total == 628"
+Assert-True ([int]$d.core_tests -eq 228)  "dotnet core_tests == 228"
+Assert-True ([int]$d.cli_tests                                 -eq 400)  "dotnet cli_tests == 400"
 Assert-True ($d.process_cli_tests_present                      -eq $true) "process_cli_tests_present == true"
 Assert-True ($d.full_pipeline_contract_tests_present           -eq $true) "full_pipeline_contract_tests_present == true"
 Assert-True ([int]$d.full_pipeline_artifact_count              -eq 7)    "dotnet full_pipeline_artifact_count == 7"

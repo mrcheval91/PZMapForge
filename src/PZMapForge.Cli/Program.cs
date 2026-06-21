@@ -235,6 +235,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-geometry-to-binary-bridge-plan"         => DeadMtlBuildWorldBuilderGeometryToBinaryBridgePlanCommand(args[1..]),
     "deadmtl-build-worldbuilder-lotheader-hex-disassembly"             => DeadMtlBuildWorldBuilderLotheaderHexDisassemblyCommand(args[1..]),
     "deadmtl-build-worldbuilder-chunkdata-hex-disassembly"           => DeadMtlBuildWorldBuilderChunkdataHexDisassemblyCommand(args[1..]),
+    "deadmtl-build-worldbuilder-lotpack-tile-walk"                 => DeadMtlBuildWorldBuilderLotpackTileWalkCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -10206,6 +10207,84 @@ static int DeadMtlBuildWorldBuilderChunkdataHexDisassemblyCommand(string[] args)
     {
         resultJson, checksCsv, summaryTxt, diffRunsCsv, recordSizesCsv,
         sample8Csv, sample16Csv, sample32Csv, hexdumpMd, candidateMd,
+    });
+
+    File.WriteAllText(resultJson, builder.RenderJson(result));
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return result.IsValid ? 0 : 1;
+}
+
+static int DeadMtlBuildWorldBuilderLotpackTileWalkCommand(string[] args)
+{
+    var minimalLotpackPath = string.Empty;
+    var visibleLotpackPath = string.Empty;
+    var outputRoot         = string.Empty;
+
+    for (int i = 0; i < args.Length; i++)
+    {
+        switch (args[i])
+        {
+            case "--minimal-lotpack": if (i + 1 < args.Length) minimalLotpackPath = args[++i]; break;
+            case "--visible-lotpack": if (i + 1 < args.Length) visibleLotpackPath = args[++i]; break;
+            case "--output-root":     if (i + 1 < args.Length) outputRoot          = args[++i]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(minimalLotpackPath) || string.IsNullOrEmpty(visibleLotpackPath)
+        || string.IsNullOrEmpty(outputRoot))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-lotpack-tile-walk " +
+            "--minimal-lotpack <path> --visible-lotpack <path> --output-root <.local dir>");
+        return 1;
+    }
+
+    if (!outputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"ERROR: --output-root must contain .local to prevent accidental output outside sandbox: {outputRoot}");
+        return 1;
+    }
+
+    Directory.CreateDirectory(outputRoot);
+
+    string resultJson       = Path.Combine(outputRoot, "deadmtl-lotpack-tile-walk-result.json");
+    string checksCsv        = Path.Combine(outputRoot, "deadmtl-lotpack-tile-walk-checks.csv");
+    string summaryTxt       = Path.Combine(outputRoot, "deadmtl-lotpack-tile-walk-summary.txt");
+    string diffRunsCsv      = Path.Combine(outputRoot, "deadmtl-lotpack-diff-runs.csv");
+    string recordSizesCsv   = Path.Combine(outputRoot, "deadmtl-lotpack-candidate-record-sizes.csv");
+    string stringTableCsv   = Path.Combine(outputRoot, "deadmtl-lotpack-string-table.csv");
+    string byteFreqCsv      = Path.Combine(outputRoot, "deadmtl-lotpack-byte-frequency.csv");
+    string hexdumpMd        = Path.Combine(outputRoot, "deadmtl-lotpack-prefix-suffix-hexdump.md");
+    string candidateMd      = Path.Combine(outputRoot, "deadmtl-lotpack-candidate-structure.md");
+    string offsetSampleCsv  = Path.Combine(outputRoot, "deadmtl-lotpack-offset-sample.csv");
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderLotpackTileWalkBuilder();
+    var result  = builder.Build(minimalLotpackPath, visibleLotpackPath, outputRoot);
+
+    File.WriteAllText(checksCsv,       builder.RenderChecksCsv(result));
+    File.WriteAllText(summaryTxt,      builder.RenderSummary(result));
+    File.WriteAllText(diffRunsCsv,     builder.RenderDiffRunsCsv(result));
+    File.WriteAllText(recordSizesCsv,  builder.RenderCandidateRecordSizesCsv(result));
+    File.WriteAllText(stringTableCsv,  builder.RenderStringTableCsv(result));
+    File.WriteAllText(byteFreqCsv,     builder.RenderByteFrequencyCsv(result));
+    File.WriteAllText(hexdumpMd,       builder.RenderPrefixSuffixHexdumpMarkdown(result));
+    File.WriteAllText(candidateMd,     builder.RenderCandidateStructureMarkdown(result));
+    File.WriteAllText(offsetSampleCsv, builder.RenderOffsetSampleCsv(result));
+
+    result.OutputArtifacts.AddRange(new[]
+    {
+        resultJson, checksCsv, summaryTxt, diffRunsCsv, recordSizesCsv,
+        stringTableCsv, byteFreqCsv, hexdumpMd, candidateMd, offsetSampleCsv,
     });
 
     File.WriteAllText(resultJson, builder.RenderJson(result));
