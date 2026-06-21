@@ -234,6 +234,7 @@ return args[0] switch
     "deadmtl-build-worldbuilder-visible-cell-binary-anatomy-audit"       => DeadMtlBuildWorldBuilderVisibleCellBinaryAnatomyAuditCommand(args[1..]),
     "deadmtl-build-worldbuilder-geometry-to-binary-bridge-plan"         => DeadMtlBuildWorldBuilderGeometryToBinaryBridgePlanCommand(args[1..]),
     "deadmtl-build-worldbuilder-lotheader-hex-disassembly"             => DeadMtlBuildWorldBuilderLotheaderHexDisassemblyCommand(args[1..]),
+    "deadmtl-build-worldbuilder-chunkdata-hex-disassembly"           => DeadMtlBuildWorldBuilderChunkdataHexDisassemblyCommand(args[1..]),
     _ => UnknownCommand(args[0]),
 };
 
@@ -10127,6 +10128,84 @@ static int DeadMtlBuildWorldBuilderLotheaderHexDisassemblyCommand(string[] args)
     result.OutputArtifacts.AddRange(new[]
     {
         resultJson, checksCsv, summaryTxt, byteRegionsCsv, diffRunsCsv, candidateMd, hexdumpMd,
+    });
+
+    File.WriteAllText(resultJson, builder.RenderJson(result));
+
+    Console.WriteLine(builder.RenderSummary(result));
+
+    if (result.Errors.Count > 0)
+    {
+        foreach (var e in result.Errors)
+            Console.Error.WriteLine($"ERROR: {e}");
+        return 1;
+    }
+
+    return result.IsValid ? 0 : 1;
+}
+
+static int DeadMtlBuildWorldBuilderChunkdataHexDisassemblyCommand(string[] args)
+{
+    var minimalChunkdataPath = string.Empty;
+    var visibleChunkdataPath = string.Empty;
+    var outputRoot           = string.Empty;
+
+    for (int i = 0; i < args.Length; i++)
+    {
+        switch (args[i])
+        {
+            case "--minimal-chunkdata": if (i + 1 < args.Length) minimalChunkdataPath = args[++i]; break;
+            case "--visible-chunkdata": if (i + 1 < args.Length) visibleChunkdataPath = args[++i]; break;
+            case "--output-root":       if (i + 1 < args.Length) outputRoot            = args[++i]; break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(minimalChunkdataPath) || string.IsNullOrEmpty(visibleChunkdataPath)
+        || string.IsNullOrEmpty(outputRoot))
+    {
+        Console.Error.WriteLine(
+            "Usage: deadmtl-build-worldbuilder-chunkdata-hex-disassembly " +
+            "--minimal-chunkdata <path> --visible-chunkdata <path> --output-root <.local dir>");
+        return 1;
+    }
+
+    if (!outputRoot.Contains(".local", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            $"ERROR: --output-root must contain .local to prevent accidental output outside sandbox: {outputRoot}");
+        return 1;
+    }
+
+    Directory.CreateDirectory(outputRoot);
+
+    string resultJson          = Path.Combine(outputRoot, "deadmtl-chunkdata-hex-disassembly-result.json");
+    string checksCsv           = Path.Combine(outputRoot, "deadmtl-chunkdata-hex-disassembly-checks.csv");
+    string summaryTxt          = Path.Combine(outputRoot, "deadmtl-chunkdata-hex-disassembly-summary.txt");
+    string diffRunsCsv         = Path.Combine(outputRoot, "deadmtl-chunkdata-diff-runs.csv");
+    string recordSizesCsv      = Path.Combine(outputRoot, "deadmtl-chunkdata-candidate-record-sizes.csv");
+    string sample8Csv          = Path.Combine(outputRoot, "deadmtl-chunkdata-record-sample-8byte.csv");
+    string sample16Csv         = Path.Combine(outputRoot, "deadmtl-chunkdata-record-sample-16byte.csv");
+    string sample32Csv         = Path.Combine(outputRoot, "deadmtl-chunkdata-record-sample-32byte.csv");
+    string hexdumpMd           = Path.Combine(outputRoot, "deadmtl-chunkdata-prefix-suffix-hexdump.md");
+    string candidateMd         = Path.Combine(outputRoot, "deadmtl-chunkdata-candidate-structure.md");
+
+    var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderChunkdataHexDisassemblyBuilder();
+    var result  = builder.Build(minimalChunkdataPath, visibleChunkdataPath, outputRoot);
+
+    File.WriteAllText(checksCsv,      builder.RenderChecksCsv(result));
+    File.WriteAllText(summaryTxt,     builder.RenderSummary(result));
+    File.WriteAllText(diffRunsCsv,    builder.RenderDiffRunsCsv(result));
+    File.WriteAllText(recordSizesCsv, builder.RenderCandidateRecordSizesCsv(result));
+    File.WriteAllText(sample8Csv,     builder.RenderRecordSamplesCsv(result.RecordSamples8Byte));
+    File.WriteAllText(sample16Csv,    builder.RenderRecordSamplesCsv(result.RecordSamples16Byte));
+    File.WriteAllText(sample32Csv,    builder.RenderRecordSamplesCsv(result.RecordSamples32Byte));
+    File.WriteAllText(hexdumpMd,      builder.RenderPrefixSuffixHexdumpMarkdown(result));
+    File.WriteAllText(candidateMd,    builder.RenderCandidateStructureMarkdown(result));
+
+    result.OutputArtifacts.AddRange(new[]
+    {
+        resultJson, checksCsv, summaryTxt, diffRunsCsv, recordSizesCsv,
+        sample8Csv, sample16Csv, sample32Csv, hexdumpMd, candidateMd,
     });
 
     File.WriteAllText(resultJson, builder.RenderJson(result));
