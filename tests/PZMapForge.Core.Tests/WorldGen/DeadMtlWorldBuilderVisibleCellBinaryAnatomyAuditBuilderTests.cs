@@ -252,4 +252,90 @@ public sealed class DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditBuilderTests
         var claimCheck = result.Checks.Single(c => c.CheckId == "MAP36A_CLAIM_BOUNDARY_CLEAN");
         Assert.Equal("PASS", claimCheck.CheckStatus);
     }
+
+    // -----------------------------------------------------------------------
+    // MAP36A1_CORE_1: missing MAP-35A visible source dir results in invalid
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map36A1_Core1_MissingMap35aSourceDirResultsInInvalid()
+    {
+        WriteSeedFiles(new byte[10], new byte[10], new byte[10]);
+
+        var result = NewBuilder().Build(SeedDir, Path.Combine(_tempDir, "no-such-source.local"), string.Empty, string.Empty);
+
+        Assert.False(result.Map35aSourceDirFound);
+        Assert.False(result.IsValid);
+        Assert.True(result.Errors.Count > 0);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP36A1_CORE_2: source path containing "Dru" is rejected
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map36A1_Core2_SourcePathWithDruIsRejected()
+    {
+        WriteSeedFiles(new byte[10], new byte[10], new byte[10]);
+        string druPath = Path.Combine(_tempDir, "Dru_source.local");
+        Directory.CreateDirectory(druPath);
+
+        var result = NewBuilder().Build(SeedDir, druPath, string.Empty, string.Empty);
+
+        Assert.True(result.Map35aSourceRejected);
+        Assert.NotEmpty(result.Map35aSourceRejectionReason);
+        Assert.False(result.IsValid);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP36A1_CORE_3: file inventory records files common to both seed and source
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map36A1_Core3_FileInventoryRecordsCommonFiles()
+    {
+        WriteSeedFiles(new byte[1], new byte[1], new byte[1]);
+        WriteSourceFiles(new byte[1], new byte[1], new byte[1]);
+        File.WriteAllText(Path.Combine(SeedDir,   "map.info"), "s");
+        File.WriteAllText(Path.Combine(SourceDir, "map.info"), "v");
+
+        var result = NewBuilder().Build(SeedDir, SourceDir, string.Empty, string.Empty);
+
+        Assert.Contains("map.info", result.CommonFiles);
+        Assert.Contains(result.FileInventory, r => r.FileName == "map.info" && r.Presence == "common");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP36A1_CORE_4: file inventory records files only in minimal seed
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map36A1_Core4_FileInventoryRecordsOnlyMinimalFiles()
+    {
+        WriteSeedFiles(new byte[1], new byte[1], new byte[1]);
+        WriteSourceFiles(new byte[1], new byte[1], new byte[1]);
+        File.WriteAllText(Path.Combine(SeedDir, "worldmap.png"), "seed-only");
+
+        var result = NewBuilder().Build(SeedDir, SourceDir, string.Empty, string.Empty);
+
+        Assert.Contains("worldmap.png", result.Map33aOnlyFiles);
+        Assert.Contains(result.FileInventory, r => r.FileName == "worldmap.png" && r.Presence == "map33a_only");
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP36A1_CORE_5: file inventory records files only in visible source
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map36A1_Core5_FileInventoryRecordsOnlyVisibleFiles()
+    {
+        WriteSeedFiles(new byte[1], new byte[1], new byte[1]);
+        WriteSourceFiles(new byte[1], new byte[1], new byte[1]);
+        File.WriteAllText(Path.Combine(SourceDir, "spawnregions.lua"), "visible-only");
+
+        var result = NewBuilder().Build(SeedDir, SourceDir, string.Empty, string.Empty);
+
+        Assert.Contains("spawnregions.lua", result.Map35aOnlyFiles);
+        Assert.Contains(result.FileInventory, r => r.FileName == "spawnregions.lua" && r.Presence == "map35a_only");
+    }
 }

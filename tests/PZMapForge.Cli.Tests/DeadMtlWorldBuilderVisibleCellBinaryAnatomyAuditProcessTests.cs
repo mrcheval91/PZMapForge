@@ -188,4 +188,78 @@ public sealed class DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditProcessTests
         Assert.False(root.GetProperty("workshop_upload_performed").GetBoolean());
         Assert.False(root.GetProperty("steam_install_write").GetBoolean());
     }
+
+    // -----------------------------------------------------------------------
+    // MAP36A1_CLI_1: Byte diff CSV written with correct header columns
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map36A1_Cli1_ByteDiffCsvWritten()
+    {
+        WriteFixtures();
+        RunCli(MakeBaseArgs());
+        string byteDiffCsv = Path.Combine(OutputRoot, "deadmtl-visible-cell-binary-anatomy-audit-byte-diff.csv");
+        Assert.True(File.Exists(byteDiffCsv), "Byte diff CSV must be written");
+        string content = File.ReadAllText(byteDiffCsv);
+        Assert.Contains("file_name", content);
+        Assert.Contains("size_delta", content);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP36A1_CLI_2: Extracted strings TXT files written for all three binary files
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map36A1_Cli2_ExtractedStringsTxtFilesWritten()
+    {
+        WriteFixtures();
+        RunCli(MakeBaseArgs());
+        string stringsDir = Path.Combine(OutputRoot, "strings");
+        Assert.True(File.Exists(Path.Combine(stringsDir, "35_27.lotheader.minimal.txt")));
+        Assert.True(File.Exists(Path.Combine(stringsDir, "35_27.lotheader.visible.txt")));
+        Assert.True(File.Exists(Path.Combine(stringsDir, "chunkdata_35_27.bin.minimal.txt")));
+        Assert.True(File.Exists(Path.Combine(stringsDir, "chunkdata_35_27.bin.visible.txt")));
+        Assert.True(File.Exists(Path.Combine(stringsDir, "world_35_27.lotpack.minimal.txt")));
+        Assert.True(File.Exists(Path.Combine(stringsDir, "world_35_27.lotpack.visible.txt")));
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP36A1_CLI_3: Markdown proof packet written and contains claim boundary
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map36A1_Cli3_MarkdownProofPacketWrittenWithClaimBoundary()
+    {
+        WriteFixtures();
+        RunCli(MakeBaseArgs());
+        string proofMd = Path.Combine(OutputRoot, "deadmtl-visible-cell-binary-anatomy-audit-proof.md");
+        Assert.True(File.Exists(proofMd), "Proof markdown must be written");
+        string content = File.ReadAllText(proofMd);
+        Assert.Contains("runtime_binary_written", content);
+        Assert.Contains("playable_export_claimed", content);
+        Assert.Contains("false", content);
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP36A1_CLI_4: Source path containing "workshop donor" exits nonzero
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Map36A1_Cli4_SourcePathWithWorkshopDonorExitsNonzero()
+    {
+        Directory.CreateDirectory(Map33aSeedDir);
+        File.WriteAllBytes(Path.Combine(Map33aSeedDir, "35_27.lotheader"),    new byte[10]);
+        File.WriteAllBytes(Path.Combine(Map33aSeedDir, "chunkdata_35_27.bin"), new byte[10]);
+        File.WriteAllBytes(Path.Combine(Map33aSeedDir, "world_35_27.lotpack"), new byte[10]);
+        Directory.CreateDirectory(OutputRoot);
+
+        string rejectedSource = Path.Combine(_tempDir, "workshop donor.local");
+        Directory.CreateDirectory(rejectedSource);
+
+        var (code, _, _) = RunCli(
+            "--map33a-seed-dir",   Map33aSeedDir,
+            "--map35a-source-dir", rejectedSource,
+            "--output-root",       OutputRoot);
+        Assert.Equal(1, code);
+    }
 }

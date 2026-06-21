@@ -17,6 +17,16 @@ public sealed class DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditBuilder
     private const string ChunkdataFile = "chunkdata_35_27.bin";
     private const string LotpackFile   = "world_35_27.lotpack";
 
+    private static readonly string[] s_sourceRejectionMarkers =
+        { "Dru_map", "Dru", "workshop donor", "third-party" };
+
+    private static readonly string[] s_sidecarFiles =
+    {
+        "map.info", "spawnpoints.lua", "objects.lua", "worldmap.xml", "worldmap.xml.bin",
+        "worldmap-forest.xml", "worldmap-forest.xml.bin", "streets.xml.bin",
+        "spawnregions.lua", "WorldGenOverride.lua", "thumb.png", "worldmap.png",
+    };
+
     public DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditResult Build(
         string map33aSeedDir,
         string map35aSourceDir,
@@ -35,14 +45,31 @@ public sealed class DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditBuilder
         };
 
         result.Map33aSeedDirFound      = !string.IsNullOrEmpty(result.Map33aSeedDir)      && Directory.Exists(result.Map33aSeedDir);
-        result.Map35aSourceDirFound    = !string.IsNullOrEmpty(result.Map35aSourceDir)    && Directory.Exists(result.Map35aSourceDir);
         result.Map35aInstalledDirFound = !string.IsNullOrEmpty(result.Map35aInstalledDir) && Directory.Exists(result.Map35aInstalledDir);
         result.Map31bEmitterJsonFound  = !string.IsNullOrEmpty(result.Map31bEmitterJson)  && File.Exists(result.Map31bEmitterJson);
 
         if (!result.Map33aSeedDirFound)
             result.Errors.Add($"MAP-33A seed dir not found: {result.Map33aSeedDir}");
-        if (!result.Map35aSourceDirFound)
-            result.Errors.Add($"MAP-35A source dir not found: {result.Map35aSourceDir}");
+
+        // Reject MAP-35A source before existence check
+        result.Map35aSourceRejected = !string.IsNullOrEmpty(result.Map35aSourceDir)
+            && s_sourceRejectionMarkers.Any(m => result.Map35aSourceDir.Contains(m, StringComparison.OrdinalIgnoreCase));
+
+        if (result.Map35aSourceRejected)
+        {
+            string marker = s_sourceRejectionMarkers.First(m =>
+                result.Map35aSourceDir.Contains(m, StringComparison.OrdinalIgnoreCase));
+            result.Map35aSourceRejectionReason = $"source path contains rejected marker: {marker}";
+            result.Errors.Add(result.Map35aSourceRejectionReason);
+            result.Map35aSourceDirFound = false;
+        }
+        else
+        {
+            result.Map35aSourceDirFound = !string.IsNullOrEmpty(result.Map35aSourceDir)
+                && Directory.Exists(result.Map35aSourceDir);
+            if (!result.Map35aSourceDirFound)
+                result.Errors.Add($"MAP-35A source dir not found: {result.Map35aSourceDir}");
+        }
 
         result.LotHeaderAnatomy = BuildFileAnatomy(LotHeaderFile,
             result.Map33aSeedDir, result.Map35aSourceDir, result.Map35aInstalledDir,
@@ -56,18 +83,21 @@ public sealed class DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditBuilder
 
         result.ChunkdataSpecial = new ChunkdataSpecialAnalysis
         {
-            MinimalSize             = result.ChunkdataAnatomy.MinimalSize,
-            VisibleSize             = result.ChunkdataAnatomy.VisibleSize,
-            SizeDelta               = result.ChunkdataAnatomy.SizeDelta,
-            SizeRatio               = result.ChunkdataAnatomy.MinimalSize > 0
+            MinimalSize            = result.ChunkdataAnatomy.MinimalSize,
+            VisibleSize            = result.ChunkdataAnatomy.VisibleSize,
+            SizeDelta              = result.ChunkdataAnatomy.SizeDelta,
+            SizeRatio              = result.ChunkdataAnatomy.MinimalSize > 0
                 ? Math.Round((double)result.ChunkdataAnatomy.VisibleSize / result.ChunkdataAnatomy.MinimalSize, 2)
                 : 0.0,
-            RecordCountGuessFixed32  = (int)(result.ChunkdataAnatomy.VisibleSize / 32),
-            RecordCountGuessFixed8   = (int)(result.ChunkdataAnatomy.VisibleSize / 8),
-            RecordCountGuessLabel    = "GUESS_NOT_VERIFIED",
+            RecordCountGuessFixed32 = (int)(result.ChunkdataAnatomy.VisibleSize / 32),
+            RecordCountGuessFixed8  = (int)(result.ChunkdataAnatomy.VisibleSize / 8),
+            RecordCountGuessLabel   = "GUESS_NOT_VERIFIED",
         };
 
         result.Map31bCrossRef = BuildMap31bCrossRef(result.Map31bEmitterJson, result.Map31bEmitterJsonFound);
+
+        BuildFileInventory(result);
+        BuildSidecarRecords(result);
 
         result.RuntimeBinaryWritten    = false;
         result.GeometryInjected        = false;
@@ -83,6 +113,9 @@ public sealed class DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditBuilder
         AddCheck(checks, "MAP36A_MAP35A_SOURCE_DIR_EXISTS",
             "MAP-35A visible source directory found",
             "true", result.Map35aSourceDirFound.ToString().ToLowerInvariant());
+        AddCheck(checks, "MAP36A_MAP35A_SOURCE_NOT_REJECTED",
+            "MAP-35A source path does not contain rejected markers",
+            "true", (!result.Map35aSourceRejected).ToString().ToLowerInvariant());
         AddCheck(checks, "MAP36A_LOTHEADER_SIZE_CAPTURED",
             "lotheader minimal and visible sizes captured",
             "true", (result.LotHeaderAnatomy.MinimalSize > 0 && result.LotHeaderAnatomy.VisibleSize > 0).ToString().ToLowerInvariant());
@@ -116,6 +149,11 @@ public sealed class DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditBuilder
         AddCheck(checks, "MAP36A_MAP31B_CROSS_REF_CAPTURED",
             "MAP-31B cross-reference recorded",
             "true", "true");
+
+        bool inventoryComplete = result.Map33aSeedDirFound && result.Map35aSourceDirFound;
+        AddCheck(checks, "MAP36A_FILE_INVENTORY_COMPLETE",
+            "file inventory built from both seed and source dirs",
+            "true", inventoryComplete.ToString().ToLowerInvariant());
 
         bool claimClean = !result.RuntimeBinaryWritten && !result.GeometryInjected
             && !result.PlayableExportClaimed && !result.WorkshopUploadPerformed && !result.SteamInstallWrite;
@@ -153,6 +191,7 @@ public sealed class DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditBuilder
         sb.AppendLine($"Cell coord                       : {r.CellCoord}");
         sb.AppendLine($"MAP-33A seed dir found           : {r.Map33aSeedDirFound}");
         sb.AppendLine($"MAP-35A source dir found         : {r.Map35aSourceDirFound}");
+        sb.AppendLine($"MAP-35A source rejected          : {r.Map35aSourceRejected}");
         sb.AppendLine($"MAP-35A installed dir found      : {r.Map35aInstalledDirFound}");
         sb.AppendLine($"MAP-31B emitter JSON found       : {r.Map31bEmitterJsonFound}");
         sb.AppendLine("");
@@ -160,6 +199,7 @@ public sealed class DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditBuilder
         sb.AppendLine($"Chunkdata  minimal={r.ChunkdataAnatomy.MinimalSize}  visible={r.ChunkdataAnatomy.VisibleSize}  delta={r.ChunkdataAnatomy.SizeDelta}");
         sb.AppendLine($"Lotpack    minimal={r.LotpackAnatomy.MinimalSize}  visible={r.LotpackAnatomy.VisibleSize}  delta={r.LotpackAnatomy.SizeDelta}");
         sb.AppendLine($"Chunkdata size ratio (GUESS)     : {r.ChunkdataSpecial.SizeRatio}");
+        sb.AppendLine($"File inventory count             : {r.FileInventory.Count} files  (common={r.CommonFiles.Count}  seed_only={r.Map33aOnlyFiles.Count}  visible_only={r.Map35aOnlyFiles.Count})");
         sb.AppendLine($"MAP-31B emits_binary_file        : {r.Map31bCrossRef.EmitsBinaryFile}");
         sb.AppendLine($"MAP-31B sandbox_only             : {r.Map31bCrossRef.SandboxOnly}");
         sb.AppendLine($"MAP-31B geometry-to-binary gap   : {r.Map31bCrossRef.Map31bGeometryToBinaryGap}");
@@ -170,9 +210,171 @@ public sealed class DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditBuilder
         return sb.ToString();
     }
 
+    public string RenderFileInventoryCsv(DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditResult result)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("file_name,presence,map33a_size,map35a_size,installed_size,map33a_sha256,map35a_sha256");
+        foreach (var rec in result.FileInventory)
+            sb.AppendLine($"{rec.FileName},{rec.Presence},{rec.Map33aSize},{rec.Map35aSize},{rec.InstalledSize},{rec.Map33aSha256},{rec.Map35aSha256}");
+        return sb.ToString();
+    }
+
+    public string RenderByteDiffCsv(DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditResult result)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("file_name,minimal_size,visible_size,size_delta,first_differing_byte_offset,total_differing_bytes,common_prefix_length,common_suffix_length,minimal_sha256,visible_sha256");
+        foreach (var a in new[] { result.LotHeaderAnatomy, result.ChunkdataAnatomy, result.LotpackAnatomy })
+            sb.AppendLine($"{a.FileName},{a.MinimalSize},{a.VisibleSize},{a.SizeDelta},{a.FirstDifferingByteOffset},{a.TotalDifferingBytes},{a.CommonPrefixLength},{a.CommonSuffixLength},{a.MinimalSha256},{a.VisibleSha256}");
+        return sb.ToString();
+    }
+
+    public string RenderProofMarkdown(DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditResult r)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("# MAP-36A Visible Cell Binary Anatomy Audit");
+        sb.AppendLine();
+        sb.AppendLine($"Generated: {r.GeneratedUtc}");
+        sb.AppendLine($"Cell: {r.CellCoord}");
+        sb.AppendLine($"Format: {r.Format}");
+        sb.AppendLine();
+        sb.AppendLine("## Claim Boundary");
+        sb.AppendLine();
+        sb.AppendLine("| Field | Value |");
+        sb.AppendLine("|---|---|");
+        sb.AppendLine($"| runtime_binary_written | {r.RuntimeBinaryWritten.ToString().ToLowerInvariant()} |");
+        sb.AppendLine($"| geometry_injected | {r.GeometryInjected.ToString().ToLowerInvariant()} |");
+        sb.AppendLine($"| playable_export_claimed | {r.PlayableExportClaimed.ToString().ToLowerInvariant()} |");
+        sb.AppendLine($"| workshop_upload_performed | {r.WorkshopUploadPerformed.ToString().ToLowerInvariant()} |");
+        sb.AppendLine($"| steam_install_write | {r.SteamInstallWrite.ToString().ToLowerInvariant()} |");
+        sb.AppendLine();
+        sb.AppendLine("## Binary File Anatomy");
+        sb.AppendLine();
+        sb.AppendLine("| File | Minimal Size | Visible Size | Delta |");
+        sb.AppendLine("|---|---|---|---|");
+        foreach (var a in new[] { r.LotHeaderAnatomy, r.ChunkdataAnatomy, r.LotpackAnatomy })
+            sb.AppendLine($"| {a.FileName} | {a.MinimalSize} | {a.VisibleSize} | {a.SizeDelta} |");
+        sb.AppendLine();
+        sb.AppendLine("## File Inventory Summary");
+        sb.AppendLine();
+        sb.AppendLine("| Presence | Count |");
+        sb.AppendLine("|---|---|");
+        sb.AppendLine($"| common | {r.CommonFiles.Count} |");
+        sb.AppendLine($"| map33a_only | {r.Map33aOnlyFiles.Count} |");
+        sb.AppendLine($"| map35a_only | {r.Map35aOnlyFiles.Count} |");
+        sb.AppendLine($"| installed_only | {r.InstalledOnlyFiles.Count} |");
+        sb.AppendLine();
+        sb.AppendLine("## MAP-31B Cross-Reference");
+        sb.AppendLine();
+        sb.AppendLine($"emits_binary_file: {r.Map31bCrossRef.EmitsBinaryFile.ToString().ToLowerInvariant()}");
+        sb.AppendLine($"sandbox_only: {r.Map31bCrossRef.SandboxOnly.ToString().ToLowerInvariant()}");
+        sb.AppendLine($"map31b_geometry_to_binary_gap: {r.Map31bCrossRef.Map31bGeometryToBinaryGap}");
+        sb.AppendLine();
+        sb.AppendLine("## Checks");
+        sb.AppendLine();
+        sb.AppendLine($"{r.PassedCheckCount}/{r.CheckCount} PASS");
+        return sb.ToString();
+    }
+
     // -----------------------------------------------------------------------
     // Private helpers
     // -----------------------------------------------------------------------
+
+    private static void BuildFileInventory(DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditResult result)
+    {
+        var seedFiles      = result.Map33aSeedDirFound      ? GetFileNamesInDir(result.Map33aSeedDir)      : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var visibleFiles   = result.Map35aSourceDirFound    ? GetFileNamesInDir(result.Map35aSourceDir)    : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var installedFiles = result.Map35aInstalledDirFound ? GetFileNamesInDir(result.Map35aInstalledDir) : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var allFileNames = seedFiles
+            .Concat(visibleFiles)
+            .Concat(installedFiles)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var fileName in allFileNames)
+        {
+            bool inSeed      = seedFiles.Contains(fileName);
+            bool inVisible   = visibleFiles.Contains(fileName);
+            bool inInstalled = installedFiles.Contains(fileName);
+
+            string presence;
+            if (inSeed && inVisible)
+            {
+                presence = "common";
+                result.CommonFiles.Add(fileName);
+            }
+            else if (inSeed)
+            {
+                presence = "map33a_only";
+                result.Map33aOnlyFiles.Add(fileName);
+            }
+            else if (inVisible)
+            {
+                presence = "map35a_only";
+                result.Map35aOnlyFiles.Add(fileName);
+            }
+            else
+            {
+                presence = "installed_only";
+                result.InstalledOnlyFiles.Add(fileName);
+            }
+
+            result.FileInventory.Add(new FileInventoryRecord
+            {
+                FileName      = fileName,
+                Presence      = presence,
+                Map33aSize    = inSeed      ? GetFileSize(result.Map33aSeedDir,      fileName) : 0,
+                Map35aSize    = inVisible   ? GetFileSize(result.Map35aSourceDir,    fileName) : 0,
+                InstalledSize = inInstalled ? GetFileSize(result.Map35aInstalledDir, fileName) : 0,
+                Map33aSha256  = inSeed      ? ComputeSha256File(result.Map33aSeedDir,   fileName) : string.Empty,
+                Map35aSha256  = inVisible   ? ComputeSha256File(result.Map35aSourceDir, fileName) : string.Empty,
+            });
+        }
+    }
+
+    private static void BuildSidecarRecords(DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditResult result)
+    {
+        foreach (var fileName in s_sidecarFiles)
+        {
+            bool seedHas      = result.Map33aSeedDirFound      && File.Exists(Path.Combine(result.Map33aSeedDir,      fileName));
+            bool visibleHas   = result.Map35aSourceDirFound    && File.Exists(Path.Combine(result.Map35aSourceDir,    fileName));
+            bool installedHas = result.Map35aInstalledDirFound && File.Exists(Path.Combine(result.Map35aInstalledDir, fileName));
+
+            if (!seedHas && !visibleHas && !installedHas) continue;
+
+            result.SidecarFileRecords.Add(new SidecarFileRecord
+            {
+                FileName      = fileName,
+                Map33aSize    = seedHas      ? GetFileSize(result.Map33aSeedDir,      fileName) : 0,
+                Map35aSize    = visibleHas   ? GetFileSize(result.Map35aSourceDir,    fileName) : 0,
+                InstalledSize = installedHas ? GetFileSize(result.Map35aInstalledDir, fileName) : 0,
+                Map33aSha256  = seedHas      ? ComputeSha256File(result.Map33aSeedDir,      fileName) : string.Empty,
+                Map35aSha256  = visibleHas   ? ComputeSha256File(result.Map35aSourceDir,    fileName) : string.Empty,
+            });
+        }
+    }
+
+    private static HashSet<string> GetFileNamesInDir(string dir)
+    {
+        if (!Directory.Exists(dir)) return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        return new HashSet<string>(
+            Directory.GetFiles(dir).Select(f => Path.GetFileName(f)!),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static long GetFileSize(string dir, string fileName)
+    {
+        string path = Path.Combine(dir, fileName);
+        return File.Exists(path) ? new FileInfo(path).Length : 0;
+    }
+
+    private static string ComputeSha256File(string dir, string fileName)
+    {
+        string path = Path.Combine(dir, fileName);
+        if (!File.Exists(path)) return string.Empty;
+        using var fs = File.OpenRead(path);
+        return Convert.ToHexString(SHA256.HashData(fs)).ToLowerInvariant();
+    }
 
     private static BinaryFileAnatomyRecord BuildFileAnatomy(
         string fileName,

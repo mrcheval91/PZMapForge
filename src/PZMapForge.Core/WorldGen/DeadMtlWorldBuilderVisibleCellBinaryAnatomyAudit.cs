@@ -18,6 +18,9 @@ public sealed class DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditResult
     [JsonPropertyName("map35a_source_dir_found")]    public bool Map35aSourceDirFound    { get; set; }
     [JsonPropertyName("map35a_installed_dir_found")] public bool Map35aInstalledDirFound { get; set; }
     [JsonPropertyName("map31b_emitter_json_found")]  public bool Map31bEmitterJsonFound  { get; set; }
+    // Source rejection
+    [JsonPropertyName("map35a_source_rejected")]         public bool   Map35aSourceRejected        { get; set; }
+    [JsonPropertyName("map35a_source_rejection_reason")] public string Map35aSourceRejectionReason { get; set; } = string.Empty;
     // Per-file binary anatomy
     [JsonPropertyName("lotheader_anatomy")]  public BinaryFileAnatomyRecord LotHeaderAnatomy  { get; set; } = new();
     [JsonPropertyName("chunkdata_anatomy")]  public BinaryFileAnatomyRecord ChunkdataAnatomy  { get; set; } = new();
@@ -26,6 +29,16 @@ public sealed class DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditResult
     [JsonPropertyName("chunkdata_special")]  public ChunkdataSpecialAnalysis ChunkdataSpecial { get; set; } = new();
     // MAP-31B cross-reference
     [JsonPropertyName("map31b_cross_ref")]   public Map31bCrossReferenceRecord Map31bCrossRef { get; set; } = new();
+    // File inventory
+    [JsonPropertyName("file_inventory")]        public List<FileInventoryRecord> FileInventory     { get; set; } = new();
+    [JsonPropertyName("common_files")]          public List<string>              CommonFiles       { get; set; } = new();
+    [JsonPropertyName("map33a_only_files")]     public List<string>              Map33aOnlyFiles   { get; set; } = new();
+    [JsonPropertyName("map35a_only_files")]     public List<string>              Map35aOnlyFiles   { get; set; } = new();
+    [JsonPropertyName("installed_only_files")]  public List<string>              InstalledOnlyFiles { get; set; } = new();
+    // Sidecar file records
+    [JsonPropertyName("sidecar_file_records")]  public List<SidecarFileRecord>  SidecarFileRecords { get; set; } = new();
+    // Output artifacts
+    [JsonPropertyName("output_artifacts")]      public List<string>              OutputArtifacts   { get; set; } = new();
     // Claim boundary
     [JsonPropertyName("runtime_binary_written")]     public bool RuntimeBinaryWritten    { get; set; }
     [JsonPropertyName("geometry_injected")]          public bool GeometryInjected        { get; set; }
@@ -40,6 +53,27 @@ public sealed class DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditResult
     [JsonPropertyName("verdict")]            public string Verdict          { get; set; } = string.Empty;
     [JsonPropertyName("checks")]             public List<BinaryAnatomyAuditCheck> Checks { get; set; } = new();
     [JsonPropertyName("errors")]             public List<string> Errors     { get; set; } = new();
+}
+
+public sealed class FileInventoryRecord
+{
+    [JsonPropertyName("file_name")]       public string FileName      { get; set; } = string.Empty;
+    [JsonPropertyName("presence")]        public string Presence      { get; set; } = string.Empty;
+    [JsonPropertyName("map33a_size")]     public long   Map33aSize    { get; set; }
+    [JsonPropertyName("map35a_size")]     public long   Map35aSize    { get; set; }
+    [JsonPropertyName("installed_size")]  public long   InstalledSize { get; set; }
+    [JsonPropertyName("map33a_sha256")]   public string Map33aSha256  { get; set; } = string.Empty;
+    [JsonPropertyName("map35a_sha256")]   public string Map35aSha256  { get; set; } = string.Empty;
+}
+
+public sealed class SidecarFileRecord
+{
+    [JsonPropertyName("file_name")]       public string FileName      { get; set; } = string.Empty;
+    [JsonPropertyName("map33a_size")]     public long   Map33aSize    { get; set; }
+    [JsonPropertyName("map35a_size")]     public long   Map35aSize    { get; set; }
+    [JsonPropertyName("installed_size")]  public long   InstalledSize { get; set; }
+    [JsonPropertyName("map33a_sha256")]   public string Map33aSha256  { get; set; } = string.Empty;
+    [JsonPropertyName("map35a_sha256")]   public string Map35aSha256  { get; set; } = string.Empty;
 }
 
 public sealed class BinaryFileAnatomyRecord
@@ -70,13 +104,13 @@ public sealed class BinaryFileAnatomyRecord
 
 public sealed class ChunkdataSpecialAnalysis
 {
-    [JsonPropertyName("minimal_size")]                                public long   MinimalSize            { get; set; }
-    [JsonPropertyName("visible_size")]                                public long   VisibleSize            { get; set; }
-    [JsonPropertyName("size_delta")]                                  public long   SizeDelta              { get; set; }
-    [JsonPropertyName("size_ratio")]                                  public double SizeRatio              { get; set; }
+    [JsonPropertyName("minimal_size")]                                public long   MinimalSize             { get; set; }
+    [JsonPropertyName("visible_size")]                                public long   VisibleSize             { get; set; }
+    [JsonPropertyName("size_delta")]                                  public long   SizeDelta               { get; set; }
+    [JsonPropertyName("size_ratio")]                                  public double SizeRatio               { get; set; }
     [JsonPropertyName("record_count_guess_if_fixed_32_byte_records")] public int   RecordCountGuessFixed32 { get; set; }
     [JsonPropertyName("record_count_guess_if_fixed_8_byte_records")]  public int   RecordCountGuessFixed8  { get; set; }
-    [JsonPropertyName("record_count_guess_label")]                    public string RecordCountGuessLabel  { get; set; } = "GUESS_NOT_VERIFIED";
+    [JsonPropertyName("record_count_guess_label")]                    public string RecordCountGuessLabel   { get; set; } = "GUESS_NOT_VERIFIED";
 }
 
 public sealed class Map31bCrossReferenceRecord

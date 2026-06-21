@@ -82,9 +82,9 @@ artifact completeness, layer pipeline (Phase 2A), and markdown report content co
 | Check | Expected |
 |---|---:|
 | dotnet build | 0 errors |
-| dotnet test (total) | 230 |
-| PZMapForge.Core.Tests | 190 |
-| PZMapForge.Cli.Tests | 40 |
+| dotnet test (total) | 580 |
+| PZMapForge.Core.Tests | 204 |
+| PZMapForge.Cli.Tests | 376 |
 | Process CLI tests present | true |
 | Full-pipeline contract tests present | true |
 | Full-pipeline artifact count | 7 |
@@ -97,7 +97,7 @@ These counts are recorded in proof-packet.json as dotnet_validation_summary.
 They are intentionally not added to validation_summary.total_expected_assertions.
 The two lanes measure different things and must remain separate.
 
-### Test breakdown: PZMapForge.Core.Tests (190)
+### Test breakdown: PZMapForge.Core.Tests (204 — breakdown below is historical; full count includes MAP-7X, MAP-36A, MAP-36A1 additions)
 
 - PaletteLoader: 8 tests
 - ImageMapForgeParser: 10 tests
@@ -121,7 +121,7 @@ The two lanes measure different things and must remain separate.
 - LocalPzInstallValidator: 10 tests (Slice 3A-2)
 - LocalTileReferenceSurveyWriter: 8 tests (Slice 3A-3)
 
-### Test breakdown: PZMapForge.Cli.Tests (35)
+### Test breakdown: PZMapForge.Cli.Tests (376 — breakdown below is historical; full count includes MAP-7X, MAP-36A, MAP-36A1 additions)
 
 - CliSmokeTests: 13 tests
 - CliProcessTests: 10 process-level integration tests

@@ -9940,17 +9940,54 @@ static int DeadMtlBuildWorldBuilderVisibleCellBinaryAnatomyAuditCommand(string[]
     if (string.IsNullOrEmpty(summaryPath))
         summaryPath = Path.Combine(outputRoot, "deadmtl-visible-cell-binary-anatomy-audit-summary.txt");
 
+    string fileInventoryCsv = Path.Combine(outputRoot, "deadmtl-visible-cell-binary-anatomy-audit-file-inventory.csv");
+    string byteDiffCsv      = Path.Combine(outputRoot, "deadmtl-visible-cell-binary-anatomy-audit-byte-diff.csv");
+    string proofMd          = Path.Combine(outputRoot, "deadmtl-visible-cell-binary-anatomy-audit-proof.md");
+    string stringsDir       = Path.Combine(outputRoot, "strings");
+
+    const string lotHeaderFile = "35_27.lotheader";
+    const string chunkdataFile = "chunkdata_35_27.bin";
+    const string lotpackFile   = "world_35_27.lotpack";
+
     var builder = new PZMapForge.Core.WorldGen.DeadMtlWorldBuilderVisibleCellBinaryAnatomyAuditBuilder();
     var result  = builder.Build(map33aSeedDir, map35aSourceDir, map35aInstalledDir, map31bEmitterJson);
-
-    Directory.CreateDirectory(Path.GetDirectoryName(outputResult)!);
-    File.WriteAllText(outputResult, builder.RenderJson(result));
 
     Directory.CreateDirectory(Path.GetDirectoryName(outputChecksCsv)!);
     File.WriteAllText(outputChecksCsv, builder.RenderChecksCsv(result));
 
     Directory.CreateDirectory(Path.GetDirectoryName(summaryPath)!);
     File.WriteAllText(summaryPath, builder.RenderSummary(result));
+
+    File.WriteAllText(fileInventoryCsv, builder.RenderFileInventoryCsv(result));
+    File.WriteAllText(byteDiffCsv, builder.RenderByteDiffCsv(result));
+    File.WriteAllText(proofMd, builder.RenderProofMarkdown(result));
+
+    Directory.CreateDirectory(stringsDir);
+    var anatomyPairs = new (string Name, PZMapForge.Core.WorldGen.BinaryFileAnatomyRecord Anatomy)[]
+    {
+        (lotHeaderFile, result.LotHeaderAnatomy),
+        (chunkdataFile, result.ChunkdataAnatomy),
+        (lotpackFile,   result.LotpackAnatomy),
+    };
+    foreach (var (name, anatomy) in anatomyPairs)
+    {
+        File.WriteAllText(Path.Combine(stringsDir, $"{name}.minimal.txt"), anatomy.MinimalPrintableStrings);
+        File.WriteAllText(Path.Combine(stringsDir, $"{name}.visible.txt"), anatomy.VisiblePrintableStrings);
+    }
+
+    result.OutputArtifacts.AddRange(new[]
+    {
+        outputResult, outputChecksCsv, summaryPath, fileInventoryCsv, byteDiffCsv, proofMd,
+        Path.Combine(stringsDir, $"{lotHeaderFile}.minimal.txt"),
+        Path.Combine(stringsDir, $"{lotHeaderFile}.visible.txt"),
+        Path.Combine(stringsDir, $"{chunkdataFile}.minimal.txt"),
+        Path.Combine(stringsDir, $"{chunkdataFile}.visible.txt"),
+        Path.Combine(stringsDir, $"{lotpackFile}.minimal.txt"),
+        Path.Combine(stringsDir, $"{lotpackFile}.visible.txt"),
+    });
+
+    Directory.CreateDirectory(Path.GetDirectoryName(outputResult)!);
+    File.WriteAllText(outputResult, builder.RenderJson(result));
 
     Console.WriteLine(builder.RenderSummary(result));
 

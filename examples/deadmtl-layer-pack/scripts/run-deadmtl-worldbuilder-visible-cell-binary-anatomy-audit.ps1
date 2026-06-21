@@ -39,6 +39,11 @@ $Summary      = Join-Path $OutputRoot "deadmtl-visible-cell-binary-anatomy-audit
 
 New-Item -ItemType Directory -Path $OutputRoot -Force | Out-Null
 
+$FileInventoryCsv = Join-Path $OutputRoot "deadmtl-visible-cell-binary-anatomy-audit-file-inventory.csv"
+$ByteDiffCsv      = Join-Path $OutputRoot "deadmtl-visible-cell-binary-anatomy-audit-byte-diff.csv"
+$ProofMd          = Join-Path $OutputRoot "deadmtl-visible-cell-binary-anatomy-audit-proof.md"
+$StringsDir       = Join-Path $OutputRoot "strings"
+
 $cliArgs = @(
     "--map33a-seed-dir",       $Map33aSeedDir,
     "--map35a-source-dir",     $Map35aSourceDir,
@@ -98,6 +103,18 @@ if (Test-Path $OutputResult) {
     Write-Host "playable_export_claimed          : $($result.playable_export_claimed)"
     Write-Host "workshop_upload_performed        : $($result.workshop_upload_performed)"
     Write-Host "steam_install_write              : $($result.steam_install_write)"
+    Write-Host ""
+    Write-Host "=== File Inventory ==="
+    Write-Host "Common files                     : $($result.common_files.Count)"
+    Write-Host "MAP-33A only                     : $($result.map33a_only_files.Count)"
+    Write-Host "MAP-35A only                     : $($result.map35a_only_files.Count)"
+    Write-Host "Installed only                   : $($result.installed_only_files.Count)"
+    Write-Host ""
+    Write-Host "=== Output Artifacts ==="
+    Write-Host "File inventory CSV               : $FileInventoryCsv"
+    Write-Host "Byte diff CSV                    : $ByteDiffCsv"
+    Write-Host "Proof markdown                   : $ProofMd"
+    Write-Host "Strings dir                      : $StringsDir"
 } else {
     Write-Warning "Result JSON not found: $OutputResult"
 }
