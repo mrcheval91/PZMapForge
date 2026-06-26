@@ -366,4 +366,76 @@ public sealed class MapExportBuild42CandidateWriterProcessTests : IDisposable
             Path.Combine(VersionedDir, "experimental-map-export-report.json")));
         Assert.Equal(1056780, doc.RootElement.GetProperty("lotp_file_size_expected").GetInt32());
     }
+
+    // -----------------------------------------------------------------------
+    // MAP37B_CLI_1: report.chunkdata_map37b_header_size == 2
+    // -----------------------------------------------------------------------
+    [Fact]
+    public void Build42Candidate_Map37B_Report_HeaderSizeIsTwo()
+    {
+        RunCandidate();
+        var doc = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(VersionedDir, "experimental-map-export-report.json")));
+        Assert.Equal(2, doc.RootElement.GetProperty("chunkdata_map37b_header_size").GetInt32());
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP37B_CLI_2: report.chunkdata_map37b_record_width == 8
+    // -----------------------------------------------------------------------
+    [Fact]
+    public void Build42Candidate_Map37B_Report_RecordWidthIsEight()
+    {
+        RunCandidate();
+        var doc = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(VersionedDir, "experimental-map-export-report.json")));
+        Assert.Equal(8, doc.RootElement.GetProperty("chunkdata_map37b_record_width").GetInt32());
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP37B_CLI_3: report.chunkdata_map37b_record_count == 128
+    // -----------------------------------------------------------------------
+    [Fact]
+    public void Build42Candidate_Map37B_Report_RecordCountIs128()
+    {
+        RunCandidate();
+        var doc = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(VersionedDir, "experimental-map-export-report.json")));
+        Assert.Equal(128, doc.RootElement.GetProperty("chunkdata_map37b_record_count").GetInt32());
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP37B_CLI_4: report.chunkdata_map37b_exact_fit == true
+    // -----------------------------------------------------------------------
+    [Fact]
+    public void Build42Candidate_Map37B_Report_ExactFitTrue()
+    {
+        RunCandidate();
+        var doc = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(VersionedDir, "experimental-map-export-report.json")));
+        Assert.True(doc.RootElement.GetProperty("chunkdata_map37b_exact_fit").GetBoolean());
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP37B_CLI_5: report.chunkdata_map37b_verified == false
+    // -----------------------------------------------------------------------
+    [Fact]
+    public void Build42Candidate_Map37B_Report_VerifiedFalse()
+    {
+        RunCandidate();
+        var doc = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(VersionedDir, "experimental-map-export-report.json")));
+        Assert.False(doc.RootElement.GetProperty("chunkdata_map37b_verified").GetBoolean());
+    }
+
+    // -----------------------------------------------------------------------
+    // MAP37B_CLI_6: chunkdata body (bytes 2-1025) length is divisible by 8
+    // -----------------------------------------------------------------------
+    [Fact]
+    public void Build42Candidate_Map37B_Chunkdata_BodyDivisibleByEight()
+    {
+        RunCandidate();
+        var bytes   = File.ReadAllBytes(Path.Combine(MapDataDir, "chunkdata_0_0.bin"));
+        var bodyLen = bytes.Length - 2;
+        Assert.Equal(0, bodyLen % 8);
+    }
 }

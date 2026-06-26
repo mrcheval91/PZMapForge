@@ -8,6 +8,36 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-37B: chunkdata record-cluster writer fix)
+- src\PZMapForge.Core\WorldGen\DeadMtlChunkdataRecordClusterWriterSpec.cs:
+  - Static spec class from MAP-37A ExactFitScore=3 confirmation.
+  - HeaderSize=2, RecordWidth=8, DefaultRecordCount=128, MinimalFileSize=1026.
+  - BuildMinimalChunkdata(): returns 2+128*8 zero-record bytes (header 0x00 0x01).
+  - Validate(): rejects data shorter than header or body not divisible by RecordWidth.
+  - verified_chunkdata_format=false; PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- src\PZMapForge.Cli\Program.cs:
+  - Build42CandidateWriterCommand: chunkdata now uses BuildMinimalChunkdata() (structure
+    identical to prior 1026-byte output; implementation made explicit per MAP-37B).
+  - Report JSON: +chunkdata_map37b_header_size=2, +chunkdata_map37b_record_width=8,
+    +chunkdata_map37b_record_count=128, +chunkdata_map37b_exact_fit=true,
+    +chunkdata_map37b_verified=false.
+  - Boundary statement updated to reference MAP-37B / MAP-37A ExactFitScore=3.
+- tests\PZMapForge.Core.Tests\WorldGen\DeadMtlChunkdataRecordClusterWriterSpecTests.cs:
+  - 6 xUnit tests (MAP37B_CORE_1 through MAP37B_CORE_6).
+  - Tests: header size constant=2, record width constant=8, exact-fit equation (1026),
+    BuildMinimalChunkdata returns 1026 bytes with default header, truncated input rejected,
+    misaligned body rejected.
+- tests\PZMapForge.Cli.Tests\MapExportBuild42CandidateWriterProcessTests.cs:
+  - 6 process tests (MAP37B_CLI_1 through MAP37B_CLI_6) appended.
+  - Tests: report.chunkdata_map37b_header_size=2, record_width=8, record_count=128,
+    exact_fit=true, verified=false; body divisible by 8.
+- docs\IMPLEMENTATION.md: MAP-37B ratified entry added.
+- scripts\validate.ps1: dnCoreTests 240->246, dnCliTests 412->418, dnTotal 652->664.
+- Remaining unknowns: chunkdata header field semantics, record field meanings,
+  zero-record cluster interpretation, chunkdata_zero_body_acceptance, build42_load_test.
+- BINARY_WRITER_STRUCTURE_NOW_EXPLICIT; PLAYABLE_EXPORT_CLAIM_ALLOWED=false;
+  LOAD_TEST_NOT_PERFORMED; MAP37B_CHUNKDATA_WRITER_SPEC_APPLIED.
+
 ### Added (MAP-9C: IsoMetaGrid map folder registration research)
 - docs/MAP_9C_ISOMETAGRID_MAP_FOLDER_REGISTRATION.md: MAP-9C research doctrine.
   - Classification: MAP9C_ISOMETAGRID_MAP_FOLDER_REGISTRATION_RESEARCH_PACKET_DEFINED.

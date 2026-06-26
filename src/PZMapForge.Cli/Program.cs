@@ -1951,18 +1951,15 @@ BOUNDARY STATEMENT:
 - Output is under .local only.
 
 BINARY CANDIDATE FORMATS ({profile}):
-- chunkdata: 1026 bytes, header 00 01, 1024-byte all-zero body (MAP-6H evidence).
+- chunkdata: 1026 bytes, header 00 01, 128 x 8-byte zero records (MAP-37B: 2+128*8 per MAP-37A ExactFitScore=3).
 - lotheader: LOTH magic, version 1, {profile switch { "empty_grass_v3" => "1024 generated entries + 1048-byte stable trailer (MAP-6Z/MAP-7C)", "empty_grass_v2" => "1024 generated entries + 1048-byte stable trailer from MAP-6Y research (MAP-6Z)", "empty_grass_v1" => "1024 generated entries blends_grassoverlays_01_0..._01_1023 (MAP-6S)", _ => "1 entry blends_grassoverlays_01_0 (MAP-4E committed evidence only)" }}.
 - objects.lua: {(profile == "empty_grass_v3" ? "comment-only placeholder (MAP-7C: avoids MAP-7A Lua lexer error)" : "return {} (candidate, may need fix)") }
 - spawnpoints.lua: {(profile == "empty_grass_v3" ? "unemployed key format (MAP-7C: explicit spawn profession)" : "all key format (candidate)")}.
 - lotpack: LOTP magic, version 1, 1024 chunks x 1024 zero bytes (MAP-6K most_common_size).
 """, gameReadEnc);
 
-    // ---- chunkdata_x_y.bin (MAP-6L: 1026 bytes, 00 01 header + 1024 zero bytes) ----
-    var chunkdataBytes = new byte[1026];
-    chunkdataBytes[0] = 0x00;
-    chunkdataBytes[1] = 0x01;
-    // bytes 2-1025: all zero (body 1024 bytes, all-zero hypothesis from MAP-6H)
+    // ---- chunkdata_x_y.bin (MAP-37B: 2-byte header + 128 x 8-byte records per MAP-37A ExactFitScore=3) ----
+    var chunkdataBytes = DeadMtlChunkdataRecordClusterWriterSpec.BuildMinimalChunkdata();
     File.WriteAllBytes(Path.Combine(mapDataDir, $"chunkdata_{cellCoord}.bin"), chunkdataBytes);
 
     // ---- 0_0.lotheader ----
@@ -2069,6 +2066,11 @@ BINARY CANDIDATE FORMATS ({profile}):
         chunkdata_status             = "generated_not_load_tested",
         chunkdata_size_bytes         = 1026,
         chunkdata_sha256             = cdataSha256,
+        chunkdata_map37b_header_size  = DeadMtlChunkdataRecordClusterWriterSpec.HeaderSize,
+        chunkdata_map37b_record_width = DeadMtlChunkdataRecordClusterWriterSpec.RecordWidth,
+        chunkdata_map37b_record_count = DeadMtlChunkdataRecordClusterWriterSpec.DefaultRecordCount,
+        chunkdata_map37b_exact_fit    = true,
+        chunkdata_map37b_verified     = false,
         loth_candidate_profile       = profile,
         loth_entry_count             = lothEntries.Length,
         loth_entries                 = lothEntries.Length > 3
