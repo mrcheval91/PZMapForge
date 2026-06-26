@@ -5,9 +5,9 @@
     Runs all PowerShell validation sub-scripts and finishes with a ledger
     summary. All sub-scripts must pass; exits nonzero on any failure.
 
-    Final output reports the complete PowerShell validation lane total (1976)
+    Final output reports the complete PowerShell validation lane total (1996)
     and the .NET lane total (556) as separate evidence lanes.
-    Counts are sourced from proof-packet v0.79 / docs/VALIDATION_LEDGER.md.
+    Counts are sourced from proof-packet v0.80 / docs/VALIDATION_LEDGER.md.
     Do not edit the constants below without also updating the proof packet
     schema and the validation ledger.
 #>
@@ -226,6 +226,33 @@ if ($map4gContent -notmatch 'bin_files_written') { throw "MAP-4G script missing 
 Write-Output "OK: script contains bin_files_written sentinel"
 if ($map4gContent -notmatch 'compiled_writer_implemented') { throw "MAP-4G script missing compiled_writer_implemented sentinel" }
 Write-Output "OK: script contains compiled_writer_implemented sentinel"
+
+Write-Output ""
+Write-Output "--- MAP-37C chunkdata staged candidate packet ---"
+$map37cDoc        = Join-Path $repoRoot 'docs\MAP_37C_CHUNKDATA_STAGED_CANDIDATE_PACKET.md'
+$map37cPrepScript = Join-Path $repoRoot 'scripts\prepare-build42-map37c-chunkdata-staged-packet.ps1'
+$map37cTests      = Join-Path $repoRoot 'scripts\test-build42-map37c-chunkdata-staged-packet.ps1'
+if (-not (Test-Path -LiteralPath $map37cDoc))        { throw "MAP-37C doc missing" }
+Write-Output "OK: docs\MAP_37C_CHUNKDATA_STAGED_CANDIDATE_PACKET.md"
+if (-not (Test-Path -LiteralPath $map37cPrepScript)) { throw "MAP-37C prepare script missing" }
+Write-Output "OK: scripts\prepare-build42-map37c-chunkdata-staged-packet.ps1"
+if (-not (Test-Path -LiteralPath $map37cTests))      { throw "MAP-37C tests missing" }
+Write-Output "OK: scripts\test-build42-map37c-chunkdata-staged-packet.ps1"
+$map37cDocContent  = Get-Content -LiteralPath $map37cDoc -Raw
+if ($map37cDocContent -notmatch 'MAP37C_STAGED') { throw "MAP-37C doc missing MAP37C_STAGED" }
+Write-Output "OK: doc contains MAP37C_STAGED"
+if ($map37cDocContent -notmatch 'CHUNKDATA_MAP37B_WRITER_APPLIED') { throw "MAP-37C doc missing CHUNKDATA_MAP37B_WRITER_APPLIED" }
+Write-Output "OK: doc contains CHUNKDATA_MAP37B_WRITER_APPLIED"
+if ($map37cDocContent -notmatch 'PLAYABLE_EXPORT_CLAIM_ALLOWED=false') { throw "MAP-37C doc missing PLAYABLE_EXPORT_CLAIM_ALLOWED=false" }
+Write-Output "OK: doc contains PLAYABLE_EXPORT_CLAIM_ALLOWED=false"
+$map37cPrepContent = Get-Content -LiteralPath $map37cPrepScript -Raw
+if ($map37cPrepContent -notmatch '\.local') { throw "MAP-37C prepare script missing .local refusal" }
+Write-Output "OK: prepare script contains .local refusal language"
+
+Write-Output ""
+Write-Output "--- MAP-37C chunkdata staged packet tests ---"
+& powershell -ExecutionPolicy Bypass -File $map37cTests
+if ($LASTEXITCODE -ne 0) { throw "MAP-37C chunkdata staged packet tests failed." }
 
 Write-Output ""
 Write-Output "--- MAP-9C IsoMetaGrid map folder registration research ---"
@@ -2420,6 +2447,7 @@ $psChecks = [ordered]@{
     'MAP-7B Lua metadata tests'            = 21
     'MAP-7C metadata v3 packet tests'     = 18
     'MAP-7D metadata v4 packet tests'     = 15
+    'MAP-37C chunkdata staged packet tests'                       = 20
     'MAP-9C map folder registration inspector tests'              = 25
     'MAP-9C runtime workshop map folder tests'                    = 25
     'MAP-9C isometagrid registration packet tests'                = 30
@@ -2476,14 +2504,14 @@ $psChecks = [ordered]@{
     'MAP-7F registration diagnostic tests' = 11
     'MAP-7E diagnostics tests'            = 11
 }
-$psTotal = 1976  # = validation_summary.total_expected_assertions in proof-packet v0.79
+$psTotal = 1996  # = validation_summary.total_expected_assertions in proof-packet v0.80
 
 $dnCoreTests = 246   # PZMapForge.Core.Tests (MAP-37B: +6 chunkdata record-cluster writer spec tests)
 $dnCliTests  = 418   # PZMapForge.Cli.Tests (MAP-37B: +6 chunkdata record-cluster writer spec tests)
 $dnTotal     = 664   # = dotnet_validation_summary.test_total (MAP-37B: +12)
 
 Write-Output ""
-Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.79):"
+Write-Output "  PowerShell lane  (validation_summary in proof-packet v0.80):"
 foreach ($kv in $psChecks.GetEnumerator()) {
     Write-Output ("    {0,-34} {1,4}" -f "$($kv.Key):", $kv.Value)
 }
@@ -2491,7 +2519,7 @@ Write-Output "    -------------------------------------- ----"
 Write-Output ("    {0,-34} {1,4}" -f "Total:", $psTotal)
 
 Write-Output ""
-Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.79 -- tracked separately):"
+Write-Output "  .NET lane  (dotnet_validation_summary in proof-packet v0.80 -- tracked separately):"
 Write-Output ("    {0,-34} {1,4}" -f "Core tests (PZMapForge.Core.Tests):", $dnCoreTests)
 Write-Output ("    {0,-34} {1,4}" -f "CLI tests  (PZMapForge.Cli.Tests):", $dnCliTests)
 Write-Output "    -------------------------------------- ----"

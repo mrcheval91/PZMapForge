@@ -8,6 +8,31 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-37C: chunkdata staged candidate packet)
+- scripts/prepare-build42-map37c-chunkdata-staged-packet.ps1:
+  - Runs CLI twice with --cell-x 35 --cell-y 27, profile empty_grass_v5.
+  - Generates chunkdata_35_27.bin: 1026 bytes, 00 01 header + 128 × 8-byte zero records.
+  - Compares SHA-256 across both runs; chunkdata_deterministic=true.
+  - .local/ guard enforced; staged_output_local_only=true.
+  - Writes map37c-chunkdata-staged-packet.json (schema pzmapforge.map37c-chunkdata-staged-packet.v0.1).
+  - Writes map37c-chunkdata-staged-packet.md.
+  - PLAYABLE_EXPORT_CLAIM_ALLOWED=false; verified_chunkdata_format=false.
+- scripts/test-build42-map37c-chunkdata-staged-packet.ps1: 20 assertions.
+  - .local guard / exits 0 / JSON+MD exist / chunkdata_35_27.bin exists / size=1026.
+  - header[0]=0x00 / header[1]=0x01 / body divisible by 8 / record_count=128.
+  - schema / header_size=2 / record_width=8 / exact_fit=true.
+  - sha256_run1+run2 64-char hex / run1==run2 / deterministic=true.
+  - PLAYABLE_EXPORT_CLAIM_ALLOWED=false.
+- docs/MAP_37C_CHUNKDATA_STAGED_CANDIDATE_PACKET.md: MAP37C_STAGED.
+  - CHUNKDATA_MAP37B_WRITER_APPLIED.
+  - PLAYABLE_EXPORT_CLAIM_ALLOWED=false; verified_chunkdata_format=false.
+- scripts/validate.ps1: MAP-37C section added before MAP-9C.
+- scripts/write-proof-packet.ps1: map37c_chunkdata_staged_packet_tests=20 added;
+  total_expected_assertions 1976->1996; schema v0.79->v0.80.
+- scripts/test-proof-packet.ps1: 2 new MAP-37C field assertions; total 1976->1996; schema v0.80.
+- docs/IMPLEMENTATION.md: MAP-37C ratified entry added.
+- psTotal 1976 -> 1996. Proof-packet v0.79 -> v0.80.
+
 ### Added (MAP-37B: chunkdata record-cluster writer fix)
 - src\PZMapForge.Core\WorldGen\DeadMtlChunkdataRecordClusterWriterSpec.cs:
   - Static spec class from MAP-37A ExactFitScore=3 confirmation.

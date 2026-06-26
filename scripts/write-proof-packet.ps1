@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Writes a deterministic local proof packet (v0.79) covering ImageMapForge,
+    Writes a deterministic local proof packet (v0.80) covering ImageMapForge,
     palette SHA-256 verification, TMX integrity, region extraction, primitive classification,
     planning recommendation artifacts, plan-recommendations contract (incl. thresholds_used),
     and a separate dotnet_validation_summary section tracking .NET xUnit test counts.
@@ -147,7 +147,7 @@ $planMdSha          = Get-FileSha256 $planMdPath
 # ---------------------------------------------------------------------------
 
 $packet = [ordered]@{
-    schema                  = 'pzmapforge.proof-packet.v0.79'
+    schema                  = 'pzmapforge.proof-packet.v0.80'
     generated_at_utc        = $generatedAt
     repo_root               = $repoRoot
     git_branch              = $gitBranch
@@ -202,6 +202,7 @@ $packet = [ordered]@{
         map7b_lua_metadata_tests          = 21
         map7c_metadata_v3_packet_tests    = 18
         map7d_metadata_v4_packet_tests    = 15
+        map37c_chunkdata_staged_packet_tests                       = 20
         map9c_map_folder_registration_inspector_tests              = 25
         map9c_runtime_workshop_map_folder_tests                    = 25
         map9c_isometagrid_registration_packet_tests                = 30
@@ -257,7 +258,7 @@ $packet = [ordered]@{
         map7g_variant_a_failure_tests     = 8
         map7f_registration_diagnostic_tests = 11
         map7e_diagnostics_tests           = 11
-        total_expected_assertions         = 1976
+        total_expected_assertions         = 1996
     }
     dotnet_validation_summary = [ordered]@{
         test_total                          = 652
@@ -337,7 +338,7 @@ $md = @"
 # PZMapForge Proof Packet
 
 Generated: $generatedAt
-Schema: pzmapforge.proof-packet.v0.79
+Schema: pzmapforge.proof-packet.v0.80
 
 ## Claim boundary
 
@@ -436,6 +437,7 @@ planning_artifact_only_not_pz_load_tested
 | MAP-7W runtime registration tests | 20 |
 | MAP-7X actual contract result tests | 20 |
 | MAP-7Y sidecar stub probe tests | 24 |
+| MAP-37C chunkdata staged packet tests | 20 |
 | MAP-9C map folder registration inspector tests | 25 |
 | MAP-9C runtime workshop map folder tests | 25 |
 | MAP-9C isometagrid registration packet tests | 30 |
@@ -470,7 +472,7 @@ planning_artifact_only_not_pz_load_tested
 | MAP-8F lots=self runtime result tests | 20 |
 | MAP-8D no invalid worldmap bin probe tests | 20 |
 | MAP-8B version media runtime result tests | 20 |
-| Total | 1976 |
+| Total | 1996 |
 
 ## .NET validation summary (separate lane)
 
