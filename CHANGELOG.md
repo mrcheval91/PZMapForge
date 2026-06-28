@@ -8,6 +8,39 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-37D: human runtime load-test packet)
+- scripts/prepare-build42-map37d-human-runtime-load-test-packet.ps1:
+  - Invokes MAP-37C prepare to generate fresh staged candidate under .local/.
+  - Captures chunkdata_35_27.bin SHA-256 as MAP-37C binary evidence reference.
+  - Writes map37d-human-runtime-load-test-packet.json (schema v0.1) + .md.
+  - Writes MAP_37D_HUMAN_RUNTIME_LOAD_TEST_PACKET.md (operator overview).
+  - Writes MAP_37D_HUMAN_INSTALL_STEPS.md (HUMAN-ONLY checklist).
+  - Writes MAP_37D_SERVER_WIRING.md (Mods=pzmapforge_map37c; Map=...;Muldraugh, KY;
+    spawn worldX=35 worldY=27 → PZ world 10650,8250,0).
+  - Writes MAP_37D_LOG_CAPTURE_COMMANDS.md.
+  - Writes MAP_37D_SUCCESS_FAILURE_CRITERIA.md (7 outcomes).
+  - Writes MAP_37D_RUNTIME_RESULT_RECORD.md.
+  - PLAYABLE_EXPORT_CLAIM_ALLOWED=false; HUMAN_ONLY_INSTALL_REQUIRED=true.
+  - CLAUDE_RAN_PZ=false; CLAUDE_WROTE_STEAM=false; CLAUDE_WROTE_WORKSHOP=false.
+- scripts/test-build42-map37d-human-runtime-load-test-packet.ps1: 29 assertions.
+  - .local guard / exits 0 / 8 docs exist / schema correct.
+  - PLAYABLE_EXPORT_CLAIM_ALLOWED=false / HUMAN_ONLY_INSTALL_REQUIRED=true.
+  - CLAUDE_RAN_PZ=false / CLAUDE_WROTE_STEAM=false / CLAUDE_WROTE_WORKSHOP=false.
+  - map37c_binary_evidence_referenced=true.
+  - HUMAN-ONLY in install steps / chunkdata_35_27.bin in install steps.
+  - Mods=pzmapforge_map37c in wiring / Map=...;Muldraugh, KY in wiring / 10650 in wiring.
+  - All 7 outcome sentinels in criteria doc (MOD_NOT_LOADED / SPAWN_METADATA_FAIL /
+    MAP_FOLDER_REGISTRATION_FAIL / CHUNKDATA_PARSE_FAIL / MULDRAUGH_FALLBACK /
+    EMPTY_WORLD / TERRAIN_MOUNT_SUCCESS).
+- docs/MAP_37D_HUMAN_RUNTIME_LOAD_TEST_PACKET.md: MAP37D_HUMAN_RUNTIME_LOAD_TEST_PACKET_DEFINED.
+  - PLAYABLE_EXPORT_CLAIM_ALLOWED=false; playable_terrain_mount_proven=false.
+- scripts/validate.ps1: MAP-37D section added before MAP-37C.
+- scripts/write-proof-packet.ps1: map37d_human_runtime_load_test_packet_tests=29 added;
+  total_expected_assertions 1996->2025; schema v0.80->v0.81.
+- scripts/test-proof-packet.ps1: 2 new MAP-37D field assertions; total 1996->2025; schema v0.81.
+- docs/IMPLEMENTATION.md: MAP-37D ratified entry added.
+- psTotal 1996 -> 2025. Proof-packet v0.80 -> v0.81.
+
 ### Added (MAP-37C: chunkdata staged candidate packet)
 - scripts/prepare-build42-map37c-chunkdata-staged-packet.ps1:
   - Runs CLI twice with --cell-x 35 --cell-y 27, profile empty_grass_v5.
