@@ -387,12 +387,12 @@ public static class DeadMtlWorldBuilderRawTileZoneMetadataValidator
                 : Fail("BASELINE_F000FF_BACK_ALLEY", "ERROR",
                     "#F000FF must be role=STREET_CORRIDOR, street_class=BACK_ALLEY."));
 
-            checks.Add(byColor.TryGetValue("#42CCFF", out var r42CC) &&
-                       r42CC.Role == "ZONE" && r42CC.ZoneType == "COMMERCIAL"
-                ? Pass("BASELINE_42CCFF_COMMERCIAL", "ERROR",
-                    "#42CCFF is ZONE / COMMERCIAL.")
-                : Fail("BASELINE_42CCFF_COMMERCIAL", "ERROR",
-                    "#42CCFF must be role=ZONE, zone_type=COMMERCIAL."));
+            checks.Add(byColor.TryGetValue("#CE0000", out var rCE00) &&
+                       rCE00.Role == "ZONE" && rCE00.ZoneType == "COMMERCIAL"
+                ? Pass("BASELINE_CE0000_COMMERCIAL", "ERROR",
+                    "#CE0000 is ZONE / COMMERCIAL.")
+                : Fail("BASELINE_CE0000_COMMERCIAL", "ERROR",
+                    "#CE0000 must be role=ZONE, zone_type=COMMERCIAL."));
 
             checks.Add(byColor.TryGetValue("#00AA10", out var r00AA) &&
                        r00AA.Role == "ZONE" && r00AA.ZoneType == "GREENSPACE"
@@ -484,7 +484,7 @@ public static class DeadMtlWorldBuilderRawTileZoneMetadataValidator
         sb.AppendLine("| #7200FF | ZONE | RESIDENTIAL | - | false | Residential fabric. Future lot subdivision. Frontage: MAIN_ROAD. |");
         sb.AppendLine("| #FF6600 | STREET_CORRIDOR | TRANSPORT | MAIN_ROAD | **true** | Main frontage road. Sidewalks generated later from neighborhood profile. |");
         sb.AppendLine("| #F000FF | STREET_CORRIDOR | TRANSPORT | BACK_ALLEY | false | Back alley / service corridor. No sidewalks. Rear access only. |");
-        sb.AppendLine("| #42CCFF | ZONE | COMMERCIAL | - | false | Commercial zone. Future lot subdivision. Frontage: MAIN_ROAD. |");
+        sb.AppendLine("| #CE0000 | ZONE | COMMERCIAL | - | false | Commercial zone. Future lot subdivision. Frontage: MAIN_ROAD. |");
         sb.AppendLine("| #00AA10 | ZONE | GREENSPACE | - | false | Park / open ground. Not normalized from any other green. |");
         sb.AppendLine("| #B2BD87 | UNIQUE_PLACEHOLDER | CIVIC_SPECIAL_BUILDING | - | false | Civic / government / institutional placeholder. No procedural fill. |");
         sb.AppendLine("| #000000 | IGNORE | VOID_OR_BORDER | - | false | Opaque black border marker. Not transparency. |");
@@ -516,7 +516,7 @@ public static class DeadMtlWorldBuilderRawTileZoneMetadataValidator
         sb.AppendLine();
         sb.AppendLine("## Commercial Lot Subdivision Note");
         sb.AppendLine();
-        sb.AppendLine("Commercial zones (#42CCFF) are also subdivided if large enough.");
+        sb.AppendLine("Commercial zones (#CE0000) are also subdivided if large enough.");
         sb.AppendLine("Commercial lots prefer MAIN_ROAD frontage (preferred_frontage = MAIN_ROAD).");
         sb.AppendLine();
         sb.AppendLine("## Civic Placeholder Note");

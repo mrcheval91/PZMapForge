@@ -33,7 +33,7 @@ public sealed class DeadMtlWorldBuilderRawTileZoneMetadataValidatorTests : IDisp
     // All 7 standard colors from map_00.png
     private static readonly string[] Map00Colors =
     {
-        "#7200FF", "#FF6600", "#00AA10", "#F000FF", "#B2BD87", "#42CCFF", "#000000"
+        "#7200FF", "#FF6600", "#00AA10", "#F000FF", "#B2BD87", "#CE0000", "#000000"
     };
 
     private string WriteInspection(IEnumerable<string> colors)
@@ -412,7 +412,7 @@ public sealed class DeadMtlWorldBuilderRawTileZoneMetadataValidatorTests : IDisp
     [Fact] public void Validate_Baseline_7200FF_IsResidential()   => AssertBaselinePasses("BASELINE_7200FF_RESIDENTIAL");
     [Fact] public void Validate_Baseline_FF6600_IsMainRoad()       => AssertBaselinePasses("BASELINE_FF6600_MAIN_ROAD");
     [Fact] public void Validate_Baseline_F000FF_IsBackAlley()      => AssertBaselinePasses("BASELINE_F000FF_BACK_ALLEY");
-    [Fact] public void Validate_Baseline_42CCFF_IsCommercial()     => AssertBaselinePasses("BASELINE_42CCFF_COMMERCIAL");
+    [Fact] public void Validate_Baseline_CE0000_IsCommercial()     => AssertBaselinePasses("BASELINE_CE0000_COMMERCIAL");
     [Fact] public void Validate_Baseline_00AA10_IsGreenspace()     => AssertBaselinePasses("BASELINE_00AA10_GREENSPACE");
     [Fact] public void Validate_Baseline_B2BD87_IsCivicSpecial()   => AssertBaselinePasses("BASELINE_B2BD87_CIVIC_SPECIAL");
     [Fact] public void Validate_Baseline_000000_IsIgnore()         => AssertBaselinePasses("BASELINE_000000_IGNORE");

@@ -7,7 +7,7 @@ namespace PZMapForge.Cli.Tests;
 public sealed class DeadMtlWorldBuilderLotheaderHexDisassemblyProcessTests : IDisposable
 {
     private readonly string _tempDir =
-        Path.Combine(Path.GetTempPath(), "pzmapforge-map36c-cli-test.local", Path.GetRandomFileName());
+        Path.Combine(Path.GetTempPath(), "pzmapforge-map36c-cli-test", Path.GetRandomFileName());
 
     public DeadMtlWorldBuilderLotheaderHexDisassemblyProcessTests() =>
         Directory.CreateDirectory(_tempDir);

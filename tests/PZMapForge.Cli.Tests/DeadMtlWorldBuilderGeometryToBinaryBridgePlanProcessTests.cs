@@ -7,7 +7,7 @@ namespace PZMapForge.Cli.Tests;
 public sealed class DeadMtlWorldBuilderGeometryToBinaryBridgePlanProcessTests : IDisposable
 {
     private readonly string _tempDir =
-        Path.Combine(Path.GetTempPath(), "pzmapforge-map36b-cli-test.local", Path.GetRandomFileName());
+        Path.Combine(Path.GetTempPath(), "pzmapforge-map36b-cli-test", Path.GetRandomFileName());
 
     public DeadMtlWorldBuilderGeometryToBinaryBridgePlanProcessTests() =>
         Directory.CreateDirectory(_tempDir);

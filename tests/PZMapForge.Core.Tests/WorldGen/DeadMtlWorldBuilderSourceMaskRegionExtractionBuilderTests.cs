@@ -344,7 +344,7 @@ public sealed class DeadMtlWorldBuilderSourceMaskRegionExtractionBuilderTests : 
     public void Build_CommercialRegion_MapsToLotGeometry()
     {
         var region = RunReal().Extraction.MaskRegions
-            .Single(r => r.SourceColor == "#42CCFF");
+            .Single(r => r.SourceColor == "#CE0000");
         Assert.Contains("LOT_GEOMETRY", region.FutureGeometryRequirementIds);
     }
 

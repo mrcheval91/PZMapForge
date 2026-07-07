@@ -277,7 +277,17 @@ public sealed class DeadMtlWorldBuilderResidentialBlueQuadrilateralLotFillBuilde
     private static (byte R, byte G, byte B) GetShadeFromPalette(
         (byte R, byte G, byte B)[] palette,
         int componentOrder, int primaryIndex, int secondaryIndex)
-        => palette[(componentOrder * 7 + primaryIndex + secondaryIndex) % palette.Length];
+    {
+        int n = palette.Length;
+        if (n <= 1) return palette[0];
+        // Ping-pong (triangle wave) across the palette so consecutive lots always
+        // move exactly one tone step (light->medium->dark->medium->light->...)
+        // instead of jumping from the darkest shade back to the lightest.
+        int period = 2 * (n - 1);
+        int pos    = (componentOrder * 7 + primaryIndex + secondaryIndex) % period;
+        int index  = pos < n ? pos : period - pos;
+        return palette[index];
+    }
 
     private static void ReassignShades(
         List<QuadrilateralLot> lots, int compOrder, (byte R, byte G, byte B)[] shades)

@@ -22,9 +22,23 @@ if ($LASTEXITCODE -ne 0) {
 New-Item -ItemType Directory -Force -Path $ManifestDir | Out-Null
 
 Write-Host "Building CLI..."
-& dotnet build $CliProject --configuration Release -q
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Build failed."
+$buildAttempt = 0
+$buildOk = $false
+while (-not $buildOk -and $buildAttempt -lt 3) {
+    $buildAttempt++
+    & dotnet build $CliProject --configuration Release -q /nodeReuse:false
+    if ($LASTEXITCODE -eq 0) {
+        $buildOk = $true
+    } elseif ($buildAttempt -lt 3) {
+        # MSB3492 AssemblyInfoInputs.cache read race: a prior `dotnet build`
+        # invocation's background compiler-server process can still hold the
+        # file handle for a brief window after that process returns. This is
+        # a known transient MSBuild race, not a real compile failure - retry.
+        Start-Sleep -Milliseconds 500
+    }
+}
+if (-not $buildOk) {
+    Write-Error "Build failed after $buildAttempt attempts."
     exit 1
 }
 

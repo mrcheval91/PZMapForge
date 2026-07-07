@@ -65,9 +65,11 @@ public sealed class AppExportProcessTests : IDisposable
         foreach (var a in args) psi.ArgumentList.Add(a);
 
         using var proc = Process.Start(psi)!;
-        var stdout = proc.StandardOutput.ReadToEnd();
-        var stderr = proc.StandardError.ReadToEnd();
+        var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+        var stderrTask = proc.StandardError.ReadToEndAsync();
         proc.WaitForExit();
+        var stdout = stdoutTask.GetAwaiter().GetResult();
+        var stderr = stderrTask.GetAwaiter().GetResult();
         return (proc.ExitCode, stdout, stderr);
     }
 
@@ -469,9 +471,11 @@ public sealed class AppExportAnnotationTests : IDisposable
         foreach (var a in args) psi.ArgumentList.Add(a);
 
         using var proc = System.Diagnostics.Process.Start(psi)!;
-        var stdout = proc.StandardOutput.ReadToEnd();
-        var stderr = proc.StandardError.ReadToEnd();
+        var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+        var stderrTask = proc.StandardError.ReadToEndAsync();
         proc.WaitForExit();
+        var stdout = stdoutTask.GetAwaiter().GetResult();
+        var stderr = stderrTask.GetAwaiter().GetResult();
         return (proc.ExitCode, stdout, stderr);
     }
 
@@ -1303,9 +1307,11 @@ public sealed class AppExportZeroSelectionTests : IDisposable
             psi.ArgumentList.Add(a);
 
         using var proc = System.Diagnostics.Process.Start(psi)!;
-        var stdout = proc.StandardOutput.ReadToEnd();
-        var stderr = proc.StandardError.ReadToEnd();
+        var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+        var stderrTask = proc.StandardError.ReadToEndAsync();
         proc.WaitForExit();
+        var stdout = stdoutTask.GetAwaiter().GetResult();
+        var stderr = stderrTask.GetAwaiter().GetResult();
 
         Assert.True(proc.ExitCode == 0,
             $"Exited {proc.ExitCode}. Stdout: {stdout}. Stderr: {stderr}");
@@ -1353,9 +1359,11 @@ public sealed class AppExportZeroSelectionTests : IDisposable
             psi.ArgumentList.Add(a);
 
         using var proc = System.Diagnostics.Process.Start(psi)!;
-        var stdout = proc.StandardOutput.ReadToEnd();
-        var stderr = proc.StandardError.ReadToEnd();
+        var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+        var stderrTask = proc.StandardError.ReadToEndAsync();
         proc.WaitForExit();
+        var stdout = stdoutTask.GetAwaiter().GetResult();
+        var stderr = stderrTask.GetAwaiter().GetResult();
 
         Assert.True(proc.ExitCode == 0,
             $"Exited {proc.ExitCode}. Stdout: {stdout}. Stderr: {stderr}");

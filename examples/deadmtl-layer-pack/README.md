@@ -693,7 +693,7 @@ no building placement, no fence placement, no lotpack writing, no runtime proof.
 Metadata: `examples/deadmtl-layer-pack/worldbuilder/tiles/map_00.zone_metadata.json`
 
 Colors: `#7200FF` RESIDENTIAL, `#FF6600` MAIN_ROAD (sidewalk_eligible), `#F000FF` BACK_ALLEY
-(no sidewalks), `#42CCFF` COMMERCIAL, `#00AA10` GREENSPACE, `#B2BD87` CIVIC_SPECIAL_BUILDING,
+(no sidewalks), `#CE0000` COMMERCIAL, `#00AA10` GREENSPACE, `#B2BD87` CIVIC_SPECIAL_BUILDING,
 `#000000` IGNORE.
 
 Run:

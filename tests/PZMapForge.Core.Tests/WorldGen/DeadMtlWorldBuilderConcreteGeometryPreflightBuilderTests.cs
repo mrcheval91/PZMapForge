@@ -299,7 +299,7 @@ public sealed class DeadMtlWorldBuilderConcreteGeometryPreflightBuilderTests : I
         var req = RunReal().Preflight.PreflightRequirements
             .Single(r => r.RequirementId == "LOT_GEOMETRY");
         Assert.Contains("#7200FF", req.SourceComponentColors);
-        Assert.Contains("#42CCFF", req.SourceComponentColors);
+        Assert.Contains("#CE0000", req.SourceComponentColors);
     }
 
     [Fact]

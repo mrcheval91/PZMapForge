@@ -303,7 +303,7 @@ public static class DeadMtlWorldBuilderBuildingSelectionPolicyPlanBuilder
         sb.AppendLine();
         sb.AppendLine("## Commercial Selection Policy");
         sb.AppendLine();
-        sb.AppendLine("#42CCFF (COMMERCIAL) is eligible for future building family selection after lot subdivision.");
+        sb.AppendLine("#CE0000 (COMMERCIAL) is eligible for future building family selection after lot subdivision.");
         sb.AppendLine("Selection is deferred. No concrete building id is selected now.");
         sb.AppendLine();
         sb.AppendLine("Allowed families: depanneur, pharmacy, restaurant, main_street_storefront, office_small");

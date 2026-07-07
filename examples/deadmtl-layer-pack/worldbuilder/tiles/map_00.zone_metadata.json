@@ -59,7 +59,7 @@
       "notes": "Back alley / service corridor. No sidewalks. Used for rear access/service, not normal frontage."
     },
     {
-      "color": "#42CCFF",
+      "color": "#CE0000",
       "role": "ZONE",
       "zone_type": "COMMERCIAL",
       "development_intensity": "MEDIUM",
