@@ -2,6 +2,17 @@
 
 MAP37D_HUMAN_RUNTIME_LOAD_TEST_PACKET_DEFINED
 
+> **Superseded by MAP-37E.** Outcome 7 below (TERRAIN_MOUNT_SUCCESS = "player
+> spawns at correct coordinate and terrain is visible") is not a sufficient
+> criterion: MAP-9N/MAP-9Q showed Build 42 can render generic procedural
+> wilderness even when the generated 35_27 cell files are removed entirely.
+> The server wiring below also reuses the MAP-9D shape (self-token +
+> `;Muldraugh, KY`) that MAP-9D showed produces an empty IsoMetaGrid
+> map-folder list, rather than the MAP-9K/9L/9Q shape that actually mounted.
+> Do not run this packet as-is to claim terrain mount evidence. Use
+> [MAP_37E_DIFFERENTIAL_CONTROL_TEST.md](MAP_37E_DIFFERENTIAL_CONTROL_TEST.md)
+> instead. This document is kept unmodified below as the historical record.
+
 ## Purpose
 
 Defines the controlled human runtime test for the MAP-37C chunkdata candidate.

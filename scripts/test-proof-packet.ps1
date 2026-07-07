@@ -83,8 +83,8 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.81') `
-    "schema == 'pzmapforge.proof-packet.v0.81' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.82') `
+    "schema == 'pzmapforge.proof-packet.v0.82' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
@@ -140,6 +140,8 @@ Assert-True ([int]$p.validation_summary.map7a_load_test_packet_tests          -e
 Assert-True ([int]$p.validation_summary.map7b_lua_metadata_tests               -eq 21)  "map7b_lua_metadata_tests == 21"
 Assert-True ([int]$p.validation_summary.map7c_metadata_v3_packet_tests         -eq 18)  "map7c_metadata_v3_packet_tests == 18"
 Assert-True ([int]$p.validation_summary.map7d_metadata_v4_packet_tests         -eq 15)  "map7d_metadata_v4_packet_tests == 15"
+Assert-True ($null -ne $p.validation_summary.PSObject.Properties['map37e_differential_control_test_packet_tests']) "Field 'map37e_differential_control_test_packet_tests' present"
+Assert-True ([int]$p.validation_summary.map37e_differential_control_test_packet_tests -eq 60) "map37e_differential_control_test_packet_tests == 60"
 Assert-True ($null -ne $p.validation_summary.PSObject.Properties['map37d_human_runtime_load_test_packet_tests']) "Field 'map37d_human_runtime_load_test_packet_tests' present"
 Assert-True ([int]$p.validation_summary.map37d_human_runtime_load_test_packet_tests -eq 29) "map37d_human_runtime_load_test_packet_tests == 29"
 Assert-True ($null -ne $p.validation_summary.PSObject.Properties['map37c_chunkdata_staged_packet_tests']) "Field 'map37c_chunkdata_staged_packet_tests' present"
@@ -210,7 +212,7 @@ Assert-True ([int]$p.validation_summary.map7h_discovery_path_tests            -e
 Assert-True ([int]$p.validation_summary.map7g_variant_a_failure_tests         -eq 8)   "map7g_variant_a_failure_tests == 8"
 Assert-True ([int]$p.validation_summary.map7f_registration_diagnostic_tests   -eq 11)  "map7f_registration_diagnostic_tests == 11"
 Assert-True ([int]$p.validation_summary.map7e_diagnostics_tests                -eq 11)  "map7e_diagnostics_tests == 11"
-Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 2025) "total_expected_assertions == 2025"
+Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 2085) "total_expected_assertions == 2085"
 
 # ---------------------------------------------------------------------------
 # dotnet_validation_summary (separate lane)

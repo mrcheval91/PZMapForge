@@ -1,5 +1,5 @@
 ﻿# worldgen-png-palette layer authoring guide
-# Generated: 2026-06-13 20:20:33
+# Generated: 2026-07-06 20:16:38
 
 == Overview ==
 

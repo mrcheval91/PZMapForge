@@ -8,6 +8,60 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-37E: differential control test packet)
+- Reworks MAP-37D into a two-run differential control test. MAP-37D's
+  TERRAIN_MOUNT_SUCCESS criterion ("spawn at correct coordinate + terrain
+  visible") is the same signal MAP-9L recorded once, before MAP-9N/MAP-9Q
+  showed generic procedural wilderness renders even with generated 35_27
+  files removed. A single-run visible-terrain test cannot distinguish
+  authored content from fallback rendering.
+- scripts/prepare-build42-map37e-differential-control-test-packet.ps1:
+  - Invokes MAP-37C prepare (no binary-generation or writer changes).
+  - Stages Run A (files-present): verbatim copy of the staged candidate.
+  - Stages Run B (files-removed): identical copy with 35_27.lotheader,
+    world_35_27.lotpack, chunkdata_35_27.bin deleted; asserts absence.
+  - Captures SHA-256 + size evidence for the three Run A files.
+  - Writes map37e-differential-control-test-packet.json (schema v0.1) + .md.
+  - Writes MAP_37E_DIFFERENTIAL_CONTROL_TEST.md (operator overview).
+  - Writes MAP_37E_HUMAN_INSTALL_STEPS.md (HUMAN-ONLY, Run A / Run B checklists).
+  - Writes MAP_37E_SERVER_WIRING.md: Mods=pzmapforge_map37c; Map=pzmapforge_map37c
+    (single self-token, NO ;Muldraugh, KY chain — the MAP-9K/9L/9Q proven mount
+    shape, not the MAP-9D/MAP-37D shape); SpawnPoint=10746,8288,0 direct INI coordinate.
+  - Writes MAP_37E_LOG_CAPTURE_COMMANDS.md.
+  - Writes MAP_37E_SUCCESS_FAILURE_CRITERIA.md: MAP-37D's 7 outcomes plus a new
+    8th outcome, FALLBACK_INDISTINGUISHABLE; TERRAIN_MOUNT_SUCCESS narrowed so it
+    cannot be reached from "Run A spawn + visible terrain" alone — it now requires
+    Run A and Run B to be distinguishable.
+  - Writes MAP_37E_RUNTIME_RESULT_RECORD.md (two-run recording template).
+  - PLAYABLE_EXPORT_CLAIM_ALLOWED=false; HUMAN_ONLY_INSTALL_REQUIRED=true.
+  - CLAUDE_RAN_PZ=false; CLAUDE_WROTE_STEAM=false; CLAUDE_WROTE_WORKSHOP=false.
+- scripts/test-build42-map37e-differential-control-test-packet.ps1: 60 assertions.
+  - .local guard / exits 0 / 8 docs exist / schema correct.
+  - Claim-boundary fields / differential_control_test=true.
+  - muldraugh_chain_present=false / expected_map_line has no Muldraugh suffix.
+  - expected_spawn_point_ini == 'SpawnPoint=10746,8288,0'.
+  - map_token_matches_staged_folder=true.
+  - Run A binary evidence (sha256 + size) / Run B absence flags (JSON and on-disk).
+  - Install steps doc separates Run A and Run B.
+  - Server wiring doc contains no Muldraugh-chained Map= line, explicit no-chain statement.
+  - All 8 outcome sentinels in criteria doc, including FALLBACK_INDISTINGUISHABLE.
+  - Criteria doc explicitly narrows TERRAIN_MOUNT_SUCCESS and documents
+    FALLBACK_INDISTINGUISHABLE as the expected result per MAP-9N/MAP-9Q.
+  - Result record contains both outcome checkboxes.
+  - No doc claims playable_terrain_mount_proven=true.
+- docs/MAP_37E_DIFFERENTIAL_CONTROL_TEST.md: MAP37E_DIFFERENTIAL_CONTROL_TEST_PACKET_DEFINED.
+  - PLAYABLE_EXPORT_CLAIM_ALLOWED=false; playable_terrain_mount_proven=false.
+- docs/MAP_37D_HUMAN_RUNTIME_LOAD_TEST_PACKET.md: added a superseded-by-MAP-37E
+  notice at the top; historical record below left unmodified.
+- scripts/validate.ps1: MAP-37E section added before MAP-37D.
+- scripts/write-proof-packet.ps1: map37e_differential_control_test_packet_tests=60 added;
+  total_expected_assertions 2025->2085; schema v0.81->v0.82.
+- scripts/test-proof-packet.ps1: 2 new MAP-37E field assertions; total 2025->2085; schema v0.82.
+- docs/IMPLEMENTATION.md: MAP-37E ratified entry added.
+- psTotal 2025 -> 2085. Proof-packet v0.81 -> v0.82.
+- No binary-generation, terrain-writer, or lotheader/lotpack/chunkdata mutation
+  changes made. No Steam/Workshop/Project Zomboid runtime actions by Claude.
+
 ### Added (MAP-37D: human runtime load-test packet)
 - scripts/prepare-build42-map37d-human-runtime-load-test-packet.ps1:
   - Invokes MAP-37C prepare to generate fresh staged candidate under .local/.
