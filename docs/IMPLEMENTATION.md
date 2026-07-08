@@ -213,6 +213,7 @@ Current-state mapping of what PZMapForge actually does vs. what it claims.
 |---|---|---|
 | TileZed-openable planning TMX | PROVISIONAL | Opened visibly in TileZed. Structurally validated (gap 2 closed). Not a PZ load-tested export. |
 | -Resize flag (nearest-neighbour) | PROVISIONAL | Logic present, not explicitly tested in harness. |
+| Build42CandidateWriter `renderable_v1` profile (MAP-38A) | PROVISIONAL | Cell data under `common/media/maps/<mapId>/` (not `<version>/media/maps/`); `map.info` `lots=Muldraugh, KY`; `lotheader` = 4 real vanilla `blends_natural_01_*` names + `unofficial_fork_map_0` distinctive marker tile + 1048-byte trailer; `lotpack` chunks = 1024 x 64 explicit 12-byte tile records (768 bytes/chunk), not zero-filled. All three differences reverse-engineered by diffing against real vanilla Muldraugh, KY game files and a confirmed-working community sample mod (github.com/pzmapping/Sample-Mod-and-Project-). Based on ONE unrepeatable human runtime test (2026-07-08) that showed a cell in this format rendering as a visually distinct, non-fallback pattern in Build 42 — not an automated differential proof like MAP-37E. `chunkdata_X_Y.bin` unchanged from the existing zero-body MAP-37B format; its real semantics are still undecoded. 21 CLI process tests cover byte-shape and content, not in-game rendering (no automated PZ runtime harness exists). Do not promote to Ratified without a repeatable, automated (or at minimum multiply-repeated human) confirmation. |
 
 ## Not present: out of scope for current phase
 

@@ -8,6 +8,50 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-38A: renderable_v1 Build 42 candidate profile) — PROVISIONAL
+- New `--build42-candidate-profile renderable_v1` for the existing Build 42
+  candidate writer (`--build42-candidate-writer`). Implements a binary format
+  reverse-engineered from real vanilla Muldraugh, KY game files and a
+  confirmed-working community sample mod, after MAP-37E's own runtime test
+  came back FALLBACK_INDISTINGUISHABLE and manual investigation found that
+  every prior profile (v0-v5) wrote cell data in a folder location and shape
+  real Build 42 map folders never use.
+- Three structural fixes versus all prior profiles:
+  1. Cell data (lotheader/lotpack/chunkdata/map.info/objects.lua/
+     spawnpoints.lua/thumb.png) now goes under `common/media/maps/<mapId>/`,
+     not `<version>/media/maps/<mapId>/`. `mod.info`/`poster.png` are
+     duplicated into both `common/` and the version folder, matching the
+     confirmed-working sample's own layout.
+  2. `map.info`'s `lots=` now names the parent world a cell overlays
+     (`Muldraugh, KY`), not a self-referential `lots=<mapId>` — confirmed
+     against real vanilla sub-town `map.info` files (Rosewood/West Point/
+     Riverside all point back to Muldraugh, KY).
+  3. `world_X_Y.lotpack` chunks are no longer a flat zero-filled payload.
+     Each of the 1024 chunks is now 64 explicit 12-byte tile records
+     (`[U32=2][U32=0xFFFFFFFF][U32=tile_index]`, 768 bytes/chunk) forming an
+     8x8 tile-slot grid, referencing a real tile-name table (4 real vanilla
+     `blends_natural_01_*` names + `unofficial_fork_map_0`, a visually
+     distinctive marker tile bundled with the Alree/Unjammer unofficial B42
+     mapping tools). Natural-blend-only content was tested first and found
+     visually indistinguishable from PZ's own procedural fallback even when
+     loading correctly — the marker tile is what let one human runtime test
+     (2026-07-08) confirm this format renders as a distinct, non-procedural
+     pattern in-game.
+- `chunkdata_X_Y.bin` is unchanged from the existing MAP-37B zero-body
+  format — real chunkdata content is confirmed non-zero in every working
+  reference seen, but its semantics are still undecoded, so this profile
+  does not claim to have fixed it.
+- **PROVISIONAL boundary**: based on ONE human-run, unrepeatable runtime
+  test, not an automated differential proof like MAP-37E's own packet.
+  `load_tested=false` and `playable_export_claimed=false` in this profile's
+  own report, same as every other profile. Not yet promoted to a MAP-3x
+  doctrine stage; no differential control test packet exists for it yet.
+- New: `tests/PZMapForge.Cli.Tests/MapExportBuild42CandidateWriterRenderableV1ProcessTests.cs`
+  (21 tests: folder structure, `map.info`, lotheader byte-shape and content,
+  lotpack byte-shape and first-record content, no-BOM encoding, report
+  claim-boundary fields).
+- v0-v5 profiles are completely unchanged; this is purely additive.
+
 ### Added (MAP-37E: differential control test packet)
 - Reworks MAP-37D into a two-run differential control test. MAP-37D's
   TERRAIN_MOUNT_SUCCESS criterion ("spawn at correct coordinate + terrain
