@@ -8,6 +8,19 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-38L: corrected-coordinate differential control test packet)
+- `scripts/prepare-build42-map38l-corrected-coordinate-differential-packet.ps1`:
+  reruns the MAP-37E/MAP-38B differential pattern (Run A files-present / Run B
+  files-removed) at cell 34_26 using MAP-38J's corrected coordinate math, to
+  convert MAP-38K's single human confirmation into a proper differential
+  result before promoting `renderable_v1` to Ratified. Includes a built-in
+  sanity check that fails loudly if the generated `objects.lua` doesn't
+  contain the expected corrected coordinate (guards against the MAP-38J fix
+  silently regressing). `docs/MAP_38L_CORRECTED_COORDINATE_DIFFERENTIAL_PACKET.md`
+  committed as the operator overview.
+- Not yet run by a human. Ready whenever the operator wants to complete the
+  ratification MAP-38K recommended.
+
 ### Fixed + Confirmed (MAP-38J/K: the actual root cause — Build 42 uses 256-tile cells, not 300 — found and fixed; rendering confirmed)
 - **The root cause of the entire MAP-6A-onward binary-format lineage's
   failure to render**: this repo's spawn-coordinate math (every profile,
