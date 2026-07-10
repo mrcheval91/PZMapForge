@@ -8,6 +8,25 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Confirmed (MAP-38S: real vegetation tile renders — second confirmed content type)
+- Operator observed **"vegetation full"** at the confirmed coordinate using
+  `pzmapforge_map38r` (`--renderable-marker-tile vegetation_foliage_01_8`).
+  Real, dense vegetation, not just the carpet floor tile.
+- This is the second confirmed content type through this repo's lotpack
+  mechanism, and much closer to MAP-38A's original goal (authored,
+  thematically plausible terrain, not just an arbitrary marker). Confirms
+  the mechanism is general-purpose — any real, textured tile name renders,
+  not just floor tiles — and that vegetation is a ground-level tile choice,
+  not an `objects.lua` zone concern (retroactively explains MAP-38O/P's
+  negatives as the wrong mechanism, not a dead end).
+- `docs/IMPLEMENTATION.md` updated accordingly. See
+  `docs/MAP_38S_REAL_VEGETATION_TILE_CONFIRMED.md`.
+- Still open: only one vegetation tile name tested; the community list has
+  more candidates (`blends_grassoverlays_01_*`,
+  `e_americanholly_01`/`e_canadianhemlock_01` first 4 trees); upper-level
+  (building interior) placement is a different, untested mechanism; MAP-38A's
+  second-cell confirmation still applies before Ratifying.
+
 ### Added (MAP-38R: --renderable-marker-tile CLI override, testing real vegetation)
 - Operator found (via the PZ modding community) that real vegetation
   placement uses specific confirmed-working tile names
