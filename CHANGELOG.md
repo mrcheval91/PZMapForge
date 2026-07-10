@@ -8,6 +8,22 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Recorded (MAP-38P result: second Vegitation zone also has no effect — hypothesis 1 ruled out)
+- Operator confirmed arrival at the second zone's location (~8730,6680,
+  visible edge of the marker-tile block) and observed plain empty grass —
+  no vegetation, no shrub scatter. Same null result as the first zone.
+- This rules out "zones only affect otherwise-unauthored ground" — neither
+  placement (over explicit marker tiles, nor over Type-A default ground)
+  produced any effect. Remaining hypotheses: the zone format is missing a
+  required field, or per-cell `objects.lua` `Vegitation` zones simply don't
+  carry the same authority as Muldraugh's own map-wide file (unlike
+  `SpawnPoint`, confirmed working from the same per-cell file).
+- **Conclusion: Vegitation zone objects via per-cell objects.lua have no
+  observed effect, tested twice, two ground types.** Closing this specific
+  avenue — no real reference implementation exists showing a working
+  per-cell zone to compare against. Recorded in
+  `docs/MAP_38O_VEGITATION_ZONE_NEGATIVE_RESULT.md`.
+
 ### Added (MAP-38P: second Vegitation zone probe over untouched ground)
 - MAP-38O's leading hypothesis was that zones seed density where the game
   generates vegetation, not force placement over already-explicit lotpack

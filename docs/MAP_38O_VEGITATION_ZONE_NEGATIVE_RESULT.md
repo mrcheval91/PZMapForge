@@ -39,16 +39,32 @@ untested:
    file (MAP-38G/MAP-38K). Different object types may be processed by
    different subsystems with different scope rules.
 
-## Recommended next step (if resumed)
+## Follow-up (MAP-38P): second zone over untouched ground — also no effect
 
-Test a `Vegitation` zone over tiles that are NOT already covered by an
-explicit lotpack record (i.e., over one of the Type-A "whole chunk is
-default" areas, not the central marker block) to distinguish hypothesis 1
-from 2/3. If vegetation appears there but not over the marker block, that
-confirms zones only affect otherwise-unauthored ground.
+Added a second `Vegitation` zone over tiles 0..63 (Type-A default-shorthand,
+outside the marker block) to distinguish hypothesis 1 from 2/3. Operator
+confirmed arrival at that location (visible at the edge of the marker-tile
+block, coordinate ~8730,6680) and observed **plain empty grass — no
+vegetation, no shrub scatter, same as everywhere else.**
+
+**This rules out hypothesis 1.** Zones do not seed vegetation over
+otherwise-unauthored ground either. Both placements (over explicit marker
+tiles, and over Type-A default ground) show zero effect. Leading
+hypotheses now: the zone object format is incomplete (missing a required
+field like density/seed), or per-cell `objects.lua` zones of type
+`Vegitation` simply don't carry the same authority as Muldraugh's own
+map-wide `objects.lua` — unlike `SpawnPoint`, which is confirmed working
+from the same per-cell file (MAP-38G/MAP-38K).
+
+**Conclusion: `Vegitation` zone objects placed via this repo's per-cell
+`objects.lua` have no observed effect, tested twice, over two different
+ground types.** Not pursued further this session — diminishing returns
+without a real reference implementation showing a working per-cell zone
+(vanilla's own zones are all in Muldraugh's single map-wide file, which is
+not the same code path as a mod's per-cell overlay).
 
 ## Claim boundary
 
-vegitation_zone_effect_confirmed=false
+vegitation_zone_effect_confirmed=false (tested twice, both negative)
 PLAYABLE_EXPORT_CLAIM_ALLOWED=false
 CLAUDE_RAN_PZ=false
