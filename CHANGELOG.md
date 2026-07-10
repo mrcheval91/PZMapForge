@@ -8,6 +8,37 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-38N: real Vegitation zone object, pushing past ground tiles)
+- Real vanilla Muldraugh's own map data has a single map-wide `objects.lua`
+  (not per-cell) full of rectangular zone objects: `Nav`, `TownZone`,
+  `Vegitation` ("Vegitation" is vanilla's own spelling). Procedural
+  vegetation density appears to be seeded by `Vegitation` zones rather than
+  authored per-tile — this is a more tractable "beyond ground tiles" avenue
+  than decoding chunkdata's binary semantics (see MAP-38M).
+- `renderable_v1`'s `objects.lua` now emits a `Vegitation` zone covering the
+  same tile range as the lotpack's central marker-tile block (MAP-38H:
+  `cellX*256+64 .. cellX*256+191`), so any vegetation effect is visible in
+  the same area as the distinctive floor tile.
+- New CLI test `RenderableV1_ObjectsLua_ContainsVegitationZoneOverMarkerBlock`.
+  23 tests total, all passing.
+- Not yet human-tested. Candidate `pzmapforge_map38n` (cell 34_26) generated
+  and installed, ready for the next test cycle.
+
+### Recorded (MAP-38M: chunkdata structural analysis — partial, semantics still undecoded)
+- Compared real vanilla `chunkdata_X_Y.bin` across 6 cells of varying
+  complexity. Every file uses only 5 distinct byte values (0x00, 0x01,
+  0x02, 0x03, 0x08) — consistent with a small categorical/enum encoding,
+  not tile indices. A 96-byte repeating unit appears in some
+  complex cells but does not evenly divide the body size, and is absent
+  entirely in others — no confirmed field-level decode. Chunkdata does not
+  appear to have a per-chunk offset table the way lotpack does (8192 bytes
+  for 1024 entries would exceed every observed file size). Recorded in
+  `docs/MAP_38M_CHUNKDATA_STRUCTURAL_ANALYSIS.md` as a documented open
+  question rather than pursued to completion this session — MAP-38L already
+  confirmed all-zero chunkdata is sufficient for ground-tile rendering, and
+  MAP-38N's Vegitation zone approach had a directly-inspectable real
+  reference, judged more tractable in the time available.
+
 ### Added + Confirmed (MAP-38L: corrected-coordinate differential control test packet — run and confirmed)
 - `scripts/prepare-build42-map38l-corrected-coordinate-differential-packet.ps1`:
   reruns the MAP-37E/MAP-38B differential pattern (Run A files-present / Run B

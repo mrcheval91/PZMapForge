@@ -253,6 +253,22 @@ public sealed class MapExportBuild42CandidateWriterRenderableV1ProcessTests : ID
     }
 
     [Fact]
+    public void RenderableV1_ObjectsLua_ContainsVegitationZoneOverMarkerBlock()
+    {
+        // MAP-38N: real vanilla Muldraugh's own objects.lua uses "Vegitation" zone
+        // objects to seed procedural vegetation density. This zone covers the same
+        // tile range (cellX*256+64 .. +191) as the lotpack's central marker-tile
+        // block (MAP-38H).
+        var (cellX, cellY) = (35, 27); // RunCandidateRenderableV1's default cell
+        RunCandidateRenderableV1();
+        var content = File.ReadAllText(ObjectsLuaPath, System.Text.Encoding.ASCII);
+        Assert.Contains("type = \"Vegitation\"", content, StringComparison.Ordinal);
+        Assert.Contains($"x = {cellX * 256 + 64}", content, StringComparison.Ordinal);
+        Assert.Contains($"y = {cellY * 256 + 64}", content, StringComparison.Ordinal);
+        Assert.Contains("width = 128, height = 128", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RenderableV1_SpawnpointsLua_NoBom()
     {
         RunCandidateRenderableV1();

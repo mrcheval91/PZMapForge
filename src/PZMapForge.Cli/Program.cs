@@ -1987,9 +1987,19 @@ end
         // addressed on a 256-tile grid, not Build 41's 300-tile grid (confirmed via
         // pzwiki.net/wiki/Mapping and a positive-control test, 2026-07-10). Must match
         // the same target spawnpoints.lua computes above.
+        // MAP-38N: real vanilla Muldraugh's own map-wide objects.lua (not per-cell --
+        // one file covering the whole map) is full of rectangular zone objects:
+        // "Nav", "TownZone", "Vegitation" (vanilla's own spelling, not a typo here),
+        // each with absolute-world-tile x/y/width/height. Procedural vegetation
+        // density appears to be seeded by "Vegitation" zones, not authored per-tile.
+        // Added one covering the same central 16x16 chunk block (tiles 64..191 of
+        // the cell, absolute cellX*256+64 .. cellX*256+191) that renderable_v1's
+        // lotpack already marks with the distinctive floor tile (MAP-38H), so any
+        // vegetation effect and the marker tile are both visible in the same area.
         "renderable_v1"  => $$"""
 objects = {
-  { name = "", type = "SpawnPoint", x = {{cellX * 256 + 128}}, y = {{cellY * 256 + 128}}, z = 0, width = 1, height = 1, properties = { Professions = "unemployed" } }
+  { name = "", type = "SpawnPoint", x = {{cellX * 256 + 128}}, y = {{cellY * 256 + 128}}, z = 0, width = 1, height = 1, properties = { Professions = "unemployed" } },
+  { name = "", type = "Vegitation", x = {{cellX * 256 + 64}}, y = {{cellY * 256 + 64}}, z = 0, width = 128, height = 128 }
 }
 """,
         "empty_grass_v5" => "-- PZMapForge MAP-9Q: minimal valid empty lotheader profile. No objects or zones. No BOM encoding applied. Not load-tested.\n",
