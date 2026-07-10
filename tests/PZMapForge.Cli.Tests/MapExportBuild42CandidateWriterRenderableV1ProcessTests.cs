@@ -138,10 +138,12 @@ public sealed class MapExportBuild42CandidateWriterRenderableV1ProcessTests : ID
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void RenderableV1_Lotheader_TotalSizeIs1166()
+    public void RenderableV1_Lotheader_TotalSizeIs1161()
     {
         RunCandidateRenderableV1();
-        Assert.Equal(1166L, new FileInfo(LotheaderPath).Length);
+        // MAP-38D: marker tile changed "unofficial_fork_map_0" (21 chars) -> "floors_rugs_01_0"
+        // (16 chars), 5 bytes shorter. 1166 -> 1161.
+        Assert.Equal(1161L, new FileInfo(LotheaderPath).Length);
     }
 
     [Fact]
@@ -158,7 +160,7 @@ public sealed class MapExportBuild42CandidateWriterRenderableV1ProcessTests : ID
     {
         RunCandidateRenderableV1();
         var content = File.ReadAllText(LotheaderPath, System.Text.Encoding.ASCII);
-        Assert.Contains("unofficial_fork_map_0", content, StringComparison.Ordinal);
+        Assert.Contains("floors_rugs_01_0", content, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -173,34 +175,57 @@ public sealed class MapExportBuild42CandidateWriterRenderableV1ProcessTests : ID
     }
 
     // -----------------------------------------------------------------------
-    // lotpack: 1024 chunks x 768 bytes (64 explicit 12-byte tile records/chunk),
-    // matching the shape used in the confirmed-working test
+    // lotpack: MAP-38H mixed encoding -- most of the 1024 chunks are the real
+    // 8-byte Type-A "whole chunk is default" shorthand, matching the byte size
+    // profile of MyMapMod's own real, authored world_31_45.lotpack (100,148
+    // bytes total; this writer's prior uniform-768-byte-per-chunk shape was
+    // 794,636 bytes, a 7.9x mismatch never checked against a real reference
+    // until 2026-07-10). A central 16x16 block of chunks (indices where
+    // 8 <= chunkX < 24 and 8 <= chunkY < 24, chunk grid is 32x32) is written
+    // as full 64-explicit-record Type-B chunks referencing the marker tile,
+    // guaranteed to cover the cell's spawn point (posX=posY=150 of 0-299).
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void RenderableV1_Lotpack_SizeIs794636()
+    public void RenderableV1_Lotpack_SizeIs210956()
     {
         RunCandidateRenderableV1();
-        Assert.Equal(794636L, new FileInfo(LotpackPath).Length);
+        // header(12) + offset_table(1024*8=8192) + 256 marker chunks*768 + 768 default chunks*8
+        // = 8204 + 196608 + 6144 = 210956
+        Assert.Equal(210956L, new FileInfo(LotpackPath).Length);
     }
 
     [Fact]
-    public void RenderableV1_Lotpack_FirstChunkIs768BytesOfExplicitTileRecords()
+    public void RenderableV1_Lotpack_FirstChunkIsTypeADefaultShorthand()
     {
         RunCandidateRenderableV1();
         var bytes = File.ReadAllBytes(LotpackPath);
         var firstOffset = BitConverter.ToInt64(bytes, 12);
         Assert.Equal(8204L, firstOffset);
+        // Chunk 0 is (chunkX=0, chunkY=0) -- outside the central 8..24 marker block,
+        // so it must be the 8-byte Type-A whole-chunk-default shorthand.
         var secondOffset = BitConverter.ToInt64(bytes, 20);
-        Assert.Equal(8204L + 768L, secondOffset);
-
-        // First record of the first chunk: [U32=2][U32=0xFFFFFFFF][U32=tile_index=4]
+        Assert.Equal(8204L + 8L, secondOffset);
         var field1 = BitConverter.ToUInt32(bytes, (int)firstOffset);
         var field2 = BitConverter.ToUInt32(bytes, (int)firstOffset + 4);
-        var field3 = BitConverter.ToUInt32(bytes, (int)firstOffset + 8);
+        Assert.Equal(0xFFFFFFFFu, field1);
+        Assert.Equal(64u, field2); // run_length = 64 (whole chunk default)
+    }
+
+    [Fact]
+    public void RenderableV1_Lotpack_CentralChunkIsTypeBExplicitMarkerTile()
+    {
+        RunCandidateRenderableV1();
+        var bytes = File.ReadAllBytes(LotpackPath);
+        // Chunk index for chunkX=16, chunkY=16 (inside the central 8..24 marker block).
+        const int chunkIndex = 16 * 32 + 16;
+        var offset = BitConverter.ToInt64(bytes, 12 + chunkIndex * 8);
+        var field1 = BitConverter.ToUInt32(bytes, (int)offset);
+        var field2 = BitConverter.ToUInt32(bytes, (int)offset + 4);
+        var field3 = BitConverter.ToUInt32(bytes, (int)offset + 8);
         Assert.Equal(2u, field1);
         Assert.Equal(0xFFFFFFFFu, field2);
-        Assert.Equal(4u, field3); // renderableTileIndex -- unofficial_fork_map_0
+        Assert.Equal(4u, field3); // renderableTileIndex -- floors_rugs_01_0
     }
 
     [Fact]

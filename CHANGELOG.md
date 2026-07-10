@@ -8,6 +8,86 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Fixed + Confirmed (MAP-38J/K: the actual root cause — Build 42 uses 256-tile cells, not 300 — found and fixed; rendering confirmed)
+- **The root cause of the entire MAP-6A-onward binary-format lineage's
+  failure to render**: this repo's spawn-coordinate math (every profile,
+  every prior MAP-9K/37D/37E/38-series test) computed targets as
+  `cellX*300+offset`, matching Build 41's 300-tile cell width. **Build 42
+  cells are 256x256 tiles** (confirmed via pzwiki.net/wiki/Mapping: a Build
+  41 cell (31,23) exports to six Build 42 cells (36,26) through (37,28)
+  under 256-tile math). Every test ever run against this repo's writer (and
+  the community reference `MyMapMod`, per MAP-38I) placed the player
+  outside the footprint of the file actually being tested, so every
+  observation was of real, unrelated vanilla/procedural terrain at the
+  wrong location — not evidence about the files themselves.
+- **MAP-38J**: fixed `renderable_v1`'s coordinate generation.
+  `spawnpoints.lua`'s legacy `worldX`/`worldY`/`posX`/`posY` fields (which
+  the engine still resolves via the old 300-based formula) and
+  `objects.lua`'s absolute `SpawnPoint` `x`/`y` are both now derived from
+  the cell's true center under Build 42's 256-tile grid
+  (`cellX*256+128, cellY*256+128`), converted back into legacy form for
+  `spawnpoints.lua`. Scoped to `renderable_v1` only. 22 existing tests
+  unaffected (none hardcoded a specific coordinate).
+- **MAP-38K — confirmed**: candidate `pzmapforge_map38j` (cell 34_26,
+  corrected coordinate) installed and tested. On-screen coordinate
+  (8835,6785) matched the computed target (8832,6784). Operator observed
+  "endless repeating street/indoor tile" — the real `floors_rugs_01_0`
+  marker tile (MAP-38D) rendering as an unmistakably artificial,
+  non-procedural pattern. **First confirmed rendering from this repo's own
+  committed writer.**
+- `docs/IMPLEMENTATION.md`: `renderable_v1` row updated to "PROVISIONAL —
+  ROOT CAUSE FOUND AND FIXED, RENDERING CONFIRMED." Every prior
+  `FALLBACK_INDISTINGUISHABLE` result in this repo (MAP-37E, MAP-38C,
+  MAP-38I) is now flagged as uninterpreted rather than disproven, since none
+  of them used the corrected coordinate math.
+- `docs/MAP_38K_ROOT_CAUSE_FOUND_RENDERING_CONFIRMED.md`: full record,
+  supersedes MAP-38I's "stop editing the writer" instruction now that the
+  actual blocker is identified and fixed.
+- Not yet Ratified: this is one human confirmation. Recommended next step
+  is a differential control test (MAP-38B pattern) with the corrected
+  coordinate math before any playable claim.
+- `PLAYABLE_EXPORT_CLAIM_ALLOWED=false`, `RENDERABLE_MOUNT_SUCCESS=true`
+  (human-observed, coordinate-verified, single confirmation).
+
+### Fixed + Recorded (MAP-38D/G/H/I: three real writer bugs found and fixed, then a positive-control failure that moves the root cause upstream)
+- **MAP-38D**: `renderable_v1`'s marker tile `unofficial_fork_map_0` has ZERO
+  occurrences in `media/newtiledefinitions.tiles.txt` and no backing texture
+  anywhere on the test install (not vanilla, not `MyMapMod`, not any
+  Workshop mod). Replaced with `floors_rugs_01_0`, a real, textured vanilla
+  tile. Updated `renderable_v1`'s lotheader entries, tests, and report
+  strings accordingly.
+- **MAP-38G**: `renderable_v1`'s `objects.lua` was comment-only (zero
+  objects) on every prior test. Direct diff against `MyMapMod`'s own
+  `objects.lua` showed it registers a real `SpawnPoint` object in addition
+  to `spawnpoints.lua` metadata. Added a matching object.
+- **MAP-38H**: `renderable_v1`'s lotpack wrote all 1024 chunks as bulky
+  768-byte fully-explicit records — 794,636 bytes total. Byte-diffed against
+  `MyMapMod`'s own real, authored `world_31_45.lotpack` (100,148 bytes) and
+  found real files are overwhelmingly the 8-byte Type-A "whole chunk is
+  default" shorthand. Rewrote the chunk writer to default every chunk to
+  Type-A except a central 16x16 block (guaranteed to cover the cell's spawn
+  point) which uses real Type-B explicit records. New size: 210,956 bytes.
+  22 CLI process tests updated/added and passing.
+- **MAP-38I — the actual finding**: all three fixes above are genuine,
+  verified bugs, and **none of them changed the observed rendering
+  outcome.** Ran a positive control: `MyMapMod` (this repo's own
+  "confirmed-working" reference since MAP-38A) tested completely unmodified
+  except its own spawn point, redirected to one of its own four real
+  authored cells (31_45). Operator confirmed the on-screen coordinate
+  (9450,13650, exactly correct) and observed procedural fallback pine
+  forest — not authored terrain. **The reference sample this whole lineage
+  has cited as proof-of-format does not itself render on the
+  currently-installed PZ Build 42.19.0.** The bug is not in this writer;
+  it's upstream (version drift, a missing registration step, or
+  official-vs-unofficial-tooling divergence). See
+  `docs/MAP_38I_POSITIVE_CONTROL_FAILURE_ROOT_CAUSE_UNKNOWN.md`.
+- `docs/IMPLEMENTATION.md`: `renderable_v1` row updated to "PROVISIONAL —
+  ROOT CAUSE ISOLATED UPSTREAM OF THIS WRITER, POSITIVE CONTROL FAILED."
+  **Do not make further changes to this writer's binary format without
+  first re-establishing a working positive control.**
+- `PLAYABLE_EXPORT_CLAIM_ALLOWED=false`, `RENDERABLE_MOUNT_SUCCESS=false`,
+  `positive_control_confirmed=false`.
+
 ### Added (MAP-38A: renderable_v1 Build 42 candidate profile) — PROVISIONAL
 - New `--build42-candidate-profile renderable_v1` for the existing Build 42
   candidate writer (`--build42-candidate-writer`). Implements a binary format
@@ -51,6 +131,68 @@ Format: Keep a Changelog.
   lotpack byte-shape and first-record content, no-BOM encoding, report
   claim-boundary fields).
 - v0-v5 profiles are completely unchanged; this is purely additive.
+
+### Recorded (MAP-38C: MAP-38B differential result — FALLBACK_INDISTINGUISHABLE)
+- Operator ran the MAP-38B packet end-to-end (Solo game, cell 35_27): Run A
+  (files-present) and Run B (files-removed) both rendered natural/organic
+  forest with no grid-aligned marker-tile pattern in either. Outcome:
+  `FALLBACK_INDISTINGUISHABLE`. MAP-38A's original single-human-test finding
+  does **not** reproduce.
+- Map folder registration is confirmed still correct (mod appeared as a
+  selectable Solo starting location; no chunkdata/lotheader/lotpack parse
+  errors in the client debug log) — the MAP-38A folder-structure and
+  `map.info` fixes hold up independently of the rendering claim.
+- `docs/MAP_38C_DIFFERENTIAL_RESULT_FALLBACK_INDISTINGUISHABLE.md`: full
+  result record plus leading hypothesis — this profile still emits the old
+  all-zero `chunkdata_35_27.bin` body, while MAP-38A's original successful
+  human test used a real, non-zero chunkdata body borrowed from a community
+  sample. Chunkdata may be load-gating whether the lotpack is consulted at
+  all, not decorative, which would explain registration succeeding while
+  rendering stays indistinguishable from fallback.
+- `docs/IMPLEMENTATION.md`: `renderable_v1` row updated from PROVISIONAL to
+  "PROVISIONAL — SECOND TEST DID NOT REPRODUCE." Do not promote to Ratified;
+  do not treat the MAP-38A rendering claim as reliable until a non-zero
+  chunkdata body is tested against this same differential packet.
+- `PLAYABLE_EXPORT_CLAIM_ALLOWED=false`, `RENDERABLE_MOUNT_SUCCESS=false`.
+
+### Added (MAP-38B: differential control test packet for renderable_v1)
+- Reworks MAP-37E's differential control test pattern for the `renderable_v1`
+  profile (MAP-38A). MAP-38A's finding rests on ONE unrepeatable human
+  runtime test — this repo's own evidence-discipline rule (a passing test
+  suite does not promote provisional behavior to canon) applies to a single
+  passing human test just as much as to automated tests, so the finding is
+  not yet promotable to Ratified.
+- `scripts/prepare-build42-map38b-differential-control-test-packet.ps1`:
+  invokes the actual `renderable_v1` CLI writer (no hand-crafted scaffolding)
+  to generate a fresh candidate at cell 35_27 (the MAP-38A confirmed-working
+  cell); stages Run A (files-present) and Run B (files-removed, same three
+  binary files deleted) side by side under `.local/`; captures SHA-256+size
+  evidence for the Run A files and asserts their absence in Run B; writes
+  `map38b-differential-control-test-packet.json`
+  (schema `pzmapforge.map38b-differential-control-test-packet.v0.1`) + `.md`
+  + `MAP_38B_DIFFERENTIAL_CONTROL_TEST.md` (operator overview) +
+  `MAP_38B_HUMAN_INSTALL_STEPS.md` (HUMAN-ONLY) + `MAP_38B_SERVER_WIRING.md`
+  (unchanged Mods=/Map=/SpawnPoint= mount shape, plus the MAP-38A
+  `map.info` `lots=Muldraugh, KY` fix, called out as a distinct field from
+  the server ini `Map=` token) + `MAP_38B_LOG_CAPTURE_COMMANDS.md` +
+  `MAP_38B_SUCCESS_FAILURE_CRITERIA.md` (8 outcomes; `RENDERABLE_MOUNT_SUCCESS`
+  narrowed further than MAP-37E's `TERRAIN_MOUNT_SUCCESS` — it requires the
+  *specific* grid-aligned `unofficial_fork_map_0` marker-tile pattern, not
+  merely "terrain differs", per MAP-38A's own recorded content-choice
+  lesson) + `MAP_38B_RUNTIME_RESULT_RECORD.md`.
+- `scripts/test-build42-map38b-differential-control-test-packet.ps1`: 65
+  assertions (`.local` guard, exits 0, 8 docs exist, schema, claim-boundary
+  fields, `map_info_lots_value=Muldraugh, KY`, `distinctive_marker_tile`
+  fields, Run A files physically present under `common/media/maps/`, Run B
+  files physically absent, all 8 outcome sentinels, no playable claim
+  anywhere in the packet).
+- Wired into `scripts/validate.ps1` (new MAP-38B section) and
+  `scripts/write-proof-packet.ps1` / `scripts/test-proof-packet.ps1`
+  (`map38b_differential_control_test_packet_tests = 65`; proof-packet
+  schema `v0.82` -> `v0.83`; `total_expected_assertions` `2085` -> `2150`).
+- Does NOT change the `renderable_v1` writer or any chunkdata/lotheader/
+  lotpack binary generation. `PLAYABLE_EXPORT_CLAIM_ALLOWED=false`,
+  `HUMAN_ONLY_INSTALL_REQUIRED=true` throughout.
 
 ### Added (MAP-37E: differential control test packet)
 - Reworks MAP-37D into a two-run differential control test. MAP-37D's

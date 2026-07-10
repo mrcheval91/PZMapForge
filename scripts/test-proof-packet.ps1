@@ -83,8 +83,8 @@ foreach ($field in $requiredFields) {
 
 Write-Output ""
 Write-Output "--- Sentinels ---"
-Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.82') `
-    "schema == 'pzmapforge.proof-packet.v0.82' (got '$($p.schema)')"
+Assert-True ($p.schema -eq 'pzmapforge.proof-packet.v0.83') `
+    "schema == 'pzmapforge.proof-packet.v0.83' (got '$($p.schema)')"
 Assert-True ($p.claim_boundary -eq 'planning_artifact_only_not_pz_load_tested') `
     "claim_boundary == 'planning_artifact_only_not_pz_load_tested'"
 
@@ -212,7 +212,7 @@ Assert-True ([int]$p.validation_summary.map7h_discovery_path_tests            -e
 Assert-True ([int]$p.validation_summary.map7g_variant_a_failure_tests         -eq 8)   "map7g_variant_a_failure_tests == 8"
 Assert-True ([int]$p.validation_summary.map7f_registration_diagnostic_tests   -eq 11)  "map7f_registration_diagnostic_tests == 11"
 Assert-True ([int]$p.validation_summary.map7e_diagnostics_tests                -eq 11)  "map7e_diagnostics_tests == 11"
-Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 2085) "total_expected_assertions == 2085"
+Assert-True ([int]$p.validation_summary.total_expected_assertions              -eq 2150) "total_expected_assertions == 2150"
 
 # ---------------------------------------------------------------------------
 # dotnet_validation_summary (separate lane)

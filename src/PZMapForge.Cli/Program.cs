@@ -1903,6 +1903,28 @@ fixed2x=true
     //   The 'all' key used in v0-v2 may not be valid; 'unemployed' is a known PZ profession key.
     if (profile is "empty_grass_v4" or "empty_grass_v5" or "renderable_v1")
     {
+        // MAP-38J CORRECTION (renderable_v1 only): worldX/worldY here were previously set
+        // to the raw cellX/cellY, which spawnpoints.lua's engine-side interpreter resolves
+        // via the LEGACY Build 41 formula (absolute = worldX*300 + posX). But this writer's
+        // lotheader/lotpack/chunkdata FILES are named/addressed on Build 42's actual 256-tile
+        // cell grid (confirmed via pzwiki.net/wiki/Mapping: B41 cell (31,23) exports to six
+        // B42 cells (36,26)-(37,28), i.e. a straight 256-tile grid, not 300). Using cellX/cellY
+        // directly in the legacy 300-based spawn formula placed the player outside the actual
+        // file's real coverage every time -- confirmed by a positive-control test (MyMapMod's
+        // own authored cell 31_45, 2026-07-10): spawning at the OLD wrong coordinate (9450,13650,
+        // 31*300+150/45*300+150) showed procedural fallback; spawning at the CORRECT coordinate
+        // (8064,11648, the true center of 31_45's 256-tile range) showed real authored ground
+        // (flat grass, no procedural shrubs) and a real building interior. Fix: compute the
+        // true absolute target using the 256-tile cell center, then convert BACK into the
+        // legacy worldX/worldY/posX/posY fields (which spawnpoints.lua's engine-side parser
+        // still expects in 300-based form) so the two coordinate systems agree.
+        var b42TargetX  = isRenderableV1 ? cellX * 256 + 128 : cellX * 300 + 150;
+        var b42TargetY  = isRenderableV1 ? cellY * 256 + 128 : cellY * 300 + 150;
+        var legacyWorldX = isRenderableV1 ? b42TargetX / 300 : cellX;
+        var legacyPosX    = isRenderableV1 ? b42TargetX % 300 : 150;
+        var legacyWorldY = isRenderableV1 ? b42TargetY / 300 : cellY;
+        var legacyPosY    = isRenderableV1 ? b42TargetY % 300 : 150;
+
         // MAP-7D: same unemployed key format as v3 but with no-BOM encoding.
         // No BOM applied via gameReadEnc = new UTF8Encoding(false).
         File.WriteAllText(Path.Combine(mapDataDir, "spawnpoints.lua"), $$"""
@@ -1911,7 +1933,7 @@ fixed2x=true
 function SpawnPoints()
     return {
         unemployed = {
-            { worldX = {{cellX}}, worldY = {{cellY}}, posX = 150, posY = 150, posZ = 0 },
+            { worldX = {{legacyWorldX}}, worldY = {{legacyWorldY}}, posX = {{legacyPosX}}, posY = {{legacyPosY}}, posZ = 0 },
         },
     }
 end
@@ -1954,7 +1976,22 @@ end
     // v3 used comment-only with BOM (UTF8) — BOM caused same LexState error as return {}.
     var objectsLuaContent = profile switch
     {
-        "renderable_v1"  => "-- PZMapForge renderable_v1: no objects or zones. No BOM encoding applied. Not load-tested.\n",
+        // MAP-38G: MyMapMod (the confirmed-working community reference) registers its
+        // spawn point as a real "SpawnPoint" object in objects.lua, in ADDITION to the
+        // spawnpoints.lua SpawnPoints() metadata. renderable_v1 previously shipped
+        // objects.lua as comment-only (no objects at all) -- confirmed via direct diff
+        // against MyMapMod's own objects.lua (2026-07-09) to be the structural gap this
+        // profile was missing.
+        // MAP-38J CORRECTION: x/y must be the cell's TRUE Build 42 256-tile-grid center
+        // (cellX*256+128), not cellX*300+150 -- Build 42 lotheader/lotpack files are
+        // addressed on a 256-tile grid, not Build 41's 300-tile grid (confirmed via
+        // pzwiki.net/wiki/Mapping and a positive-control test, 2026-07-10). Must match
+        // the same target spawnpoints.lua computes above.
+        "renderable_v1"  => $$"""
+objects = {
+  { name = "", type = "SpawnPoint", x = {{cellX * 256 + 128}}, y = {{cellY * 256 + 128}}, z = 0, width = 1, height = 1, properties = { Professions = "unemployed" } }
+}
+""",
         "empty_grass_v5" => "-- PZMapForge MAP-9Q: minimal valid empty lotheader profile. No objects or zones. No BOM encoding applied. Not load-tested.\n",
         "empty_grass_v4" => "-- PZMapForge MAP-7D: no objects or zones for this experimental empty cell.\n-- objects.lua placeholder. No BOM encoding applied (MAP-7D fix). Not load-tested.\n",
         "empty_grass_v3" => "-- PZMapForge MAP-7C: no objects or zones for this experimental empty cell.\n-- objects.lua is a placeholder. Not load-tested. Not a playable Project Zomboid map.\n",
@@ -1989,10 +2026,10 @@ BOUNDARY STATEMENT:
 
 BINARY CANDIDATE FORMATS ({profile}):
 - chunkdata: 1026 bytes, header 00 01, 128 x 8-byte zero records (MAP-37B: 2+128*8 per MAP-37A ExactFitScore=3). {(isRenderableV1 ? "Real semantics still unknown -- a non-zero chunkdata was present in the confirmed-working test, but this writer still emits the zero-body candidate." : "")}
-- lotheader: LOTH magic, version 1, {(isRenderableV1 ? "5 entries: 4 real vanilla natural-blend tile names + 1 distinctive marker tile (unofficial_fork_map_0), + 1048-byte stable trailer" : profile switch { "empty_grass_v3" => "1024 generated entries + 1048-byte stable trailer (MAP-6Z/MAP-7C)", "empty_grass_v2" => "1024 generated entries + 1048-byte stable trailer from MAP-6Y research (MAP-6Z)", "empty_grass_v1" => "1024 generated entries blends_grassoverlays_01_0..._01_1023 (MAP-6S)", _ => "1 entry blends_grassoverlays_01_0 (MAP-4E committed evidence only)" })}.
-- objects.lua: {(isRenderableV1 ? "comment-only placeholder, no BOM" : profile == "empty_grass_v3" ? "comment-only placeholder (MAP-7C: avoids MAP-7A Lua lexer error)" : "return {} (candidate, may need fix)") }
+- lotheader: LOTH magic, version 1, {(isRenderableV1 ? "5 entries: 4 real vanilla natural-blend tile names + 1 distinctive marker tile (floors_rugs_01_0, a real textured vanilla tile), + 1048-byte stable trailer" : profile switch { "empty_grass_v3" => "1024 generated entries + 1048-byte stable trailer (MAP-6Z/MAP-7C)", "empty_grass_v2" => "1024 generated entries + 1048-byte stable trailer from MAP-6Y research (MAP-6Z)", "empty_grass_v1" => "1024 generated entries blends_grassoverlays_01_0..._01_1023 (MAP-6S)", _ => "1 entry blends_grassoverlays_01_0 (MAP-4E committed evidence only)" })}.
+- objects.lua: {(isRenderableV1 ? "real SpawnPoint object entry (MAP-38G, matching MyMapMod's own objects.lua structure), no BOM" : profile == "empty_grass_v3" ? "comment-only placeholder (MAP-7C: avoids MAP-7A Lua lexer error)" : "return {} (candidate, may need fix)") }
 - spawnpoints.lua: {(isRenderableV1 ? "unemployed key format, no BOM" : profile == "empty_grass_v3" ? "unemployed key format (MAP-7C: explicit spawn profession)" : "all key format (candidate)")}.
-- lotpack: LOTP magic, version 1, {(isRenderableV1 ? "1024 chunks, each an 8x8 tile-slot grid of 64 explicit 12-byte tile records (768 bytes/chunk) referencing the distinctive marker tile" : "1024 chunks x 1024 zero bytes (MAP-6K most_common_size)")}.
+- lotpack: LOTP magic, version 1, {(isRenderableV1 ? "1024 chunks; MAP-38H mixed encoding: chunks outside a central 16x16 block use the real 8-byte Type-A whole-chunk-default shorthand, chunks inside the central block (guaranteed to cover the spawn point) use 64 explicit 12-byte tile records (768 bytes/chunk) referencing the distinctive marker tile" : "1024 chunks x 1024 zero bytes (MAP-6K most_common_size)")}.
 {(isRenderableV1 ? "- folder layout: cell data under common/media/maps/<mapId>/, not 42/media/maps/<mapId>/ -- confirmed against real vanilla sub-town map.info files and a working community sample mod." : "")}
 """, gameReadEnc);
 
@@ -2012,24 +2049,32 @@ BINARY CANDIDATE FORMATS ({profile}):
     // renderable_v1's tile names are real vanilla/tooling asset names, not synthetic
     // generated ones. The first 4 are real vanilla natural-terrain blend tiles
     // (confirmed present byte-for-byte in vanilla Muldraugh, KY's own 35_27.lotheader).
-    // The 5th, unofficial_fork_map_0, is the tile whose ground-render was confirmed
-    // visually distinguishable from PZ's own procedural fallback in the one human
-    // runtime test this profile is based on (2026-07-08) -- natural-blend tiles alone
-    // look like generic wilderness even when correctly loaded, so this profile
-    // deliberately references the distinctive tile as RenderableTileIndex below.
+    // The 5th, floors_rugs_01_0, is a real vanilla floor/rug tile (confirmed present
+    // in media/newtiledefinitions.tiles.txt) used as the distinctive marker -- natural-
+    // blend tiles alone look like generic wilderness even when correctly loaded, so this
+    // profile deliberately references a visually obvious, guaranteed-textured tile as
+    // RenderableTileIndex below.
+    // MAP-38D CORRECTION: this profile originally used "unofficial_fork_map_0" here, a
+    // name the 2026-07-08 human test's own hand-crafted scaffolding referenced. That name
+    // has ZERO occurrences in media/newtiledefinitions.tiles.txt and no backing texture
+    // anywhere in this repo's local install, MyMapMod, or any Workshop mod (confirmed
+    // 2026-07-09) -- referencing it silently renders as fallback, not a missing-texture
+    // error, which is why every differential test (MAP-37E onward) came back
+    // FALLBACK_INDISTINGUISHABLE regardless of chunkdata/cell changes. See
+    // docs/MAP_38D_PHANTOM_TILE_ROOT_CAUSE.md.
     var lothEntries = profile switch
     {
         "renderable_v1" => new[]
         {
             "blends_natural_01_16", "blends_natural_01_21", "blends_natural_01_22",
-            "blends_natural_01_23", "unofficial_fork_map_0",
+            "blends_natural_01_23", "floors_rugs_01_0",
         },
         "empty_grass_v5" => BuildMap9qDruEmptyLothEntries(),
         "empty_grass_v1" or "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4"
             => Enumerable.Range(0, 1024).Select(i => $"blends_grassoverlays_01_{i}").ToArray(),
         _ => new[] { "blends_grassoverlays_01_0" }, // MAP-4E committed evidence
     };
-    const int renderableTileIndex = 4; // unofficial_fork_map_0 -- see comment above
+    const int renderableTileIndex = 4; // floors_rugs_01_0 -- see comment above (MAP-38D)
     var lothEntryData = Encoding.ASCII.GetBytes(string.Join("\n", lothEntries) + "\n");
     // MAP-6Z: canonical 1048-byte simple-cell trailer from MAP-6Y reference research.
     // Source: 80 Dru_map simple cells (all_1048_blocks_identical=true). First two U32LE=8, rest zero.
@@ -2059,36 +2104,64 @@ BINARY CANDIDATE FORMATS ({profile}):
 
     if (isRenderableV1)
     {
-        // Each chunk is an 8x8 tile-slot grid (64 slots), confirmed against real vanilla
-        // Muldraugh chunks and a working community sample's lotpack. Every slot here is
-        // an explicit 12-byte record [U32=2][U32=0xFFFFFFFF][U32=tile_index] referencing
-        // renderableTileIndex -- the tile confirmed to render as a visually distinct
-        // pattern in the one human runtime test this profile is based on. Real chunks can
-        // also mix in an 8-byte run-length shorthand [U32=0xFFFFFFFF][U32=run_length] for
-        // consecutive default slots, but that encoding was only observed, not
-        // independently re-derived and confirmed by this writer -- so this profile always
-        // writes the simpler uniform-64-explicit-record shape (768 bytes/chunk), which was
-        // the exact shape used in the confirmed-working test.
-        var chunkBytes = new byte[64 * 12];
+        // MAP-38H CORRECTION: this profile previously wrote every one of the 1024 chunks
+        // as 64 explicit 12-byte tile records (768 bytes/chunk, uniform). Direct byte
+        // comparison against MyMapMod's own real, authored world_31_45.lotpack (2026-07-10)
+        // showed that file is only 100,148 bytes total -- 7.9x smaller than this writer's
+        // 794,636-byte output for the same chunk count. The real file's chunks are
+        // overwhelmingly the 8-byte Type-A "whole chunk is default" shorthand
+        // ([U32=0xFFFFFFFF][U32=run_length=64]), confirmed by reading its own offset
+        // table (first three chunks all 8 bytes apart). Writing every chunk as bulky
+        // Type-B was an unverified assumption from the original single human test, never
+        // independently confirmed and now shown to be structurally unlike any real
+        // working file this repo has actually inspected.
+        //
+        // Fix: default every chunk to the real Type-A whole-chunk-default shorthand, and
+        // write full Type-B explicit records (referencing renderableTileIndex) only for a
+        // central block of chunks guaranteed to contain the cell's spawn point
+        // (spawnpoints.lua/objects.lua both place spawn at posX=posY=150 of 0-299,
+        // i.e. the geometric center), so the marker tile is visible at spawn without
+        // requiring the whole cell to be non-default.
+        const int chunksPerSide = 32; // 1024 = 32 x 32
+        const int centerLo = 8, centerHi = 24; // central 16x16 block of chunks (out of 32x32)
+        var typeAChunk = new byte[8];
+        BitConverter.GetBytes(0xFFFFFFFFu).CopyTo(typeAChunk, 0);
+        BitConverter.GetBytes((uint)64).CopyTo(typeAChunk, 4);
+        var typeBChunk = new byte[64 * 12];
         for (var slot = 0; slot < 64; slot++)
         {
             var recPos = slot * 12;
-            BitConverter.GetBytes((uint)2).CopyTo(chunkBytes, recPos);
-            BitConverter.GetBytes(0xFFFFFFFFu).CopyTo(chunkBytes, recPos + 4);
-            BitConverter.GetBytes((uint)renderableTileIndex).CopyTo(chunkBytes, recPos + 8);
+            BitConverter.GetBytes((uint)2).CopyTo(typeBChunk, recPos);
+            BitConverter.GetBytes(0xFFFFFFFFu).CopyTo(typeBChunk, recPos + 4);
+            BitConverter.GetBytes((uint)renderableTileIndex).CopyTo(typeBChunk, recPos + 8);
         }
 
-        lotpExpectedSize = lotpFirstOffset + lotpChunkCount * chunkBytes.Length;
+        var chunkIsMarker = new bool[lotpChunkCount];
+        var chunkSize     = new int[lotpChunkCount];
+        var totalChunkBytes = 0L;
+        for (var i = 0; i < lotpChunkCount; i++)
+        {
+            var cx = i % chunksPerSide;
+            var cy = i / chunksPerSide;
+            var isMarker = cx >= centerLo && cx < centerHi && cy >= centerLo && cy < centerHi;
+            chunkIsMarker[i] = isMarker;
+            chunkSize[i]     = isMarker ? typeBChunk.Length : typeAChunk.Length;
+            totalChunkBytes += chunkSize[i];
+        }
+
+        lotpExpectedSize = (int)(lotpFirstOffset + totalChunkBytes);
         lotpBytes = new byte[lotpExpectedSize];
         lotpBytes[0] = 0x4C; lotpBytes[1] = 0x4F; lotpBytes[2] = 0x54; lotpBytes[3] = 0x50; // LOTP
         lotpBytes[4] = 0x01;
         lotpBytes[8] = 0x00; lotpBytes[9] = 0x04; lotpBytes[10] = 0x00; lotpBytes[11] = 0x00;
+        var cursor = (long)lotpFirstOffset;
         for (var i = 0; i < lotpChunkCount; i++)
         {
             var entryPos = lotpHeaderSize + i * 8;
-            var offset   = (long)lotpFirstOffset + (long)i * chunkBytes.Length;
-            BitConverter.GetBytes(offset).CopyTo(lotpBytes, entryPos);
-            chunkBytes.CopyTo(lotpBytes, (int)offset);
+            BitConverter.GetBytes(cursor).CopyTo(lotpBytes, entryPos);
+            var body = chunkIsMarker[i] ? typeBChunk : typeAChunk;
+            body.CopyTo(lotpBytes, (int)cursor);
+            cursor += body.Length;
         }
     }
     else
@@ -2115,7 +2188,7 @@ BINARY CANDIDATE FORMATS ({profile}):
     File.WriteAllBytes(Path.Combine(mapDataDir, $"world_{cellCoord}.lotpack"), lotpBytes);
     var lotpChunkPayloadBytes = isRenderableV1 ? 64 * 12 : 1024;
     var lotpPayloadStrategy   = isRenderableV1
-        ? "uniform_64_explicit_tile_records_per_chunk_768_bytes"
+        ? "map38h_mixed_typeA_default_8byte_plus_central_16x16_chunk_block_typeB_explicit_768byte"
         : "uniform_zero_1024_per_chunk";
 
     // ---- Report JSON ----
@@ -2197,7 +2270,7 @@ BINARY CANDIDATE FORMATS ({profile}):
         },
         loth_entry_strategy          = profile switch
         {
-            "renderable_v1"  => "four_real_vanilla_natural_blend_names_plus_unofficial_fork_map_0_distinctive_marker_tile",
+            "renderable_v1"  => "four_real_vanilla_natural_blend_names_plus_floors_rugs_01_0_distinctive_marker_tile",
             "empty_grass_v5" => "map9q_dru_empty_style_94_entry_registry_with_1048_byte_empty_tail_no_bom_encoding",
             "empty_grass_v4" => "generated_contiguous_grass_overlay_range_with_map6y_stable_trailer_no_bom_encoding",
             "empty_grass_v3" => "generated_contiguous_grass_overlay_range_with_map6y_stable_trailer_and_fixed_lua_metadata",
@@ -2231,21 +2304,21 @@ BINARY CANDIDATE FORMATS ({profile}):
             : "utf8_with_bom_default",
         lua_metadata_strategy        = profile switch
         {
-            "renderable_v1"  => "objects_lua_comment_only_no_bom",
+            "renderable_v1"  => "objects_lua_real_spawnpoint_object_no_bom",
             "empty_grass_v4" => "objects_lua_comment_only_no_bom",
             "empty_grass_v3" => "objects_lua_comment_only",
             _                => "return_empty_table",
         },
         objects_lua_strategy         = profile switch
         {
-            "renderable_v1"  => "comment_only_lua_no_bom",
+            "renderable_v1"  => "real_spawnpoint_object_no_bom_map38g",
             "empty_grass_v4" => "comment_only_lua_no_bom",
             "empty_grass_v3" => "comment_only_lua",
             _                => "return_empty_table",
         },
         objects_lua_known_risk       = profile switch
         {
-            "renderable_v1"  => "not_applicable_comment_only_lua_confirmed_safe_in_human_runtime_test",
+            "renderable_v1"  => "spawnpoint_object_coordinates_assume_300_tile_cell_width_not_independently_reverified_this_pass",
             "empty_grass_v4" => "build42_may_expect_specific_zone_table_format_no_bom_encoding_applied",
             "empty_grass_v3" => "build42_may_expect_specific_zone_table_format",
             _                => "return_table_led_to_lexer_exception_in_map7a",
@@ -2320,7 +2393,7 @@ No PZ assets copied. No repo media/maps writes. Experimental only.
 | File | Size | Format | Status |
 |---|---|---|---|
 | {cellCoord}.lotheader | {lothBytes.Length} | LOTH magic+version+{lothEntries.Length} {(lothEntries.Length == 1 ? "entry" : "entries")}{(lothTrailer.Length > 0 ? $"+{lothTrailer.Length}-byte stable trailer" : "")} | generated_not_load_tested |
-| world_{cellCoord}.lotpack | {lotpExpectedSize} | LOTP magic+version+1024 chunks{(isRenderableV1 ? " (each 64x12-byte explicit tile records)" : "")} | generated_not_load_tested |
+| world_{cellCoord}.lotpack | {lotpExpectedSize} | LOTP magic+version+1024 chunks{(isRenderableV1 ? " (mostly 8-byte Type-A default shorthand, central 16x16 block explicit 64x12-byte tile records)" : "")} | generated_not_load_tested |
 | chunkdata_{cellCoord}.bin | 1026 | 00 01 header + 1024 zero bytes | generated_not_load_tested |
 
 ## Remaining unknowns
