@@ -8,18 +8,28 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
-### Added (MAP-38L: corrected-coordinate differential control test packet)
+### Added + Confirmed (MAP-38L: corrected-coordinate differential control test packet — run and confirmed)
 - `scripts/prepare-build42-map38l-corrected-coordinate-differential-packet.ps1`:
   reruns the MAP-37E/MAP-38B differential pattern (Run A files-present / Run B
-  files-removed) at cell 34_26 using MAP-38J's corrected coordinate math, to
-  convert MAP-38K's single human confirmation into a proper differential
-  result before promoting `renderable_v1` to Ratified. Includes a built-in
-  sanity check that fails loudly if the generated `objects.lua` doesn't
-  contain the expected corrected coordinate (guards against the MAP-38J fix
-  silently regressing). `docs/MAP_38L_CORRECTED_COORDINATE_DIFFERENTIAL_PACKET.md`
-  committed as the operator overview.
-- Not yet run by a human. Ready whenever the operator wants to complete the
-  ratification MAP-38K recommended.
+  files-removed) at cell 34_26 using MAP-38J's corrected coordinate math.
+  Includes a built-in sanity check that fails loudly if the generated
+  `objects.lua` doesn't contain the expected corrected coordinate.
+  `docs/MAP_38L_CORRECTED_COORDINATE_DIFFERENTIAL_PACKET.md` committed as
+  the operator overview.
+- **Run by the operator, same session**: Run A (`pzmapforge_map38j`,
+  files-present) showed the repeating `floors_rugs_01_0` marker-tile pattern.
+  Run B (same mod folder, candidate files removed) showed plain flat grass —
+  no procedural vegetation, no marker pattern. Clearly, visibly different
+  from Run A. (Cell 34_26 is a real, populated vanilla cell, not a gap, so
+  Run B's content is Muldraugh's own real simple grassland rather than
+  generic procedural wilderness — but the marker-tile-present-vs-absent
+  signal, which is what the test actually needs, held cleanly.)
+- `docs/IMPLEMENTATION.md`: `renderable_v1` row updated to "PROVISIONAL —
+  DIFFERENTIAL-CONFIRMED AT ONE CELL." MAP-38A's own recommendation
+  (independent confirmation at a second cell) still applies before treating
+  this as settled/Ratified.
+- `PLAYABLE_EXPORT_CLAIM_ALLOWED=false`, `RENDERABLE_MOUNT_SUCCESS=true`
+  (differential-confirmed, one cell).
 
 ### Fixed + Confirmed (MAP-38J/K: the actual root cause — Build 42 uses 256-tile cells, not 300 — found and fixed; rendering confirmed)
 - **The root cause of the entire MAP-6A-onward binary-format lineage's
