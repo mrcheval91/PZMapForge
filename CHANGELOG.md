@@ -8,6 +8,23 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-38R: --renderable-marker-tile CLI override, testing real vegetation)
+- Operator found (via the PZ modding community) that real vegetation
+  placement uses specific confirmed-working tile names
+  (`vegetation_foliage_01_*`, `blends_grassoverlays_01_*`,
+  `e_americanholly_01`/`e_canadianhemlock_01` first 4 trees) painted as
+  actual ground/layer tiles — not `objects.lua` zone objects, which
+  explains MAP-38O/P's negative results (wrong mechanism entirely).
+- Added `--renderable-marker-tile <name>` CLI flag to
+  `Build42CandidateWriterCommand`/`map-export-experimental`, overriding
+  `renderable_v1`'s 5th lotheader entry (default unchanged:
+  `floors_rugs_01_0`). 24 existing tests pass unaffected (default behavior
+  unchanged).
+- Candidate `pzmapforge_map38r` (cell 34_26) generated with
+  `--renderable-marker-tile vegetation_foliage_01_8` — same confirmed
+  lotpack mechanism that rendered the carpet tile, now referencing a real
+  vegetation tile instead of a floor tile. Installed, not yet human-tested.
+
 ### Recorded (MAP-38Q: real chunkdata swap — no effect; three clean negatives this session)
 - Swapped real vanilla `chunkdata_36_27.bin` (3906 bytes, the most complex
   chunkdata sampled) into the confirmed-working candidate's

@@ -976,6 +976,7 @@ static int MapExportExperimentalCommand(string[] args)
     var lotheaderCandidate      = "current_failed";
     var build42CandidateWriter  = false;
     var build42CandidateProfile = "empty_grass_v0";
+    string? renderableMarkerTile = null;
 
     for (var i = 0; i < args.Length; i++)
     {
@@ -985,6 +986,7 @@ static int MapExportExperimentalCommand(string[] args)
         else if (args[i] is "--lotheader-candidate" && i + 1 < args.Length)      lotheaderCandidate      = args[++i];
         else if (args[i] is "--build42-candidate-writer")                         build42CandidateWriter  = true;
         else if (args[i] is "--build42-candidate-profile" && i + 1 < args.Length) build42CandidateProfile = args[++i];
+        else if (args[i] is "--renderable-marker-tile" && i + 1 < args.Length)   renderableMarkerTile    = args[++i];
         else if (args[i] is "--cell-x" && i + 1 < args.Length)
         {
             if (int.TryParse(args[++i], out var cx)) cellX = cx;
@@ -1049,7 +1051,7 @@ static int MapExportExperimentalCommand(string[] args)
     // ---- Build 42 candidate writer MVP (MAP-6L) ----
     if (build42CandidateWriter)
     {
-        return Build42CandidateWriterCommand(mapId, outputFull, cellX, cellY, build42CandidateProfile);
+        return Build42CandidateWriterCommand(mapId, outputFull, cellX, cellY, build42CandidateProfile, renderableMarkerTile);
     }
 
     // ---- Build 42 Workshop-style nested package layout ----
@@ -1800,7 +1802,8 @@ Checks:        {passCount + failCount} total, {passCount} passed, {failCount} fa
 }
 
 static int Build42CandidateWriterCommand(
-    string mapId, string outputFull, int cellX, int cellY, string profile)
+    string mapId, string outputFull, int cellX, int cellY, string profile,
+    string? markerTileOverride = null)
 {
     // MAP-6L: Build 42 candidate writer MVP.
     // Writes LOTP, LOTH, and chunkdata under .local using MAP-6J/MAP-6K contract.
@@ -2082,7 +2085,7 @@ BINARY CANDIDATE FORMATS ({profile}):
         "renderable_v1" => new[]
         {
             "blends_natural_01_16", "blends_natural_01_21", "blends_natural_01_22",
-            "blends_natural_01_23", "floors_rugs_01_0",
+            "blends_natural_01_23", markerTileOverride ?? "floors_rugs_01_0",
         },
         "empty_grass_v5" => BuildMap9qDruEmptyLothEntries(),
         "empty_grass_v1" or "empty_grass_v2" or "empty_grass_v3" or "empty_grass_v4"
