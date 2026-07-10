@@ -8,6 +8,19 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Recorded (MAP-38O: Vegitation zone — no observed effect)
+- Operator tested `pzmapforge_map38n` (MAP-38N's Vegitation zone candidate)
+  at the confirmed coordinate. Result: identical "endless repeating carpet
+  tile" pattern as the zone-less candidate — no vegetation, no visible
+  effect from the zone object.
+- Leading hypothesis: zones may seed density where the game generates
+  vegetation, not force placement over already-explicit lotpack ground
+  (the whole marked area is explicit Type-B marker-tile records, leaving no
+  "unauthored" slot for a zone to affect). Untested alternative: the zone
+  format may be incomplete, or per-cell objects.lua zones may not carry the
+  same authority as Muldraugh's own map-wide file for this object type.
+  Recorded in `docs/MAP_38O_VEGITATION_ZONE_NEGATIVE_RESULT.md`.
+
 ### Added (MAP-38N: real Vegitation zone object, pushing past ground tiles)
 - Real vanilla Muldraugh's own map data has a single map-wide `objects.lua`
   (not per-cell) full of rectangular zone objects: `Nav`, `TownZone`,
