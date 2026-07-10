@@ -1992,14 +1992,19 @@ end
         // "Nav", "TownZone", "Vegitation" (vanilla's own spelling, not a typo here),
         // each with absolute-world-tile x/y/width/height. Procedural vegetation
         // density appears to be seeded by "Vegitation" zones, not authored per-tile.
-        // Added one covering the same central 16x16 chunk block (tiles 64..191 of
-        // the cell, absolute cellX*256+64 .. cellX*256+191) that renderable_v1's
-        // lotpack already marks with the distinctive floor tile (MAP-38H), so any
-        // vegetation effect and the marker tile are both visible in the same area.
+        // The first zone covers the same central 16x16 chunk block (tiles 64..191)
+        // that renderable_v1's lotpack marks with the distinctive floor tile
+        // (MAP-38H) -- MAP-38O found this has no observed effect, leading
+        // hypothesis being that zones only seed vegetation over otherwise-
+        // unauthored (Type-A default-shorthand) ground, not already-explicit
+        // lotpack records. MAP-38P adds a second zone over tiles 0..63 -- a chunk
+        // range OUTSIDE the central marker block, still Type-A default in the
+        // lotpack -- to test that hypothesis directly.
         "renderable_v1"  => $$"""
 objects = {
   { name = "", type = "SpawnPoint", x = {{cellX * 256 + 128}}, y = {{cellY * 256 + 128}}, z = 0, width = 1, height = 1, properties = { Professions = "unemployed" } },
-  { name = "", type = "Vegitation", x = {{cellX * 256 + 64}}, y = {{cellY * 256 + 64}}, z = 0, width = 128, height = 128 }
+  { name = "", type = "Vegitation", x = {{cellX * 256 + 64}}, y = {{cellY * 256 + 64}}, z = 0, width = 128, height = 128 },
+  { name = "", type = "Vegitation", x = {{cellX * 256 + 0}}, y = {{cellY * 256 + 0}}, z = 0, width = 64, height = 64 }
 }
 """,
         "empty_grass_v5" => "-- PZMapForge MAP-9Q: minimal valid empty lotheader profile. No objects or zones. No BOM encoding applied. Not load-tested.\n",

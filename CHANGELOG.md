@@ -8,6 +8,18 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-38P: second Vegitation zone probe over untouched ground)
+- MAP-38O's leading hypothesis was that zones seed density where the game
+  generates vegetation, not force placement over already-explicit lotpack
+  ground. Added a second `Vegitation` zone over tiles 0..63 of the cell
+  (chunkX/Y 0..7) — Type-A default-shorthand in the lotpack, outside the
+  central 8..24 marker block — to test this directly. New test
+  `RenderableV1_ObjectsLua_ContainsSecondVegitationZoneOverUntouchedGround`.
+  24 tests total, all passing.
+- Candidate `pzmapforge_map38p` (cell 34_26) generated and installed, ready
+  whenever the operator can check. Same central marker block, plus the new
+  zone over otherwise-default ground.
+
 ### Recorded (MAP-38O: Vegitation zone — no observed effect)
 - Operator tested `pzmapforge_map38n` (MAP-38N's Vegitation zone candidate)
   at the confirmed coordinate. Result: identical "endless repeating carpet

@@ -269,6 +269,20 @@ public sealed class MapExportBuild42CandidateWriterRenderableV1ProcessTests : ID
     }
 
     [Fact]
+    public void RenderableV1_ObjectsLua_ContainsSecondVegitationZoneOverUntouchedGround()
+    {
+        // MAP-38P: second Vegitation zone over tiles 0..63 (chunkX/Y 0..7), which
+        // are Type-A default-shorthand in the lotpack (outside the central 8..24
+        // marker block) -- tests whether zones affect otherwise-unauthored ground
+        // differently than already-explicit lotpack records (MAP-38O hypothesis).
+        var (cellX, cellY) = (35, 27);
+        RunCandidateRenderableV1();
+        var content = File.ReadAllText(ObjectsLuaPath, System.Text.Encoding.ASCII);
+        Assert.Contains($"x = {cellX * 256 + 0}, y = {cellY * 256 + 0}", content, StringComparison.Ordinal);
+        Assert.Contains("width = 64, height = 64", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RenderableV1_SpawnpointsLua_NoBom()
     {
         RunCandidateRenderableV1();
