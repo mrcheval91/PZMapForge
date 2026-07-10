@@ -8,6 +8,21 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Recorded (MAP-38Q: real chunkdata swap — no effect; three clean negatives this session)
+- Swapped real vanilla `chunkdata_36_27.bin` (3906 bytes, the most complex
+  chunkdata sampled) into the confirmed-working candidate's
+  `chunkdata_34_26.bin`. Operator confirmed identical result to the
+  all-zero baseline: same carpet tile at spawn, same empty grass at the
+  second zone. **Chunkdata content has no observed effect on rendering.**
+- Combined with MAP-38O/P's Vegitation zone negatives, three
+  content-placement experiments this session all returned clean negatives.
+  Within this testing pathway, only lotpack ground tiles and the
+  `SpawnPoint` object are confirmed to affect observable output.
+- Recorded in `docs/MAP_38Q_CHUNKDATA_SWAP_NEGATIVE_RESULT.md` as a
+  reasonable stopping point for further blind experimentation — remaining
+  paths are external (ask the PZ modding Discord, or decode chunkdata's
+  format with more time than a single session allows).
+
 ### Recorded (MAP-38P result: second Vegitation zone also has no effect — hypothesis 1 ruled out)
 - Operator confirmed arrival at the second zone's location (~8730,6680,
   visible edge of the marker-tile block) and observed plain empty grass —
