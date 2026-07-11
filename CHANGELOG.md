@@ -8,6 +8,35 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-38ZG: --renderable-layer-field, testing the layer hypothesis for buildings)
+- No published format spec exists for Build 42's building/room binary
+  encoding (checked `github.com/Unjammer/PZ_Vanilla_map_b42`, a community
+  decoder that reconstructs 8,724 real buildings but explicitly withholds
+  its methodology). Downloaded its small `Tutorial.zip` sample output
+  (not committed — third-party analysis material, kept local) and
+  inspected a real building TBX file directly.
+- **Finding**: real buildings use ten independently-gridded named layers
+  per Z-level — `Floor, FloorOverlay, FloorGrime, FloorGrime2,
+  FloorFurniture, Vegetation, Walls, WallTrim, Walls2, WallTrim2`. Walls
+  occupy sparse outline positions with segment-specific tile indices (not
+  a filled uniform area); Vegetation is its own dedicated layer, separate
+  from Floor — confirming why the `Vegitation`-type `objects.lua` zone
+  experiments (MAP-38O/P) never had any effect.
+- **Hypothesis**: this repo's lotpack Type-B record field1 (hardcoded to
+  `2` in every prior test) is a layer selector, and `2` likely corresponds
+  to `FloorGrime` if the compiled format's layer order matches the TBX
+  list — which would explain why every confirmed content type so far
+  (floor, foliage, grass overlay, forest, atmospheric forest, and the wall
+  smear) all rendered as flat ground-level content.
+- Added `--renderable-layer-field <int>` CLI flag overriding the
+  previously-hardcoded value. Default unchanged (still 2), 24 tests pass.
+- Three candidates generated testing the wall tile at different layer
+  field guesses (0, 6, 7) — not yet human-tested. **Caution**: this
+  changes a field whose safe range is unknown (only `2` has ever been
+  observed in real files) — some crash risk, same recovery as MAP-38ZC if
+  needed. Recorded in
+  `docs/MAP_38ZG_BUILDING_LAYER_STRUCTURE_DISCOVERED.md`.
+
 ### Confirmed (MAP-38ZF: wall tile renders — sixth content type, new category)
 - Tested `walls_exterior_house_01_4` (structural wall texture, not
   ground/vegetation) via the same safe single-tile mechanism. **Confirmed

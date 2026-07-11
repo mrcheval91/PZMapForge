@@ -978,6 +978,7 @@ static int MapExportExperimentalCommand(string[] args)
     var build42CandidateProfile = "empty_grass_v0";
     string? renderableMarkerTile = null;
     var renderablePalette = false;
+    var renderableLayerField = 2;
 
     for (var i = 0; i < args.Length; i++)
     {
@@ -989,6 +990,7 @@ static int MapExportExperimentalCommand(string[] args)
         else if (args[i] is "--build42-candidate-profile" && i + 1 < args.Length) build42CandidateProfile = args[++i];
         else if (args[i] is "--renderable-marker-tile" && i + 1 < args.Length)   renderableMarkerTile    = args[++i];
         else if (args[i] is "--renderable-palette")                              renderablePalette       = true;
+        else if (args[i] is "--renderable-layer-field" && i + 1 < args.Length)   renderableLayerField    = int.Parse(args[++i]);
         else if (args[i] is "--cell-x" && i + 1 < args.Length)
         {
             if (int.TryParse(args[++i], out var cx)) cellX = cx;
@@ -1053,7 +1055,7 @@ static int MapExportExperimentalCommand(string[] args)
     // ---- Build 42 candidate writer MVP (MAP-6L) ----
     if (build42CandidateWriter)
     {
-        return Build42CandidateWriterCommand(mapId, outputFull, cellX, cellY, build42CandidateProfile, renderableMarkerTile, renderablePalette);
+        return Build42CandidateWriterCommand(mapId, outputFull, cellX, cellY, build42CandidateProfile, renderableMarkerTile, renderablePalette, renderableLayerField);
     }
 
     // ---- Build 42 Workshop-style nested package layout ----
@@ -1805,7 +1807,7 @@ Checks:        {passCount + failCount} total, {passCount} passed, {failCount} fa
 
 static int Build42CandidateWriterCommand(
     string mapId, string outputFull, int cellX, int cellY, string profile,
-    string? markerTileOverride = null, bool palette = false)
+    string? markerTileOverride = null, bool palette = false, int renderableLayerField = 2)
 {
     // MAP-6L: Build 42 candidate writer MVP.
     // Writes LOTP, LOTH, and chunkdata under .local using MAP-6J/MAP-6K contract.
@@ -2172,7 +2174,17 @@ BINARY CANDIDATE FORMATS ({profile}):
             for (var slot = 0; slot < 64; slot++)
             {
                 var recPos = slot * 12;
-                BitConverter.GetBytes((uint)2).CopyTo(chunk, recPos);
+                // MAP-38ZG: field1 was always hardcoded to 2 (the only value ever observed
+                // in real files this repo inspected). Real building TBX files (the human-
+                // editable authoring format, decoded via a third-party community tool --
+                // github.com/Unjammer/PZ_Vanilla_map_b42) show compiled buildings use TEN
+                // named layers per Z-level: Floor, FloorOverlay, FloorGrime, FloorGrime2,
+                // FloorFurniture, Vegetation, Walls, WallTrim, Walls2, WallTrim2. field1 is
+                // hypothesized to be a layer selector; renderableLayerField lets this be
+                // overridden to test that hypothesis (e.g. wall tiles need a different
+                // layer than ground tiles to render as proper oriented walls instead of a
+                // flat smear -- see docs/MAP_38ZF_WALL_TILE_CONFIRMED.md).
+                BitConverter.GetBytes((uint)renderableLayerField).CopyTo(chunk, recPos);
                 BitConverter.GetBytes(0xFFFFFFFFu).CopyTo(chunk, recPos + 4);
                 BitConverter.GetBytes((uint)tileIndex).CopyTo(chunk, recPos + 8);
             }
