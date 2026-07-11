@@ -8,6 +8,22 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-38ZD: buffered palette layout — untested fix attempt for MAP-38ZC's crash)
+- Rewrote `--renderable-palette`'s chunk layout to leave a 2-chunk
+  (16-tile) Type-A default buffer between every region, so no two
+  different explicit tile types ever share an edge. Quadrants shrink to
+  9x9 chunks; the spawn point (chunk 16,16) now falls inside the gap
+  itself — the player spawns on safe untouched ground with all four
+  quadrants visible nearby but not touching. The atmospheric strip
+  (index 8) gets its own 2-chunk gap from the quadrants.
+- 24 tests still pass. Byte-level sanity check confirms the file is
+  structurally sound (offset table consistent, spawn chunk correctly
+  8-byte Type-A, file size matches exactly).
+- CLI warning updated to reflect this is an untested fix attempt, not
+  confirmed safe or still-broken.
+- Candidate `pzmapforge_map38zd` (cell 34_26) generated and installed,
+  awaiting human confirmation.
+
 ### Fixed + Recorded (MAP-38ZC: --renderable-palette crashes Build 42 on load)
 - Operator tested `pzmapforge_map38zb` (MAP-38ZB) and got a real engine
   crash on world load: red error panel, empty world, no character.

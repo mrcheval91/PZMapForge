@@ -2161,8 +2161,7 @@ BINARY CANDIDATE FORMATS ({profile}):
         // content types are visible in one candidate. Non-palette mode keeps the
         // original single central 16x16 block unchanged.
         const int chunksPerSide = 32; // 1024 = 32 x 32
-        const int centerLo = 8, centerHi = 24; // central 16x16 block of chunks (out of 32x32)
-        const int midpoint = 16;               // quadrant split point within the block
+        const int centerLo = 8, centerHi = 24; // central 16x16 block of chunks (out of 32x32), non-palette mode only
         var typeAChunk = new byte[8];
         BitConverter.GetBytes(0xFFFFFFFFu).CopyTo(typeAChunk, 0);
         BitConverter.GetBytes((uint)64).CopyTo(typeAChunk, 4);
@@ -2185,39 +2184,50 @@ BINARY CANDIDATE FORMATS ({profile}):
             typeBByIndex.TryGetValue(tileIndex, out var cached) ? cached : (typeBByIndex[tileIndex] = BuildTypeBChunk(tileIndex));
 
         var chunkTileIndex = new int?[lotpChunkCount]; // null = Type-A default
-        for (var i = 0; i < lotpChunkCount; i++)
+        if (palette)
         {
-            var cx = i % chunksPerSide;
-            var cy = i / chunksPerSide;
-            var inBlock = cx >= centerLo && cx < centerHi && cy >= centerLo && cy < centerHi;
-            if (!inBlock) { continue; }
+            // MAP-38ZD: MAP-38ZC crashed (NullPointerException in Blending.changeGround)
+            // when different explicit tile types were placed directly adjacent to each
+            // other. This layout tests the fix hypothesis: leave a 2-chunk (16-tile)
+            // Type-A default buffer between every region so no two different explicit
+            // tiles ever share an edge. Quadrants shrink to 9x9 chunks (6..14 / 17..25)
+            // with a 2-chunk gap (15..16) between them; the spawn point (chunk 16,16,
+            // from tile 128/8) falls IN that gap -- the player spawns on safe untouched
+            // ground with all four quadrants visible nearby but not touching. The
+            // atmospheric strip (index 8) is separated from the quadrants by its own
+            // 2-chunk gap (26..27) rather than sitting directly below them.
+            const int qLo1 = 6, qHi1 = 15;   // first quadrant band (chunks 6..14 inclusive)
+            const int qLo2 = 17, qHi2 = 26;  // second quadrant band (chunks 17..25 inclusive)
+            const int stripLo = 28, stripHi = 32; // atmospheric strip (chunks 28..31 inclusive)
+            for (var i = 0; i < lotpChunkCount; i++)
+            {
+                var cx = i % chunksPerSide;
+                var cy = i / chunksPerSide;
+                var inBand1X = cx >= qLo1 && cx < qHi1;
+                var inBand2X = cx >= qLo2 && cx < qHi2;
+                var inBand1Y = cy >= qLo1 && cy < qHi1;
+                var inBand2Y = cy >= qLo2 && cy < qHi2;
 
-            if (palette)
-            {
-                chunkTileIndex[i] = (cx < midpoint, cy < midpoint) switch
+                if (inBand1X && inBand1Y)      { chunkTileIndex[i] = 4; } // NW: floors_rugs_01_0
+                else if (inBand2X && inBand1Y) { chunkTileIndex[i] = 5; } // NE: vegetation_foliage_01_8
+                else if (inBand1X && inBand2Y) { chunkTileIndex[i] = 6; } // SW: blends_grassoverlays_01_0
+                else if (inBand2X && inBand2Y) { chunkTileIndex[i] = 7; } // SE: vegetation_trees_01_8
+                else if (cx >= qLo1 && cx < qHi2 && cy >= stripLo && cy < stripHi)
                 {
-                    (true, true)   => 4,  // NW: floors_rugs_01_0
-                    (false, true)  => 5,  // NE: vegetation_foliage_01_8
-                    (true, false)  => 6,  // SW: blends_grassoverlays_01_0
-                    (false, false) => 7,  // SE: vegetation_trees_01_8
-                };
-            }
-            else
-            {
-                chunkTileIndex[i] = renderableTileIndex;
+                    chunkTileIndex[i] = 8; // atmospheric strip: vegetation_trees_01_24
+                }
+                // else: left null -> Type-A default (includes all gap buffers and spawn point)
             }
         }
-        // Palette-only fifth region: a strip south of the main block for the
-        // atmospheric deep-forest tile (MAP-38ZA), kept spatially separate.
-        if (palette)
+        else
         {
             for (var i = 0; i < lotpChunkCount; i++)
             {
                 var cx = i % chunksPerSide;
                 var cy = i / chunksPerSide;
-                if (cx >= centerLo && cx < centerHi && cy >= centerHi && cy < centerHi + 8)
+                if (cx >= centerLo && cx < centerHi && cy >= centerLo && cy < centerHi)
                 {
-                    chunkTileIndex[i] = 8; // vegetation_trees_01_24
+                    chunkTileIndex[i] = renderableTileIndex;
                 }
             }
         }
@@ -2493,10 +2503,11 @@ No PZ assets copied. No repo media/maps writes. Experimental only.
 
     if (palette)
     {
-        Console.WriteLine("WARNING: --renderable-palette is KNOWN TO CRASH Build 42 on load");
-        Console.WriteLine("  (java.lang.NullPointerException in Blending.changeGround, confirmed");
-        Console.WriteLine("  2026-07-11). Adjacent different explicit tile types trigger a null");
-        Console.WriteLine("  floor reference in the game's own ground-blend system. See");
+        Console.WriteLine("WARNING: --renderable-palette's first layout (adjacent tile regions,");
+        Console.WriteLine("  no gap) crashed Build 42 on load (NullPointerException in");
+        Console.WriteLine("  Blending.changeGround, confirmed 2026-07-11, docs/MAP_38ZC_...). This");
+        Console.WriteLine("  version (MAP-38ZD) inserts a 2-chunk Type-A default buffer between");
+        Console.WriteLine("  every region as a fix attempt -- NOT YET HUMAN-CONFIRMED safe. See");
         Console.WriteLine("  docs/MAP_38ZC_MULTI_TILE_BOUNDARY_CRASH.md before using this candidate.");
     }
     Console.WriteLine($"Candidate dir:                   {candidateDir}");
