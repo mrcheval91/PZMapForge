@@ -8,6 +8,25 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Confirmed (MAP-38ZE: buffered palette crash fix works + Tile Report debug tool discovered)
+- Operator tested `pzmapforge_map38zd` (MAP-38ZD's buffered layout): **no
+  crash**, world loaded cleanly, all four quadrants rendered correctly
+  (carpet, foliage, herbs, forest). Confirms the fix — separating
+  different explicit tile types with a Type-A default buffer avoids the
+  `Blending.changeGround` NullPointerException. `--renderable-palette` is
+  now considered safe with this layout.
+- A water feature seen in one gap column was confirmed via a newly
+  discovered debug feature — **Build 42's Tile Report** (right-click →
+  exact tile name + coordinates under cursor) — to be real vanilla content
+  (`blends_natural_02_0`), not a bug. Gap zones correctly fall through to
+  genuine underlying Muldraugh terrain.
+- **Major tooling discovery**: use the Tile Report feature for all future
+  runtime verification in this repo instead of relying on visual
+  descriptions — it gives exact, unambiguous ground truth. Recorded in
+  `docs/MAP_38ZE_BUFFERED_PALETTE_CONFIRMED_AND_TILE_REPORT_TOOL.md`.
+- CLI note updated from "untested fix attempt" warning to a confirmed-safe
+  explanatory note.
+
 ### Added (MAP-38ZD: buffered palette layout — untested fix attempt for MAP-38ZC's crash)
 - Rewrote `--renderable-palette`'s chunk layout to leave a 2-chunk
   (16-tile) Type-A default buffer between every region, so no two

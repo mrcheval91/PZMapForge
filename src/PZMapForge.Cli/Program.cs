@@ -2503,12 +2503,12 @@ No PZ assets copied. No repo media/maps writes. Experimental only.
 
     if (palette)
     {
-        Console.WriteLine("WARNING: --renderable-palette's first layout (adjacent tile regions,");
-        Console.WriteLine("  no gap) crashed Build 42 on load (NullPointerException in");
-        Console.WriteLine("  Blending.changeGround, confirmed 2026-07-11, docs/MAP_38ZC_...). This");
-        Console.WriteLine("  version (MAP-38ZD) inserts a 2-chunk Type-A default buffer between");
-        Console.WriteLine("  every region as a fix attempt -- NOT YET HUMAN-CONFIRMED safe. See");
-        Console.WriteLine("  docs/MAP_38ZC_MULTI_TILE_BOUNDARY_CRASH.md before using this candidate.");
+        Console.WriteLine("NOTE: --renderable-palette's first layout (adjacent tile regions, no");
+        Console.WriteLine("  gap) crashed Build 42 on load (NullPointerException in");
+        Console.WriteLine("  Blending.changeGround, docs/MAP_38ZC_...). The current layout inserts");
+        Console.WriteLine("  a 2-chunk Type-A default buffer between every region -- confirmed safe");
+        Console.WriteLine("  by human runtime test 2026-07-11 (docs/MAP_38ZE_...). Do not remove the");
+        Console.WriteLine("  buffer without re-testing.");
     }
     Console.WriteLine($"Candidate dir:                   {candidateDir}");
     Console.WriteLine($"Profile:                         {profile}");
