@@ -8,6 +8,31 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Fixed + Recorded (MAP-38ZC: --renderable-palette crashes Build 42 on load)
+- Operator tested `pzmapforge_map38zb` (MAP-38ZB) and got a real engine
+  crash on world load: red error panel, empty world, no character.
+  Debug log: `java.lang.NullPointerException: Cannot read field "sprite"
+  because the return value of "zombie.iso.IsoGridSquare.getFloor()" is
+  null at Blending.changeGround(Blending.java:120)`, inside
+  `IsoChunk.doLoadGridsquare` → `IsoChunkMap.processAllLoadGridSquare` →
+  `IngameState.enter` — runs on every chunk load, so this crashes
+  reliably, not just near a boundary.
+- Leading hypothesis: adjacent grid squares with **different** explicit
+  floor tiles need blend-transition data this writer doesn't provide, and
+  the vanilla blending system crashes (rather than degrading gracefully)
+  when it's absent. Every prior single-tile-type candidate (MAP-38K
+  through MAP-38ZA) has exactly one boundary shape (marker ↔ Type-A
+  default) and never crashed; MAP-38ZB introduced four-plus different
+  explicit tiles meeting at internal seams.
+- Added a runtime warning: the CLI now prints a warning to stdout whenever
+  `--renderable-palette` is used, pointing at
+  `docs/MAP_38ZC_MULTI_TILE_BOUNDARY_CRASH.md`. 24 tests still pass.
+- **Do not use `--renderable-palette` until this is understood.**
+  Single-uniform-tile-type candidates remain confirmed safe.
+- Possible connection to chunkdata's still-undecoded structure (MAP-38M) —
+  chunkdata may be exactly the blend-transition data the engine expects at
+  tile-type boundaries.
+
 ### Added (MAP-38ZB: --renderable-palette, a showcase of all 5 confirmed content types)
 - New `--renderable-palette` CLI flag on `renderable_v1`. Instead of one
   uniform central block, divides the central 16x16 chunk block into four

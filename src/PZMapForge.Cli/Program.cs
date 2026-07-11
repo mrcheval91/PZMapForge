@@ -2491,6 +2491,14 @@ No PZ assets copied. No repo media/maps writes. Experimental only.
 """;
     File.WriteAllText(Path.Combine(versionedDir, "experimental-map-export-report.md"), md, Encoding.UTF8);
 
+    if (palette)
+    {
+        Console.WriteLine("WARNING: --renderable-palette is KNOWN TO CRASH Build 42 on load");
+        Console.WriteLine("  (java.lang.NullPointerException in Blending.changeGround, confirmed");
+        Console.WriteLine("  2026-07-11). Adjacent different explicit tile types trigger a null");
+        Console.WriteLine("  floor reference in the game's own ground-blend system. See");
+        Console.WriteLine("  docs/MAP_38ZC_MULTI_TILE_BOUNDARY_CRASH.md before using this candidate.");
+    }
     Console.WriteLine($"Candidate dir:                   {candidateDir}");
     Console.WriteLine($"Profile:                         {profile}");
     Console.WriteLine($"Map ID:                          {mapId}");
