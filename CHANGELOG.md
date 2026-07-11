@@ -8,6 +8,31 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Confirmed (MAP-38ZA: real trees confirmed — index 0 was blank, not the whole category)
+- MAP-38W's "trees render as void" result was specific to
+  `vegetation_trees_01_0`. Tested two other real indices:
+  `vegetation_trees_01_8` — CONFIRMED, "mixed trees with zones of dense
+  evergreens, and the grass with like a transition dotting scattered", a
+  genuine varied forest render; `vegetation_trees_01_24` — CONFIRMED, "dark
+  foggy forest, with zombies in it! and fog stays" outside which is plain
+  grass — a full atmospheric deep-forest effect (fog + hostile spawns)
+  tightly bounded to the authored cell, from a single ground-tile
+  reference.
+- **This overturns MAP-38W's "trees need a separate object/Vegetation
+  layer" hypothesis.** They don't — they just needed a valid tile index.
+  Real, object-rich, game-relevant content (not just visual dressing) is
+  achievable purely through the lotpack ground-tile mechanism already
+  confirmed working since MAP-38K.
+- Also confirms zone objects (`Vegitation` x2, `DeepForest`, tested via a
+  hand-edited probe not yet in the CLI) are fully inert across 3 attempts —
+  `SpawnPoint` remains the only working `objects.lua` object type. All
+  future content work should target the lotpack tile mechanism.
+- `docs/IMPLEMENTATION.md` updated. Also also tested a hand-edited
+  `DeepForest` zone object (not via CLI flag) — no effect, same as
+  `Vegitation`, reinforcing that zone objects don't work via this pathway
+  regardless of type. See
+  `docs/MAP_38ZA_REAL_TREES_AND_ATMOSPHERIC_FOREST_CONFIRMED.md`.
+
 ### Recorded (MAP-38W: ground-layer blends work, trees/groundcover render as void)
 - Tested 3 more real tile names via `--renderable-marker-tile`, same
   mechanism and coordinate: `blends_grassoverlays_01_0` — CONFIRMED
