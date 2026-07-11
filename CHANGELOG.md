@@ -8,6 +8,23 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Recorded (MAP-38W: ground-layer blends work, trees/groundcover render as void)
+- Tested 3 more real tile names via `--renderable-marker-tile`, same
+  mechanism and coordinate: `blends_grassoverlays_01_0` — CONFIRMED
+  ("long herbs, all around", third content type);
+  `vegetation_trees_01_0` and `vegetation_groundcover_01_0` — both **void**
+  (empty walkable space, character fully visible, nothing rendered — not
+  darkness, not fallback content, not an error).
+- Pattern: every successful tile is a flat, tileable ground blend/overlay
+  texture. Trees (and at least groundcover index 0) render as void,
+  consistent with needing a separate object/vegetation layer this writer's
+  single-layer lotpack format doesn't emit — matching TUT-03's own
+  authoring workflow (Furniture layer copy → Vegetation layer paste).
+- This defines the writer's current ceiling: any real ground-layer blend
+  tile works; discrete object placement (trees, at least some groundcover)
+  does not, and would need a materially bigger feature than a tile-name
+  swap. Recorded in `docs/MAP_38W_TILE_CATEGORY_RESULTS.md`.
+
 ### Confirmed (MAP-38S: real vegetation tile renders — second confirmed content type)
 - Operator observed **"vegetation full"** at the confirmed coordinate using
   `pzmapforge_map38r` (`--renderable-marker-tile vegetation_foliage_01_8`).
