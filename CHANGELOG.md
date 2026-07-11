@@ -8,6 +8,22 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Added (MAP-38ZB: --renderable-palette, a showcase of all 5 confirmed content types)
+- New `--renderable-palette` CLI flag on `renderable_v1`. Instead of one
+  uniform central block, divides the central 16x16 chunk block into four
+  quadrants (`floors_rugs_01_0` NW, `vegetation_foliage_01_8` NE,
+  `blends_grassoverlays_01_0` SW, `vegetation_trees_01_8` SE, all meeting
+  at the spawn point) plus a fifth strip south of the block
+  (`vegetation_trees_01_24`, the atmospheric deep-forest/fog/zombie tile,
+  MAP-38ZA) — kept spatially separate given its stronger effect. Default
+  (non-palette) behavior is completely unchanged; 24 existing tests pass.
+- Candidate `pzmapforge_map38zb` (cell 34_26) generated and installed —
+  1256-byte lotheader (9 tile names), 308,236-byte lotpack (384 explicit
+  chunks across 5 regions + Type-A default elsewhere).
+- This is real, reusable infrastructure (not a one-off probe like the
+  earlier ad hoc `DeepForest` zone edit) — a single candidate now
+  demonstrates every confirmed content type from one test.
+
 ### Confirmed (MAP-38ZA: real trees confirmed — index 0 was blank, not the whole category)
 - MAP-38W's "trees render as void" result was specific to
   `vegetation_trees_01_0`. Tested two other real indices:

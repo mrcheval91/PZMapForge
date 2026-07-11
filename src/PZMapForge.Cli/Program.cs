@@ -977,6 +977,7 @@ static int MapExportExperimentalCommand(string[] args)
     var build42CandidateWriter  = false;
     var build42CandidateProfile = "empty_grass_v0";
     string? renderableMarkerTile = null;
+    var renderablePalette = false;
 
     for (var i = 0; i < args.Length; i++)
     {
@@ -987,6 +988,7 @@ static int MapExportExperimentalCommand(string[] args)
         else if (args[i] is "--build42-candidate-writer")                         build42CandidateWriter  = true;
         else if (args[i] is "--build42-candidate-profile" && i + 1 < args.Length) build42CandidateProfile = args[++i];
         else if (args[i] is "--renderable-marker-tile" && i + 1 < args.Length)   renderableMarkerTile    = args[++i];
+        else if (args[i] is "--renderable-palette")                              renderablePalette       = true;
         else if (args[i] is "--cell-x" && i + 1 < args.Length)
         {
             if (int.TryParse(args[++i], out var cx)) cellX = cx;
@@ -1051,7 +1053,7 @@ static int MapExportExperimentalCommand(string[] args)
     // ---- Build 42 candidate writer MVP (MAP-6L) ----
     if (build42CandidateWriter)
     {
-        return Build42CandidateWriterCommand(mapId, outputFull, cellX, cellY, build42CandidateProfile, renderableMarkerTile);
+        return Build42CandidateWriterCommand(mapId, outputFull, cellX, cellY, build42CandidateProfile, renderableMarkerTile, renderablePalette);
     }
 
     // ---- Build 42 Workshop-style nested package layout ----
@@ -1803,7 +1805,7 @@ Checks:        {passCount + failCount} total, {passCount} passed, {failCount} fa
 
 static int Build42CandidateWriterCommand(
     string mapId, string outputFull, int cellX, int cellY, string profile,
-    string? markerTileOverride = null)
+    string? markerTileOverride = null, bool palette = false)
 {
     // MAP-6L: Build 42 candidate writer MVP.
     // Writes LOTP, LOTH, and chunkdata under .local using MAP-6J/MAP-6K contract.
@@ -2080,8 +2082,21 @@ BINARY CANDIDATE FORMATS ({profile}):
     // error, which is why every differential test (MAP-37E onward) came back
     // FALLBACK_INDISTINGUISHABLE regardless of chunkdata/cell changes. See
     // docs/MAP_38D_PHANTOM_TILE_ROOT_CAUSE.md.
+        // MAP-38ZB: --renderable-palette mode. All five of these tile names were
+        // independently confirmed rendering real, distinct content this session
+        // (MAP-38K floor tile, MAP-38S foliage, MAP-38W grass overlay,
+        // MAP-38ZA forest + atmospheric deep-forest with fog/zombie spawns).
+        // Indices 4-8 below are placed into four quadrants of the central chunk
+        // block plus a fifth strip, see the lotpack section for exact regions.
     var lothEntries = profile switch
     {
+        "renderable_v1" when palette => new[]
+        {
+            "blends_natural_01_16", "blends_natural_01_21", "blends_natural_01_22",
+            "blends_natural_01_23",
+            "floors_rugs_01_0", "vegetation_foliage_01_8", "blends_grassoverlays_01_0",
+            "vegetation_trees_01_8", "vegetation_trees_01_24",
+        },
         "renderable_v1" => new[]
         {
             "blends_natural_01_16", "blends_natural_01_21", "blends_natural_01_22",
@@ -2140,30 +2155,78 @@ BINARY CANDIDATE FORMATS ({profile}):
         // (spawnpoints.lua/objects.lua both place spawn at posX=posY=150 of 0-299,
         // i.e. the geometric center), so the marker tile is visible at spawn without
         // requiring the whole cell to be non-default.
+        // MAP-38ZB: --renderable-palette divides the central chunk block into four
+        // quadrants (tile indices 4-7) plus a fifth strip (index 8, the atmospheric
+        // deep-forest tile) instead of one uniform block, so all five confirmed
+        // content types are visible in one candidate. Non-palette mode keeps the
+        // original single central 16x16 block unchanged.
         const int chunksPerSide = 32; // 1024 = 32 x 32
         const int centerLo = 8, centerHi = 24; // central 16x16 block of chunks (out of 32x32)
+        const int midpoint = 16;               // quadrant split point within the block
         var typeAChunk = new byte[8];
         BitConverter.GetBytes(0xFFFFFFFFu).CopyTo(typeAChunk, 0);
         BitConverter.GetBytes((uint)64).CopyTo(typeAChunk, 4);
-        var typeBChunk = new byte[64 * 12];
-        for (var slot = 0; slot < 64; slot++)
+
+        byte[] BuildTypeBChunk(int tileIndex)
         {
-            var recPos = slot * 12;
-            BitConverter.GetBytes((uint)2).CopyTo(typeBChunk, recPos);
-            BitConverter.GetBytes(0xFFFFFFFFu).CopyTo(typeBChunk, recPos + 4);
-            BitConverter.GetBytes((uint)renderableTileIndex).CopyTo(typeBChunk, recPos + 8);
+            var chunk = new byte[64 * 12];
+            for (var slot = 0; slot < 64; slot++)
+            {
+                var recPos = slot * 12;
+                BitConverter.GetBytes((uint)2).CopyTo(chunk, recPos);
+                BitConverter.GetBytes(0xFFFFFFFFu).CopyTo(chunk, recPos + 4);
+                BitConverter.GetBytes((uint)tileIndex).CopyTo(chunk, recPos + 8);
+            }
+            return chunk;
         }
 
-        var chunkIsMarker = new bool[lotpChunkCount];
-        var chunkSize     = new int[lotpChunkCount];
-        var totalChunkBytes = 0L;
+        var typeBByIndex = new Dictionary<int, byte[]>();
+        byte[] TypeBFor(int tileIndex) =>
+            typeBByIndex.TryGetValue(tileIndex, out var cached) ? cached : (typeBByIndex[tileIndex] = BuildTypeBChunk(tileIndex));
+
+        var chunkTileIndex = new int?[lotpChunkCount]; // null = Type-A default
         for (var i = 0; i < lotpChunkCount; i++)
         {
             var cx = i % chunksPerSide;
             var cy = i / chunksPerSide;
-            var isMarker = cx >= centerLo && cx < centerHi && cy >= centerLo && cy < centerHi;
-            chunkIsMarker[i] = isMarker;
-            chunkSize[i]     = isMarker ? typeBChunk.Length : typeAChunk.Length;
+            var inBlock = cx >= centerLo && cx < centerHi && cy >= centerLo && cy < centerHi;
+            if (!inBlock) { continue; }
+
+            if (palette)
+            {
+                chunkTileIndex[i] = (cx < midpoint, cy < midpoint) switch
+                {
+                    (true, true)   => 4,  // NW: floors_rugs_01_0
+                    (false, true)  => 5,  // NE: vegetation_foliage_01_8
+                    (true, false)  => 6,  // SW: blends_grassoverlays_01_0
+                    (false, false) => 7,  // SE: vegetation_trees_01_8
+                };
+            }
+            else
+            {
+                chunkTileIndex[i] = renderableTileIndex;
+            }
+        }
+        // Palette-only fifth region: a strip south of the main block for the
+        // atmospheric deep-forest tile (MAP-38ZA), kept spatially separate.
+        if (palette)
+        {
+            for (var i = 0; i < lotpChunkCount; i++)
+            {
+                var cx = i % chunksPerSide;
+                var cy = i / chunksPerSide;
+                if (cx >= centerLo && cx < centerHi && cy >= centerHi && cy < centerHi + 8)
+                {
+                    chunkTileIndex[i] = 8; // vegetation_trees_01_24
+                }
+            }
+        }
+
+        var chunkSize = new int[lotpChunkCount];
+        var totalChunkBytes = 0L;
+        for (var i = 0; i < lotpChunkCount; i++)
+        {
+            chunkSize[i] = chunkTileIndex[i] is int ? 64 * 12 : typeAChunk.Length;
             totalChunkBytes += chunkSize[i];
         }
 
@@ -2177,7 +2240,7 @@ BINARY CANDIDATE FORMATS ({profile}):
         {
             var entryPos = lotpHeaderSize + i * 8;
             BitConverter.GetBytes(cursor).CopyTo(lotpBytes, entryPos);
-            var body = chunkIsMarker[i] ? typeBChunk : typeAChunk;
+            var body = chunkTileIndex[i] is int idx ? TypeBFor(idx) : typeAChunk;
             body.CopyTo(lotpBytes, (int)cursor);
             cursor += body.Length;
         }
