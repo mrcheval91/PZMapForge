@@ -8,6 +8,23 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Confirmed (MAP-38ZF: wall tile renders — sixth content type, new category)
+- Tested `walls_exterior_house_01_4` (structural wall texture, not
+  ground/vegetation) via the same safe single-tile mechanism. **Confirmed
+  via Tile Report** — first positive use of the tool, not just
+  disambiguating a negative: `Tile Report: walls_exterior_house_01_4`,
+  `Coordinates Report x: 8831, y: 6782, z: 0`.
+- Visual result: an oversized diagonal wall-sprite smear, not a coherent
+  room. Wall sprites are tall, offset isometric graphics representing a
+  vertical surface, not flat tileable ground textures — placing one via
+  the flat ground-tile mechanism renders the texture but not proper room
+  geometry.
+- Confirms no content-type gate exists at the rendering level across at
+  least 3 broad categories now (ground blends, vegetation, walls). A real
+  coherent room would need actual wall-placement logic this writer
+  doesn't have — a materially bigger feature. Recorded in
+  `docs/MAP_38ZF_WALL_TILE_CONFIRMED.md`.
+
 ### Confirmed (MAP-38ZE: buffered palette crash fix works + Tile Report debug tool discovered)
 - Operator tested `pzmapforge_map38zd` (MAP-38ZD's buffered layout): **no
   crash**, world loaded cleanly, all four quadrants rendered correctly
