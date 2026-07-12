@@ -8,6 +8,22 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Found (MAP-38ZH: field1 confirmed as a real 5-slot array index, TBX-layer hypothesis falsified)
+- Human runtime test of MAP-38ZG's layer-field hypothesis (`field1=6/7/0`)
+  produced hard evidence via the game's own Java stack trace:
+  `field1=6` and `field1=7` both throw
+  `java.lang.IndexOutOfBoundsException: Index N out of bounds for length 5`
+  at `IsoCell.PlaceLot(IsoCell.java:2946)` (an `ArrayList.get(field1)` call).
+  256 occurrences of each exception in `DebugLog.txt`, 512 total — exact
+  match to the human-reported error count.
+- This falsifies the 10-slot TBX-layer-order hypothesis in its literal
+  form: valid range is provably 0-4, not 0-9. `field1=2` (used throughout
+  this session) and `field1=0` (newly tested, loads cleanly, no visible
+  marker) are both valid indices, but MAP-38ZF already showed index 2 does
+  not behave as a "Walls" layer either — so this 5-slot array is not a
+  TBX-style visual-layer selector. Real meaning unknown; indices 1/3/4
+  untested. See `docs/MAP_38ZH_FIELD1_ARRAY_BOUND_CONFIRMED.md`.
+
 ### Added (MAP-38ZG: --renderable-layer-field, testing the layer hypothesis for buildings)
 - No published format spec exists for Build 42's building/room binary
   encoding (checked `github.com/Unjammer/PZ_Vanilla_map_b42`, a community
