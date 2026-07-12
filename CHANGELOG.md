@@ -8,6 +8,19 @@ Format: Keep a Changelog.
 
 ## [Unreleased]
 
+### Found (MAP-38ZI: field1's "0-4 valid range" claim was wrong — corrects MAP-38ZH)
+- Tested the 3 remaining untested field1 values (1, 3, 4). `field1=4`
+  ALSO crashes, inside the range MAP-38ZH claimed was safe — with a
+  different exception shape (`Index -1 out of bounds for length 5`, not
+  "Index 4"). Three crash-causing values now confirmed (4, 6, 7), three
+  unrelated index/length relationships — no formula fits all three.
+  `IsoCell.PlaceLot`'s indexing is not a simple bounds-checked lookup on
+  field1; further black-box value testing will not resolve it. Confirmed
+  safe: 0, 1, 2, 3. The h4 test's initial "vegetation at intervals"
+  observation is retracted — the crash log shows that chunk was blanked;
+  the vegetation seen was ordinary adjacent terrain, not field1=4 content.
+  See `docs/MAP_38ZI_FIELD1_NOT_A_SIMPLE_RANGE_CORRECTION.md`.
+
 ### Found (MAP-38ZH: field1 confirmed as a real 5-slot array index, TBX-layer hypothesis falsified)
 - Human runtime test of MAP-38ZG's layer-field hypothesis (`field1=6/7/0`)
   produced hard evidence via the game's own Java stack trace:
