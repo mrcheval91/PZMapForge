@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, map10_loader_trace]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-test-validate:
+    runs-on: windows-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: |
+          dotnet restore src/PZMapForge.Cli/PZMapForge.Cli.csproj
+          dotnet restore tests/PZMapForge.Core.Tests/PZMapForge.Core.Tests.csproj
+          dotnet restore tests/PZMapForge.Cli.Tests/PZMapForge.Cli.Tests.csproj
+
+      - name: Build (Release)
+        run: |
+          dotnet build src/PZMapForge.Cli/PZMapForge.Cli.csproj --configuration Release --no-restore
+          dotnet build tests/PZMapForge.Core.Tests/PZMapForge.Core.Tests.csproj --configuration Release --no-restore
+          dotnet build tests/PZMapForge.Cli.Tests/PZMapForge.Cli.Tests.csproj --configuration Release --no-restore
+
+      - name: Test PZMapForge.Core.Tests
+        run: dotnet test tests/PZMapForge.Core.Tests/PZMapForge.Core.Tests.csproj --configuration Release --no-build --logger "console;verbosity=normal"
+
+      - name: Test PZMapForge.Cli.Tests
+        run: dotnet test tests/PZMapForge.Cli.Tests/PZMapForge.Cli.Tests.csproj --configuration Release --no-build --logger "console;verbosity=normal"
+
+      - name: Full repo validation (scripts/validate.ps1)
+        shell: powershell
+        run: |
+          ./scripts/validate.ps1
