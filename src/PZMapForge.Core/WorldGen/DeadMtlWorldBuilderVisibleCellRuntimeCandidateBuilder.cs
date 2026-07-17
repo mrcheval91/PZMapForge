@@ -601,7 +601,6 @@ public sealed class DeadMtlWorldBuilderVisibleCellRuntimeCandidateBuilder
     private static void EmitLogChecks(List<VisibleCellCandidateCheck> checks,
         DeadMtlWorldBuilderVisibleCellRuntimeCandidateResult r)
     {
-        bool logsFound = r.RuntimeLogsFound;
         AddCheck(checks, "MAP35A_COLLECT_LOGS_DOES_NOT_REINSTALL",
             "Collect-logs does not reinstall or overwrite installed folder",
             "PASS", "PASS");
@@ -610,7 +609,6 @@ public sealed class DeadMtlWorldBuilderVisibleCellRuntimeCandidateBuilder
             "Install marker present (from prior -InstallOnly run)",
             "PASS", "PASS");
 
-        string passFail(bool v) => logsFound && v ? "PASS" : "FAIL";
         AddCheck(checks, "MAP35A_RUNTIME_CLASSIFICATION_RECORDED",
             "Runtime classification recorded from log analysis",
             "CLASSIFIED", !string.IsNullOrEmpty(r.RuntimeClassification) ? "CLASSIFIED" : "UNCLASSIFIED");

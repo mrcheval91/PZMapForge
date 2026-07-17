@@ -405,21 +405,27 @@ public sealed class DeadMtlWorldBuilderMinimalConcreteGeometrySandboxWriterLocke
             "FLOOR", result.LargestEmittedOperationBucket);
 
         // 24-28: Per-bucket counts
+        var wallOp      = emittedOps.FirstOrDefault(o => o.SourceMaterialBucket == "WALL");
+        var floorOp     = emittedOps.FirstOrDefault(o => o.SourceMaterialBucket == "FLOOR");
+        var accessOp    = emittedOps.FirstOrDefault(o => o.SourceMaterialBucket == "ACCESS");
+        var lotOp       = emittedOps.FirstOrDefault(o => o.SourceMaterialBucket == "LOT");
+        var componentOp = emittedOps.FirstOrDefault(o => o.SourceMaterialBucket == "COMPONENT");
+
         AddCheck(checks, "WALL_EMITTED_COUNT_850",
             "WALL emitted planned_cell_count is 850",
-            "850", emittedOps.FirstOrDefault(o => o.SourceMaterialBucket == "WALL").PlannedCellCount.ToString());
+            "850", wallOp?.PlannedCellCount.ToString() ?? "MISSING");
         AddCheck(checks, "FLOOR_EMITTED_COUNT_2444",
             "FLOOR emitted planned_cell_count is 2444",
-            "2444", emittedOps.FirstOrDefault(o => o.SourceMaterialBucket == "FLOOR").PlannedCellCount.ToString());
+            "2444", floorOp?.PlannedCellCount.ToString() ?? "MISSING");
         AddCheck(checks, "ACCESS_EMITTED_COUNT_148",
             "ACCESS emitted planned_cell_count is 148",
-            "148", emittedOps.FirstOrDefault(o => o.SourceMaterialBucket == "ACCESS").PlannedCellCount.ToString());
+            "148", accessOp?.PlannedCellCount.ToString() ?? "MISSING");
         AddCheck(checks, "LOT_EMITTED_COUNT_1898",
             "LOT emitted planned_cell_count is 1898",
-            "1898", emittedOps.FirstOrDefault(o => o.SourceMaterialBucket == "LOT").PlannedCellCount.ToString());
+            "1898", lotOp?.PlannedCellCount.ToString() ?? "MISSING");
         AddCheck(checks, "COMPONENT_EMITTED_COUNT_0",
             "COMPONENT emitted planned_cell_count is 0",
-            "0", emittedOps.FirstOrDefault(o => o.SourceMaterialBucket == "COMPONENT").PlannedCellCount.ToString());
+            "0", componentOp?.PlannedCellCount.ToString() ?? "MISSING");
 
         // 29-37: Emitted operation invariants
         bool allRequireDigest    = emittedOps.All(o => o.RequiresLockedReplayDigest);
